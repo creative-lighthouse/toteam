@@ -1,0 +1,75 @@
+@mixin media($size) {
+    @if $size ==smartphone {
+        @media (max-width: 480px) {
+            @content;
+        }
+    }
+
+    @else if $size ==medium {
+        @media (min-width: 700px) {
+            @content;
+        }
+    }
+
+    @else if $size ==desktop {
+        @media (min-width: 1000px) {
+            @content;
+        }
+    }
+
+    @else if $size ==maxwidth {
+        @media (min-width: 1200px) {
+            @content;
+        }
+    }
+
+    @else if $size ==max-medium {
+        @media (max-width: 700px) {
+            @content;
+        }
+    }
+
+    @else if $size ==max-smartphone {
+        @media (max-width: 480px) {
+            @content;
+        }
+    }
+
+    @else if $size ==max-desktop {
+        @media (max-width: 1000px) {
+            @content;
+        }
+    }
+
+    @else if $size ==max-maxwidth {
+        @media (max-width: 1200px) {
+            @content;
+        }
+    }
+
+    @else {
+        @error "Unknown media size: #{$size}. Please use one of the defined breakpoints: smartphone, medium, desktop, large, maxwidth, max-medium, max-smartphone, max-desktop, max-large, max-maxwidth.";
+    }
+}
+
+body {
+    --ColorPrimary: #1E3755;
+    --ColorPrimaryLight: #466892;
+    --ColorPrimaryDark: #0f1d30;
+    --ColorSecondary: #C9A141;
+    --ColorSecondaryLight: #fad47a;
+    --ColorSecondaryDark: #806934;
+
+    --ColorBlack: #000000;
+    --ColorWhite: #FFFFFF;
+
+    --ColorFont: #000000;
+
+    --ColorButton: var(--ColorPrimary);
+    --ColorButtonHover: var(--ColorPrimaryDark);
+    --ColorButtonText: var(--ColorWhite);
+
+    --MaxWidth: 1200px;
+    --MaxWidthContent: 980px;
+    --HeaderHeight: 120px;
+}

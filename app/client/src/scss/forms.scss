@@ -1,0 +1,157 @@
+@use "variables" as *;
+
+form {
+    //background-color: red;
+}
+
+
+//LOGIN FORM
+form#MemberLoginForm_LoginForm{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+    fieldset{
+        border: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+
+        .field{
+            width: 100%;
+            margin: 5px 0 10px 0;
+
+            input{
+                width: 100%;
+                padding: 10px;
+                margin: 5px 0;
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                height: 40px;
+
+                &[type="checkbox"]{
+                    width: 10%;
+                    height: 0px;
+                }
+
+                &[type="password"] {
+                    line-height: 0px;
+                    font: large Verdana, sans-serif;
+                    letter-spacing: 1px;
+                }
+            }
+
+            &.checkbox{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 20px;
+
+                input[type="checkbox"]{
+                    position: relative;
+                    margin-right: 10px;
+
+                    &::before{
+                        content: '';
+                        display: block;
+                        width: 35px;
+                        height: 20px;
+                        border: 1px solid #ccc;
+                        border-radius: 15px;
+                        background-color: #fff;
+                        cursor: pointer;
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        transition: 0.3s;
+                    }
+
+                    &::after{
+                        content: '';
+                        display: block;
+                        width: 15px;
+                        height: 15px;
+                        border-radius: 10px;
+                        background-color: var(--ColorPrimary);
+                        cursor: pointer;
+                        position: absolute;
+                        top: 50%;
+                        left: 30%;
+                        transform: translate(-50%, -50%);
+                        transition: 0.3s;
+                    }
+
+                    &:checked
+                    {
+                        &::after{
+                            left: 70%;
+                            background-color: var(--ColorWhite);
+                        }
+
+                        &::before{
+                            background-color: var(--ColorPrimary);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    .btn-toolbar{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: column;
+
+        input[type="submit"]{
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            cursor: pointer;
+
+            &:hover{
+                background-color: var(--ColorPrimaryDark);
+            }
+        }
+
+        #ForgotPassword{
+            margin-top: 20px;
+            margin-left: 0;
+            margin-bottom: 5px;
+            background-color: transparent;
+            color: var(--ColorPrimary);
+            border: none;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+    }
+
+    &::after{
+        content: '';
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: var(--ColorPrimary);
+        opacity: 0.5;
+        z-index: -1;
+    }
+}

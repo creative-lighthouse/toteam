@@ -1,0 +1,85 @@
+@use "glightbox/dist/css/glightbox.css";
+@use 'swiper/swiper-bundle.css';
+
+@use "fonts.scss";
+@use "normalize.scss";
+@use "variables" as *;
+@use "typography.scss";
+@use "forms.scss";
+
+@use "layout/footer.scss";
+@use "layout/header.scss";
+
+@use "elements/TextImageElement.scss";
+@use "elements/TeaserElement.scss";
+
+.section {
+    max-width: var(--MaxWidth);
+    margin: 50px auto;
+    padding: 0 20px;
+}
+
+.section_content{
+    max-width: var(--MaxWidthContent);
+    margin: 0 auto;
+}
+
+//Styles to make the footer stick to the bottom of the page
+body {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+        "header"
+        "content"
+        "footer";
+    width: 100%;
+    background-color: #f7f7f7;
+    overflow-x: hidden;
+
+    .area_header {
+        grid-area: header;
+        z-index: 100;
+    }
+
+    .area_content {
+        grid-area: content;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .area_footer {
+        grid-area: footer;
+    }
+
+    img {
+        &.leftAlone {
+            float: left;
+            margin: 5px 100% 10px 0;
+        }
+
+        &.rightAlone {
+            float: right;
+            margin-left: 100%;
+        }
+
+        &.center {
+            float: none;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
+        &.right {
+            float: right;
+            margin-left: 20px;
+        }
+
+        &.left {
+            float: left;
+            padding: 0px 20px 10px 0;
+            margin: 0px 0 0 0;
+        }
+    }
+}

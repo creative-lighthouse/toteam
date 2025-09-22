@@ -1,0 +1,65 @@
+@use "variables" as *;
+
+body{
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+}
+
+h1, h2, h3, h4, h5{
+    font-weight: 700;
+
+}
+
+h1{
+    font-size: 35px;
+}
+
+p {
+    margin: 0 0 30px 0;
+
+    &.text-left {
+        text-align: left;
+    }
+
+    &.text-center {
+        text-align: center;
+    }
+
+    &.text-right {
+        text-align: right;
+    }
+
+    &.text-justify {
+        text-align: justify;
+    }
+}
+
+a {
+    cursor: pointer;
+    color: var(--ColorLink);
+    text-decoration: none;
+
+    &.link--button {
+        background-color: var(--ColorButton);
+        color: var(--ColorButtonText);
+        display: inline-block;
+        font-size: 16px;
+        text-wrap: nowrap;
+        font-weight: bold;
+        border-radius: 4px;
+        padding: 13px 35px;
+        text-decoration: none;
+        transition: 0.2s ease-in-out;
+        align-self: flex-end;
+
+        &:hover {
+            background-color: var(--ColorButtonHover);
+        }
+
+        @include media(max-desktop) {
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+    }
+}
