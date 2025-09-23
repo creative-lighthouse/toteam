@@ -1,12 +1,8 @@
 {
-    "name": "atwx/standard-silverstripe-template",
+    "name": "creativelighthouse/silverstripe-toteam",
     "type": "silverstripe-recipe",
-    "description": "A default Silverstripe installation",
+    "description": "An organizing tool for groups and freelancers",
     "repositories": [
-        {
-            "type": "git",
-            "url": "https://github.com/wernerkrauss/silverstripe-pure-modal.git"
-        },
         {
             "type": "git",
             "url": "https://github.com/atwx/silverstripe-projectinfo.git"

@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Extensions;
+
+use SilverStripe\Assets\Image;
+use SilverStripe\Core\Extension;
+use App\HumanResources\Department;
+use App\HumanResources\FoodPreference;
+use App\HumanResources\FoodPreferences;
+
+class MemberExtension extends Extension
+{
+    private static $db = [
+        "Nickname" => "Varchar(255)",
+        "Joindate" => "Int",
+    ];
+
+    private static $has_one = [
+        "Image" => Image::class,
+    ];
+
+    private static $has_many = [
+        "FoodPreferences" => FoodPreferences::class,
+    ];
+
+    private static $belongs_many = [
+        "Departments" => Department::class,
+    ];
+
+    private static $owns = [
+        'Image',
+    ];
+}
