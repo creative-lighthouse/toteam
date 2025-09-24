@@ -30,4 +30,6 @@ class MemberExtension extends Extension
     private static $owns = [
         'Image',
     ];
+
+    public function getParticipations() {}
 }
