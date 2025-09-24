@@ -2,8 +2,8 @@
 
 namespace App\Events;
 
+use SilverStripe\ORM\FieldType\DBField;
 use Override;
-use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
@@ -12,6 +12,7 @@ class EventDayParticipation extends DataObject
     private static $db = [
         "TimeStart" => "Time",
         "TimeEnd" => "Time",
+        "Type" => "Enum('Accept, Maybe, Decline')",
         "Notes" => "Varchar(512)"
     ];
 
@@ -34,7 +35,7 @@ class EventDayParticipation extends DataObject
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
-        $fields->removeByName("Parent");
+        $fields->removeByName("ParentID");
         return $fields;
     }
 
@@ -44,12 +45,20 @@ class EventDayParticipation extends DataObject
         $end = $this->dbObject('TimeEnd');
         if ($start && $end) {
             return $start->Format('hh:mm') . " - " . $end->Format('hh:mm');
-        } elseif ($start) {
+        } elseif ($start instanceof DBField) {
             return "ab " . $start->Format('hh:mm');
-        } elseif ($end) {
+        } elseif ($end instanceof DBField) {
             return "bis " . $end->Format('hh:mm');
         } else {
             return "Kein Datum";
         }
+    }
+
+    public function getDay() {
+        return $this->Parent();
+    }
+
+    public function getEvent() {
+        return $this->Parent()->getEvent();
     }
 }

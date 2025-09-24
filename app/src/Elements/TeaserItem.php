@@ -17,7 +17,7 @@ use SilverStripe\LinkField\Form\LinkField;
  * @property int $ButtonID
  * @property int $ParentID
  * @method Image Image()
- * @method \SilverStripe\LinkField\Models\Link Button()
+ * @method Link Button()
  * @method TeaserElement Parent()
  */
 class TeaserItem extends DataObject

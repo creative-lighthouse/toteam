@@ -10,6 +10,14 @@
         {
             "type": "git",
             "url": "https://github.com/wernerkrauss/silverstripe-ideannotator.git"
+        },
+        {
+            "type": "git",
+            "url": "https://github.com/StevenPaw/silverstripe-cms-theme.git"
+        },
+        {
+            "type": "git",
+            "url": "git@github.com:StevenPaw/silverstripe-elemental-clipboard.git"
         }
     ],
     "require": {
@@ -20,7 +28,9 @@
         "ext-json": "*",
         "atwx/silverstripe-projectinfo": "dev-main",
         "symbiote/silverstripe-gridfieldextensions": "^5.0",
-        "silverstripe/linkfield": "^5.0"
+        "silverstripe/linkfield": "^5.0",
+        "ryanpotter/silverstripe-cms-theme": "dev-master",
+        "stevenpaw/silverstripe-elemental-clipboard": "dev-main"
     },
     "require-dev": {
         "silverleague/ideannotator": "dev-silverstripe6 as 4.0",

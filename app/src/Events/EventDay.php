@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use SilverStripe\ORM\FieldType\DBField;
 use Override;
 use App\Events\Event;
 use App\Events\EventDayType;
@@ -58,17 +59,21 @@ class EventDay extends DataObject
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
-        $fields->removeByName("Parent");
+        $fields->removeByName("ParentID");
         return $fields;
     }
 
     public function RenderDate()
     {
         $date = $this->dbObject('Date');
-        if ($date) {
+        if ($date instanceof DBField) {
             return $this->dbObject('Date')->Format('dd.MM.YYYY');
         } else {
             return "Kein Datum";
         }
+    }
+
+    public function getEvent() {
+        return $this->Parent();
     }
 }

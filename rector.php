@@ -19,7 +19,7 @@ return RectorConfig::configure()
     ->withSets([
         //rector lists
         LevelSetList::UP_TO_PHP_83,
-        // SetList::CODE_QUALITY,
+        SetList::CODE_QUALITY,
         // SetList::CODING_STYLE,
         // silverstripe rector
         // SilverstripeSetList::CODE_STYLE,

@@ -19,7 +19,7 @@ use DNADesign\Elemental\Models\BaseElement;
  * @property int $ImageID
  * @property int $ButtonID
  * @method Image Image()
- * @method \SilverStripe\LinkField\Models\Link Button()
+ * @method Link Button()
  */
 class TextImageElement extends BaseElement
 {

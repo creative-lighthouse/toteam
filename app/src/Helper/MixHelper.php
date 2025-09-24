@@ -2,6 +2,8 @@
 
 namespace App\Helper;
 
+use Exception;
+use JsonException;
 use SilverStripe\Core\Manifest\ModuleResourceLoader;
 use SilverStripe\View\TemplateGlobalProvider;
 
@@ -9,12 +11,12 @@ class MixHelper implements TemplateGlobalProvider
 {
     public static function startsWith($haystack, $needle) :bool
     {
-        return (strpos($haystack, $needle) === 0);
+        return (str_starts_with((string) $haystack, (string) $needle));
     }
 
     /**
-     * @throws \JsonException
-     * @throws \Exception
+     * @throws JsonException
+     * @throws Exception
      */
     public static function Mix($path, $manifestDirectory = 'app/client/dist') :string
     {
@@ -26,7 +28,7 @@ class MixHelper implements TemplateGlobalProvider
         }
         if (!$manifest) {
             if (!file_exists($manifestPath = ($rootPath . $manifestDirectory . '/mix-manifest.json'))) {
-                throw new \Exception('The Mix manifest does not exist.');
+                throw new Exception('The Mix manifest does not exist.');
             }
             $manifest = json_decode(file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
         }
@@ -36,7 +38,7 @@ class MixHelper implements TemplateGlobalProvider
         }
 
         if (!array_key_exists($path, $manifest)) {
-            throw new \Exception(
+            throw new Exception(
                 "Unable to locate Mix file: {$path}. Please check your " .
                 'webpack.mix.js output paths and try again.'
             );

@@ -1,21 +1,46 @@
 <?php
 
-use SilverStripe\Security\Member;
+use App\Events\EventDay;
+use App\Events\EventDayParticipation;
+use PHP_CodeSniffer\Generators\HTML;
 
-class Calendar
+class Calendar implements Stringable
 {
 
     private $active_year, $active_month, $active_day;
     private $member;
     private $events = [];
+    private $participations = [];
+    private $eventdays = [];
 
-    public function __construct($date = null, $memberID = null)
+    public function __construct($date = null, $member = null)
     {
-        $this->active_year = $date != null ? date('Y', strtotime($date)) : date('Y');
-        $this->active_month = $date != null ? date('m', strtotime($date)) : date('m');
-        $this->active_day = $date != null ? date('d', strtotime($date)) : date('d');
-        if ($memberID) {
-            $this->member = Member::get()->byID($memberID);
+        $this->active_year = $date != null ? date('Y', strtotime((string) $date)) : date('Y');
+        $this->active_month = $date != null ? date('m', strtotime((string) $date)) : date('m');
+        $this->active_day = $date != null ? date('d', strtotime((string) $date)) : date('d');
+        $this->member = $member;
+        if($this->member) {
+            $this->eventdays = EventDay::get();
+            foreach ($this->eventdays as $day) {
+                $memberparticipation = EventDayParticipation::get()->filter(['ParentID' => $day->ID, 'MemberID' => $this->member->ID])->first();
+                if($memberparticipation) {
+                    switch($memberparticipation->Type) {
+                        case 'Accept':
+                            $this->add_event($day->Title, $day->Date, 1, 'green');
+                            break;
+                        case 'Maybe':
+                            $this->add_event($day->Title, $day->Date, 1, 'orange');
+                            break;
+                        case 'Decline':
+                            $this->add_event($day->Title, $day->Date, 1, 'red');
+                            break;
+                        default:
+                            $this->add_event($day->Title, $day->Date, 1, 'gray');
+                    }
+                } else {
+                    $this->add_event($day->Title, $day->Date, 1, 'gray');
+                }
+            }
         }
     }
 
@@ -25,7 +50,7 @@ class Calendar
         $this->events[] = [$txt, $date, $days, $color];
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         $num_days = date('t', strtotime($this->active_day . '-' . $this->active_month . '-' . $this->active_year));
         $num_days_last_month = date('j', strtotime('last day of previous month', strtotime($this->active_day . '-' . $this->active_month . '-' . $this->active_year)));
@@ -61,7 +86,7 @@ class Calendar
             $html .= '<span>' . $i . '</span>';
             foreach ($this->events as $event) {
                 for ($d = 0; $d <= ($event[2] - 1); $d++) {
-                    if (date('y-m-d', strtotime($this->active_year . '-' . $this->active_month . '-' . $i . ' -' . $d . ' day')) == date('y-m-d', strtotime($event[1]))) {
+                    if (date('y-m-d', strtotime($this->active_year . '-' . $this->active_month . '-' . $i . ' -' . $d . ' day')) === date('y-m-d', strtotime((string) $event[1]))) {
                         $html .= '<div class="event' . $event[3] . '">';
                         $html .= $event[0];
                         $html .= '</div>';

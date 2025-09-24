@@ -2,6 +2,7 @@
 
 namespace App\Pages;
 
+use Override;
 use PageController;
 use SilverStripe\Forms\Form;
 use SilverStripe\Forms\FieldList;
@@ -18,6 +19,7 @@ class LoginPageController extends PageController
         'confirm',
     ];
 
+    #[Override]
     public function LoginForm()
     {
 

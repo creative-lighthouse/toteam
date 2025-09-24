@@ -61,6 +61,10 @@
     word-wrap: break-word;
 }
 
+.calendar .days .day_num .event.gray {
+    background-color: gray;
+}
+
 .calendar .days .day_num .event.green {
     background-color: #51ce57;
 }

@@ -2,8 +2,8 @@
 
 namespace App\Elements;
 
+use Override;
 use DNADesign\Elemental\Models\BaseElement;
-use SilverStripe\Forms\DropdownField;
 
 /**
  * Class \App\Elements\TextImageElement
@@ -24,11 +24,13 @@ class TextElement extends BaseElement
     private static $table_name = 'TextElement';
     private static $icon = 'font-icon-block-content';
 
+    #[Override]
     public function getType()
     {
         return "Text";
     }
 
+    #[Override]
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();

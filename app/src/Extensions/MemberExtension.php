@@ -5,7 +5,6 @@ namespace App\Extensions;
 use SilverStripe\Assets\Image;
 use SilverStripe\Core\Extension;
 use App\HumanResources\Department;
-use App\HumanResources\FoodPreference;
 use App\HumanResources\FoodPreferences;
 
 class MemberExtension extends Extension
