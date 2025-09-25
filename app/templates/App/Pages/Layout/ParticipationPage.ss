@@ -1,3 +1,4 @@
 <div class="section section--ParticipationPage">
-    $Calendar
+    <div id="calendar" style="height: 800px" data-calendardata='{$CalendarDataJSON}'></div>
+    </div>
 </div>

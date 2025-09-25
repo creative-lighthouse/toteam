@@ -4,8 +4,10 @@ namespace App\Pages;
 
 use Calendar;
 use PageController;
-use SilverStripe\ORM\FieldType\DBField;
+use App\Events\EventDay;
+use App\Events\EventDayParticipation;
 use SilverStripe\Security\Security;
+use SilverStripe\ORM\FieldType\DBField;
 
 class ParticipationPageController extends PageController
 {
@@ -23,14 +25,25 @@ class ParticipationPageController extends PageController
             $this->redirect($this->Link() . "?date=" . date('Y-m-d'));
         }
 
+        $eventdaysasjson = [];
+        $allEventDays = EventDay::get()->sort('Date ASC');
+        foreach ($allEventDays as $eventday) {
+            $eventdaysasjson[] = $eventday->jsonSerialize();
+        }
+
         return [
-            'Calendar' => DBField::create_field('HTMLText', $this->RenderCalendar($date) ?? null),
+            'CalendarDataJSON' => json_encode($eventdaysasjson),
             'Date' => $date,
         ];
     }
 
-    public function RenderCalendar($date = null)
+    public function EventDays()
     {
-        return new Calendar($date, Security::getCurrentUser());
+        $member = Security::getCurrentUser();
+        if ($member) {
+            $days = EventDay::get()->sort('Date ASC');
+            return $days;
+        }
+        return null;
     }
 }

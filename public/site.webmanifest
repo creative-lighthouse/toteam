@@ -1,0 +1,17 @@
+{
+    "name": "ToTeam",
+    "short_name": "ToTeam",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1976d2",
+    "description": "A Progressive Web App for helpful projects",
+    "icons": [
+        {
+            "src": "./_resources/app/client/icons/apple_touch_icon_120.png",
+            "sizes": "120x120",
+            "type": "image/png"
+        }
+    ],
+    "lang": "en"
+}

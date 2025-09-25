@@ -1,5 +1,6 @@
 import Swiper, {Autoplay, EffectCoverflow, EffectFade, Navigation, Pagination} from 'swiper';
 import GLightbox from "glightbox";
+import './calendar.js';
 
 document.addEventListener("DOMContentLoaded", function (event) {
 
