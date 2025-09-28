@@ -8,7 +8,7 @@
         <meta charset="utf-8">
         <title>$Title - $SiteConfig.Title</title>
         $ViteClient.RAW
-        <link rel="stylesheet" href="$Vite("app/client/src/scss/main.scss")">
+        <link rel="stylesheet" href="$Vite('app/client/src/scss/main.scss')">
 
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="{$Title}" />
@@ -41,7 +41,7 @@
         <main class="area_content main">
                 $Layout
         </main>
-        <script type="module" src="$Vite("app/client/src/js/main.js")"></script>
+        <script type="module" src="$Vite('app/client/src/js/main.js')"></script>
         <div class="area_footer">
             <% include Footer %>
         </div>

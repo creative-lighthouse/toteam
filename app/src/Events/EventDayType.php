@@ -29,7 +29,8 @@ class EventDayType extends DataObject
     private static $field_labels = [];
 
     private static $summary_fields = [
-        "SingularTitle"
+        "Title",
+        "PluralTitle",
     ];
 
     private static $table_name = 'EventDayType';

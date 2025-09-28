@@ -2,13 +2,15 @@
 
 namespace App\Events;
 
-use SilverStripe\ORM\FieldType\DBField;
 use Override;
 use App\Events\Event;
 use App\Events\EventDayType;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
+use SilverStripe\Model\List\GroupedList;
+use SilverStripe\ORM\FieldType\DBField;
 
 class EventDay extends DataObject
 {
@@ -17,6 +19,7 @@ class EventDay extends DataObject
         "Date" => "Date",
         "TimeStart" => "Time",
         "TimeEnd" => "Time",
+        "Location" => "Varchar(511)",
     ];
 
     private static $has_one = [
@@ -27,7 +30,7 @@ class EventDay extends DataObject
 
     private static $has_many = [
         'Participations' => EventDayParticipation::class,
-        'Foods' => EventDayFood::class,
+        'Meals' => EventDayMeal::class,
     ];
 
     private static $owns = [
@@ -73,7 +76,56 @@ class EventDay extends DataObject
         }
     }
 
+    public function RenderDateWithTime()
+    {
+        $date = $this->dbObject('Date');
+        if ($date instanceof DBField) {
+            if($this->TimeStart && $this->TimeEnd) {
+                return $this->dbObject('Date')->Format('dd.MM.YY') . ', ' . $this->dbObject('TimeStart')->Format('HH:mm') . ' - ' . $this->dbObject('TimeEnd')->Format('HH:mm');
+            } else if($this->TimeStart) {
+                return $this->dbObject('Date')->Format('dd.MM.YY') . ', Ab' . $this->dbObject('TimeStart')->Format('HH:mm');
+            } else {
+                return $this->dbObject('Date')->Format('dd.MM.YY');
+            }
+        } else {
+            return "Kein Datum";
+        }
+    }
+
     public function getEvent() {
         return $this->Parent();
+    }
+
+    public function getParticipationOfCurrentUser() {
+        $member = Security::getCurrentUser();
+        if(!$member) {
+            return null;
+        }
+        return EventDayParticipation::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
+    }
+
+    public function getGroupedParticipations() {
+        return GroupedList::create($this->Participations());
+    }
+
+    public function FormatTimeStart() {
+        return $this->TimeStart ? (new \DateTime($this->TimeStart))->format('H:i') : '';
+    }
+
+    public function FormatTimeEnd() {
+        return $this->TimeEnd ? (new \DateTime($this->TimeEnd))->format('H:i') : '';
+    }
+
+    public function RenderTime()
+    {
+        if($this->TimeStart && $this->TimeEnd) {
+            return $this->FormatTimeStart() . " - " . $this->FormatTimeEnd();
+        } elseif ($this->TimeStart) {
+            return "ab " . $this->FormatTimeStart();
+        } elseif ($this->TimeEnd) {
+            return "bis " . $this->FormatTimeEnd();
+        } else {
+            return "Kein Datum";
+        }
     }
 }

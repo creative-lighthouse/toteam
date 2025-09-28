@@ -2,7 +2,6 @@
 
 namespace {
 
-    use Override;
     use SilverStripe\CMS\Controllers\ContentController;
 
     /**
@@ -31,7 +30,6 @@ namespace {
          */
         private static $allowed_actions = [];
 
-        #[Override]
         protected function init()
         {
             parent::init();

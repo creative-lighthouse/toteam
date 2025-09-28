@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Events;
+
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use App\Events\EventDay;
+use SilverStripe\ORM\DataObject;
+use App\Events\EventDayMealEater;
+use SilverStripe\Security\Security;
+
+class EventDayMeal extends DataObject
+{
+    private static $db = [
+        "Title" => "Varchar(255)",
+        "Time" => "Time"
+    ];
+
+    private static $has_one = [
+        "Parent" => EventDay::class,
+    ];
+
+    private static $has_many = [
+        "Eaters" => EventDayMealEater::class,
+    ];
+
+    private static $field_labels = [
+        "Title" => "Titel",
+        "Time" => "Uhrzeit",
+        "Eaters" => "Teilnehmer",
+    ];
+
+    private static $summary_fields = [
+        "Title" => "Titel",
+        "RenderTime" => "Uhrzeit",
+    ];
+
+    private static $table_name = 'EventDayMeal';
+    private static $singular_name = "Mahlzeit";
+    private static $plural_name = "Mahlzeiten";
+    
+    public function getCMSFields()
+    {
+        $fields = parent::getCMSFields();
+        $fields->removeByName('ParentID');
+
+        $eatersGridfield = $fields->dataFieldByName('Eaters');
+        $fields->removeByName('Eaters');
+        $eatersGridfield->setConfig(GridFieldConfig_RecordEditor::create());
+        $fields->addFieldToTab('Root.Main', $eatersGridfield);
+        return $fields;
+    }
+
+    public function RenderTime()
+    {
+        return $this->dbObject('Time')->Format('HH:mm');
+    }
+
+    public function getMealParticipationOfCurrentUser() {
+        $member = Security::getCurrentUser();
+        if(!$member) {
+            return null;
+        }
+        return EventDayMealEater::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
+    }
+}

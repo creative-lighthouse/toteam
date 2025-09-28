@@ -1,46 +1,54 @@
 <?php
 
 use App\Events\EventDay;
+use App\Pages\ParticipationPage;
+use SilverStripe\Model\ArrayData;
 use App\Events\EventDayParticipation;
-use PHP_CodeSniffer\Generators\HTML;
+use SilverStripe\Model\List\ArrayList;
 
-class Calendar implements Stringable
+class Calendar
 {
-
     private $active_year, $active_month, $active_day;
     private $member;
     private $events = [];
-    private $participations = [];
     private $eventdays = [];
+    private $currentEventDayID = null;
 
-    public function __construct($date = null, $member = null)
+    public function __construct($date = null, $member = null, $eventdayID = null)
     {
+        setlocale(LC_ALL, 'de_DE.UTF-8');
         $this->active_year = $date != null ? date('Y', strtotime((string) $date)) : date('Y');
         $this->active_month = $date != null ? date('m', strtotime((string) $date)) : date('m');
         $this->active_day = $date != null ? date('d', strtotime((string) $date)) : date('d');
         $this->member = $member;
+        $this->currentEventDayID = $eventdayID;
         if($this->member) {
             $this->eventdays = EventDay::get();
             foreach ($this->eventdays as $day) {
                 $memberparticipation = EventDayParticipation::get()->filter(['ParentID' => $day->ID, 'MemberID' => $this->member->ID])->first();
                 if($memberparticipation) {
-                    switch($memberparticipation->Type) {
-                        case 'Accept':
-                            $this->add_event($day->Title, $day->Date, 1, 'green');
-                            break;
-                        case 'Maybe':
-                            $this->add_event($day->Title, $day->Date, 1, 'orange');
-                            break;
-                        case 'Decline':
-                            $this->add_event($day->Title, $day->Date, 1, 'red');
-                            break;
-                        default:
-                            $this->add_event($day->Title, $day->Date, 1, 'gray');
-                    }
+                    $this->getColorOfEvent($day);
                 } else {
-                    $this->add_event($day->Title, $day->Date, 1, 'gray');
+                    $this->add_event($day->Title, $day->Date, 1, 'event-color--gray');
                 }
             }
+        }
+    }
+
+    public function getColorOfEvent($day){
+        $memberparticipation = EventDayParticipation::get()->filter(['ParentID' => $day->ID, 'MemberID' => $this->member->ID])->first();
+        switch ($memberparticipation->Type) {
+            case 'Accept':
+                $this->add_event($day->Title, $day->Date, 1, 'event-color--green');
+                break;
+            case 'Maybe':
+                $this->add_event($day->Title, $day->Date, 1, 'event-color--orange');
+                break;
+            case 'Decline':
+                $this->add_event($day->Title, $day->Date, 1, 'event-color--red');
+                break;
+            default:
+                $this->add_event($day->Title, $day->Date, 1, 'event-color--gray');
         }
     }
 
@@ -50,60 +58,124 @@ class Calendar implements Stringable
         $this->events[] = [$txt, $date, $days, $color];
     }
 
-    public function __toString(): string
+    public function getNumOfDays()
     {
         $num_days = date('t', strtotime($this->active_day . '-' . $this->active_month . '-' . $this->active_year));
-        $num_days_last_month = date('j', strtotime('last day of previous month', strtotime($this->active_day . '-' . $this->active_month . '-' . $this->active_year)));
-        $days = [0 => 'Sun', 1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat'];
-        $first_day_of_week = array_search(date('D', strtotime($this->active_year . '-' . $this->active_month . '-1')), $days);
-        $html = '<div class="calendar">';
-        $html .= '<div class="header">';
-        $html .= '<div class="month-year">';
-        $html .= date('F Y', strtotime($this->active_year . '-' . $this->active_month . '-' . $this->active_day));
-        $html .= '</div>';
-        $html .= '</div>';
-        $html .= '<div class="days">';
+        return $num_days;
+    }
+    
+    public function getNumOfDaysLastMonth()
+    {
+        $num_days_last_month = date('t', strtotime('last month', strtotime($this->active_day . '-' . $this->active_month . '-' . $this->active_year)));
+        return $num_days_last_month;
+    }
+
+    public function getNumOfDaysNextMonth()
+    {
+        $num_days_next_month = date('t', strtotime('next month', strtotime($this->active_day . '-' . $this->active_month . '-' . $this->active_year)));
+        return $num_days_next_month;
+    }
+
+    public function getDays()
+    {
+        return [0 => 'MO', 1 => 'DI', 2 => 'MI', 3 => 'DO', 4 => 'FR', 5 => 'SA', 6 => 'SO'];
+    }
+
+    public function getFirstDayOfWeek()
+    {
+        $first_day_of_week = array_search(date('D', strtotime($this->active_year . '-' . $this->active_month . '-1')), $this->getDays());
+        return $first_day_of_week;
+    }
+    // Removed __toString HTML generation. Use template rendering instead.
+
+    public function getDaysOfWeek()
+    {
+        $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        $out = [];
         foreach ($days as $day) {
-            $html .= '
-                <div class="day_name">
-                    ' . $day . '
-                </div>
-            ';
+            $out[] = ArrayData::create(['Value' => $day]);
         }
+        return ArrayList::create($out);
+    }
+
+    public function getCalendarDays()
+    {
+        $num_days = date('t', strtotime($this->active_year . '-' . $this->active_month . '-01'));
+        $num_days_last_month = date('j', strtotime('last day of previous month', strtotime($this->active_year . '-' . $this->active_month . '-01')));
+        $first_day_of_week = date('N', strtotime($this->active_year . '-' . $this->active_month . '-01')) - 1; // 0=Mon
+        $days = [];
+
+        // Days from previous month (ignored)
         for ($i = $first_day_of_week; $i > 0; $i--) {
-            $html .= '
-                <div class="day_num ignore">
-                    ' . ($num_days_last_month - $i + 1) . '
-                </div>
-            ';
+            $days[] = ArrayData::create([
+                'Number' => $num_days_last_month - $i + 1,
+                'IsCurrentMonth' => false,
+                'IsSelected' => false,
+                'EventDays' => ArrayList::create([])
+            ]);
         }
+
+        // Days in current month
         for ($i = 1; $i <= $num_days; $i++) {
-            $selected = '';
-            if ($i == $this->active_day) {
-                $selected = ' selected';
-            }
-            $html .= '<div class="day_num' . $selected . '">';
-            $html .= '<span>' . $i . '</span>';
+            $isSelected = ($i == $this->active_day);
+            $dateStr = $this->active_year . '-' . $this->active_month . '-' . str_pad($i, 2, '0', STR_PAD_LEFT);
+            $events = [];
             foreach ($this->events as $event) {
                 for ($d = 0; $d <= ($event[2] - 1); $d++) {
-                    if (date('y-m-d', strtotime($this->active_year . '-' . $this->active_month . '-' . $i . ' -' . $d . ' day')) === date('y-m-d', strtotime((string) $event[1]))) {
-                        $html .= '<div class="event' . $event[3] . '">';
-                        $html .= $event[0];
-                        $html .= '</div>';
+                    $eventDate = date('Y-m-d', strtotime($event[1]));
+                    $compareDate = date('Y-m-d', strtotime($dateStr . ' -' . $d . ' day'));
+                    if ($compareDate === $eventDate) {
+                        $events[] = ArrayData::create([
+                            'Title' => $event[0],
+                            'Date' => $event[1],
+                            'Color' => trim($event[3]),
+                        ]);
                     }
                 }
             }
-            $html .= '</div>';
+            $days[] = ArrayData::create([
+                'Number' => $i,
+                'IsCurrentMonth' => true,
+                'IsSelected' => $isSelected,
+                'EventDays' => $this->getEventsForDay($dateStr),
+            ]);
         }
-        for ($i = 1; $i <= (42 - $num_days - max($first_day_of_week, 0)); $i++) {
-            $html .= '
-                <div class="day_num ignore">
-                    ' . $i . '
-                </div>
-            ';
+
+        // Fill up to 42 days (6 weeks)
+        $total = count($days);
+        for ($i = 1; $i <= (42 - $total); $i++) {
+            $days[] = ArrayData::create([
+                'Number' => $i,
+                'IsCurrentMonth' => false,
+                'IsSelected' => false,
+                'EventDays' => ArrayList::create([])
+            ]);
         }
-        $html .= '</div>';
-        $html .= '</div>';
-        return $html;
+
+        return ArrayList::create($days);
+    }
+
+    public function getEventsForDay($day)
+    {
+        $events = EventDay::get()->filter('Date', $day);
+        return $events;
+    }
+
+    public function render()
+    {
+        return ArrayData::create([
+            'DaysOfWeek' => $this->getDaysOfWeek(),
+            'CalendarDays' => $this->getCalendarDays(),
+            'ActiveYear' => $this->active_year,
+            'ActiveMonth' => $this->active_month,
+            'ActiveDay' => $this->active_day,
+            'ParticipationPage' => $this->getParticipationPage(),
+            'CurrentEventDayID' => $this->currentEventDayID,
+        ])->renderWith('Includes/Calendar');
+    }
+
+    public function getParticipationPage()
+    {
+        return ParticipationPage::get()->first();
     }
 }

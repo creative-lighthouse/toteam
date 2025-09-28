@@ -10,7 +10,7 @@ class EventAdmin extends ModelAdmin
 {
     private static $menu_title = 'Events';
 
-    private static $url_segment = 'person-directory';
+    private static $url_segment = 'event-directory';
 
     private static $managed_models = [
         Event::class,

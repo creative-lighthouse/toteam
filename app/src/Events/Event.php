@@ -29,6 +29,9 @@ class Event extends DataObject
 
     private static $field_labels = [
         "EventDays" => "Veranstaltungs-Tage",
+        "Title" => "Titel",
+        "Start" => "Start",
+        "End" => "Ende",
     ];
 
     private static $summary_fields = [

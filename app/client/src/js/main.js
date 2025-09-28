@@ -56,4 +56,18 @@ document.addEventListener("DOMContentLoaded", function (event) {
             document.body.classList.remove('menu--fixed');
         }
     });
+
+    document.querySelectorAll('dialog[data-autoopen="true"]').forEach(dialog => {
+        dialog.showModal();
+        const statusMessage = document.createElement('div');
+        statusMessage.className = `status-message status-message--success`;
+        statusMessage.textContent = "Gespeichert";
+        dialog.appendChild(statusMessage);
+        setTimeout(() => {
+            statusMessage.classList.add('status-message--hide');
+        }, 3000);
+        setTimeout(() => {
+            statusMessage.remove();
+        }, 6000);
+    });
 });

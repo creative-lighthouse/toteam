@@ -1,0 +1,16 @@
+{
+    "name": "My PWA App",
+    "short_name": "PWAApp",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1976d2",
+    "description": "A simple Progressive Web App.",
+    "icons": [
+        {
+            "src": "./_resources/app/client/icons/apple_touch_icon_120.png",
+            "sizes": "120x120",
+            "type": "image/png"
+        }
+    ]
+}
