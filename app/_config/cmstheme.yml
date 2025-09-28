@@ -1,6 +1,6 @@
 SilverStripe\SiteConfig\SiteConfig:
-  cms_logo: "_resources/app/client/icons/nav_brand.svg"
-  cms_logo_width: 60 # Optional width constraint
+  cms_logo: "_resources/app/client/icons/ToTeam-Icon-x1024.png" # Path to logo
+  cms_logo_width: 128 # Optional width constraint
 
 SilverStripe\Admin\LeftAndMain:
   cms_background: "#000"

@@ -1,12 +1,19 @@
 <header>
     <div class="header_nav">
         <a href="" class="nav_brand">
-            <img src="_resources/app/client/icons/nav_brand.svg">
+            <img src="_resources/app/client/icons/ToTeam-safari-pinned-tab.svg">
         </a>
         <div class="nav_menu">
             <% loop $Menu(1) %>
                 <% if $MenuPosition == "main" %>
-                    <a href="$Link" class="nav_link<% if $LinkOrSection == "section" %> nav_link--active<% end_if %>">$MenuTitle</a>
+                    <a href="$Link" class="nav_link<% if $LinkOrSection == "section" %> nav_link--active<% end_if %>">
+                        <div class="nav_icon">
+                            <% if $PageIcon %>
+                                <img src="$PageIcon.Url" alt="$MenuTitle Icon" class="nav_icon_image">
+                            <% end_if %>
+                        </div>
+                        <p class="nav_title">$MenuTitle</p>
+                    </a>
                 <% end_if %>
             <% end_loop %>
         </div>

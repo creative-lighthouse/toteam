@@ -1,18 +1,17 @@
 @use "glightbox/dist/css/glightbox.css";
 @use 'swiper/swiper-bundle.css';
 
+@use "variables" as *;
 @use "fonts.scss";
 @use "normalize.scss";
-@use "variables" as *;
 @use "typography.scss";
 @use "forms.scss";
 @use "calendar.scss";
 
-@use "layout/footer.scss";
 @use "layout/header.scss";
 
-@use "elements/TextImageElement.scss";
-@use "elements/TeaserElement.scss";
+@use "pages/DashboardPage.scss";
+@use "pages/RegistrationPage.scss";
 
 .section {
     max-width: var(--MaxWidth);
@@ -36,8 +35,8 @@ body {
         "content"
         "footer";
     width: 100%;
-    background-color: #f7f7f7;
     overflow-x: hidden;
+    background-color: var(--ColorWhite);
 
     .area_header {
         grid-area: header;
@@ -52,6 +51,7 @@ body {
 
     .area_footer {
         grid-area: footer;
+        text-align: center;
     }
 
     img {

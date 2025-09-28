@@ -1,9 +1,0 @@
----
-Name: approutes
-After:
-  - "#rootroutes"
-  - "#coreroutes"
----
-SilverStripe\Control\Director:
-  rules:
-    "typographyexample//$Action/$ID/$Name": 'App\Pages\TypographyExampleController'

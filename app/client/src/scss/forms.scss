@@ -1,12 +1,7 @@
 @use "variables" as *;
 
-form {
-    //background-color: red;
-}
-
-
 //LOGIN FORM
-form#MemberLoginForm_LoginForm{
+form#MemberLoginForm_LoginForm, form#Form_RegistrationForm {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -150,7 +145,6 @@ form#MemberLoginForm_LoginForm{
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: var(--ColorPrimary);
         opacity: 0.5;
         z-index: -1;
     }

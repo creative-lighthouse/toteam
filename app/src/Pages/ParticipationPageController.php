@@ -26,10 +26,6 @@ class ParticipationPageController extends PageController
         $date = $this->request->getVar('date');
         $eventday = $this->request->getVar('eventID');
 
-        if (!$date) {
-            $this->redirect($this->Link() . "?date=" . date('Y-m-d'));
-        }
-
         return [
             'Calendar' => DBField::create_field('HTMLText', $this->RenderCalendar($date, $eventday) ?? null),
             'Date' => $date,
@@ -59,6 +55,14 @@ class ParticipationPageController extends PageController
             }
             $eventDayParticipation->write();
         } else {
+            if($type == 'Accept') {
+                if(!$eventDayParticipation->TimeStart) {
+                    $eventDayParticipation->TimeStart = $eventday->TimeStart;
+                }
+                if(!$eventDayParticipation->TimeEnd) {
+                    $eventDayParticipation->TimeEnd = $eventday->TimeEnd;
+                }
+            }
             $eventDayParticipation->Type = $type;
             $eventDayParticipation->write();
         }
@@ -86,7 +90,7 @@ class ParticipationPageController extends PageController
             $eventDayMealEater->ParentID = $meal->ID;
             $eventDayMealEater->MemberID = $member->ID;
             $eventDayMealEater->Type = $type;
-            
+
             $eventDayMealEater->write();
         } else {
             $eventDayMealEater->Type = $type;

@@ -1,0 +1,30 @@
+.section.section--RegistrationPage {
+    margin: 0;
+    padding: 0 20px;
+
+    .section_content{
+        text-align: center;
+        .section_form {
+
+        }
+
+        .section_login {
+            margin: 20px 0;
+            text-align: center;
+            a {
+                color: var(--ColorPrimary);
+                text-decoration: none;
+                font-weight: bold;
+                background-color: var(--ColorPrimary);
+                padding: 5px 10px;
+                border-radius: 5px;
+                border: none;
+                color: white;
+
+                &:hover {
+                    background-color: var(--ColorPrimaryDark);
+                }
+            }
+        }
+    }
+}

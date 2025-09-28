@@ -18,13 +18,10 @@ class Task extends DataObject
         "Parent" => Task::class,
     ];
 
-    private static $has_many = [
-        'Supporters' => Member::class,
-        'SubTasks' => Task::class,
-    ];
-
     private static $many_many = [
         'TaskGroups' => TaskGroup::class,
+        'Supporters' => Member::class,
+        'SubTasks' => Task::class,
     ];
 
     private static $owns = [
@@ -32,7 +29,7 @@ class Task extends DataObject
     ];
 
     private static $field_labels = [
-        
+
     ];
 
     private static $summary_fields = [

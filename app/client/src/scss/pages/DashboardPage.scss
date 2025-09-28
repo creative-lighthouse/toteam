@@ -1,0 +1,56 @@
+.section.section--DashboardPage {
+    .section_content{
+        display: grid;
+        grid-template-columns: repeat(2, calc(50% - 10px));
+        gap: 20px;
+        width: 100%;
+
+        .section_infobox{
+            background-color: var(--ColorWhite);
+            color: var(--ColorBlack);
+            padding: 20px;
+            border-radius: 5px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--ColorGray);
+
+            .infobox_list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                text-align: left;
+
+                li {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 10px 15px;
+                    border-radius: 5px;
+                    background-color: var(--ColorWhite);
+                    color: var(--ColorBlack);
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+                    &:last-child {
+                        border-bottom: none;
+                    }
+
+                    .item_label {
+                        font-weight: bold;
+                    }
+
+                    .item_value {
+                        font-size: 1.2em;
+                    }
+                }
+            }
+        }
+    }
+}

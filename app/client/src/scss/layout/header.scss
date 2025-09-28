@@ -3,9 +3,10 @@
 header {
     overflow: visible;
     max-width: 100%;
-    background-color: var(--ColorPrimaryLight);
+    background-color: var(--ColorPrimaryDark);
     width: 100%;
     filter: none;
+    position: relative;
 
     .header_nav{
         max-width: var(--MaxWidth);
@@ -15,7 +16,7 @@ header {
         margin: 0 auto;
 
         .nav_brand{
-            height: var(--HeaderHeight);
+            height: calc(var(--HeaderHeight) - 50px);
             width: auto;
             padding: 10px;
 
@@ -29,31 +30,50 @@ header {
         }
 
         .nav_menu{
+            display: flex;
+            align-items: center;
+
             .nav_link {
                 text-decoration: none;
-                display: inline-block;
-                margin: 10px 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                margin: 0;
                 padding: 10px 30px;
-                color: var(--ColorPrimary);
+                color: var(--ColorWhite);
                 text-align: center;
 
+                .nav_title{
+                    margin: 4px 0 0 0;
+                    font-size: 10px;
+                }
+
+                .nav_icon{
+                    width: 40px;
+                    height: 40px;
+
+                    img{
+                        width: 100%;
+                        height: 100%;
+                        object-fit: contain;
+                    }
+                }
+
                 &:hover {
-                    background-color: var(--ColorPrimaryDark);
-                    color: var(--ColorWhite);
+                    background-color: var(--ColorPrimary);
                 }
 
                 &:active {
-                    background-color: var(--ColorPrimaryDark);
+                    background-color: var(--ColorPrimary);
                 }
 
                 &:focus {
                     background-color: var(--ColorPrimaryLight);
-                    color: var(--ColorWhite);
                 }
 
                 &.nav_link--active {
-                    background-color: var(--ColorPrimaryDark);
-                    color: var(--ColorWhite);
+                    background-color: var(--ColorPrimary);
                 }
             }
 

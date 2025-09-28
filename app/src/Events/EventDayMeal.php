@@ -31,13 +31,13 @@ class EventDayMeal extends DataObject
 
     private static $summary_fields = [
         "Title" => "Titel",
-        "RenderTime" => "Uhrzeit",
+        "Time" => "Uhrzeit",
     ];
 
     private static $table_name = 'EventDayMeal';
     private static $singular_name = "Mahlzeit";
     private static $plural_name = "Mahlzeiten";
-    
+
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
@@ -45,8 +45,10 @@ class EventDayMeal extends DataObject
 
         $eatersGridfield = $fields->dataFieldByName('Eaters');
         $fields->removeByName('Eaters');
-        $eatersGridfield->setConfig(GridFieldConfig_RecordEditor::create());
-        $fields->addFieldToTab('Root.Main', $eatersGridfield);
+        if ($eatersGridfield) {
+            $eatersGridfield->setConfig(GridFieldConfig_RecordEditor::create());
+            $fields->addFieldToTab('Root.Main', $eatersGridfield);
+        }
         return $fields;
     }
 

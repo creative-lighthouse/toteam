@@ -6,6 +6,7 @@ use SilverStripe\Assets\Image;
 use SilverStripe\Core\Extension;
 use App\HumanResources\Department;
 use App\HumanResources\FoodPreferences;
+use App\Tasks\Task;
 
 class MemberExtension extends Extension
 {
@@ -24,6 +25,7 @@ class MemberExtension extends Extension
 
     private static $belongs_many = [
         "Departments" => Department::class,
+        "Tasks" => Task::class,
     ];
 
     private static $owns = [

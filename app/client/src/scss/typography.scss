@@ -40,6 +40,50 @@ a {
     color: var(--ColorLink);
     text-decoration: none;
 
+    &.button {
+        background-color: var(--ColorButton);
+        color: var(--ColorButtonText);
+        display: inline-block;
+        font-size: 16px;
+        text-wrap: nowrap;
+        font-weight: bold;
+        border-radius: 4px;
+        padding: 9px 12px;
+        text-decoration: none;
+        transition: 0.2s ease-in-out;
+
+        &.button--arrow {
+            padding-right: 25px;
+            position: relative;
+
+            &::after {
+                content: '';
+                position: absolute;
+                right: 11px;
+                top: 50%;
+                transform: translateY(-50%) rotate(-45deg);
+                border-right: 2px solid var(--ColorWhite);
+                border-bottom: 2px solid var(--ColorWhite);
+                height: 10px;
+                width: 10px;
+                transition: 0.2s ease-in-out;
+            }
+
+            &:hover::after {
+                right: 9px;
+            }
+        }
+
+        &:hover {
+            background-color: var(--ColorButtonHover);
+        }
+
+        @include media(max-desktop) {
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+    }
+
     &.link--button {
         background-color: var(--ColorButton);
         color: var(--ColorButtonText);
@@ -62,4 +106,27 @@ a {
             white-space: normal;
         }
     }
+}
+
+kbd {
+    display: inline-block;
+    width: auto;
+    border-radius: 3px;
+    border: 1px solid #b4b4b4;
+    color: #333333;
+    display: inline-block;
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 4px;
+    white-space: nowrap;
+    transform: translateY(-2px) scale(0.85) rotate(5deg);
+    text-transform: uppercase;
+}
+
+.coming_soon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
 }

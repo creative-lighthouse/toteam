@@ -65,6 +65,10 @@ document.addEventListener("DOMContentLoaded", function (event) {
         dialog.appendChild(statusMessage);
         setTimeout(() => {
             statusMessage.classList.add('status-message--hide');
+            //Delete eventID from URL
+            const url = new URL(window.location);
+            url.searchParams.delete('eventID');
+            window.history.replaceState({}, document.title, url.toString());
         }, 3000);
         setTimeout(() => {
             statusMessage.remove();

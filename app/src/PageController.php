@@ -2,39 +2,37 @@
 
 namespace {
 
-    use SilverStripe\CMS\Controllers\ContentController;
+use SilverStripe\Control\HTTPRequest;
+use SilverStripe\Control\HTTPResponse;
 
-    /**
-     * Class \PageController
-     *
-     * @property Page $dataRecord
-     * @method Page data()
-     * @mixin Page
-     */
+    use App\Pages\RegistrationPage;
+    use SilverStripe\CMS\Controllers\ContentController;
+    use SilverStripe\Security\Security;
+
     class PageController extends ContentController
     {
-        /**
-         * An array of actions that can be accessed via a request. Each array element should be an action name, and the
-         * permissions or conditions required to allow the user to access it.
-         *
-         * <code>
-         * [
-         *     'action', // anyone can access this action
-         *     'action' => true, // same as above
-         *     'action' => 'ADMIN', // you must have ADMIN permissions to access this action
-         *     'action' => '->checkAction' // you can only access this action if $this->checkAction() returns true
-         * ];
-         * </code>
-         *
-         * @var array
-         */
-        private static $allowed_actions = [];
-
         protected function init()
         {
             parent::init();
-            // You can include any CSS or JS required by your project here.
-            // See: https://docs.silverstripe.org/en/developer_guides/templates/requirements/
+
+            $registrationPage = RegistrationPage::get()->first();
+
+            //Check if currently on registration or login page
+            $currentURL = $this->getRequest()->getURL();
+            if($registrationPage && ($currentURL === $registrationPage->URLSegment || $currentURL === 'Security/login')) {
+                return;
+            }
+
+            if(Security::getCurrentUser()) {
+                //Logged in
+            } else {
+                //Not logged in
+                if($registrationPage) {
+                    return $this->redirect($registrationPage->Link());
+                } else {
+                    return $this->httpError(404, 'Du musst eingeloggt sein um diesen Dienst zu nutzen');
+                }
+            }
         }
     }
 }

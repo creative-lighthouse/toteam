@@ -31,6 +31,8 @@ class EventDayParticipation extends DataObject
 
     private static $summary_fields = [
         "Member.Title" => "Benutzer",
+        "RenderType" => "Teilnahme",
+        "RenderTime" => "Zeit",
     ];
 
     private static $table_name = 'EventDayParticipation';

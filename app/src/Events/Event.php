@@ -4,6 +4,7 @@ namespace App\Events;
 
 use Override;
 use SilverStripe\Assets\Image;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\ORM\DataObject;
 
 class Event extends DataObject
@@ -48,6 +49,16 @@ class Event extends DataObject
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
+
+        //Move EventDays to Main Tab
+        $eventDaysGrid = $fields->dataFieldByName('EventDays');
+        $fields->removeByName('EventDays');
+        $baseConfig = GridFieldConfig_RecordEditor::create();
+        $eventDaysGrid->setConfig($baseConfig);
+        $fields->addFieldToTab('Root.Main', $eventDaysGrid);
+
+
+
         return $fields;
     }
 

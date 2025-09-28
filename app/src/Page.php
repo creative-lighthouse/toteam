@@ -2,6 +2,8 @@
 
 namespace {
 
+use SilverStripe\Assets\Image;
+
     use DNADesign\Elemental\Models\ElementalArea;
     use DNADesign\Elemental\Extensions\ElementalPageExtension;
     use SilverStripe\CMS\Model\SiteTree;
@@ -23,7 +25,13 @@ namespace {
             "MenuPosition" => "Enum('main,footer', 'main')",
         ];
 
-        private static $has_one = [];
+        private static $has_one = [
+            "PageIcon" => Image::class,
+        ];
+
+        private static $owns = [
+            'PageIcon',
+        ];
 
         #[Override]
         public function getCMSFields()

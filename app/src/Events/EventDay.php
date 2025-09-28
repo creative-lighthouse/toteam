@@ -9,8 +9,19 @@ use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
-use SilverStripe\Model\List\GroupedList;
+use App\Pages\ParticipationPage;
 use SilverStripe\ORM\FieldType\DBField;
+use SilverStripe\Model\List\GroupedList;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridFieldConfig;
+use SilverStripe\Forms\GridField\GridFieldButtonRow;
+use SilverStripe\Forms\GridField\GridFieldConfig_Base;
+use Symbiote\GridFieldExtensions\GridFieldTitleHeader;
+use SilverStripe\Forms\GridField\GridFieldDeleteAction;
+use SilverStripe\Forms\GridField\GridFieldToolbarHeader;
+use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
+use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 
 class EventDay extends DataObject
 {
@@ -46,7 +57,7 @@ class EventDay extends DataObject
         "Type" => "Tages-Typ",
         "Image" => "Bild",
         "Participations" => "Teilnahmen",
-        "Foods" => "Mahlzeiten",
+        "Meals" => "Mahlzeiten",
     ];
 
     private static $summary_fields = [
@@ -63,6 +74,23 @@ class EventDay extends DataObject
     {
         $fields = parent::getCMSFields();
         $fields->removeByName("ParentID");
+
+        //Make Meals Inline-Editable entries with gridfield-extensions
+        $mealsGrid = GridField::create(
+            'MealsGrid',
+            'Mahlzeiten',
+            $this->Meals(),
+            GridFieldConfig::create()
+                ->addComponent(GridFieldButtonRow::create('before'))
+                ->addComponent(GridFieldToolbarHeader::create())
+                ->addComponent(GridFieldTitleHeader::create())
+                ->addComponent(GridFieldEditableColumns::create())
+                ->addComponent(GridFieldDeleteAction::create())
+                ->addComponent(GridFieldAddNewInlineButton::create())
+        );
+        $fields->removeByName('Meals');
+        $fields->addFieldToTab('Root.Main', $mealsGrid);
+
         return $fields;
     }
 
@@ -127,5 +155,14 @@ class EventDay extends DataObject
         } else {
             return "Kein Datum";
         }
+    }
+
+    public function getLink() {
+        $event = $this->Parent();
+        $participationPage = ParticipationPage::get()->first();
+        if($event && $participationPage) {
+            return $participationPage->Link() . "?date=" . $this->Date . "&eventID=" . $this->ID;
+        }
+        return null;
     }
 }
