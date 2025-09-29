@@ -14,6 +14,7 @@ use SilverStripe\Forms\GridField\GridFieldToolbarHeader;
 use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
 use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Forms\GridField\GridFieldEditButton;
 
 class Event extends DataObject
 {
@@ -69,9 +70,8 @@ class Event extends DataObject
                 ->addComponent(GridFieldButtonRow::create('before'))
                 ->addComponent(GridFieldToolbarHeader::create())
                 ->addComponent(GridFieldTitleHeader::create())
-                ->addComponent(GridFieldEditableColumns::create())
                 ->addComponent(GridFieldDeleteAction::create())
-                ->addComponent(GridFieldAddNewInlineButton::create())
+                ->addComponent(GridFieldEditButton::create())
         );
         $fields->addFieldToTab('Root.Main', $eventDaysGrid);
         return $fields;
