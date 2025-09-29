@@ -14,8 +14,15 @@ class DashboardPageController extends PageController
 
     public function index()
     {
-        $participationPage = ParticipationPage::get()->first();
         $currentuser = Security::getCurrentUser();
+        $registrationPage = RegistrationPage::get()->first();
+
+
+        if(!$currentuser && $registrationPage) {
+            return $this->redirect($registrationPage->Link());
+        }
+
+        $participationPage = ParticipationPage::get()->first();
         $latestparticipations = EventDayParticipation::get()
             ->filter(['MemberID' => $currentuser->ID])
             ->sort('Created', 'DESC')

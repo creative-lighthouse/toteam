@@ -109,7 +109,7 @@ class ParticipationPageController extends PageController
         if (!$timestart || !$timeend) {
             return $this->httpError(400, 'Invalid time input: ' . $timestart . ' - ' . $timeend);
         }
-        echo "Change Participation Time to " . $timestart . " - " . $timeend . " for dateID " . $dateID;
+        //echo "Change Participation Time to " . $timestart . " - " . $timeend . " for dateID " . $dateID;
 
         $eventday = EventDay::get_by_id($dateID);
         $member = Security::getCurrentUser();

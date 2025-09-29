@@ -23,12 +23,18 @@ use SilverStripe\Control\HTTPResponse;
                 return;
             }
 
+            //Check if currently trying to register
+            if($this->getRequest()->getVar('Action') === 'doRegister') {
+                return;
+            }
+
+
             if(Security::getCurrentUser()) {
                 //Logged in
             } else {
                 //Not logged in
                 if($registrationPage) {
-                    return $this->redirect($registrationPage->Link());
+                    //return $this->redirect($registrationPage->Link());
                 } else {
                     //return $this->httpError(404, 'Du musst eingeloggt sein um diesen Dienst zu nutzen');
                 }

@@ -16,6 +16,7 @@ class RegistrationPageController extends PageController
 {
     private static $allowed_actions = [
         'RegistrationForm',
+        'doRegister',
         'confirm',
     ];
 
