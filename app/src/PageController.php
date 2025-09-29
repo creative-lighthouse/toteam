@@ -30,7 +30,7 @@ use SilverStripe\Control\HTTPResponse;
                 if($registrationPage) {
                     return $this->redirect($registrationPage->Link());
                 } else {
-                    return $this->httpError(404, 'Du musst eingeloggt sein um diesen Dienst zu nutzen');
+                    //return $this->httpError(404, 'Du musst eingeloggt sein um diesen Dienst zu nutzen');
                 }
             }
         }
