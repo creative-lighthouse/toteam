@@ -21,7 +21,7 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.3",
         "silverstripe/recipe-cms": "^6.0",
         "dnadesign/silverstripe-elemental": "^6.0",
         "atwx/silverstripe-vitehelper": "^1.0",

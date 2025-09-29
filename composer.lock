@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "389902241f38d5f8b5ace2fd0ad8df63",
+    "content-hash": "48c6754146d789681a683108a08b2f2b",
     "packages": [
         {
             "name": "alchemy/resource-component",
@@ -2999,16 +2999,16 @@
         },
         {
             "name": "silverstripe/cms",
-            "version": "6.0.3",
+            "version": "6.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/silverstripe/silverstripe-cms.git",
-                "reference": "a769ed20d18a2546e938c29a727bc1382b6c97ef"
+                "reference": "158d216e430f43b65aae84b59aa65bedca99d67a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/silverstripe/silverstripe-cms/zipball/a769ed20d18a2546e938c29a727bc1382b6c97ef",
-                "reference": "a769ed20d18a2546e938c29a727bc1382b6c97ef",
+                "url": "https://api.github.com/repos/silverstripe/silverstripe-cms/zipball/158d216e430f43b65aae84b59aa65bedca99d67a",
+                "reference": "158d216e430f43b65aae84b59aa65bedca99d67a",
                 "shasum": ""
             },
             "require": {
@@ -3065,9 +3065,9 @@
             ],
             "support": {
                 "issues": "https://github.com/silverstripe/silverstripe-cms/issues",
-                "source": "https://github.com/silverstripe/silverstripe-cms/tree/6.0.3"
+                "source": "https://github.com/silverstripe/silverstripe-cms/tree/6.0.4"
             },
-            "time": "2025-08-18T21:29:48+00:00"
+            "time": "2025-09-29T05:32:06+00:00"
         },
         {
             "name": "silverstripe/config",
@@ -9233,7 +9233,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.4",
+        "php": "^8.3",
         "ext-json": "*"
     },
     "platform-dev": {},
