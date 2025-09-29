@@ -4,8 +4,16 @@ namespace App\Events;
 
 use Override;
 use SilverStripe\Assets\Image;
-use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridFieldConfig;
+use SilverStripe\Forms\GridField\GridFieldButtonRow;
+use Symbiote\GridFieldExtensions\GridFieldTitleHeader;
+use SilverStripe\Forms\GridField\GridFieldDeleteAction;
+use SilverStripe\Forms\GridField\GridFieldToolbarHeader;
+use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
+use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 
 class Event extends DataObject
 {
@@ -53,12 +61,19 @@ class Event extends DataObject
         //Move EventDays to Main Tab
         $eventDaysGrid = $fields->dataFieldByName('EventDays');
         $fields->removeByName('EventDays');
-        $baseConfig = GridFieldConfig_RecordEditor::create();
-        $eventDaysGrid->setConfig($baseConfig);
+        $eventDaysGrid = GridField::create(
+            'EventDaysGrid',
+            'Veranstaltungstage',
+            $this->EventDays(),
+            GridFieldConfig::create()
+                ->addComponent(GridFieldButtonRow::create('before'))
+                ->addComponent(GridFieldToolbarHeader::create())
+                ->addComponent(GridFieldTitleHeader::create())
+                ->addComponent(GridFieldEditableColumns::create())
+                ->addComponent(GridFieldDeleteAction::create())
+                ->addComponent(GridFieldAddNewInlineButton::create())
+        );
         $fields->addFieldToTab('Root.Main', $eventDaysGrid);
-
-
-
         return $fields;
     }
 
