@@ -18,9 +18,7 @@
             <% end_loop %>
             <a href="$Link" class="nav_link">
                 <div class="nav_icon">
-                    <% if $PageIcon %>
-                        <img src="$PageIcon.Url" alt="$MenuTitle Icon" class="nav_icon_image">
-                    <% end_if %>
+                    <img src="_resources/app/client/icons/Logout.png" alt="Logout Icon" class="nav_icon_image">
                 </div>
                 <p class="nav_title">Logout</p>
             </a>
