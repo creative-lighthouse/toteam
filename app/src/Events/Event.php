@@ -66,12 +66,7 @@ class Event extends DataObject
             'EventDaysGrid',
             'Veranstaltungstage',
             $this->EventDays(),
-            GridFieldConfig::create()
-                ->addComponent(GridFieldButtonRow::create('before'))
-                ->addComponent(GridFieldToolbarHeader::create())
-                ->addComponent(GridFieldTitleHeader::create())
-                ->addComponent(GridFieldDeleteAction::create())
-                ->addComponent(GridFieldEditButton::create())
+            GridFieldConfig_RecordEditor::create()
         );
         $fields->addFieldToTab('Root.Main', $eventDaysGrid);
         return $fields;
