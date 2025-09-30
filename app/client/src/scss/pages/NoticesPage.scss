@@ -1,0 +1,48 @@
+.section.section--NoticesPage {
+    .section_content{
+        .back-link{
+            text-decoration: none;
+            font-weight: bold;
+            background-color: var(--ColorPrimary);
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: none;
+            color: white;
+
+            &:hover {
+                background-color: var(--ColorPrimaryDark);
+            }
+        }
+
+        .notices-list{
+            list-style: none;
+
+            .notice_item_wrapper{
+                margin-bottom: 20px;
+                background-color: var(--ColorWhite);
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                transition: box-shadow 0.3s ease;
+
+                .notice_item{
+                    padding: 20px;
+                    display: block;
+
+                    .notice_date{
+                        margin: 0;
+                        opacity: 0.6;
+                        font-size: 12px;
+                    }
+
+                    .notice_text{
+                        margin: 0;
+                    }
+                }
+
+                &:hover {
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                }
+            }
+        }
+    }
+}

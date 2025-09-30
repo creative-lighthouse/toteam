@@ -19,26 +19,31 @@ use SilverStripe\Control\HTTPResponse;
 
             //Check if currently on registration or login page
             $currentURL = $this->getRequest()->getURL();
-            if($registrationPage && ($currentURL === $registrationPage->URLSegment || $currentURL === 'Security/login')) {
+            if ($registrationPage && ($currentURL === $registrationPage->URLSegment || $currentURL === 'Security/login')) {
                 return;
             }
 
             //Check if currently trying to register
-            if($this->getRequest()->getVar('Action') === 'doRegister') {
+            if ($this->getRequest()->getVar('Action') === 'doRegister') {
                 return;
             }
 
 
-            if(Security::getCurrentUser()) {
+            if (Security::getCurrentUser()) {
                 //Logged in
             } else {
                 //Not logged in
-                if($registrationPage) {
+                if ($registrationPage) {
                     //return $this->redirect($registrationPage->Link());
                 } else {
                     //return $this->httpError(404, 'Du musst eingeloggt sein um diesen Dienst zu nutzen');
                 }
             }
+        }
+
+        public function getLogoutLink()
+        {
+            return Security::logout_url();
         }
     }
 }

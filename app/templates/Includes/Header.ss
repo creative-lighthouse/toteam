@@ -16,7 +16,7 @@
                     </a>
                 <% end_if %>
             <% end_loop %>
-            <a href="$Link" class="nav_link">
+            <a href="$LogoutLink" class="nav_link">
                 <div class="nav_icon">
                     <img src="_resources/app/client/icons/Logout.png" alt="Logout Icon" class="nav_icon_image">
                 </div>

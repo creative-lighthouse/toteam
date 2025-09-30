@@ -2,15 +2,14 @@
 
 namespace App\Pages;
 
-use Calendar;
 use PageController;
+use App\Events\Calendar;
 use App\Events\EventDay;
 use App\Events\EventDayMeal;
 use App\Events\EventDayMealEater;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
 use SilverStripe\ORM\FieldType\DBField;
-use SilverStripe\Control\Middleware\ConfirmationMiddleware\GetParameter;
 
 class ParticipationPageController extends PageController
 {

@@ -1,5 +1,8 @@
 <?php
 
+
+namespace App\Events;
+
 use App\Events\EventDay;
 use App\Pages\ParticipationPage;
 use SilverStripe\Model\ArrayData;
@@ -22,11 +25,11 @@ class Calendar
         $this->active_day = $date != null ? date('d', strtotime((string) $date)) : date('d');
         $this->member = $member;
         $this->currentEventDayID = $eventdayID;
-        if($this->member) {
+        if ($this->member) {
             $this->eventdays = EventDay::get();
             foreach ($this->eventdays as $day) {
                 $memberparticipation = EventDayParticipation::get()->filter(['ParentID' => $day->ID, 'MemberID' => $this->member->ID])->first();
-                if($memberparticipation) {
+                if ($memberparticipation) {
                     $this->getColorOfEvent($day);
                 } else {
                     $this->add_event($day->Title, $day->Date, 1, 'event-color--gray');
@@ -35,7 +38,8 @@ class Calendar
         }
     }
 
-    public function getColorOfEvent($day){
+    public function getColorOfEvent($day)
+    {
         $memberparticipation = EventDayParticipation::get()->filter(['ParentID' => $day->ID, 'MemberID' => $this->member->ID])->first();
         switch ($memberparticipation->Type) {
             case 'Accept':
@@ -107,11 +111,26 @@ class Calendar
 
         // Days from previous month (ignored)
         for ($i = $first_day_of_week; $i > 0; $i--) {
+            $dateStr = $this->active_year . '-' . ($this->active_month - 1) . '-' . str_pad($i, 2, '0', STR_PAD_LEFT);
+
+            foreach ($this->events as $event) {
+                for ($d = 0; $d <= ($event[2] - 1); $d++) {
+                    $eventDate = date('Y-m-d', strtotime($event[1]));
+                    $compareDate = date('Y-m-d', strtotime($dateStr . ' -' . $d . ' day'));
+                    if ($compareDate === $eventDate) {
+                        $events[] = ArrayData::create([
+                            'Title' => $event[0],
+                            'Date' => $event[1],
+                            'Color' => trim($event[3]),
+                        ]);
+                    }
+                }
+            }
             $days[] = ArrayData::create([
                 'Number' => $num_days_last_month - $i + 1,
                 'IsCurrentMonth' => false,
                 'IsSelected' => false,
-                'EventDays' => ArrayList::create([])
+                'EventDays' => $this->getEventsForDay($dateStr),
             ]);
         }
 
@@ -143,7 +162,7 @@ class Calendar
 
         // Fill up to 42 days (6 weeks)
         $total = count($days);
-        for ($i = 1; $i <= (42 - $total); $i++) {
+        for ($i = 1; $i <= (35 - $total); $i++) {
             $days[] = ArrayData::create([
                 'Number' => $i,
                 'IsCurrentMonth' => false,

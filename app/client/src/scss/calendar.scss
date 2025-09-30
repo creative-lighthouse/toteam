@@ -59,6 +59,12 @@
     border: none;
 }
 
+.calendar .days{
+     .not-current-month{
+        background-color: #f1f1f1;
+    }
+}
+
 .calendar .days .day_num {
     display: flex;
     flex-flow: column;
