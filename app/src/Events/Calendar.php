@@ -67,7 +67,7 @@ class Calendar
         $num_days = date('t', strtotime($this->active_day . '-' . $this->active_month . '-' . $this->active_year));
         return $num_days;
     }
-    
+
     public function getNumOfDaysLastMonth()
     {
         $num_days_last_month = date('t', strtotime('last month', strtotime($this->active_day . '-' . $this->active_month . '-' . $this->active_year)));
@@ -130,7 +130,7 @@ class Calendar
                 'Number' => $num_days_last_month - $i + 1,
                 'IsCurrentMonth' => false,
                 'IsSelected' => false,
-                'EventDays' => $this->getEventsForDay($dateStr),
+                'EventDays' => ArrayList::create([]),
             ]);
         }
 
