@@ -16,12 +16,26 @@
                     </a>
                 <% end_if %>
             <% end_loop %>
-            <a href="$LogoutLink" class="nav_link">
-                <div class="nav_icon">
-                    <img src="_resources/app/client/icons/Logout.png" alt="Logout Icon" class="nav_icon_image">
-                </div>
-                <p class="nav_title">Logout</p>
-            </a>
+            <% if $CurrentUser %>
+                <a href="$ProfileLink" class="nav_link<% if $Top.Link == $ProfileLink %> nav_link--active<% end_if %>">
+                    <div class="nav_icon nav_icon--profile">
+                        <% with $CurrentUser %>
+                            <% if $ProfileImage %>
+                                <img src="$ProfileImage.URL" alt="Profilbild von $FirstName $Surname" class="profile_image">
+                            <% else %>
+                                <img src="$Gravatar" alt="Standard Profilbild" class="profile_image">
+                            <% end_if %>
+                        <% end_with %>
+                    </div>
+                    <p class="nav_title">Profil</p>
+                </a>
+                <a href="$LogoutLink" class="nav_link">
+                    <div class="nav_icon">
+                        <img src="_resources/app/client/icons/Logout.png" alt="Logout Icon" class="nav_icon_image">
+                    </div>
+                    <p class="nav_title">Logout</p>
+                </a>
+            <% end_if %>
         </div>
         <div class="nav_button" data-behaviour="toggle-menu">
             <div class="bar1"></div>

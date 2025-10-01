@@ -1,0 +1,36 @@
+.section.section--ProfilePage {
+    .section_content {
+        text-align: center;
+
+        .section_profileimage {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid var(--ColorPrimaryLight);
+            display: block;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+
+        .section_details {
+            margin: 0 auto;
+
+            td{
+                padding: 8px 10px;
+                text-align: left;
+
+                &:first-of-type{
+                    font-weight: bold;
+                    color: var(--ColorTextSecondary);
+                    text-align: right;
+                }
+            }
+        }
+    }
+}

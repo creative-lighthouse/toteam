@@ -3,11 +3,12 @@
 namespace App\HumanResources;
 
 use Override;
+use App\Food\Food;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
-class FoodPreferences extends DataObject
+class Allergy extends DataObject
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -22,8 +23,12 @@ class FoodPreferences extends DataObject
         'Icon',
     ];
 
-    private static $belongs_many = [
+    private static $many_many = [
         "Members" => Member::class,
+    ];
+
+    private static $belongs_many_many = [
+        'Foods' => Food::class,
     ];
 
     private static $field_labels = [];
@@ -32,9 +37,9 @@ class FoodPreferences extends DataObject
         "Title"
     ];
 
-    private static $table_name = 'FoodPreference';
-    private static $singular_name = "Essenspräferenz";
-    private static $plural_name = "Essenspräferenzen";
+    private static $table_name = 'Allergy';
+    private static $singular_name = "Allergie";
+    private static $plural_name = "Allergien";
 
     #[Override]
     public function getCMSFields()

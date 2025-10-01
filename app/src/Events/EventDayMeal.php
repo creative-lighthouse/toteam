@@ -2,11 +2,14 @@
 
 namespace App\Events;
 
-use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use App\Food\Food;
 use App\Events\EventDay;
 use SilverStripe\ORM\DataObject;
 use App\Events\EventDayMealEater;
 use SilverStripe\Security\Security;
+use SilverStripe\Forms\GridField\GridFieldConfig;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 
 class EventDayMeal extends DataObject
 {
@@ -23,6 +26,10 @@ class EventDayMeal extends DataObject
         "Eaters" => EventDayMealEater::class,
     ];
 
+    private static $many_many = [
+        "Foods" => Food::class,
+    ];
+
     private static $field_labels = [
         "Title" => "Titel",
         "Time" => "Uhrzeit",
@@ -32,6 +39,15 @@ class EventDayMeal extends DataObject
     private static $summary_fields = [
         "Title" => "Titel",
         "Time" => "Uhrzeit",
+        "Parent.Title" => "Tag",
+        "Parent.Date.Nice" => "Datum",
+    ];
+
+    private static $searchable_fields = [
+        "Title",
+        "Time",
+        "Parent.Title",
+        "Parent.Date",
     ];
 
     private static $table_name = 'EventDayMeal';

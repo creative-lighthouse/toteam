@@ -2,9 +2,7 @@
 
 namespace {
 
-use SilverStripe\Control\HTTPRequest;
-use SilverStripe\Control\HTTPResponse;
-
+    use App\Pages\ProfilePage;
     use App\Pages\RegistrationPage;
     use SilverStripe\CMS\Controllers\ContentController;
     use SilverStripe\Security\Security;
@@ -27,23 +25,24 @@ use SilverStripe\Control\HTTPResponse;
             if ($this->getRequest()->getVar('Action') === 'doRegister') {
                 return;
             }
-
-
-            if (Security::getCurrentUser()) {
-                //Logged in
-            } else {
-                //Not logged in
-                if ($registrationPage) {
-                    //return $this->redirect($registrationPage->Link());
-                } else {
-                    //return $this->httpError(404, 'Du musst eingeloggt sein um diesen Dienst zu nutzen');
-                }
-            }
         }
 
         public function getLogoutLink()
         {
             return Security::logout_url();
+        }
+
+        public function getProfileLink()
+        {
+            $profilePage = ProfilePage::get()->first();
+            if ($profilePage) {
+                return $profilePage->Link();
+            }
+        }
+
+        public function getCurrentUser()
+        {
+            return Security::getCurrentUser();
         }
     }
 }

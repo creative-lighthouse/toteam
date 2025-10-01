@@ -21,3 +21,7 @@ Atwx\ViteHelper\Helper\ViteHelper:
 SilverStripe\Core\Injector\Injector:
   DataListFilter.FulltextBoolean:
     class: App\ORM\FulltextBooleanFilter
+
+SilverStripe\Security\Member:
+  extensions:
+    - App\Extensions\MemberExtension
