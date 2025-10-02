@@ -2,7 +2,9 @@
 
 namespace App\Pages;
 
+use App\HumanResources\Allergy;
 use PageController;
+use SilverStripe\Forms\CheckboxSetField;
 use SilverStripe\Forms\Form;
 use SilverStripe\Forms\DateField;
 use SilverStripe\Forms\FieldList;
@@ -37,19 +39,23 @@ class ProfilePageController extends PageController
         }
         $currentUser = Member::get()->filter("ID", $currentMember->ID)->first();
         if ($currentUser) {
-            $upload = new FileField("ProfileImage", "Profile Image");
+            $upload = new FileField("ProfileImage", "Profilbild");
             $upload->setFolderName("ProfileImages");
             $upload->setAllowedFileCategories("image");
-            $textFieldFirstName = new TextField("FirstName", "First Name");
-            $textFieldLastName = new TextField("Surname", "Last Name");
-            $textFieldEmail = new TextField("Email", "Email");
-            $dateFieldBirthdate = new DateField("DateOfBirth", "Birthdate");
+            $textFieldFirstName = new TextField("FirstName", "Vorname");
+            $textFieldLastName = new TextField("Surname", "Nachname");
+            $textFieldEmail = new TextField("Email", "E-Mail");
+            $dateFieldBirthdate = new DateField("DateOfBirth", "Geburtsdatum");
             $dropdownFieldFoodPreference = DropdownField::create('FoodPreference', 'Essenspräferenz', [
                 'None' => 'Keine Besonderheiten',
                 'Vegetarian' => 'Vegetarisch',
                 'Vegan' => 'Vegan',
             ]);
             $dropdownFieldFoodPreference->setValue($currentUser->FoodPreference);
+            $allergies = Allergy::get();
+            if ($allergies->count() > 0) {
+                $dropdownFieldAllergies = CheckboxSetField::create('Allergies', 'Allergien', $allergies->map('ID', 'Title'));
+            }
 
             $fields = new FieldList(
                 $upload,
@@ -57,7 +63,8 @@ class ProfilePageController extends PageController
                 $textFieldLastName,
                 $textFieldEmail,
                 $dateFieldBirthdate,
-                $dropdownFieldFoodPreference
+                $dropdownFieldFoodPreference,
+                $dropdownFieldAllergies ?? null
             );
 
             $actions = new FieldList(

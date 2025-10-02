@@ -48,17 +48,17 @@ class ParticipationPageController extends PageController
             $eventDayParticipation->ParentID = $eventday->ID;
             $eventDayParticipation->MemberID = $member->ID;
             $eventDayParticipation->Type = $type;
-            if($type == 'Accept') {
+            if ($type == 'Accept') {
                 $eventDayParticipation->TimeStart = $eventday->TimeStart;
                 $eventDayParticipation->TimeEnd = $eventday->TimeEnd;
             }
             $eventDayParticipation->write();
         } else {
-            if($type == 'Accept') {
-                if(!$eventDayParticipation->TimeStart) {
+            if ($type == 'Accept' || $type == 'Maybe') {
+                if (!$eventDayParticipation->TimeStart) {
                     $eventDayParticipation->TimeStart = $eventday->TimeStart;
                 }
-                if(!$eventDayParticipation->TimeEnd) {
+                if (!$eventDayParticipation->TimeEnd) {
                     $eventDayParticipation->TimeEnd = $eventday->TimeEnd;
                 }
             }

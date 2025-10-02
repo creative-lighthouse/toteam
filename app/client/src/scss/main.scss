@@ -86,3 +86,30 @@ body {
         }
     }
 }
+
+.status-message{
+    z-index: 1000;
+    position: fixed;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #79f291;
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    opacity: 1;
+    transition: all 0.5s ease;
+    animation: fadeIn 0.3s;
+
+    &.status-message--hide  {
+        top: -30px;
+        opacity: 0;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

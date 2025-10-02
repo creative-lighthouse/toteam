@@ -2,6 +2,7 @@
 
 namespace App\Pages;
 
+use App\Events\EventDayMealEater;
 use PageController;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
@@ -32,18 +33,31 @@ class DashboardPageController extends PageController
             ->sort('Created', 'DESC')
             ->limit(5);
         $upcomingeventdays = EventDayParticipation::get()
-            ->filter(['MemberID' => $currentuser->ID, 'Type' => 'Accept'])
+            ->filter('MemberID', $currentuser->ID)
+            ->filter(['Type' => ['Accept', 'Maybe']])
             ->sort('Parent.Date', 'ASC')
             ->limit(5);
         $participationToday = EventDayParticipation::get()
             ->filter(['MemberID' => $currentuser->ID, 'Type' => 'Accept', 'Parent.Date' => date('Y-m-d')])->first();
+
         return [
             'User' => $currentuser,
             'LatestParticipations' => $latestparticipations,
             'LatestTasks' => $latesttasks,
             'UpcomingEventDays' => $upcomingeventdays,
+            'MealsToday' => $this->getAllMealsParticipatedToday(),
             'ParticipationPage' => $participationPage,
             'ParticipationToday' => $participationToday,
         ];
+    }
+
+    public function getAllMealsParticipatedToday()
+    {
+        $currentuser = Security::getCurrentUser();
+        if (!$currentuser) {
+            return null;
+        }
+        return EventDayMealEater::get()
+            ->filter(['MemberID' => $currentuser->ID, 'Type' => 'Accept', 'Parent.Parent.Date' => date('Y-m-d')]);
     }
 }

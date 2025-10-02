@@ -36,13 +36,47 @@
                 text-align: left;
 
                 li {
-                    display: flex;
                     justify-content: space-between;
                     padding: 10px 15px;
                     border-radius: 5px;
                     background-color: var(--ColorWhite);
                     color: var(--ColorBlack);
                     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+                    .hl3{
+                        margin: 0;
+                    }
+
+                    span{
+                        font-size: 14px;
+                        font-weight: 200;
+                    }
+
+                    .list--foods{
+                        list-style: none;
+                        padding: 0;
+                        margin: 5px 0 0 0;
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 5px;
+
+                        li{
+                            background-color: var(--ColorGrayLight);
+                            color: var(--ColorBlack);
+                            padding: 3px 8px;
+                            border-radius: 3px;
+                            font-size: 0.9em;
+                        }
+                    }
+
+                    &.accepted {
+                        border-left: 4px solid green;
+                    }
+
+                    &.maybe {
+                        border-left: 4px solid orange;
+                        opacity: 0.5;
+                    }
 
                     &:last-child {
                         border-bottom: none;

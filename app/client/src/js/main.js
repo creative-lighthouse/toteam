@@ -74,4 +74,16 @@ document.addEventListener("DOMContentLoaded", function (event) {
             statusMessage.remove();
         }, 6000);
     });
+
+    //Close dialog on outside click
+    document.querySelectorAll('dialog').forEach(dialog => {
+        dialog.addEventListener('click', (event) => {
+            const rect = dialog.getBoundingClientRect();
+            const isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height
+                && rect.left <= event.clientX && event.clientX <= rect.left + rect.width);
+            if (!isInDialog) {
+                dialog.close();
+            }
+        });
+    });
 });

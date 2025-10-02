@@ -58,4 +58,12 @@ class Food extends DataObject
             ->setResultsFormat('$Title - $Parent.Title');
         return $fields;
     }
+
+    public function RenderSupplier()
+    {
+        if ($this->SupplierID && $this->Supplier()->exists()) {
+            return $this->Supplier()->RenderName();
+        }
+        return 'Niemand';
+    }
 }

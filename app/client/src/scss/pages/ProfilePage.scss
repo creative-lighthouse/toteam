@@ -34,3 +34,118 @@
         }
     }
 }
+
+.section_editprofilemodal {
+    border: none;
+    max-width: 400px;
+    width: 90%;
+    border-radius: 10px;
+    font-weight: 500;
+    padding: 0;
+    text-align: center;
+
+    .modal-header{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        width: 100%;
+        background-color: black;
+        padding: 15px 20px;
+        color: white;
+
+        .modal-title{
+            margin: 0;
+        }
+    }
+
+    .dialog_close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: white;
+    }
+
+    .modal-body {
+        padding: 20px;
+        text-align: left;
+
+        form {
+            border: none;
+
+            fieldset{
+                border: none;
+                margin: 0 auto;
+                padding: 0;
+
+                .field {
+                    margin-bottom: 15px;
+                    text-align: left;
+
+                    label {
+                        display: block;
+                        margin-bottom: 5px;
+                        font-weight: bold;
+                    }
+
+                    input, select {
+                        width: 100%;
+                        padding: 8px;
+                        border: 1px solid #ccc;
+                        border-radius: 4px;
+                        box-sizing: border-box;
+                    }
+
+                    .checkboxset{
+                        display: flex;
+                        flex-direction: column;
+                        gap: 5px;
+                        margin: 0;
+                        list-style: none;
+                        padding: 0;
+
+                        li{
+                            display: flex;
+                            align-items: flex-start;
+                            gap: 10px;
+
+                            input[type="checkbox"]{
+                                margin: 0;
+                                width: auto;
+                            }
+                        }
+                    }
+                }
+            }
+
+            .btn-toolbar {
+                text-align: center;
+
+                input[type="submit"] {
+                    background-color: var(--ColorPrimary);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 16px;
+
+                    &:hover {
+                        background-color: var(--ColorPrimaryDark);
+                    }
+                }
+            }
+        }
+    }
+
+    &::backdrop {
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        z-index: -1;
+    }
+}

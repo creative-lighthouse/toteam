@@ -36,15 +36,19 @@
                 </tr>
             </table>
             <a class="button" onclick="document.getElementById('editProfileDialog').showModal()">Profil bearbeiten</a>
-            <dialog class="dialog dialog--editprofile" id="editProfileDialog">
+            <dialog class="dialog section_editprofilemodal" id="editProfileDialog">
                 <div class="dialog_content">
                     <button class="dialog_close" onclick="document.getElementById('editProfileDialog').close()">&times;</button>
-                    <h2>Profil bearbeiten</h2>
-                    <% if $Top.EditProfileForm %>
-                        $Top.EditProfileForm
-                    <% else %>
-                        <p>Fehler: Formular konnte nicht geladen werden.</p>
-                    <% end_if %>
+                    <div class="modal-header">
+                        <h2 class="hl2 modal-title">Profil bearbeiten</h2>
+                    </div>
+                    <div class="modal-body">
+                        <% if $Top.EditProfileForm %>
+                            $Top.EditProfileForm
+                        <% else %>
+                            <p>Fehler: Formular konnte nicht geladen werden.</p>
+                        <% end_if %>
+                    </div>
                 </div>
             </dialog>
         </div>

@@ -51,7 +51,7 @@
                                     <button type="submit" name="response" value="Decline" class="event-response-button event-response-decline <% if $ParticipationOfCurrentUser.Type == 'Decline' %>selected<% else_if $ParticipationOfCurrentUser %>unselected<% end_if %>">Nicht dabei</button>
                                 </fieldset>
                             </form>
-                            <% if $ParticipationOfCurrentUser.Type == 'Accept' %>
+                            <% if $ParticipationOfCurrentUser.Type == 'Accept' || $ParticipationOfCurrentUser.Type == 'Maybe' %>
                                 <hr>
                                 <form class="event-response-actions" method="post" action="{$Top.ParticipationPage.Link('changeParticipationTime')}/{$ID}">
                                     <fieldset class="fieldset-update-time">

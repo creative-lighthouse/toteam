@@ -6,22 +6,20 @@ use Override;
 use App\Events\Event;
 use App\Events\EventDayType;
 use SilverStripe\Assets\Image;
+use App\Pages\ParticipationPage;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Forms\TextField;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
-use App\Pages\ParticipationPage;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\Model\List\GroupedList;
 use SilverStripe\Forms\GridField\GridField;
-use SilverStripe\Forms\GridField\GridFieldConfig;
-use SilverStripe\Forms\GridField\GridFieldButtonRow;
+use SilverStripe\Forms\GridField\GridFieldEditButton;
 use SilverStripe\Forms\GridField\GridFieldConfig_Base;
-use Symbiote\GridFieldExtensions\GridFieldTitleHeader;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\GridField\GridFieldDeleteAction;
-use SilverStripe\Forms\GridField\GridFieldToolbarHeader;
 use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
 use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
-use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 
 class EventDay extends DataObject
 {
@@ -75,18 +73,32 @@ class EventDay extends DataObject
         $fields = parent::getCMSFields();
         $fields->removeByName("ParentID");
 
-        //Make Meals Inline-Editable entries with gridfield-extensions
+        // Simple GridField with inline editing for Meals
+        $editableColumns = GridFieldEditableColumns::create();
+        $editableColumns->setDisplayFields([
+            'Title' => [
+                'title' => 'Titel',
+                'callback' => function ($record, $column, $grid) {
+                    return TextField::create($column);
+                }
+            ],
+            'Description' => [
+                'title' => 'Beschreibung',
+                'callback' => function ($record, $column, $grid) {
+                    return TextField::create($column);
+                }
+            ]
+        ]);
+
+        // Add delete and edit buttons
+        $mealsGridConfig = GridFieldConfig_RecordEditor::create()
+            ->addComponent($editableColumns);
+
         $mealsGrid = GridField::create(
-            'MealsGrid',
+            'Meals',
             'Mahlzeiten',
             $this->Meals(),
-            GridFieldConfig::create()
-                ->addComponent(GridFieldButtonRow::create('before'))
-                ->addComponent(GridFieldToolbarHeader::create())
-                ->addComponent(GridFieldTitleHeader::create())
-                ->addComponent(GridFieldEditableColumns::create())
-                ->addComponent(GridFieldDeleteAction::create())
-                ->addComponent(GridFieldAddNewInlineButton::create())
+            $mealsGridConfig
         );
         $fields->removeByName('Meals');
         $fields->addFieldToTab('Root.Main', $mealsGrid);
@@ -108,9 +120,9 @@ class EventDay extends DataObject
     {
         $date = $this->dbObject('Date');
         if ($date instanceof DBField) {
-            if($this->TimeStart && $this->TimeEnd) {
+            if ($this->TimeStart && $this->TimeEnd) {
                 return $this->dbObject('Date')->Format('dd.MM.YY') . ', ' . $this->dbObject('TimeStart')->Format('HH:mm') . ' - ' . $this->dbObject('TimeEnd')->Format('HH:mm');
-            } else if($this->TimeStart) {
+            } elseif ($this->TimeStart) {
                 return $this->dbObject('Date')->Format('dd.MM.YY') . ', Ab' . $this->dbObject('TimeStart')->Format('HH:mm');
             } else {
                 return $this->dbObject('Date')->Format('dd.MM.YY');
@@ -120,33 +132,38 @@ class EventDay extends DataObject
         }
     }
 
-    public function getEvent() {
+    public function getEvent()
+    {
         return $this->Parent();
     }
 
-    public function getParticipationOfCurrentUser() {
+    public function getParticipationOfCurrentUser()
+    {
         $member = Security::getCurrentUser();
-        if(!$member) {
+        if (!$member) {
             return null;
         }
         return EventDayParticipation::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
     }
 
-    public function getGroupedParticipations() {
+    public function getGroupedParticipations()
+    {
         return GroupedList::create($this->Participations());
     }
 
-    public function FormatTimeStart() {
+    public function FormatTimeStart()
+    {
         return $this->TimeStart ? (new \DateTime($this->TimeStart))->format('H:i') : '';
     }
 
-    public function FormatTimeEnd() {
+    public function FormatTimeEnd()
+    {
         return $this->TimeEnd ? (new \DateTime($this->TimeEnd))->format('H:i') : '';
     }
 
     public function RenderTime()
     {
-        if($this->TimeStart && $this->TimeEnd) {
+        if ($this->TimeStart && $this->TimeEnd) {
             return $this->FormatTimeStart() . " - " . $this->FormatTimeEnd();
         } elseif ($this->TimeStart) {
             return "ab " . $this->FormatTimeStart();
@@ -157,10 +174,11 @@ class EventDay extends DataObject
         }
     }
 
-    public function getLink() {
+    public function getLink()
+    {
         $event = $this->Parent();
         $participationPage = ParticipationPage::get()->first();
-        if($event && $participationPage) {
+        if ($event && $participationPage) {
             return $participationPage->Link() . "?date=" . $this->Date . "&eventID=" . $this->ID;
         }
         return null;

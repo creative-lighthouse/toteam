@@ -108,4 +108,17 @@ class MemberExtension extends Extension
         }
         return $url;
     }
+
+    public function RenderName()
+    {
+        return $this->owner->FirstName;
+    }
+
+    public function RenderProfileImage()
+    {
+        if ($this->owner->ProfileImageID && $this->owner->ProfileImage()->exists()) {
+            return $this->owner->ProfileImage()->ScaleWidth(200)->getURL();
+        }
+        return $this->getGravatar(200);
+    }
 }

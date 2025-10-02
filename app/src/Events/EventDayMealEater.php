@@ -4,10 +4,6 @@ namespace App\Events;
 
 use Override;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\Security\Security;
-use App\Events\EventDayParticipation;
-use SilverStripe\Model\List\GroupedList;
-use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\Security\Member;
 
 class EventDayMealEater extends DataObject
