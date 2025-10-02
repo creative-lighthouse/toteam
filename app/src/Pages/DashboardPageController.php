@@ -19,7 +19,7 @@ class DashboardPageController extends PageController
         $registrationPage = RegistrationPage::get()->first();
 
 
-        if(!$currentuser && $registrationPage) {
+        if (!$currentuser && $registrationPage) {
             return $this->redirect($registrationPage->Link());
         }
 
@@ -35,6 +35,7 @@ class DashboardPageController extends PageController
         $upcomingeventdays = EventDayParticipation::get()
             ->filter('MemberID', $currentuser->ID)
             ->filter(['Type' => ['Accept', 'Maybe']])
+            ->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'))
             ->sort('Parent.Date', 'ASC')
             ->limit(5);
         $participationToday = EventDayParticipation::get()

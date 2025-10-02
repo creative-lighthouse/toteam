@@ -53,9 +53,13 @@ class Food extends DataObject
             'Vegetarian' => 'Vegetarisch',
             'Vegan' => 'Vegan',
         ]));
-        $EventDayMealConfig = $fields->dataFieldByName('Meals')->getConfig();
-        $EventDayMealConfig->getComponentByType(GridFieldAddExistingAutocompleter::class)
-            ->setResultsFormat('$Title - $Parent.Title');
+
+        $mealsField = $fields->dataFieldByName('Meals');
+        if ($mealsField) {
+            $EventDayMealConfig = $mealsField->getConfig();
+            $EventDayMealConfig->getComponentByType(GridFieldAddExistingAutocompleter::class)
+                ->setResultsFormat('$Title - $Parent.Title');
+        }
         return $fields;
     }
 
