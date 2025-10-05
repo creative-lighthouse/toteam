@@ -11,7 +11,7 @@
                     <li class="<% if $Type = 'Accept' %>accepted<% else_if $Type = 'Maybe' %>maybe<% end_if %>"><a href="$Parent.Link">$Parent.Title - <i>$Parent.RenderDateWithTime</i></a></li>
                 <% end_loop %>
             </ul>
-            <a href="$ParticipationPage.Link" class="button button--arrow">Weitere Verfügbarkeiten eingeben</a>
+            <a href="$CalendarPage.Link" class="button button--arrow">Weitere Verfügbarkeiten eingeben</a>
         </div>
         <div class="section_infobox">
             <h2 class="hl2">Deine zuletzt zugewiesenen Aufgaben</h2>

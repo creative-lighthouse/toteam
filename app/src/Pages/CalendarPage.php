@@ -4,9 +4,9 @@ namespace App\Pages;
 
 use Page;
 
-class ParticipationPage extends Page
+class CalendarPage extends Page
 {
-    private static $table_name = 'ParticipationPage';
+    private static $table_name = 'CalendarPage';
 
     private static $cms_icon = 'font-icon-p-user';
 

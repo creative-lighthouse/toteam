@@ -23,7 +23,7 @@ class DashboardPageController extends PageController
             return $this->redirect($registrationPage->Link());
         }
 
-        $participationPage = ParticipationPage::get()->first();
+        $CalendarPage = CalendarPage::get()->first();
         $latestparticipations = EventDayParticipation::get()
             ->filter(['MemberID' => $currentuser->ID])
             ->sort('Created', 'DESC')
@@ -47,7 +47,7 @@ class DashboardPageController extends PageController
             'LatestTasks' => $latesttasks,
             'UpcomingEventDays' => $upcomingeventdays,
             'MealsToday' => $this->getAllMealsParticipatedToday(),
-            'ParticipationPage' => $participationPage,
+            'CalendarPage' => $CalendarPage,
             'ParticipationToday' => $participationToday,
         ];
     }

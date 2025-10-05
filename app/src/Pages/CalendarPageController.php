@@ -12,7 +12,7 @@ use App\Events\EventDayParticipation;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\ORM\FieldType\DBField;
 
-class ParticipationPageController extends PageController
+class CalendarPageController extends PageController
 {
     private static $allowed_actions = [
         "changeParticipation",
@@ -198,5 +198,10 @@ class ParticipationPageController extends PageController
         $response->addHeader('Content-Disposition', 'inline; filename="toteam-events.ics"');
 
         return $response;
+    }
+
+    public function getICSLink()
+    {
+        return $this->AbsoluteLink() . "/ics";
     }
 }

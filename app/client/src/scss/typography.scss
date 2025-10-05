@@ -39,8 +39,9 @@ a {
     cursor: pointer;
     color: var(--ColorLink);
     text-decoration: none;
+}
 
-    &.button {
+    .button {
         background-color: var(--ColorButton);
         color: var(--ColorButtonText);
         display: inline-block;
@@ -84,7 +85,7 @@ a {
         }
     }
 
-    &.link--button {
+    .link--button {
         background-color: var(--ColorButton);
         color: var(--ColorButtonText);
         display: inline-block;
@@ -106,7 +107,7 @@ a {
             white-space: normal;
         }
     }
-}
+
 
 kbd {
     display: inline-block;

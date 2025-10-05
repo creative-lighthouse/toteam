@@ -1,7 +1,7 @@
 import Swiper, {Autoplay, EffectCoverflow, EffectFade, Navigation, Pagination} from 'swiper';
 import GLightbox from "glightbox";
 
-document.addEventListener("DOMContentLoaded", function (event) {
+document.addEventListener("DOMContentLoaded", function () {
 
     // INIT MENUBUTTON
     const menu_button = document.querySelector('[data-behaviour="toggle-menu"]');
@@ -84,6 +84,30 @@ document.addEventListener("DOMContentLoaded", function (event) {
             if (!isInDialog) {
                 dialog.close();
             }
+        });
+    });
+
+    const copyButtons = document.querySelectorAll('.copy-btn');
+
+    copyButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetText = button.getAttribute('data-copy-target');
+
+            if (!targetText) {
+                return;
+            }
+
+            navigator.clipboard.writeText(targetText)
+                .then(() => {
+                    const feedback = button.parentElement.querySelector('.copy-feedback');
+                    if (feedback) {
+                        feedback.style.display = 'inline';
+                        setTimeout(() => feedback.style.display = 'none', 2000);
+                    }
+                })
+                .catch(err => {
+                    console.error("Fehler beim Kopieren:", err);
+                });
         });
     });
 });

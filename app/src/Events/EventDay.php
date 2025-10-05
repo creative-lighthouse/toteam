@@ -6,7 +6,7 @@ use Override;
 use App\Events\Event;
 use App\Events\EventDayType;
 use SilverStripe\Assets\Image;
-use App\Pages\ParticipationPage;
+use App\Pages\CalendarPage;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Forms\TextField;
 use SilverStripe\Security\Security;
@@ -177,9 +177,9 @@ class EventDay extends DataObject
     public function getLink()
     {
         $event = $this->Parent();
-        $participationPage = ParticipationPage::get()->first();
-        if ($event && $participationPage) {
-            return $participationPage->Link() . "?date=" . $this->Date . "&eventID=" . $this->ID;
+        $calendarPage = CalendarPage::get()->first();
+        if ($event && $calendarPage) {
+            return $calendarPage->Link() . "?date=" . $this->Date . "&eventID=" . $this->ID;
         }
         return null;
     }

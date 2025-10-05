@@ -43,7 +43,7 @@
                         </div>
                         <div class="event-participation">
                             <h4 class="event-participation_title">Deine Verfügbarkeit</h4>
-                            <form class="event-response-actions" method="post" action="{$Top.ParticipationPage.Link('changeParticipation')}/{$ID}">
+                            <form class="event-response-actions" method="post" action="{$Top.CalendarPage.Link('changeParticipation')}/{$ID}">
                                 <fieldset class="fieldset-availability">
                                     <input type="hidden" name="csrf_token" value="$CSRFToken">
                                     <button type="submit" name="response" value="Accept" class="event-response-button event-response-accept <% if $ParticipationOfCurrentUser.Type == 'Accept' %>selected<% else_if $ParticipationOfCurrentUser %>unselected<% end_if %>">Dabei</button>
@@ -53,7 +53,7 @@
                             </form>
                             <% if $ParticipationOfCurrentUser.Type == 'Accept' || $ParticipationOfCurrentUser.Type == 'Maybe' %>
                                 <hr>
-                                <form class="event-response-actions" method="post" action="{$Top.ParticipationPage.Link('changeParticipationTime')}/{$ID}">
+                                <form class="event-response-actions" method="post" action="{$Top.CalendarPage.Link('changeParticipationTime')}/{$ID}">
                                     <fieldset class="fieldset-update-time">
                                         <p>Von</p>
                                         <input type="time" name="timestart" value="$ParticipationOfCurrentUser.TimeStart" step="900" class="event-response-arrival-time">
@@ -72,7 +72,7 @@
                                     <% loop $Meals %>
                                         <div class="meal">
                                             <span class="meal-title">$RenderTime - $Title</span>
-                                            <form class="event-response-actions" method="post" action="{$Top.ParticipationPage.Link('changeParticipationFood')}/{$Up.ID}">
+                                            <form class="event-response-actions" method="post" action="{$Top.CalendarPage.Link('changeParticipationFood')}/{$Up.ID}">
                                                 <fieldset class="fieldset-availability">
                                                     <input type="hidden" name="meal" value="$ID">
                                                     <button type="submit" name="response" value="Accept" class="event-response-button event-response-accept <% if $MealParticipationOfCurrentUser.Type == 'Accept' %>selected<% else_if $MealParticipationOfCurrentUser %>unselected<% end_if %>">Ja</button>

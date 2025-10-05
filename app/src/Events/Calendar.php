@@ -4,7 +4,7 @@
 namespace App\Events;
 
 use App\Events\EventDay;
-use App\Pages\ParticipationPage;
+use App\Pages\CalendarPage;
 use SilverStripe\Model\ArrayData;
 use App\Events\EventDayParticipation;
 use SilverStripe\Model\List\ArrayList;
@@ -188,13 +188,13 @@ class Calendar
             'ActiveYear' => $this->active_year,
             'ActiveMonth' => $this->active_month,
             'ActiveDay' => $this->active_day,
-            'ParticipationPage' => $this->getParticipationPage(),
+            'CalendarPage' => $this->getCalendarPage(),
             'CurrentEventDayID' => $this->currentEventDayID,
         ])->renderWith('Includes/Calendar');
     }
 
-    public function getParticipationPage()
+    public function getCalendarPage()
     {
-        return ParticipationPage::get()->first();
+        return CalendarPage::get()->first();
     }
 }
