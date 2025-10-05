@@ -29,6 +29,7 @@ class EventDay extends DataObject
         "TimeStart" => "Time",
         "TimeEnd" => "Time",
         "Location" => "Varchar(511)",
+        "Description" => "Text",
     ];
 
     private static $has_one = [

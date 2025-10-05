@@ -10,5 +10,8 @@ class NoticesPage extends Page
 
     private static $cms_icon = 'font-icon-p-user';
 
+    private static $singular_name = "Ankündigungsseite";
+    private static $plural_name = "Ankündigungsseiten";
+
     private static $allowed_children = 'none';
 }

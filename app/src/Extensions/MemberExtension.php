@@ -9,6 +9,7 @@ use App\HumanResources\Allergy;
 use SilverStripe\Core\Extension;
 use App\HumanResources\Department;
 use App\Events\EventDayParticipation;
+use App\SuggestionBox\Suggestion;
 use SilverStripe\Forms\DropdownField;
 
 class MemberExtension extends Extension
@@ -17,6 +18,7 @@ class MemberExtension extends Extension
         "Joindate" => "Date",
         "FoodPreference" => "Varchar(255)",
         "DateOfBirth" => "Date",
+        "Hash" => "Varchar(255)",
     ];
 
     private static $has_one = [
@@ -30,6 +32,7 @@ class MemberExtension extends Extension
     private static $belongs_many = [
         "Departments" => Department::class,
         "Tasks" => Task::class,
+        "Suggestions" => Suggestion::class,
     ];
 
     private static $owns = [
@@ -54,6 +57,18 @@ class MemberExtension extends Extension
             'Vegan' => 'Vegan',
         ]));
         return $fields;
+    }
+
+    /**
+     * Event handler called before writing to the database.
+     *
+     * @uses DataExtension->onAfterWrite()
+     */
+    public function onBeforeWrite()
+    {
+        if (!$this->owner->Hash) {
+            $this->owner->Hash = md5(uniqid(rand(), true));
+        }
     }
 
     public function getParticipations()

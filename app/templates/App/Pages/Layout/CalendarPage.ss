@@ -6,10 +6,12 @@
         <a href="$LinkToNextMonth">></a>
     </div>
     $Calendar
-    <div class="copy-container">
-        <button type="button" class="button copy-btn" data-copy-target="$ICSLink">
-            Link für externe Kalender kopieren
-        </button>
-        <span class="copy-feedback" style="display:none; color:green;">✓ Link kopiert</span>
-    </div>
+    <% if $ICSLink %>
+        <div class="copy-container">
+            <button type="button" class="button copy-btn" data-copy-target="$ICSLink">
+                Link für externe Kalender kopieren
+            </button>
+            <span class="copy-feedback" style="display:none; color:green;">✓ Link kopiert</span>
+        </div>
+    <% end_if %>
 </div>
