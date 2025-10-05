@@ -177,7 +177,7 @@ class CalendarPageController extends PageController
             $ics .= "DTSTAMP:" . gmdate('Ymd\THis\Z', strtotime($eventDay->Created)) . "\r\n";
             $ics .= "DTSTART:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullStartDate())) . "\r\n";
             $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullEndDate())) . "\r\n";
-            $ics .= "SUMMARY:" . "\r\n";
+            $ics .= "SUMMARY:" . $eventDay->Title . "\r\n";
             $ics .= "DESCRIPTION:" . "\r\n";
             $ics .= "LOCATION:" . $eventDay->Location . "\r\n";
             $ics .= "CLASS:PUBLIC\r\n";
