@@ -163,8 +163,6 @@ class ParticipationPageController extends PageController
 
     private function generateICS()
     {
-
-        //get all eventdays
         $eventDays = EventDay::get();
 
         $ics = "BEGIN:VCALENDAR\r\n";
