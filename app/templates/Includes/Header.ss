@@ -27,13 +27,7 @@
                             <% end_if %>
                         <% end_with %>
                     </div>
-                    <p class="nav_title">Profil</p>
-                </a>
-                <a href="$LogoutLink" class="nav_link">
-                    <div class="nav_icon">
-                        <img src="_resources/app/client/icons/Logout.png" alt="Logout Icon" class="nav_icon_image">
-                    </div>
-                    <p class="nav_title">Logout</p>
+                    <p class="nav_title">$CurrentUser.FirstName</p>
                 </a>
             <% end_if %>
         </div>

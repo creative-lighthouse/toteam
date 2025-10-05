@@ -36,6 +36,9 @@
                 </tr>
             </table>
             <a class="button" onclick="document.getElementById('editProfileDialog').showModal()">Profil bearbeiten</a>
+            <hr>
+            <a class="button" href="$Top.LogoutLink">Ausloggen</a>
+
             <dialog class="dialog section_editprofilemodal" id="editProfileDialog">
                 <div class="dialog_content">
                     <button class="dialog_close" onclick="document.getElementById('editProfileDialog').close()">&times;</button>
