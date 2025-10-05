@@ -175,8 +175,8 @@ class ParticipationPageController extends PageController
             $ics .= "BEGIN:VEVENT\r\n";
             $ics .= "UID:" . $eventDay->ID . "@toteam\r\n";
             $ics .= "DTSTAMP:" . gmdate('Ymd\THis\Z', strtotime($eventDay->Created)) . "\r\n";
-            $ics .= "DTSTART:" . gmdate('Ymd\THis\Z', strtotime($eventDay->TimeStart)) . "\r\n";
-            $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->TimeEnd)) . "\r\n";
+            $ics .= "DTSTART:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullStartDate())) . "\r\n";
+            $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullEndDate())) . "\r\n";
             $ics .= "SUMMARY:" . "\r\n";
             $ics .= "DESCRIPTION:" . "\r\n";
             $ics .= "LOCATION:" . $eventDay->Location . "\r\n";

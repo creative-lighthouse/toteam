@@ -183,4 +183,12 @@ class EventDay extends DataObject
         }
         return null;
     }
+
+    public function getFullStartDate(){
+        return $this->Date . ' ' . $this->TimeStart;
+    }
+
+    public function getFullEndDate(){
+        return $this->Date . ' ' . $this->TimeEnd;
+    }
 }
