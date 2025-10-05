@@ -9,6 +9,7 @@ use App\Events\EventDayMeal;
 use App\Events\EventDayMealEater;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
+use SilverStripe\Control\HTTPResponse;
 use SilverStripe\ORM\FieldType\DBField;
 
 class ParticipationPageController extends PageController
@@ -17,6 +18,7 @@ class ParticipationPageController extends PageController
         "changeParticipation",
         "changeParticipationFood",
         "changeParticipationTime",
+        "ics",
     ];
 
     public function index()
@@ -157,5 +159,46 @@ class ParticipationPageController extends PageController
             $date = date('Y-m-d');
         }
         return date('F Y', strtotime((string) $date));
+    }
+
+    private function generateICS()
+    {
+
+        //get all eventdays
+        $eventDays = EventDay::get();
+
+        $ics = "BEGIN:VCALENDAR\r\n";
+        $ics .= "VERSION:2.0\r\n";
+        $ics .= "PRODID:-//ToTeam//Creative Lighthouse//DE\r\n";
+        $ics .= "CALSCALE:GREGORIAN\r\n";
+        $ics .= "METHOD:PUBLISH\r\n";
+
+        foreach ($eventDays as $eventDay) {
+            $ics .= "BEGIN:VEVENT\r\n";
+            $ics .= "UID:" . $eventDay->ID . "@toteam\r\n";
+            $ics .= "DTSTAMP:" . gmdate('Ymd\THis\Z', strtotime($eventDay->Created)) . "\r\n";
+            $ics .= "DTSTART:" . gmdate('Ymd\THis\Z', strtotime($eventDay->TimeStart)) . "\r\n";
+            $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->TimeEnd)) . "\r\n";
+            $ics .= "SUMMARY:" . "\r\n";
+            $ics .= "DESCRIPTION:" . "\r\n";
+            $ics .= "LOCATION:" . $eventDay->Location . "\r\n";
+            $ics .= "CLASS:PUBLIC\r\n";
+            $ics .= "END:VEVENT\r\n";
+        }
+
+        $ics .= "END:VCALENDAR\r\n";
+
+        return $ics;
+    }
+
+    public function ics()
+    {
+        $icsContent = $this->generateICS();
+
+        $response = HTTPResponse::create($icsContent);
+        $response->addHeader('Content-Type', 'text/calendar; charset=utf-8');
+        $response->addHeader('Content-Disposition', 'inline; filename="toteam-events.ics"');
+
+        return $response;
     }
 }
