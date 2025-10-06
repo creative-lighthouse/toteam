@@ -15,6 +15,7 @@ class Suggestion extends DataObject
         "Description" => "Text",
         "HasRecipient" => "Boolean",
         "SeenByRecipient" => "Boolean",
+        "IsAnonymous" => "Boolean",
     ];
 
     private static $has_one = [

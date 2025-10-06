@@ -185,6 +185,19 @@
             color: #333;
         }
 
+        form{
+            border: none;
+            max-width: unset;
+            background-color: transparent;
+            box-shadow: none;
+            padding: 0;
+            border-radius: 0;
+
+            fieldset{
+                flex-direction: row;
+            }
+        }
+
         .event-response-actions {
             display: flex;
             flex-direction: column;
@@ -306,6 +319,19 @@
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
+
+                form{
+                    border: none;
+                    max-width: unset;
+                    background-color: transparent;
+                    box-shadow: none;
+                    padding: 0;
+                    border-radius: 0;
+
+                    fieldset{
+                        flex-direction: row;
+                    }
+                }
 
                 .event-response-actions{
                     margin: 0;

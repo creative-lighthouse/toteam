@@ -1,7 +1,7 @@
 <% with $CurrentUser %>
     <div class="section section--ProfilePage">
         <div class="section_content">
-            <h1 class="section_title">Profil von $FirstName $Surname <kbd>ALPHA</kbd></h1>
+            <h1 class="section_title">Profil von $FirstName $Surname</h1>
             <div class="section_profileimage">
                 <% if $ProfileImage %>
                     <img src="$ProfileImage.URL" alt="Profilbild von $FirstName $Surname" class="profile_image">

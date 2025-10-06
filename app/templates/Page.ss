@@ -44,7 +44,7 @@
                 $Layout
         </main>
         <div class="area_footer">
-            <p class="footer_note"><i>ToTeam v0.1</i> <kbd>BETA</kbd></p>
+            <p class="footer_note"><i>ToTeam v0.1.1</i> <kbd>BETA</kbd></p>
         </div>
         <script type="module" src="$Vite('app/client/src/js/main.js')"></script>
     </body>
