@@ -3,6 +3,7 @@
 namespace App\Admins;
 
 use App\Food\Food;
+use App\Food\Meal;
 use App\HumanResources\Allergy;
 use SilverStripe\Admin\ModelAdmin;
 
@@ -18,6 +19,7 @@ class FoodAdmin extends ModelAdmin
 
     private static $managed_models = [
         Food::class,
+        Meal::class,
         Allergy::class,
     ];
 }

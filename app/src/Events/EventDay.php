@@ -3,23 +3,15 @@
 namespace App\Events;
 
 use Override;
+use App\Food\Meal;
 use App\Events\Event;
 use App\Events\EventDayType;
 use SilverStripe\Assets\Image;
-use App\Pages\CalendarPage;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\Forms\TextField;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\Model\List\GroupedList;
-use SilverStripe\Forms\GridField\GridField;
-use SilverStripe\Forms\GridField\GridFieldEditButton;
-use SilverStripe\Forms\GridField\GridFieldConfig_Base;
-use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
-use SilverStripe\Forms\GridField\GridFieldDeleteAction;
-use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
-use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
 
 /**
  * Class \App\Events\EventDay
@@ -38,6 +30,7 @@ use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
  * @method \App\Events\EventDayType Type()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayParticipation[] Participations()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayMeal[] Meals()
+ * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] MealsNew()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -64,6 +57,7 @@ class EventDay extends DataObject
     private static $has_many = [
         'Participations' => EventDayParticipation::class,
         'Meals' => EventDayMeal::class,
+        'MealsNew' => Meal::class,
     ];
 
     private static $owns = [
@@ -79,7 +73,7 @@ class EventDay extends DataObject
         "Type" => "Tages-Typ",
         "Image" => "Bild",
         "Participations" => "Teilnahmen",
-        "Meals" => "Mahlzeiten",
+        "MealsNew" => "Mahlzeiten",
     ];
 
     private static $summary_fields = [
@@ -96,36 +90,6 @@ class EventDay extends DataObject
     {
         $fields = parent::getCMSFields();
         $fields->removeByName("ParentID");
-
-        // Simple GridField with inline editing for Meals
-        $editableColumns = GridFieldEditableColumns::create();
-        $editableColumns->setDisplayFields([
-            'Title' => [
-                'title' => 'Titel',
-                'callback' => function ($record, $column, $grid) {
-                    return TextField::create($column);
-                }
-            ],
-            'Description' => [
-                'title' => 'Beschreibung',
-                'callback' => function ($record, $column, $grid) {
-                    return TextField::create($column);
-                }
-            ]
-        ]);
-
-        // Add delete and edit buttons
-        $mealsGridConfig = GridFieldConfig_RecordEditor::create()
-            ->addComponent($editableColumns);
-
-        $mealsGrid = GridField::create(
-            'Meals',
-            'Mahlzeiten',
-            $this->Meals(),
-            $mealsGridConfig
-        );
-        $fields->removeByName('Meals');
-        $fields->addFieldToTab('Root.Main', $mealsGrid);
 
         return $fields;
     }
@@ -201,18 +165,19 @@ class EventDay extends DataObject
     public function getLink()
     {
         $event = $this->Parent();
-        $calendarPage = CalendarPage::get()->first();
-        if ($event && $calendarPage) {
-            return $calendarPage->Link() . "?date=" . $this->Date . "&eventID=" . $this->ID;
+        if ($event) {
+            return "/calendar" . "?date=" . $this->Date . "&eventID=" . $this->ID;
         }
         return null;
     }
 
-    public function getFullStartDate(){
+    public function getFullStartDate()
+    {
         return $this->Date . ' ' . $this->TimeStart;
     }
 
-    public function getFullEndDate(){
+    public function getFullEndDate()
+    {
         return $this->Date . ' ' . $this->TimeEnd;
     }
 }

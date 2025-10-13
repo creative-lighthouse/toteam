@@ -4,8 +4,8 @@ namespace App\Controllers;
 
 use App\Events\Calendar;
 use App\Events\EventDay;
-use App\Events\EventDayMeal;
-use App\Events\EventDayMealEater;
+use App\Food\Meal;
+use App\Food\MealEater;
 use App\Controllers\BaseController;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
@@ -47,7 +47,7 @@ class CalendarController extends BaseController
             return $this->httpError(400, 'Invalid participation type: ' . $type);
         }
 
-        $eventday = EventDay::get_by_id($dateID);
+        $eventday = EventDay::get()->byID($dateID);
         $member = Security::getCurrentUser();
         $eventDayParticipation = $eventday->Participations()->filter(['MemberID' => $member->ID])->first();
         if (!$eventDayParticipation) {
@@ -61,6 +61,9 @@ class CalendarController extends BaseController
             }
             $eventDayParticipation->write();
         } else {
+            if (!is_object($eventDayParticipation)) {
+                return $this->httpError(400, 'No participation found for user: ' . $member->ID);
+            }
             if ($type == 'Accept' || $type == 'Maybe') {
                 if (!$eventDayParticipation->TimeStart) {
                     $eventDayParticipation->TimeStart = $eventday->TimeStart;
@@ -86,21 +89,24 @@ class CalendarController extends BaseController
             return $this->httpError(400, 'Invalid participation type: ' . $type);
         }
 
-        $meal = EventDayMeal::get_by_id($mealID);
+        $meal = Meal::get()->byID($mealID);
         $member = Security::getCurrentUser();
-        $eventday = EventDay::get_by_id($dateID);
-        $eventDayMealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
+        $eventday = EventDay::get()->byID($dateID);
+        $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
 
-        if (!$eventDayMealEater) {
-            $eventDayMealEater = EventDayMealEater::create();
-            $eventDayMealEater->ParentID = $meal->ID;
-            $eventDayMealEater->MemberID = $member->ID;
-            $eventDayMealEater->Type = $type;
+        if (!is_object($mealEater)) {
+            $mealEater = null;
+        }
 
-            $eventDayMealEater->write();
+        if (!$mealEater) {
+            $mealEater = MealEater::create();
+            $mealEater->ParentID = $meal->ID;
+            $mealEater->MemberID = $member->ID;
+            $mealEater->Type = $type;
+            $mealEater->write();
         } else {
-            $eventDayMealEater->Type = $type;
-            $eventDayMealEater->write();
+            $mealEater->Type = $type;
+            $mealEater->write();
         }
 
         $this->redirect('/calendar?date=' . $eventday->Date . '&eventID=' . $eventday->ID);
@@ -117,10 +123,13 @@ class CalendarController extends BaseController
         }
         //echo "Change Participation Time to " . $timestart . " - " . $timeend . " for dateID " . $dateID;
 
-        $eventday = EventDay::get_by_id($dateID);
+        $eventday = EventDay::get()->byID($dateID);
         $member = Security::getCurrentUser();
         $eventDayParticipation = $eventday->Participations()->filter(['MemberID' => $member->ID])->first();
         if ($eventDayParticipation) {
+            if (!is_object($eventDayParticipation)) {
+                return $this->httpError(400, 'No participation found for user: ' . $member->ID);
+            }
             $eventDayParticipation->TimeStart = $timestart;
             $eventDayParticipation->TimeEnd = $timeend;
             $eventDayParticipation->write();
@@ -182,10 +191,13 @@ class CalendarController extends BaseController
         //Get all statusses of users for this eventday in string format. Use "Zugesagt", "Vielleicht" and "Abgesagt"
         $returnstring = "";
         $returnstring .= "=== Teilnehmer ===\\n";
-        $eventDay = EventDay::get_by_id($eventDayID);
+        $eventDay = EventDay::get()->byID($eventDayID);
         if ($eventDay) {
             $participations = $eventDay->Participations();
             foreach ($participations as $participation) {
+                if (!is_object($participation)) {
+                    continue;
+                }
                 $member = $participation->Member();
                 if ($member) {
                     $returnstring .= "- " . $member->getName() . " (" . $participation->Type . ")\\n";
@@ -193,7 +205,7 @@ class CalendarController extends BaseController
             }
             return rtrim($returnstring, "\\n");
         }
-        return [];
+        return "";
     }
 
     public static function getFoodForDay($eventDayID)
@@ -202,20 +214,23 @@ class CalendarController extends BaseController
         $returnstring = "";
         $returnstring .= "=== Mahlzeiten ===\\n";
 
-        $eventDay = EventDay::get_by_id($eventDayID);
+        $eventDay = EventDay::get()->byID($eventDayID);
         if ($eventDay) {
             $meals = $eventDay->Meals();
             foreach ($meals as $meal) {
-                $returnstring .= $meal->Title . " (" . $meal->Time . "):\\n";
+                if (!is_object($meal)) {
+                    continue;
+                }
+                $returnstring .= $meal->Title . " (" . $meal->RenderTime . "):\\n";
                 $eaters = $meal->Eaters();
                 foreach ($eaters as $eater) {
                     $member = $eater->Member();
                     if ($member) {
-                        $returnstring .= "- " . $member->getName() . " (" . $eater->Type . ")\\n";
+                        $returnstring .= "- " . $member->getName() . " (" . $eater->Type . ")\n";
                     }
                 }
             }
-            return rtrim($returnstring, "\\n");
+            return rtrim($returnstring, "\n");
         }
         return "";
     }

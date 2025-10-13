@@ -64,11 +64,6 @@ class Notice extends DataObject
 
     public function getLink()
     {
-        $noticespage = NoticesPage::get()->first();
-        if ($noticespage) {
-            return $noticespage->Link('view/' . $this->ID);
-        } else {
-            return null;
-        }
+        return '/notices/view/' . $this->ID;
     }
 }

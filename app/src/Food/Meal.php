@@ -1,29 +1,30 @@
 <?php
 
-namespace App\Events;
+namespace App\Food;
 
 use App\Food\Food;
+use App\Food\MealEater;
 use App\Events\EventDay;
 use SilverStripe\ORM\DataObject;
-use App\Events\EventDayMealEater;
 use SilverStripe\Security\Security;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 
 /**
- * Class \App\Events\EventDayMeal
+ * Class \App\Food\Meal
  *
  * @property ?string $Title
  * @property ?string $Time
  * @property int $ParentID
  * @method \App\Events\EventDay Parent()
- * @method \SilverStripe\ORM\DataList|\App\Events\EventDayMealEater[] Eaters()
+ * @method \SilverStripe\ORM\DataList|\App\Food\MealEater[] Eaters()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Food\Food[] Foods()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class EventDayMeal extends DataObject
+class Meal extends DataObject
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -35,7 +36,11 @@ class EventDayMeal extends DataObject
     ];
 
     private static $has_many = [
-        "Eaters" => EventDayMealEater::class,
+        "Eaters" => MealEater::class,
+    ];
+
+    private static $many_many = [
+        "Foods" => Food::class,
     ];
 
     private static $field_labels = [
@@ -58,9 +63,9 @@ class EventDayMeal extends DataObject
         "Parent.Date",
     ];
 
-    private static $table_name = 'EventDayMeal';
-    private static $singular_name = "Mahlzeit (ALT)";
-    private static $plural_name = "Mahlzeiten (ALT)";
+    private static $table_name = 'Meal';
+    private static $singular_name = "Mahlzeit";
+    private static $plural_name = "Mahlzeiten";
 
     public function getCMSFields()
     {
@@ -87,6 +92,6 @@ class EventDayMeal extends DataObject
         if (!$member) {
             return null;
         }
-        return EventDayMealEater::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
+        return MealEater::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
     }
 }

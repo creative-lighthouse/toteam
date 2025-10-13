@@ -24,8 +24,33 @@
 }
 
 .section_content{
-    max-width: var(--MaxWidthContent);
     margin: 0 auto;
+}
+
+.section_intro{
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 15px 10px 10px 10px;
+    border-radius: 0 0 20px 20px;
+    border: 1px solid var(--ColorGray);
+    background-color: var(--ColorPrimary);
+    width: 100%;
+
+    .hl1{
+        margin: 0;
+        font-size: 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--ColorWhite);
+    }
+
+    p{
+        margin: 10px auto;
+        font-size: 14px;
+        font-weight: 300;
+        color: var(--ColorGray);
+        max-width: 800px;
+    }
 }
 
 //Styles to make the footer stick to the bottom of the page
@@ -51,7 +76,7 @@ body {
         grid-area: content;
         width: 100%;
         margin: 0 auto;
-        margin-top: 95px;
+        margin-top: 75px;
     }
 
     .area_footer {

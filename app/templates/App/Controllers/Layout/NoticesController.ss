@@ -1,7 +1,7 @@
 <div class="section section--NoticesPage">
     <div class="section_content">
         <div class="section_intro">
-            <h1>Ankündigungen</h1>
+            <h1 class="hl1">Ankündigungen</h1>
             <p>Hier findest du alle aktuellen Ankündigungen. Schau regelmäßig vorbei, um nichts zu verpassen!</p>
         </div>
 

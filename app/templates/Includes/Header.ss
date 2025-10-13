@@ -8,7 +8,7 @@
                 <li>
                     <a href="/notices" class="nav_link<% if $IsCurrentRoute(notices) %> nav_link--active<% end_if %>">
                         <div class="nav_icon nav_icon--notices">
-                            <img src="_resources/app/client/icons/totems/nachrichten_totem.png" alt="Nachrichten Icon" class="profile_image">
+                            <img src="_resources/app/client/icons/totems/nachrichten_totem.png" alt="Nachrichten Icon" class="nav_image">
                         </div>
                         <p class="nav_title">Ankündigungen</p>
                     </a>
@@ -16,9 +16,17 @@
                 <li>
                     <a href="/calendar" class="nav_link<% if $IsCurrentRoute(calendar) %> nav_link--active<% end_if %>">
                         <div class="nav_icon nav_icon--calendar">
-                            <img src="_resources/app/client/icons/totems/kalender_totem.png" alt="Kalender Icon" class="profile_image">
+                            <img src="_resources/app/client/icons/totems/kalender_totem.png" alt="Kalender Icon" class="nav_image">
                         </div>
                         <p class="nav_title">Kalender</p>
+                    </a>
+                </li>
+                <li>
+                    <a href="/food" class="nav_link<% if $IsCurrentRoute(food) %> nav_link--active<% end_if %>">
+                        <div class="nav_icon nav_icon--food">
+                            <img src="_resources/app/client/icons/totems/essen_totem.png" alt="Essen Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Essen</p>
                     </a>
                 </li>
                 <li>

@@ -1,6 +1,6 @@
 <div class="section section--CalendarPage">
     <div class="section_intro">
-            <h1>Kalender</h1>
+            <h1 class="hl1">Kalender</h1>
             <p>Hier kannst du deine Termine und Veranstaltungen verwalten, sowie deine Verfügbarkeiten eingeben</p>
         </div>
     <div class="calendar-header">

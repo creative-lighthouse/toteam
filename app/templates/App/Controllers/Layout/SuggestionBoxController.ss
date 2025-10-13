@@ -1,7 +1,7 @@
 <div class="section section--SuggestionPage">
     <div class="section_content">
         <div class="section_intro">
-            <h1>Kummerkasten</h1>
+            <h1 class="hl1">Kummerkasten</h1>
             <p>Hier kannst du Kritik, Anmerkungen oder Probleme ansprechen. Wenn du willst, kannst du dabei auch anonym bleiben oder eine betreffende Person auswählen</p>
         </div>
         <div class="section_addnew">
