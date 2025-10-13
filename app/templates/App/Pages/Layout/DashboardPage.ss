@@ -13,6 +13,7 @@
             </ul>
             <a href="$CalendarPage.Link" class="button button--arrow">Weitere Verfügbarkeiten eingeben</a>
         </div>
+        <!--
         <div class="section_infobox">
             <h2 class="hl2">Deine zuletzt zugewiesenen Aufgaben</h2>
             <ul class="infobox_list">
@@ -24,6 +25,7 @@
                 </div>
             </ul>
         </div>
+        !-->
         <div class="section_infobox">
             <h2 class="hl2">Heutige Mahlzeiten</h2>
             <ul class="infobox_list list--meals">

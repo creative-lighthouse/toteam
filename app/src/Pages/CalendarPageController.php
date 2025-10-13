@@ -163,12 +163,55 @@ class CalendarPageController extends PageController
 
     public function getICSLink()
     {
-        $icspage = ICSPage::get()->first();
+        $icslink = $this->getRequest()->getScheme() . '://' . $this->getRequest()->getHost() . '/ics';
         $currentUser = Security::getCurrentUser();
-        if ($currentUser && $currentUser->Hash && $icspage) {
-            return $icspage->AbsoluteLink() . "?user=" . $currentUser->Hash;
+        if ($currentUser && $currentUser->Hash && $icslink) {
+            return $icslink . "?user=" . $currentUser->Hash;
         } else {
             return null;
         }
+    }
+
+    public static function getUsersForDay($eventDayID)
+    {
+        //Get all statusses of users for this eventday in string format. Use "Zugesagt", "Vielleicht" and "Abgesagt"
+        $returnstring = "";
+        $returnstring .= "=== Teilnehmer ===\\n";
+        $eventDay = EventDay::get_by_id($eventDayID);
+        if ($eventDay) {
+            $participations = $eventDay->Participations();
+            foreach ($participations as $participation) {
+                $member = $participation->Member();
+                if ($member) {
+                    $returnstring .= "- " . $member->getName() . " (" . $participation->Type . ")\\n";
+                }
+            }
+            return rtrim($returnstring, "\\n");
+        }
+        return [];
+    }
+
+    public static function getFoodForDay($eventDayID)
+    {
+        //Get all food statusses of users for this eventday in string format. Use "Dabei" and "Nicht dabei"
+        $returnstring = "";
+        $returnstring .= "=== Mahlzeiten ===\\n";
+
+        $eventDay = EventDay::get_by_id($eventDayID);
+        if ($eventDay) {
+            $meals = $eventDay->Meals();
+            foreach ($meals as $meal) {
+                $returnstring .= $meal->Title . " (" . $meal->Time . "):\\n";
+                $eaters = $meal->Eaters();
+                foreach ($eaters as $eater) {
+                    $member = $eater->Member();
+                    if ($member) {
+                        $returnstring .= "- " . $member->getName() . " (" . $eater->Type . ")\\n";
+                    }
+                }
+            }
+            return rtrim($returnstring, "\\n");
+        }
+        return "";
     }
 }

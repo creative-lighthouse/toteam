@@ -6,6 +6,7 @@ use PageController;
 use App\Events\EventDay;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
+use App\Pages\CalendarPageController;
 use SilverStripe\Control\HTTPResponse;
 
 class ICSPageController extends PageController
@@ -46,10 +47,10 @@ class ICSPageController extends PageController
             $ics .= "UID:" . $eventDay->ID . "@toteam\r\n";
             $ics .= "DTSTAMP:" . gmdate('Ymd\THis\Z', strtotime($eventDay->Created)) . "\r\n";
             $ics .= "DTSTART:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullStartDate())) . "\r\n";
-            $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullEndDate())) . "\r\n";            
+            $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullEndDate())) . "\r\n";
             $ics .= "LAST-MODIFIED:" . gmdate('Ymd\THis\Z', strtotime($eventDay->LastEdited)) . "\r\n";
             $ics .= "SUMMARY:" . $eventDay->Title . "\r\n";
-            $ics .= "DESCRIPTION:" . $eventDay->Description . "\r\n";
+            $ics .= "DESCRIPTION:" . $eventDay->Description . "\\n" . CalendarPageController::getUsersForDay($eventDay->ID) . "\\n" . CalendarPageController::getFoodForDay($eventDay->ID, $user->ID) . "\\n" . "via ToTeam\r\n";
             $ics .= "LOCATION:" . $eventDay->Location . "\r\n";
             $ics .= "CLASS:PUBLIC\r\n";
             $ics .= "END:VEVENT\r\n";
