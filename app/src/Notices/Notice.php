@@ -6,6 +6,24 @@ use App\Pages\NoticesPage;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
+/**
+ * Class \App\Notices\Notice
+ *
+ * @property ?string $Title
+ * @property ?string $ShortText
+ * @property ?string $LongText
+ * @property ?string $ReleaseDate
+ * @property ?string $ExpiryDate
+ * @property int $AuthorID
+ * @property int $CategoryID
+ * @method \SilverStripe\Security\Member Author()
+ * @method \App\Notices\NoticeCategory Category()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class Notice extends DataObject
 {
     private static $db = [

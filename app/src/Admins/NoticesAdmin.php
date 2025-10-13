@@ -6,6 +6,10 @@ use App\Notices\Notice;
 use App\Notices\NoticeCategory;
 use SilverStripe\Admin\ModelAdmin;
 
+/**
+ * Class \App\Admins\NoticesAdmin
+ *
+ */
 class NoticesAdmin extends ModelAdmin
 {
     private static $menu_title = 'Ankündigungen';

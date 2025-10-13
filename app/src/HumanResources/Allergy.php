@@ -8,6 +8,21 @@ use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
+/**
+ * Class \App\HumanResources\Allergy
+ *
+ * @property ?string $Title
+ * @property int $SortOrder
+ * @property int $IconID
+ * @method \SilverStripe\Assets\Image Icon()
+ * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Food\Food[] Foods()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class Allergy extends DataObject
 {
     private static $db = [

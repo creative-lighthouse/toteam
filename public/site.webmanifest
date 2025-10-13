@@ -1,23 +1,57 @@
 {
-    "name": "ToTeam",
-    "short_name": "ToTeam",
-    "description": "Team- und Event-Management als PWA",
-    "theme_color": "#4E9DAE",
-    "background_color": "#ffffff",
-    "display": "standalone",
-    "orientation": "portrait",
-    "scope": "/",
-    "start_url": "/dashboard",
-    "icons": [
-        {
-            "src": "./_resources/app/client/icons/icon_192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "./_resources/app/client/icons/icon_512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "ToTeam",
+  "id": "toteam",
+  "short_name": "ToTeam",
+  "description": "Projekt-Management für Teams",
+  "theme_color": "#0C2041",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "browser"
+  ],
+  "shortcuts": [
+    {
+      "name": "Profil",
+      "url": "/profile",
+      "description": "Deine Daten und Einstellungen"
+    },
+    {
+      "name": "Kalender",
+      "url": "/calendar",
+      "description": "Verfügbarkeiten eintragen und ansehen"
+    }
+  ],
+  "orientation": "portrait",
+  "dir": "ltr",
+  "lang": "de",
+  "scope": "/",
+  "start_url": "/dashboard",
+  "icons": [
+    {
+      "src": "./_resources/app/client/icons/pwa/icons/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./_resources/app/client/icons/pwa/icons/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./_resources/app/client/icons/pwa/icons/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./_resources/app/client/icons/pwa/icons/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

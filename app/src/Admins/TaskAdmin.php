@@ -6,6 +6,10 @@ use App\Tasks\Task;
 use App\Tasks\TaskGroup;
 use SilverStripe\Admin\ModelAdmin;
 
+/**
+ * Class \App\Admins\TaskAdmin
+ *
+ */
 class TaskAdmin extends ModelAdmin
 {
     private static $menu_title = 'Tasks';

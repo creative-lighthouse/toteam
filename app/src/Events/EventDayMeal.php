@@ -11,6 +11,21 @@ use SilverStripe\Forms\GridField\GridFieldConfig;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 
+/**
+ * Class \App\Events\EventDayMeal
+ *
+ * @property ?string $Title
+ * @property ?string $Time
+ * @property int $ParentID
+ * @method \App\Events\EventDay Parent()
+ * @method \SilverStripe\ORM\DataList|\App\Events\EventDayMealEater[] Eaters()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Food\Food[] Foods()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class EventDayMeal extends DataObject
 {
     private static $db = [

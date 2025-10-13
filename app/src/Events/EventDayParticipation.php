@@ -7,6 +7,23 @@ use Override;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
+/**
+ * Class \App\Events\EventDayParticipation
+ *
+ * @property ?string $TimeStart
+ * @property ?string $TimeEnd
+ * @property ?string $Type
+ * @property ?string $Notes
+ * @property int $ParentID
+ * @property int $MemberID
+ * @method \App\Events\EventDay Parent()
+ * @method \SilverStripe\Security\Member Member()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class EventDayParticipation extends DataObject
 {
     private static $db = [

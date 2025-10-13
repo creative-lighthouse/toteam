@@ -5,35 +5,25 @@
     "repositories": [
         {
             "type": "git",
-            "url": "https://github.com/atwx/silverstripe-projectinfo.git"
-        },
-        {
-            "type": "git",
-            "url": "https://github.com/wernerkrauss/silverstripe-ideannotator.git"
-        },
-        {
-            "type": "git",
             "url": "https://github.com/StevenPaw/silverstripe-cms-theme.git"
-        },
-        {
-            "type": "git",
-            "url": "git@github.com:StevenPaw/silverstripe-elemental-clipboard.git"
         }
     ],
     "require": {
         "php": "^8.3",
-        "silverstripe/recipe-cms": "^6.0",
-        "dnadesign/silverstripe-elemental": "^6.0",
+        "silverstripe/recipe-core": "^6",
+        "silverstripe/admin": "^3",
+        "silverstripe/asset-admin": "^3",
+        "silverstripe/siteconfig": "^6",
         "atwx/silverstripe-vitehelper": "^1.0",
+        "ext-intl": "*",
         "ext-json": "*",
-        "atwx/silverstripe-projectinfo": "dev-main",
         "symbiote/silverstripe-gridfieldextensions": "^5.0",
         "silverstripe/linkfield": "^5.0",
         "ryanpotter/silverstripe-cms-theme": "dev-master",
-        "stevenpaw/silverstripe-elemental-clipboard": "dev-main"
+        "colymba/gridfield-bulk-editing-tools": "^5.0"
     },
     "require-dev": {
-        "silverleague/ideannotator": "dev-silverstripe6 as 4.0",
+        "silverleague/ideannotator": "4.0",
         "wernerkrauss/silverstripe-rector": "^1",
         "cambis/silverstan": "^2",
         "squizlabs/php_codesniffer": "^3",

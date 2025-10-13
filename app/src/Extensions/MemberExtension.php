@@ -12,6 +12,18 @@ use App\Events\EventDayParticipation;
 use App\SuggestionBox\Suggestion;
 use SilverStripe\Forms\DropdownField;
 
+/**
+ * Class \App\Extensions\MemberExtension
+ *
+ * @property \SilverStripe\Security\Member|\App\Extensions\MemberExtension $owner
+ * @property ?string $Joindate
+ * @property ?string $FoodPreference
+ * @property ?string $DateOfBirth
+ * @property ?string $Hash
+ * @property int $ProfileImageID
+ * @method \SilverStripe\Assets\Image ProfileImage()
+ * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
+ */
 class MemberExtension extends Extension
 {
     private static $db = [

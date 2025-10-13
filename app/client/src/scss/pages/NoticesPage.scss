@@ -1,4 +1,8 @@
+@use "../variables" as *;
+
 .section.section--NoticesPage {
+    margin: 0 auto;
+
     .section_content{
         .back-link{
             text-decoration: none;

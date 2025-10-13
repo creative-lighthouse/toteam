@@ -4,6 +4,16 @@ namespace App\Tasks;
 
 use SilverStripe\ORM\DataObject;
 
+/**
+ * Class \App\Tasks\TaskGroup
+ *
+ * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\Task[] Tasks()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class TaskGroup extends DataObject
 {
     private static $db = [

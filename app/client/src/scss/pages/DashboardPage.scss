@@ -1,6 +1,8 @@
 @use "../variables" as *;
 
 .section.section--DashboardPage {
+    margin: 0 auto;
+
     .section_content{
         display: grid;
         grid-template-columns: repeat(2, calc(50% - 10px));
@@ -94,6 +96,52 @@
 
             @include media(max-medium) {
                 grid-column: span 2;
+            }
+        }
+
+        .pwa-install-banner{
+            grid-column: span 2;
+            display: none; /* Hidden by default, shown via JS */
+            position: relative;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            padding: 1em;
+            text-align: center;
+            font-size: 1.1em;
+            border-radius: 5px;
+
+            .pwa-install-text{
+                margin: 0 0 5px 0;
+                padding: 0 20px;
+            }
+
+            .pwa-install-btn{
+                .pwa-install-btn-action {
+                    background: var(--ColorWhite);
+                    color: var(--ColorPrimary);
+                    border: none;
+                    padding: 0.5em 1em;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    margin-top: 0.5em;
+                    transition: 0.2s ease-in-out;
+
+                    &:hover {
+                        background: var(--ColorGray);
+                    }
+                }
+            }
+
+            .pwa-install-close {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: transparent;
+                color: var(--ColorWhite);
+                border: none;
+                font-size: 1.5em;
+                cursor: pointer;
             }
         }
     }

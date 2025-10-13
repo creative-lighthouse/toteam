@@ -12,6 +12,24 @@ use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\GridField\GridFieldConfig;
 use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 
+/**
+ * Class \App\Food\Food
+ *
+ * @property ?string $Title
+ * @property ?string $FoodPreference
+ * @property ?string $Notes
+ * @property int $ImageID
+ * @property int $SupplierID
+ * @method \SilverStripe\Assets\Image Image()
+ * @method \SilverStripe\Security\Member Supplier()
+ * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Events\EventDayMeal[] Meals()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class Food extends DataObject
 {
     private static $db = [

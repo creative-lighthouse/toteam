@@ -6,11 +6,11 @@ After:
 ---
 SilverStripe\Control\Director:
   rules:
-    'dashboard': 'App\Pages\DashboardPageController'
-    '': 'App\Pages\DashboardPageController'
-    'calendar//$Action/$ID/$Name': 'App\Pages\CalendarPageController'
-    'ics//$Action/$ID/$Name': 'App\Pages\ICSPageController'
-    'notices//$Action/$ID/$Name': 'App\Pages\NoticesPageController'
-    'profile//$Action/$ID/$Name': 'App\Pages\ProfilePageController'
-    'registration//$Action/$ID/$Name': 'App\Pages\RegistrationPageController'
-    'suggestionbox//$Action/$ID/$Name': 'App\Pages\SuggestionBoxPageController'
+    '': 'App\Controllers\DashboardController'
+    'dashboard': 'App\Controllers\DashboardController'
+    'calendar//$Action/$ID/$Name': 'App\Controllers\CalendarController'
+    'ics//$Action/$ID/$Name': 'App\Controllers\ICSPageController'
+    'notices//$Action/$ID/$Name': 'App\Controllers\NoticesController'
+    'profile//$Action/$ID/$Name': 'App\Controllers\ProfileController'
+    'registration//$Action/$ID/$Name': 'App\Controllers\RegistrationController'
+    'suggestionbox//$Action/$ID/$Name': 'App\Controllers\SuggestionBoxController'

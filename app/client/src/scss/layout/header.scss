@@ -33,6 +33,9 @@ header {
         .nav_menu{
             display: flex;
             align-items: center;
+            list-style: none;
+            padding: 0;
+            margin: 0;
 
             .nav_link {
                 text-decoration: none;

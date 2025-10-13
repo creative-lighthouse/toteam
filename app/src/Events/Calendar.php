@@ -188,13 +188,7 @@ class Calendar
             'ActiveYear' => $this->active_year,
             'ActiveMonth' => $this->active_month,
             'ActiveDay' => $this->active_day,
-            'CalendarPage' => $this->getCalendarPage(),
             'CurrentEventDayID' => $this->currentEventDayID,
         ])->renderWith('Includes/Calendar');
-    }
-
-    public function getCalendarPage()
-    {
-        return CalendarPage::get()->first();
     }
 }

@@ -6,6 +6,10 @@ use App\Food\Food;
 use App\HumanResources\Allergy;
 use SilverStripe\Admin\ModelAdmin;
 
+/**
+ * Class \App\Admins\FoodAdmin
+ *
+ */
 class FoodAdmin extends ModelAdmin
 {
     private static $menu_title = 'Food';

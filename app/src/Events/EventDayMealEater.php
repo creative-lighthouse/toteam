@@ -6,6 +6,20 @@ use Override;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
+/**
+ * Class \App\Events\EventDayMealEater
+ *
+ * @property ?string $Type
+ * @property int $ParentID
+ * @property int $MemberID
+ * @method \App\Events\EventDayMeal Parent()
+ * @method \SilverStripe\Security\Member Member()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class EventDayMealEater extends DataObject
 {
     private static $db = [

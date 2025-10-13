@@ -8,6 +8,24 @@ use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
+/**
+ * Class \App\SuggestionBox\Suggestion
+ *
+ * @property ?string $Title
+ * @property ?string $Description
+ * @property bool $HasRecipient
+ * @property bool $SeenByRecipient
+ * @property bool $IsAnonymous
+ * @property int $RecipientID
+ * @property int $SenderID
+ * @method \SilverStripe\Security\Member Recipient()
+ * @method \SilverStripe\Security\Member Sender()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class Suggestion extends DataObject
 {
     private static $db = [

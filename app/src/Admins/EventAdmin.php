@@ -6,6 +6,10 @@ use App\Events\Event;
 use App\Events\EventDayType;
 use SilverStripe\Admin\ModelAdmin;
 
+/**
+ * Class \App\Admins\EventAdmin
+ *
+ */
 class EventAdmin extends ModelAdmin
 {
     private static $menu_title = 'Events';

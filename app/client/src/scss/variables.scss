@@ -53,12 +53,14 @@
 }
 
 body {
-    --ColorPrimary: #4a6592;
+    --ColorPrimary: #3f567c;
     --ColorPrimaryLight: #4E9DAE;
-    --ColorPrimaryDark: #2A3952;
+    --ColorPrimaryDark: #0c2041;
     --ColorSecondary: #C9A141;
     --ColorSecondaryLight: #fad47a;
     --ColorSecondaryDark: #806934;
+    --ColorDarkGray: rgb(161, 161, 161);
+    --ColorExtraDarkGray: rgb(211, 211, 211);
     --ColorGray: #f0f0f0;
 
     --ColorHeader: #0c2041;

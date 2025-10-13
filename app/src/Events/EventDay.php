@@ -21,6 +21,29 @@ use SilverStripe\Forms\GridField\GridFieldDeleteAction;
 use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
 use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
 
+/**
+ * Class \App\Events\EventDay
+ *
+ * @property ?string $Title
+ * @property ?string $Date
+ * @property ?string $TimeStart
+ * @property ?string $TimeEnd
+ * @property ?string $Location
+ * @property ?string $Description
+ * @property int $ParentID
+ * @property int $ImageID
+ * @property int $TypeID
+ * @method \App\Events\Event Parent()
+ * @method \SilverStripe\Assets\Image Image()
+ * @method \App\Events\EventDayType Type()
+ * @method \SilverStripe\ORM\DataList|\App\Events\EventDayParticipation[] Participations()
+ * @method \SilverStripe\ORM\DataList|\App\Events\EventDayMeal[] Meals()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class EventDay extends DataObject
 {
     private static $db = [

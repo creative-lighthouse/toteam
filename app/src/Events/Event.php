@@ -16,6 +16,21 @@ use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\GridField\GridFieldEditButton;
 
+/**
+ * Class \App\Events\Event
+ *
+ * @property ?string $Title
+ * @property ?string $Start
+ * @property ?string $End
+ * @property int $ImageID
+ * @method \SilverStripe\Assets\Image Image()
+ * @method \SilverStripe\ORM\DataList|\App\Events\EventDay[] EventDays()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class Event extends DataObject
 {
     private static $db = [
