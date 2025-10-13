@@ -29,8 +29,7 @@ use SilverStripe\Model\List\GroupedList;
  * @method \SilverStripe\Assets\Image Image()
  * @method \App\Events\EventDayType Type()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayParticipation[] Participations()
- * @method \SilverStripe\ORM\DataList|\App\Events\EventDayMeal[] Meals()
- * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] MealsNew()
+ * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -56,8 +55,7 @@ class EventDay extends DataObject
 
     private static $has_many = [
         'Participations' => EventDayParticipation::class,
-        'Meals' => EventDayMeal::class,
-        'MealsNew' => Meal::class,
+        'Meals' => Meal::class,
     ];
 
     private static $owns = [
@@ -73,7 +71,7 @@ class EventDay extends DataObject
         "Type" => "Tages-Typ",
         "Image" => "Bild",
         "Participations" => "Teilnahmen",
-        "MealsNew" => "Mahlzeiten",
+        "Meals" => "Mahlzeiten",
     ];
 
     private static $summary_fields = [

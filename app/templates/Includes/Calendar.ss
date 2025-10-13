@@ -69,7 +69,7 @@
                             <div class="event-meals">
                                 <h4>Willst du mitessen?</h4>
                                 <div class="meals-list">
-                                    <% loop $MealsNew %>
+                                    <% loop $Meals %>
                                         <div class="meal">
                                             <span class="meal-title">$RenderTime - $Title</span>
                                             <form class="event-response-actions" method="post" action="/calendar/changeParticipationFood/{$Up.ID}">
