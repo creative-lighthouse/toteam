@@ -3,13 +3,12 @@
 namespace App\Food;
 
 use Override;
-use App\Events\EventDayMeal;
+use App\Food\Meal;
 use SilverStripe\Assets\Image;
 use App\HumanResources\Allergy;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\Forms\DropdownField;
-use SilverStripe\Forms\GridField\GridFieldConfig;
 use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 
 /**
@@ -23,7 +22,7 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\Security\Member Supplier()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
- * @method \SilverStripe\ORM\ManyManyList|\App\Events\EventDayMeal[] Meals()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Food\Meal[] Meals()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -49,7 +48,7 @@ class Food extends DataObject
 
     private static $many_many = [
         "Allergies" => Allergy::class,
-        "Meals" => EventDayMeal::class,
+        "Meals" => Meal::class,
     ];
 
     private static $field_labels = [];

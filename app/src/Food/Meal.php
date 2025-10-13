@@ -47,6 +47,7 @@ class Meal extends DataObject
         "Title" => "Titel",
         "Time" => "Uhrzeit",
         "Eaters" => "Teilnehmer",
+        "Foods" => "Gerichte",
     ];
 
     private static $summary_fields = [
