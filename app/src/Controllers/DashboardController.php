@@ -3,8 +3,7 @@
 namespace App\Controllers;
 
 use App\Tasks\Task;
-use App\Pages\RegistrationPage;
-use App\Events\EventDayMealEater;
+use App\Food\MealEater;
 use App\Controllers\BaseController;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
@@ -61,7 +60,7 @@ class DashboardController extends BaseController
         if (!$currentuser) {
             return null;
         }
-        return EventDayMealEater::get()
+        return MealEater::get()
             ->filter(['MemberID' => $currentuser->ID, 'Type' => 'Accept', 'Parent.Parent.Date' => date('Y-m-d')]);
     }
 }

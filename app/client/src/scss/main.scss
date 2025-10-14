@@ -16,6 +16,16 @@
 @use "pages/ProfilePage.scss";
 @use "pages/CalendarPage.scss";
 @use "pages/SuggestionPage.scss";
+@use "pages/FoodPage.scss";
+
+@view-transition {
+    navigation: auto;
+}
+
+html{
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+}
 
 .section {
     max-width: var(--MaxWidth);
@@ -30,11 +40,12 @@
 .section_intro{
     text-align: center;
     margin-bottom: 30px;
-    padding: 15px 10px 10px 10px;
+    padding: 15px;
     border-radius: 0 0 20px 20px;
     border: 1px solid var(--ColorGray);
     background-color: var(--ColorPrimary);
     width: 100%;
+    view-transition-name: section-intro;
 
     .hl1{
         margin: 0;
@@ -42,10 +53,11 @@
         font-weight: 600;
         text-transform: uppercase;
         color: var(--ColorWhite);
+        view-transition-name: section-introtitle;
     }
 
     p{
-        margin: 10px auto;
+        margin: 10px auto 0 auto;
         font-size: 14px;
         font-weight: 300;
         color: var(--ColorGray);
@@ -77,6 +89,11 @@ body {
         width: 100%;
         margin: 0 auto;
         margin-top: 75px;
+
+        @include media(max-medium) {
+            margin-top: -2px;
+            margin-bottom: 50px;
+        }
     }
 
     .area_footer {
@@ -140,4 +157,67 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+}
+
+dialog{
+    border: none;
+    max-width: 400px;
+    width: 90%;
+    border-radius: 10px;
+    border: none;
+    font-weight: 500;
+    padding: 0;
+    text-align: center;
+
+    form{
+        padding: 0;
+        border: none;
+        box-shadow: none;
+        background-color: transparent;
+    }
+
+    .dialog-header{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        width: 100%;
+        background-color: black;
+        padding: 15px 20px;
+        color: white;
+
+        .dialog-title{
+            margin: 0;
+        }
+
+        .dialog-date{
+            margin: 0;
+        }
+    }
+
+    .dialog-content{
+        padding: 20px;
+    }
+
+    .dialog-close{
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: white;
+    }
+
+    h1, h2, h3, h4{
+        margin: 0 0 10px 0;
+    }
+
+    &::backdrop {
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        z-index: -1;
+    }
 }

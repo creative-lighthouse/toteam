@@ -3,12 +3,6 @@ import GLightbox from "glightbox";
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    // INIT MENUBUTTON
-    const menu_button = document.querySelector('[data-behaviour="toggle-menu"]');
-    menu_button.addEventListener('click', () => {
-        document.body.classList.toggle('body--show');
-    })
-
     // INIT LIGHTBOX
     const lightbox = GLightbox({
         selector: '[data-gallery="gallery"]',
@@ -46,15 +40,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 clickable: true,
             },
         });
-    });
-
-    // FIXED HEADER
-    window.addEventListener('scroll', () => {
-        if (document.documentElement.scrollTop > 30 || document.body.scrollTop > 30){
-            document.body.classList.add('menu--fixed');
-        } else {
-            document.body.classList.remove('menu--fixed');
-        }
     });
 
     document.querySelectorAll('dialog[data-autoopen="true"]').forEach(dialog => {

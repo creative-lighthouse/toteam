@@ -39,7 +39,7 @@ class Meal extends DataObject
         "Eaters" => MealEater::class,
     ];
 
-    private static $many_many = [
+    private static $belongs_many_many = [
         "Foods" => Food::class,
     ];
 
@@ -94,5 +94,10 @@ class Meal extends DataObject
             return null;
         }
         return MealEater::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
+    }
+
+    public function getDetailsLink()
+    {
+        return '/food/meal/' . $this->ID;
     }
 }

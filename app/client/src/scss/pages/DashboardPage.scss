@@ -145,4 +145,8 @@
             }
         }
     }
+
+    @include media(max-medium) {
+        margin-top: 20px;
+    }
 }

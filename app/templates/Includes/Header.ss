@@ -1,16 +1,21 @@
 <header>
     <div class="header_nav">
-        <a href="/dashboard" class="nav_brand">
-            <img src="_resources/app/client/icons/ToTeam-safari-pinned-tab.svg" alt="ToTeam Logo - Zum Dashboard">
-        </a>
         <ul class="nav_menu">
             <% if $CurrentUser %>
+                <li>
+                    <a href="/dashboard" class="nav_link<% if $IsCurrentRoute(dashboard) %> nav_link--active<% end_if %>">
+                        <div class="nav_icon nav_icon--dashboard">
+                            <img src="_resources/app/client/icons/ToTeam-safari-pinned-tab.svg" alt="ToTeam Logo - Zum Dashboard">
+                        </div>
+                        <p class="nav_title">Dashboard</p>
+                    </a>
+                </li>
                 <li>
                     <a href="/notices" class="nav_link<% if $IsCurrentRoute(notices) %> nav_link--active<% end_if %>">
                         <div class="nav_icon nav_icon--notices">
                             <img src="_resources/app/client/icons/totems/nachrichten_totem.png" alt="Nachrichten Icon" class="nav_image">
                         </div>
-                        <p class="nav_title">Ankündigungen</p>
+                        <p class="nav_title">Wichtiges</p>
                     </a>
                 </li>
                 <li>
@@ -52,12 +57,6 @@
                     </a>
                 </li>
             <% end_if %>
-        </div>
-        <div class="nav_button" data-behaviour="toggle-menu">
-            <div class="bar1"></div>
-            <div class="bar2"></div>
-            <div class="bar3"></div>
-            <div class="bar4"></div>
         </div>
     </div>
 </header>

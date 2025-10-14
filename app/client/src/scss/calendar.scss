@@ -144,39 +144,8 @@
     padding: 0;
     text-align: center;
 
-    .modal-header{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        width: 100%;
-        background-color: black;
-        padding: 15px 20px;
-        color: white;
-
-        .event-title{
-            margin: 0;
-        }
-
-        .event-date{
-            margin: 0;
-        }
-    }
-
-    .event-modal-close{
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: white;
-    }
-
     .event-participation{
-        padding: 15px 20px 10px 20px;
+        padding: 0 0 10px 0;
 
         .event-participation_title{
             margin-top: 0;
@@ -308,8 +277,6 @@
     }
 
     .event-meals{
-        padding: 20px;
-
         .meals-list{
             display: flex;
             flex-direction: column;
@@ -394,8 +361,6 @@
     }
 
     .event-participants{
-        padding: 20px;
-
         .participants-list{
             display: flex;
             flex-direction: column;
@@ -431,15 +396,5 @@
                 }
             }
         }
-    }
-
-    h1, h2, h3, h4{
-        margin: 0 0 10px 0;
-    }
-
-    &::backdrop {
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(5px);
-        z-index: -1;
     }
 }

@@ -17,6 +17,7 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @property ?string $Title
  * @property ?string $FoodPreference
  * @property ?string $Notes
+ * @property ?string $Status
  * @property int $ImageID
  * @property int $SupplierID
  * @method \SilverStripe\Assets\Image Image()
@@ -35,6 +36,7 @@ class Food extends DataObject
         "Title" => "Varchar(255)",
         "FoodPreference" => "Varchar(255)",
         "Notes" => "Text",
+        "Status" => "Enum('New, Accepted, Rejected', 'New')",
     ];
 
     private static $has_one = [
@@ -51,7 +53,16 @@ class Food extends DataObject
         "Meals" => Meal::class,
     ];
 
-    private static $field_labels = [];
+    private static $field_labels = [
+        "Title" => "Titel",
+        "FoodPreference" => "Essenspräferenz",
+        "Notes" => "Notizen",
+        "Status" => "Status",
+        "Image" => "Bild",
+        "Supplier" => "Anbieter",
+        "Allergies" => "Allergien",
+        "Meals" => "Mahlzeiten",
+    ];
 
     private static $summary_fields = [
         "Title"
@@ -66,7 +77,7 @@ class Food extends DataObject
     {
         $fields = parent::getCMSFields();
         $fields->replaceField('FoodPreference', DropdownField::create('FoodPreference', 'Essenspräferenz', [
-            'None' => 'Keine Besonderheiten',
+            'None' => 'Nicht vegetarisch',
             'Vegetarian' => 'Vegetarisch',
             'Vegan' => 'Vegan',
         ]));
@@ -75,7 +86,7 @@ class Food extends DataObject
         if ($mealsField) {
             $EventDayMealConfig = $mealsField->getConfig();
             $EventDayMealConfig->getComponentByType(GridFieldAddExistingAutocompleter::class)
-                ->setResultsFormat('$Title - $Parent.Title');
+                ->setResultsFormat('$Title - $Parent.Title ($Foods.Count Gerichte)');
         }
         return $fields;
     }
@@ -86,5 +97,46 @@ class Food extends DataObject
             return $this->Supplier()->RenderName();
         }
         return 'Niemand';
+    }
+
+    public function RenderAllergies()
+    {
+        $allergies = $this->Allergies();
+        if ($allergies->count() == 0) {
+            return 'Keine';
+        }
+        $titles = [];
+        foreach ($allergies as $allergy) {
+            $titles[] = $allergy->Title;
+        }
+        return implode(', ', $titles);
+    }
+
+    public function RenderFoodPreference()
+    {
+        switch ($this->FoodPreference) {
+            case 'None':
+                return 'Nicht vegetarisch';
+            case 'Vegetarian':
+                return 'Vegetarisch';
+            case 'Vegan':
+                return 'Vegan';
+            default:
+                return $this->FoodPreference;
+        }
+    }
+
+    public function RenderStatus()
+    {
+        switch ($this->Status) {
+            case 'New':
+                return 'Neu angeboten';
+            case 'Accepted':
+                return 'Akzeptiert';
+            case 'Rejected':
+                return 'Abgelehnt';
+            default:
+                return $this->Status;
+        }
     }
 }
