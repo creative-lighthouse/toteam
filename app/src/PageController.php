@@ -28,7 +28,7 @@ use SilverStripe\Security\Security;
                 if (Security::getCurrentUser()) {
                     $this->redirect('/dashboard');
                 } else {
-                    $this->redirect('/registration');
+                    $this->redirect('/Security/login?BackURL=/dashboard');
                 }
             }
         }

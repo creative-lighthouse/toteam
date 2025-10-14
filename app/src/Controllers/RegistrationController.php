@@ -11,6 +11,7 @@ use SilverStripe\Forms\EmailField;
 use SilverStripe\Forms\FormAction;
 use SilverStripe\Security\Member_Validator;
 use SilverStripe\Forms\ConfirmedPasswordField;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Controllers\RegistrationController
@@ -25,6 +26,15 @@ class RegistrationController extends BaseController
         'doRegister',
         'confirm',
     ];
+
+    public function index()
+    {
+        $currentUser = Security::getCurrentUser();
+        if ($currentUser) {
+            $this->redirect('/dashboard');
+        }
+        return [];
+    }
 
     public function RegistrationForm()
     {

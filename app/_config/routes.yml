@@ -6,10 +6,10 @@ After:
 ---
 SilverStripe\Control\Director:
   rules:
-    '': 'App\Controllers\DashboardController'
+    '': '->dashboard'
     'dashboard': 'App\Controllers\DashboardController'
     'calendar//$Action/$ID/$Name': 'App\Controllers\CalendarController'
-    'ics//$Action/$ID/$Name': 'App\Controllers\ICSPageController'
+    'ics//$Action/$ID/$Name': 'App\Controllers\ICSController'
     'notices//$Action/$ID/$Name': 'App\Controllers\NoticesController'
     'profile//$Action/$ID/$Name': 'App\Controllers\ProfileController'
     'registration//$Action/$ID/$Name': 'App\Controllers\RegistrationController'

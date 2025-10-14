@@ -12,7 +12,7 @@ namespace {
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Page extends SiteTree
+    class Page extends SiteTree
     {
     }
 }

@@ -98,9 +98,4 @@ class ProfileController extends BaseController
         }
         return null;
     }
-
-    public function getLogoutLink()
-    {
-
-    }
 }

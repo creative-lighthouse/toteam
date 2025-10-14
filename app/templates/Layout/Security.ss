@@ -1,16 +1,16 @@
 <div class="section section--RegistrationPage">
     <div class="section_content">
         <div class="section_form">
-            <h1 class="hl1">Registrieren</h1>
+            <h1 class="hl1">Einloggen</h1>
             <div class="form_container">
                 <div class="section_text">
-                    <p>Registriere dich hier für einen neuen Account:</p>
+                    <p>Logge dich hier mit deinen Benutzerdaten ein:</p>
                 </div>
-                $RegistrationForm
+                $Form
             </div>
         </div>
         <div class="section_login">
-            <p>Du hast schon einen Account? <a class="button--form" href="$absoluteBaseURL/Security/login?BackURL=dashboard">Einloggen</a></p>
+            <p>Du hast noch keinen Account? <a class="button--form" href="/registration">Registrieren</a></p>
         </div>
     </div>
 </div>
