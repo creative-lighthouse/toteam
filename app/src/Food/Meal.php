@@ -67,6 +67,7 @@ class Meal extends DataObject
     private static $table_name = 'Meal';
     private static $singular_name = "Mahlzeit";
     private static $plural_name = "Mahlzeiten";
+    private static $default_sort = 'Time ASC';
 
     public function getCMSFields()
     {

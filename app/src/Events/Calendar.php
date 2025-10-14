@@ -177,6 +177,8 @@ class Calendar
     public function getEventsForDay($day)
     {
         $events = EventDay::get()->filter('Date', $day);
+        //Sort by Date and Time
+        $events = $events->sort('Date', 'ASC')->sort('TimeStart', 'ASC');
         return $events;
     }
 
