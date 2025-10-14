@@ -22,6 +22,7 @@ use SilverStripe\Model\List\GroupedList;
  * @property ?string $TimeEnd
  * @property ?string $Location
  * @property ?string $Description
+ * @property int $ICSSequence
  * @property int $ParentID
  * @property int $ImageID
  * @property int $TypeID
