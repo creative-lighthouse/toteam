@@ -50,6 +50,7 @@ class ICSController extends BaseController
         foreach ($eventDays as $eventDay) {
             $ics .= "BEGIN:VEVENT\r\n";
             $ics .= "UID:" . $eventDay->ID . "@toteam\r\n";
+            $ics .= "SEQUENCE:" . $eventDay->ICSSequence . "\r\n";
             $ics .= "DTSTAMP:" . gmdate('Ymd\THis\Z', strtotime($eventDay->Created)) . "\r\n";
             $ics .= "DTSTART:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullStartDate())) . "\r\n";
             $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullEndDate())) . "\r\n";

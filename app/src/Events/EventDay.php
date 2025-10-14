@@ -45,6 +45,7 @@ class EventDay extends DataObject
         "TimeEnd" => "Time",
         "Location" => "Varchar(511)",
         "Description" => "Text",
+        "ICSSequence" => "Int",
     ];
 
     private static $has_one = [
@@ -88,8 +89,20 @@ class EventDay extends DataObject
     {
         $fields = parent::getCMSFields();
         $fields->removeByName("ParentID");
+        $fields->removeByName("ICSSequence");
 
         return $fields;
+    }
+
+    /**
+     * Event handler called before writing to the database.
+     *
+     * @uses DataExtension->onAfterWrite()
+     */
+    public function onBeforeWrite()
+    {
+        parent::onBeforeWrite();
+        $this->ICSSequence = ($this->ICSSequence ?? 0) + 1;
     }
 
     public function RenderDate()
