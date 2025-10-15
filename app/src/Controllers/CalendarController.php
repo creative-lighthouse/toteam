@@ -188,21 +188,53 @@ class CalendarController extends BaseController
 
     public static function getUsersForDay($eventDayID)
     {
-        //Get all statusses of users for this eventday in string format. Use "Zugesagt", "Vielleicht" and "Abgesagt"
         $returnstring = "";
         $returnstring .= "=== Teilnehmer ===\\n";
         $eventDay = EventDay::get()->byID($eventDayID);
         if ($eventDay) {
-            $participations = $eventDay->Participations();
-            foreach ($participations as $participation) {
-                if (!is_object($participation)) {
-                    continue;
+
+            $participations = $eventDay->getGroupedParticipations();
+            if ($participations->count() == 0) {
+                $returnstring .= "Keine Teilnehmer.\\n";
+                return rtrim($returnstring, "\\n");
+            }
+            // Convert to array to manually group by Type
+            $participationsArray = $participations->toArray();
+            $grouped = array();
+            foreach ($participationsArray as $participation) {
+                if (!isset($grouped[$participation->Type])) {
+                    $grouped[$participation->Type] = array();
                 }
-                $member = $participation->Member();
-                if ($member) {
-                    $returnstring .= "- " . $member->getName() . " (" . $participation->Type . ")\\n";
+                $grouped[$participation->Type][] = $participation;
+            }
+            $order = ['Accept', 'Maybe', 'Decline'];
+            foreach ($order as $type) {
+                if (!isset($grouped[$type])) continue;
+                switch ($type) {
+                    case 'Accept':
+                        $statusText = 'Zugesagt';
+                        break;
+                    case 'Maybe':
+                        $statusText = 'Vielleicht';
+                        break;
+                    case 'Decline':
+                        $statusText = 'Abgesagt';
+                        break;
+                    default:
+                        $statusText = 'Unbekannt';
+                }
+                $returnstring .= $statusText . ":\\n";
+                foreach ($grouped[$type] as $participation) {
+                    if (!is_object($participation)) {
+                        continue;
+                    }
+                    $member = $participation->Member();
+                    if ($member) {
+                        $returnstring .= "- " . $member->getName() . "\\n";
+                    }
                 }
             }
+
             return rtrim($returnstring, "\\n");
         }
         return "";
@@ -210,27 +242,72 @@ class CalendarController extends BaseController
 
     public static function getFoodForDay($eventDayID)
     {
-        //Get all food statusses of users for this eventday in string format. Use "Dabei" and "Nicht dabei"
         $returnstring = "";
         $returnstring .= "=== Mahlzeiten ===\\n";
 
         $eventDay = EventDay::get()->byID($eventDayID);
         if ($eventDay) {
             $meals = $eventDay->Meals();
+
+            if ($meals->count() == 0) {
+                $returnstring .= "Keine Mahlzeiten geplant.\\n";
+                return rtrim($returnstring, "\\n");
+            }
+
             foreach ($meals as $meal) {
                 if (!is_object($meal)) {
                     continue;
                 }
-                $returnstring .= $meal->Title . " (" . $meal->RenderTime . "):\\n";
+                
+                $returnstring .= $meal->Title . " (" . $meal->RenderTime() . "):\\n";
                 $eaters = $meal->Eaters();
+                if ($eaters->count() == 0) {
+                    $returnstring .= "Keine Teilnehmer.\\n";
+                    continue;
+                }
+                
+                $grouped = array();
                 foreach ($eaters as $eater) {
-                    $member = $eater->Member();
-                    if ($member) {
-                        $returnstring .= "- " . $member->getName() . " (" . $eater->Type . ")\n";
+                    if (!is_object($eater)) {
+                        continue;
+                    }
+                    
+                    if (!isset($grouped[$eater->Type])) {
+                        $grouped[$eater->Type] = array();
+                    }
+                    $grouped[$eater->Type][] = $eater;
+                }
+                $order = ['Accept', 'Maybe', 'Decline'];
+                foreach ($order as $type) {
+                    if (!isset($grouped[$type])) continue;
+                    switch ($type) {
+                        case 'Accept':
+                            $statusText = 'Zugesagt';
+                            break;
+                        case 'Maybe':
+                            $statusText = 'Vielleicht';
+                            break;
+                        case 'Decline':
+                            $statusText = 'Abgesagt';
+                            break;
+                        default:
+                            $statusText = 'Unbekannt';
+                    }
+                    $returnstring .= $statusText . ":\\n";
+                    foreach ($grouped[$type] as $participation) {
+                        if (!is_object($participation)) {
+                            continue;
+                        }
+                        $member = $participation->Member();
+                        if ($member) {
+                            $returnstring .= "- " . $member->getName() . "\\n";
+                        }
                     }
                 }
+                $returnstring .= "\\n";
             }
-            return rtrim($returnstring, "\n");
+
+            return rtrim($returnstring, "\\n");
         }
         return "";
     }
