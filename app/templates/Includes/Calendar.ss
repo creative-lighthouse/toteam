@@ -94,7 +94,7 @@
                                             <% loop $Children %>
                                                 <div class="participant participant--status-$Type">
                                                     <span class="participant-name">$Member.Name</span>
-                                                    <% if $RenderTime != $Up.Up.RenderTime && $Up.Type == "Accept" %>
+                                                    <% if $RenderTime != $Up.Up.RenderTime && ($ParticipationOfCurrentUser.Type == 'Accept' || $ParticipationOfCurrentUser.Type == 'Maybe') %>
                                                         <span class="participant-status">($RenderTime)</span>
                                                     <% end_if %>
                                                 </div>
