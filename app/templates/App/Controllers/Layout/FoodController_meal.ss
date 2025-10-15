@@ -9,7 +9,7 @@
 
         <% with $Meal %>
             <div class="section_mealdetails">
-                <h2 class="hl2">$Parent.Title - $Title am $RenderDate um $RenderTime Uhr</h2>
+                <h2 class="hl2">$Parent.Title - $Title am $Parent.RenderDate um $RenderTime Uhr</h2>
 
                 <h3 class="hl3">Angebotene Gerichte</h3>
                 <ul class="section_mealdetails_foodlist">
