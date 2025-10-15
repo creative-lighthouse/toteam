@@ -74,7 +74,10 @@
                         <% if $Meals.Count > 0 %>
                             <li class="suppliedmeal meallist-entry">
                                 <span class="suppliedmeal-title"><b>$Title</b> für <b>$Meals.First.Parent.Title</b> am $Meals.First.Parent.RenderDate um $Meals.First.RenderTime Uhr</span>
-                                <a href="$Meals.First.DetailsLink" class="button button--small">Mahlzeit ansehen</a>
+                                <div class="food-actions">
+                                    <a href="$Meals.First.DetailsLink" class="button button--small">Mahlzeit ansehen</a>
+                                    <a href="$EditLink" class="button button--small">Gericht bearbeiten</a>
+                                </div>
                             </li>
                         <% else %>
                             <li class="suppliedmeal meallist-entry">
