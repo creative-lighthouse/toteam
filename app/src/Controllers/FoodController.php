@@ -6,7 +6,10 @@ use App\Food\Food;
 use App\Food\Meal;
 use App\HumanResources\Allergy;
 use App\Controllers\BaseController;
+use PHPUnit\Framework\Attributes\Group;
 use SilverStripe\Security\Security;
+use SilverStripe\Model\List\GroupedList;
+use SilverStripe\ORM\DataList;
 
 /**
  * Class \App\Controllers\FoodController
@@ -27,10 +30,10 @@ class FoodController extends BaseController
         $allmeals = Meal::get()->sort('ParentID', 'DESC')->sort('Time', 'ASC');
         $meals = $allmeals->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'));
 
-        $mealswithoutfood = [];
+        $mealswithoutfood = DataList::create(Meal::class);
         foreach ($meals as $meal) {
             if ($meal->Foods()->count() == 0) {
-                $mealswithoutfood[] = $meal;
+                $mealswithoutfood->add($meal);
             }
         }
 
@@ -40,6 +43,14 @@ class FoodController extends BaseController
             $usersuppliedfoods = Food::get()
                 ->filter('SupplierID', $currentuser->ID);
         }
+
+        //Sortiere nach Parent.Date und Time gleichzeitig
+        $meals = $meals->sort(['Parent.Date' => 'ASC', 'Time' => 'ASC']);
+        $mealswithoutfood = $mealswithoutfood->sort(['Parent.Date' => 'ASC', 'Time' => 'ASC']);
+
+        //Create grouped lists
+        $mealswithoutfood = GroupedList::create($mealswithoutfood);
+        $meals = GroupedList::create($meals);
 
         return $this->render([
             'Meals' => $meals,
