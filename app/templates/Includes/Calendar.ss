@@ -71,7 +71,7 @@
                                     <div class="meals-list">
                                         <% loop $Meals %>
                                             <div class="meal">
-                                                <span class="meal-title">$RenderTime - $Title</span>
+                                                <span class="meal-title">$RenderTime - <a href="/food/meal/$ID">$Title</a></span>
                                                 <form class="event-response-actions" method="post" action="/calendar/changeParticipationFood/{$Up.ID}">
                                                     <fieldset class="fieldset-availability">
                                                         <input type="hidden" name="meal" value="$ID">
