@@ -39,6 +39,7 @@
                             <% else %>
                                 <p class="dialog-date">$RenderDateWithTime</p>
                             <% end_if %>
+                                <p class="dialog-description">$Description</p>
                         </div>
                         <div class="dialog-content">
                             <div class="event-participation">
