@@ -1,7 +1,7 @@
 @use "../variables" as *;
 
 .section.section--FoodPage{
-    margin: 0 auto;
+    margin: 0 auto 15px auto;
 
     .section_content{
         display: flex;
@@ -13,41 +13,121 @@
             margin-bottom: 10px;
         }
 
-        .section_mealcategory{
-            border: 1px solid var(--ColorGray);
-            border-radius: 20px;
-            padding: 15px 20px;
+        .section_foodbox{
+            background-color: var(--ColorWhite);
+            border: 1px solid var(--ColorLightGrey);
+            border-radius: 8px;
 
             .hl2{
-                margin: 0 0 10px 0;
+                margin-bottom: 10px;
             }
 
-            ul{
+            p{
+                margin-bottom: 20px;
+            }
+
+            .section_dayslist{
                 list-style: none;
-                padding: 0;
                 margin: 0;
+                padding: 0;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+
+                .section_day{
+                    background-color: var(--ColorGray);
+                    border-radius: 10px;
+                    padding: 20px;
+                }
+
+                @include media(max-desktop) {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                @include media(max-medium) {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .meallist{
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
 
                 .meallist-entry{
-                    border: 1px solid var(--ColorGray);
-                    border-radius: 10px;
-                    padding: 5px 15px;
-                    margin-bottom: 10px;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                     background-color: var(--ColorLightGray);
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    padding: 10px;
+                    border-radius: 5px;
 
-                    .button{
-                        padding: 5px 10px;
-                    }
-
-                    @include media(max-medium) {
-                        padding: 10px;
-                        flex-direction: column;
-                        align-items: flex-start;
+                    .food-actions{
+                        display: flex;
                         gap: 10px;
+                        height: 100%;
+                        align-items: center;
                     }
+                }
+
+                &.meallist--suppliedfoods{
+                    .meallist-entry{
+                        background-color: var(--ColorGray);
+                    }
+                }
+            }
+        }
+    }
+}
+
+.section.section--FoodPageDetails {
+    margin-top: 0;
+
+    .section_mealdetails{
+        .hl3 {
+            margin-bottom: 10px;
+        }
+
+        .section_foodlist{
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            .fooditem{
+                background-color: var(--ColorLightGray);
+                padding: 20px;
+                border-radius: 10px;
+                position: relative;
+
+                p{
+                    margin: 0;
+                }
+
+                .hl4 {
+                    margin: 0;
+                }
+
+                .fooditem_statusicon{
+                    width: 24px;
+                    height: 24px;
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    display: block;
+                }
+
+                &.fooditem--New{
+                    opacity: 0.6;
+                }
+
+                &.fooditem--Rejected{
+                    opacity: 0.3;
                 }
             }
         }

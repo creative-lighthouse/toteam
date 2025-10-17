@@ -24,8 +24,8 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @method \SilverStripe\Security\Member Supplier()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Meal[] Meals()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -36,7 +36,7 @@ class Food extends DataObject
         "Title" => "Varchar(255)",
         "FoodPreference" => "Varchar(255)",
         "Notes" => "Text",
-        "Status" => "Enum('New, Accepted, Rejected', 'New')",
+        "Status" => "Enum('Accepted, New, Rejected', 'New')",
     ];
 
     private static $has_one = [

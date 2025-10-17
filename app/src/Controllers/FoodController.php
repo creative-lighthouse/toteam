@@ -37,12 +37,19 @@ class FoodController extends BaseController
             }
         }
 
+        //Filter mealswithoutfood for future date
+        $mealswithoutfood = $mealswithoutfood->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'));
+
         $usersuppliedfoods = [];
         $currentuser = Security::getCurrentUser();
         if ($currentuser) {
             $usersuppliedfoods = Food::get()
                 ->filter('SupplierID', $currentuser->ID);
         }
+        //Filter usersuppliedfoods for meals in the future
+        $usersuppliedfoods = $usersuppliedfoods->filter('Meals.Parent.Date:GreaterThanOrEqual', date('Y-m-d'));
+        //Sort usersuppliedfoods by Status and Title
+        $usersuppliedfoods = $usersuppliedfoods->sort(['Status' => 'ASC', 'Title' => 'ASC']);
 
         //Sortiere nach Parent.Date und Time gleichzeitig
         $meals = $meals->sort(['Parent.Date' => 'ASC', 'Time' => 'ASC']);

@@ -18,8 +18,8 @@ use SilverStripe\Security\Member;
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\TaskGroup[] TaskGroups()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Supporters()
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\Task[] SubTasks()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
