@@ -19,8 +19,10 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta charset="utf-8">
         <title>$Title - $SiteConfig.Title</title>
+        <link rel="manifest" href="site.webmanifest" />
         $ViteClient.RAW
         <link rel="stylesheet" href="$Vite('app/client/src/scss/main.scss')">
+        <script type="module" src="$Vite('app/client/src/js/main.js')"></script>
 
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="{$Title}" />
@@ -35,8 +37,6 @@
         <meta property="og:site_name" content="{$SiteConfig.Title}" />
         <meta property="og:url" content="{$Link}" />
         <meta property="og:image" content="app/client/images/ToTeam-SocialImage.png" />
-
-        <link rel="manifest" href="site.webmanifest" />
 
         <link rel="apple-touch-icon" sizes="120x120" href="_resources/app/client/icons/apple-touch-icon_120.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="_resources/app/client/icons/apple-touch-icon_180.png" />
@@ -82,7 +82,6 @@
         <div class="area_footer">
             <p class="footer_note"><i>ToTeam v0.1.2</i> <kbd>BETA</kbd></p>
         </div>
-        <script type="module" src="$Vite('app/client/src/js/main.js')"></script>
         <script>
             function showOfflineBanner() {
                 if (!navigator.onLine) {

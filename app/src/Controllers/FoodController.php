@@ -22,6 +22,7 @@ class FoodController extends BaseController
     private static $allowed_actions = [
         'meal',
         'addfood',
+        'editfood',
     ];
 
     public function index()
@@ -122,8 +123,55 @@ class FoodController extends BaseController
         return $this->httpError(400, 'Invalid request');
     }
 
+    public function editfood($request)
+    {
+        //Edit an existing food item on post request
+        if ($request->isPOST()) {
+            $foodID = $request->postVar('foodid');
+            $food = Food::get()->byID($foodID);
+            if (!$food) {
+                return $this->httpError(404, 'Food not found');
+            }
+
+            $mealID = $request->postVar('mealid');
+            $meal = Meal::get()->byID($mealID);
+            if (!$meal) {
+                return $this->httpError(404, 'Meal not found');
+            }
+
+            // Update food item
+            $food->Title = $request->postVar('title');
+            $food->Notes = $request->postVar('notes');
+            $food->FoodPreference = $request->postVar('foodpreference');
+
+            $allergyIDs = $request->postVar('allergies'); // This should be an array of allergy IDs
+            // Clear existing allergies
+            $food->Allergies()->removeAll();
+            if (is_array($allergyIDs)) {
+                $allergies = Allergy::get()->filter('ID', $allergyIDs);
+                if ($allergies->count() > 0) {
+                    $food->Allergies()->addMany($allergies);
+                }
+            }
+
+            // Save the food item
+            if ($food->write()) {
+                return $this->redirectBack();
+            } else {
+                return $this->httpError(500, 'Could not save food item');
+            }
+        }
+
+        return $this->httpError(400, 'Invalid request');
+    }
+
     public function FoodAddLink()
     {
         return 'food/addfood';
+    }
+
+    public function FoodEditLink()
+    {
+        return 'food/editfood';
     }
 }

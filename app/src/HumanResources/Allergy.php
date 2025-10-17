@@ -17,8 +17,8 @@ use SilverStripe\Security\Member;
  * @method \SilverStripe\Assets\Image Icon()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Food[] Foods()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -61,5 +61,14 @@ class Allergy extends DataObject
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    public function getIsInFood($foodid)
+    {
+        $foods = $this->Foods()->filter('ID', $foodid);
+        if ($foods->count() > 0) {
+            return true;
+        }
+        return false;
     }
 }

@@ -16,7 +16,9 @@ SilverStripe\ORM\Connect\MySQLDatabase:
   collation: utf8mb4_unicode_ci
 
 Atwx\ViteHelper\Helper\ViteHelper:
-  editor_css: "app/client/src/scss/editor.scss"
+    manifest_path: "/app/client/dist/.vite/manifest.json"  # default
+    output_url: "/app/client/dist/"  # default
+    editor_css: 'app/client/src/scss/editor.scss'
 
 SilverStripe\Core\Injector\Injector:
   DataListFilter.FulltextBoolean:

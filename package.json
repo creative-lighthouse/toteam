@@ -1,23 +1,26 @@
 {
-  "name": "silverstripe-template",
+  "name": "silverstripe-toteam",
   "type": "module",
   "version": "1.0.0",
   "main": "main.js",
-  "author": "Adiwidjaja Teamworks GmbH",
+  "author": "Creative Lighthouse",
   "license": "MIT",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "dotenv": "^17.2.3",
     "sass": "^1.89.2",
-    "vite": "^6"
+    "vite": "^7.1.10"
   },
   "dependencies": {
     "@toast-ui/calendar": "^2.1.3",
     "glightbox": "^3.0.9",
     "swiper": "^9.0.4"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "description": "Project-Management for Teams",
+  "repository": "git@github.com:creative-lighthouse/silverstripe-toteam.git"
 }

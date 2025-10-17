@@ -88,9 +88,50 @@
                                     <a href="$Meals.First.DetailsLink" class="icon-button" title="Mahlzeit ansehen">
                                         <img src="../_resources/app/client/icons/actions/action_eye.svg" alt="" class="button-icon" />
                                     </a>
-                                    <a href="$EditLink" class="icon-button" title="Gericht bearbeiten">
+                                    <a class="icon-button" title="Gericht bearbeiten" onclick="document.getElementById('foodedit-modal-{$ID}').showModal()">
                                         <img src="../_resources/app/client/icons/actions/action_edit.svg" alt="" class="button-icon" />
                                     </a>
+
+                                    <dialog id="foodedit-modal-{$ID}" class="foodedit-modal">
+                                        <button class="dialog-close" onclick="document.getElementById('foodedit-modal-{$ID}').close()">×</button>
+                                        <div class="dialog-header">
+                                            <h3>Essen anbieten</h3>
+                                            <p>$Meals.First.Title - $Meals.First.Parent.RenderDate um $Meals.First.RenderTime Uhr</p>
+                                            <p class="dialog-date"><b>$Title</b></p>
+                                        </div>
+                                        <div class="dialog-content">
+                                            <form method="post" action="$Top.FoodEditLink">
+                                                <div class="field">
+                                                    <label for="title">Name des Gerichts:</label>
+                                                    <input type="text" id="title" name="title" required value="$Title"/>
+                                                </div>
+                                                <div class="field">
+                                                    <label for="notes">Kurze Beschreibung:</label>
+                                                    <textarea id="notes" name="notes">$Notes</textarea>
+                                                </div>
+                                                <div class="field">
+                                                    <label for="foodpreference">Ist dein Gericht Vegan oder Vegetarisch?</label>
+                                                    <select id="foodpreference" name="foodpreference">
+                                                        <option value=""<% if not $FoodPreference %> selected<% end_if %>>Nicht vegan oder vegetarisch</option>
+                                                        <option value="vegan"<% if $FoodPreference == 'vegan' %> selected<% end_if %>>Vegan</option>
+                                                        <option value="vegetarisch"<% if $FoodPreference == 'vegetarisch' %> selected<% end_if %>>Vegetarisch</option>
+                                                    </select>
+                                                </div>
+                                                <div class="field">
+                                                    <legend>Welche Allergien kann dein Gericht auslösen?</legend>
+                                                    <% loop $Top.AllAllergies %>
+                                                        <div class="checkbox-entry">
+                                                            <input <% if $IsInFood($Up.ID) %>checked<% end_if %> type="checkbox" id="allergy-$ID" name="allergies[]" value="$ID" />
+                                                            <label for="allergy-$ID">$Title</label>
+                                                        </div>
+                                                    <% end_loop %>
+                                                </div>
+                                                <input type="hidden" name="mealid" value="$Meals.First.ID" />
+                                                <input type="hidden" name="foodid" value="$ID" />
+                                                <button type="submit" class="button">Gericht bearbeiten</button>
+                                            </form>
+                                        </div>
+                                    </dialog>
                                 </div>
                             </li>
                         <% else %>
