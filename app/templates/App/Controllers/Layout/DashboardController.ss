@@ -76,7 +76,7 @@
                 <ul class="infobox_list mealswithoutfood">
                     <% loop $MealsWithoutFoodSupplied %>
                         <li class="mealswithoutfood--item">
-                            <p><b>$Children.First.Parent.Title ($Children.First.Parent.RenderDate)</b></p>
+                            <p class="list--mealswithoutfood-title"><b>$Children.First.Parent.Title ($Children.First.Parent.RenderDate)</b></p>
                             <ul class="list--mealswithoutfood-meals">
                                 <% loop $Children %>
                                     <li><a href="$DetailsLink">$RenderTime - $Title</a></li>

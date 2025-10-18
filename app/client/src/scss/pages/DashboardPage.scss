@@ -121,6 +121,10 @@
                         border-radius: var(--BorderRadiusSmall);
                         margin-bottom: 10px;
 
+                        .list--mealswithoutfood-title{
+                            padding-left: 10px;
+                        }
+
                         .list--mealswithoutfood-meals{
                             list-style: none;
                             padding: 0;
