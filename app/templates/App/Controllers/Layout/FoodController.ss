@@ -24,7 +24,7 @@
                                                 <% end_loop %>
                                             </ul>
                                             <% else %>
-                                                <p><i>Keine Gerichte verfügbar</i></p>
+                                                <p><i>Noch keine Gerichte angeboten</i></p>
                                             <% end_if %>
                                         </a>
                                     </li>
