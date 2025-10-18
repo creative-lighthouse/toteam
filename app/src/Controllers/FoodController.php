@@ -174,4 +174,23 @@ class FoodController extends BaseController
     {
         return 'food/editfood';
     }
+
+    public static function getMealsWithoutFood()
+    {
+
+        $allmeals = Meal::get()->sort('ParentID', 'DESC')->sort('Time', 'ASC');
+        $meals = $allmeals->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'));
+
+        $mealswithoutfood = DataList::create(Meal::class);
+        foreach ($meals as $meal) {
+            if ($meal->Foods()->count() == 0) {
+                $mealswithoutfood->add($meal);
+            }
+        }
+
+        //Filter mealswithoutfood for future date
+        $mealswithoutfood = $mealswithoutfood->sort(['Parent.Date' => 'ASC', 'Time' => 'ASC']);
+        $mealswithoutfood = GroupedList::create($mealswithoutfood);
+        return $mealswithoutfood;
+    }
 }

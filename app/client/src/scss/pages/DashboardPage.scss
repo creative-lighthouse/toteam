@@ -17,7 +17,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             box-shadow: var(--BoxShadowLight);
 
@@ -37,11 +37,14 @@
 
                 li {
                     justify-content: space-between;
-                    padding: 10px 15px;
                     border-radius: var(--BorderRadiusSmall);
                     background-color: var(--ColorWhite);
                     color: var(--ColorBlack);
                     box-shadow: var(--BoxShadowLight);
+
+                    a {
+                        padding: 10px 15px;
+                    }
 
                     .hl3{
                         margin: 0;
@@ -88,6 +91,57 @@
 
                     .item_value {
                         font-size: 1.2em;
+                    }
+                }
+
+                &.agenda{
+                    .agenda--item{
+                        .hl4{
+                            margin: 10px 0 5px 0;
+                        }
+                        .list--agenda-points, .list--meals{
+                            list-style: none;
+                            padding: 0;
+                            margin: 0;
+
+                            li{
+                                border: 1px solid var(--ColorGray);
+                                padding: 10px;
+                                border-radius: var(--BorderRadiusSmall);
+                                margin-bottom: 10px;
+                            }
+                        }
+                    }
+                }
+
+                &.mealswithoutfood{
+                    .mealswithoutfood--item{
+                        border: 1px solid var(--ColorGray);
+                        padding: 10px 0;
+                        border-radius: var(--BorderRadiusSmall);
+                        margin-bottom: 10px;
+
+                        .list--mealswithoutfood-meals{
+                            list-style: none;
+                            padding: 0;
+                            margin: 0;
+
+                            li{
+                                margin-bottom: 5px;
+
+                                &:first-of-type{
+                                    margin-top: 5px;
+                                }
+
+                                &:last-of-type{
+                                    margin-bottom: 0;
+                                }
+                            }
+                        }
+
+                        &:last-of-type{
+                            margin-bottom: 0;
+                        }
                     }
                 }
             }

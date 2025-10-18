@@ -63,4 +63,9 @@ class DashboardController extends BaseController
         return MealEater::get()
             ->filter(['MemberID' => $currentuser->ID, 'Type' => 'Accept', 'Parent.Parent.Date' => date('Y-m-d')]);
     }
+
+    public function getMealsWithoutFoodSupplied()
+    {
+        return FoodController::getMealsWithoutFood()->GroupedBy('ParentID');
+    }
 }

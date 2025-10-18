@@ -13,8 +13,9 @@
                 <% end_with %>
             </div>
         </div>
+
         <div class="section_infobox">
-            <h2 class="hl2">Deine anstehenden Termine</h2>
+            <h2 class="hl2">Deine anstehenden Termine:</h2>
             <ul class="infobox_list">
                 <% if $UpcomingEventDays %>
                     <% loop $UpcomingEventDays %>
@@ -25,30 +26,66 @@
                 <% end_if %>
             </ul>
         </div>
-        <div class="section_infobox">
-            <h2 class="hl2">Heutige Mahlzeiten</h2>
-            <ul class="infobox_list list--meals">
-                <% if $MealsToday %>
-                    <% loop $MealsToday %>
-                        <li>
-                            <h3 class="hl3">$Parent.Title <span class="meal_time">- $Parent.RenderTime</span></h3>
-                            <% if $Parent.Foods %>
-                                <ul class="list--foods">
-                                    <% loop $Parent.Foods %>
+
+        <% if $CurrentUser.TodaysParticipations.Count > 0 %>
+            <div class="section_infobox">
+                <h2 class="hl2">Das steht heute an:</h2>
+                <ul class="infobox_list agenda">
+                    <% loop $CurrentUser.TodaysParticipations %>
+                        <li class="agenda--item">
+                            <h3 class="hl3">$Parent.Title</h3>
+                            <p><b>Uhrzeit:</b> $Parent.RenderTime</p>
+                            <p><b>Ort:</b> $Parent.Location</p>
+                            <% if $Parent.Description %>
+                                <p>$Parent.Description</p>
+                            <% end_if %>
+                            <% if $Parent.AgendaPoints %>
+                                <h4 class="hl4">Tagesplan</h4>
+                                <ul class="list--agenda-points">
+                                    <% loop $Parent.AgendaPoints %>
                                         <li>
-                                            <p>$Title <span>von $RenderSupplier</span></p>
+                                            <p><strong>$RenderTime:</strong> $Title</p>
+                                            <div>
+                                                $Description
+                                            </div>
                                         </li>
                                     <% end_loop %>
                                 </ul>
-                            <% else %>
-                                <p>Noch kein Gericht eingetragen</p>
                             <% end_if %>
+                            <% if $Parent.Meals %>
+                                <h4 class="hl4">Mahlzeiten</h4>
+                                <ul class="list--meals">
+                                    <% loop $Parent.Meals %>
+                                        <li>
+                                            <p><strong>$RenderTime:</strong> $Title</p>
+                                        </li>
+                                    <% end_loop %>
+                                </ul>
+                            <% end_if %>
+                            <a class="button" href="$Parent.Link">Termindetails anzeigen</a>
                         </li>
                     <% end_loop %>
-                <% else %>
-                    <li>Du hast heute keine Mahlzeiten</li>
-                <% end_if %>
-            </ul>
-        </div>
+                </ul>
+            </div>
+        <% end_if %>
+
+        <% if $MealsWithoutFoodSupplied %>
+            <div class="section_infobox">
+                <h2 class="hl2">Es gibt aktuell Mahlzeiten ohne Gerichte:</h2>
+                <p>Kannst du ggf. zu einer dieser Mahlzeiten etwas zum Essen beisteuern?</p>
+                <ul class="infobox_list mealswithoutfood">
+                    <% loop $MealsWithoutFoodSupplied %>
+                        <li class="mealswithoutfood--item">
+                            <a href="$Children.First.Parent.Link"><b>$Children.First.Parent.Title ($Children.First.Parent.RenderDate)</b></a>
+                            <ul class="list--mealswithoutfood-meals">
+                                <% loop $Children %>
+                                    <li><a href="$DetailsLink">$RenderTime - $Title</a></li>
+                                <% end_loop %>
+                            </ul>
+                        </li>
+                    <% end_loop %>
+                </ul>
+            </div>
+        <% end_if %>
     </div>
 </div>

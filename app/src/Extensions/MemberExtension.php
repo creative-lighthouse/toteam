@@ -148,4 +148,10 @@ class MemberExtension extends Extension
         }
         return $this->getGravatar(200);
     }
+
+    public function getTodaysParticipations()
+    {
+        $today = date('Y-m-d');
+        return $this->getParticipations()->filter('Parent.Date', $today)->filterAny('Type', ['Accept', 'Maybe']);
+    }
 }

@@ -5,7 +5,7 @@
         <% with $Meal %>
             <div class="section_mealdetails">
                 <div class="mealbox mealbox--mealheader">
-                    <h2 class="hl2">$Title</h2>
+                    <h2 class="hl2">$Parent.Title - $Title</h2>
                     <h3>$Parent.RenderDate | $RenderTime Uhr</h3>
                     <h4>$Parent.Parent.Title</h4>
                 </div>
@@ -14,11 +14,7 @@
                         <% if $Foods.Count > 0 %>
                             <% loop $Foods.Sort("Status") %>
                                 <li class="fooditem fooditem--$Status">
-                                    <% if $Status == "Accepted" %>
-                                        <img class="fooditem_statusicon" src="../_resources/app/client/icons/states/state_accepted.svg" alt="Akzeptiert">
-                                    <% else_if $Status == "Rejected" %>
-                                        <img class="fooditem_statusicon" src="../_resources/app/client/icons/states/state_decline.svg" alt="Abgelehnt">
-                                    <% else_if $Status == "New" %>
+                                    <% if $Status == "New" %>
                                         <img class="fooditem_statusicon" src="../_resources/app/client/icons/states/state_new.svg" alt="Neu">
                                     <% end_if %>
                                     <h3 class="hl3 fooditem_title">$Title</h3>
