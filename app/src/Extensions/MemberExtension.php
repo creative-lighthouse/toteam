@@ -64,7 +64,7 @@ class MemberExtension extends Extension
     public function updateCMSFields(FieldList $fields)
     {
         $fields->replaceField('FoodPreference', DropdownField::create('FoodPreference', 'Essenspräferenz', [
-            'None' => 'Keine Besonderheiten',
+            'None' => 'Keine',
             'Vegetarian' => 'Vegetarisch',
             'Vegan' => 'Vegan',
         ]));
@@ -96,7 +96,7 @@ class MemberExtension extends Extension
             case 'Vegan':
                 return 'Vegan';
             default:
-                return 'Keine Besonderheiten';
+                return 'Keine';
         }
     }
 
