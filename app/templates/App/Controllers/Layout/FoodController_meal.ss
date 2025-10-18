@@ -37,7 +37,7 @@
                         <% end_if %>
                     </ul>
 
-                    <a class="button" onclick="document.getElementById('foodadd-modal-{$ID}').showModal()" aria-label="Essen für $Title am $Parent.RenderDate um $RenderTime Uhr anbieten" title="Essen anbieten">Weiteres Gericht anbieten</a>
+                    <a class="button" onclick="document.getElementById('foodadd-modal-{$ID}').showModal()" aria-label="Essen für $Title am $Parent.RenderDate um $RenderTime Uhr anbieten" title="Essen anbieten"><% if $Foods.Count > 0 %>Weiteres <% end_if %>Gericht anbieten</a>
 
                     <dialog id="foodadd-modal-{$ID}" class="foodadd-modal">
                         <button class="dialog-close" onclick="document.getElementById('foodadd-modal-{$ID}').close()">×</button>
