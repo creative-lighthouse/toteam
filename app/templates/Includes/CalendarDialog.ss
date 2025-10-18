@@ -11,10 +11,12 @@
         <% end_if %>
     </div>
     <div class="dialog-content">
-        <details class="dialog-infobox">
+        <% if $Description %>
+            <details class="dialog-infobox">
             <summary class="dialog-summary dialog-headline">Details</summary>
             <p class="dialog-summary-content">$Description</p>
-        </details>
+            </details>
+        <% end_if %>
         <div class="dialog-infobox infobox--participation">
             <p class="dialog-headline">Bist du dabei?</p>
             <form class="event-response-actions" method="post" action="/calendar/changeParticipation/{$ID}">
