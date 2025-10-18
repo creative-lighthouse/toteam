@@ -126,10 +126,15 @@ class Calendar
                     }
                 }
             }
+            $currentDate = date('Y-m-d');
+            $dateStr = date('Y-m-d', strtotime(($this->active_month - 1) . '/' . ($num_days_last_month - $i + 1) . '/' . $this->active_year));
+            $isToday = ($dateStr === $currentDate);
+            
             $days[] = ArrayData::create([
                 'Number' => $num_days_last_month - $i + 1,
                 'IsCurrentMonth' => false,
                 'IsSelected' => false,
+                'IsToday' => $isToday,
                 'EventDays' => ArrayList::create([]),
             ]);
         }
@@ -138,6 +143,8 @@ class Calendar
         for ($i = 1; $i <= $num_days; $i++) {
             $isSelected = ($i == $this->active_day);
             $dateStr = $this->active_year . '-' . $this->active_month . '-' . str_pad($i, 2, '0', STR_PAD_LEFT);
+            $currentDate = date('Y-m-d');
+            $isToday = ($dateStr === $currentDate);
             $events = [];
             foreach ($this->events as $event) {
                 for ($d = 0; $d <= ($event[2] - 1); $d++) {
@@ -156,6 +163,7 @@ class Calendar
                 'Number' => $i,
                 'IsCurrentMonth' => true,
                 'IsSelected' => $isSelected,
+                'IsToday' => $isToday,
                 'EventDays' => $this->getEventsForDay($dateStr),
             ]);
         }
@@ -163,10 +171,15 @@ class Calendar
         // Fill up to 42 days (6 weeks)
         $total = count($days);
         for ($i = 1; $i <= (35 - $total); $i++) {
+            $currentDate = date('Y-m-d');
+            $dateStr = date('Y-m-d', strtotime(($this->active_month + 1) . '/' . $i . '/' . $this->active_year));
+            $isToday = ($dateStr === $currentDate);
+            
             $days[] = ArrayData::create([
                 'Number' => $i,
                 'IsCurrentMonth' => false,
                 'IsSelected' => false,
+                'IsToday' => $isToday,
                 'EventDays' => ArrayList::create([])
             ]);
         }

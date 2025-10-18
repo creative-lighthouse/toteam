@@ -99,6 +99,10 @@
             &:nth-child(7n+1) {
                 border-left: 1px solid var(--ColorLightGray);
             }
+
+            &.date-today{
+                background-color: var(--ColorLightGray);
+            }
         }
     }
 }

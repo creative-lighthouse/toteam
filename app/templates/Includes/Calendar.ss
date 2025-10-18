@@ -23,7 +23,7 @@
         </div>
 
         <% loop $CalendarDays %>
-            <div class="day_num<% if not $IsCurrentMonth %> ignore<% end_if %><% if not $IsCurrentMonth %>not-current-month<% end_if %>">
+            <div class="day_num<% if not $IsCurrentMonth %> ignore<% end_if %><% if not $IsCurrentMonth %>not-current-month<% end_if %><%if $IsToday %> date-today<% end_if %>">
                 <% if $IsCurrentMonth %><p class="day_number">$Number</p><% end_if %>
                 <% loop $EventDays %>
                     <div class="event event--color-$ParticipationOfCurrentUser.Type" onclick="document.getElementById('event-modal-{$ID}').showModal()">
