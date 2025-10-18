@@ -1,0 +1,23 @@
+.introbar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    padding: 10px 0;
+    view-transition-name: introbar;
+
+    .introbar-title{
+        text-align: center;
+        color: var(--ColorPrimary);
+    }
+
+    .introbar-action {
+        padding: 5px;
+        width: 30px;
+        height: 30px;
+
+        .introbar-icon {
+            width: 100%;
+            height: 100%;
+        }
+    }
+}

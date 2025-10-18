@@ -64,15 +64,18 @@ class EventDayParticipation extends DataObject
         return $fields;
     }
 
-    public function getDay() {
+    public function getDay()
+    {
         return $this->Parent();
     }
 
-    public function getEvent() {
+    public function getEvent()
+    {
         return $this->Parent()->getEvent();
     }
 
-    public function RenderType() {
+    public function RenderType()
+    {
         switch ($this->Type) {
             case 'Accept':
                 return 'Zugesagt';
@@ -85,17 +88,19 @@ class EventDayParticipation extends DataObject
         }
     }
 
-    public function FormatTimeStart() {
+    public function FormatTimeStart()
+    {
         return $this->TimeStart ? (new \DateTime($this->TimeStart))->format('H:i') : '';
     }
 
-    public function FormatTimeEnd() {
+    public function FormatTimeEnd()
+    {
         return $this->TimeEnd ? (new \DateTime($this->TimeEnd))->format('H:i') : '';
     }
 
     public function RenderTime()
     {
-        if($this->TimeStart && $this->TimeEnd) {
+        if ($this->TimeStart && $this->TimeEnd) {
             return $this->FormatTimeStart() . " - " . $this->FormatTimeEnd();
         } elseif ($this->TimeStart) {
             return "ab " . $this->FormatTimeStart();

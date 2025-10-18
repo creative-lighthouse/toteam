@@ -1,10 +1,9 @@
 @use "../variables" as *;
 
 .section.section--CalendarPage {
-    margin: 0 auto;
-
-    .copy-btn {
-        margin: 20px 0;
-        border: none;
+    .section_content{
+        .copy-btn {
+            margin: 20px 0;
+        }
     }
 }

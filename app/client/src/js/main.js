@@ -2,6 +2,13 @@ import Swiper, {Autoplay, EffectCoverflow, EffectFade, Navigation, Pagination} f
 import GLightbox from "glightbox";
 
 document.addEventListener("DOMContentLoaded", function () {
+    const mainnavButton = document.querySelector('[data-action="toggle-secnav"]');
+
+    if (mainnavButton) {
+        mainnavButton.addEventListener('click', function () {
+            document.body.classList.toggle('secnav--open');
+        });
+    }
 
     // INIT LIGHTBOX
     const lightbox = GLightbox({
@@ -83,16 +90,16 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             navigator.clipboard.writeText(targetText)
-                .then(() => {
-                    const feedback = button.parentElement.querySelector('.copy-feedback');
-                    if (feedback) {
-                        feedback.style.display = 'inline';
-                        setTimeout(() => feedback.style.display = 'none', 2000);
-                    }
-                })
-                .catch(err => {
-                    console.error("Fehler beim Kopieren:", err);
-                });
+            .then(() => {
+                const feedback = button.parentElement.querySelector('.copy-feedback');
+                if (feedback) {
+                    feedback.style.display = 'inline';
+                    setTimeout(() => feedback.style.display = 'none', 2000);
+                }
+            })
+            .catch(err => {
+                console.error("Fehler beim Kopieren:", err);
+            });
         });
     });
 });

@@ -6,9 +6,11 @@
 @use "normalize.scss";
 @use "typography.scss";
 @use "forms.scss";
-@use "calendar.scss";
 
 @use "layout/header.scss";
+@use "layout/introbar.scss";
+@use "layout/dialog.scss";
+@use "layout/calendar.scss";
 
 @use "pages/DashboardPage.scss";
 @use "pages/RegistrationPage.scss";
@@ -27,44 +29,6 @@ html{
     scroll-behavior: smooth;
 }
 
-.section {
-    max-width: var(--MaxWidth);
-    margin: 50px auto;
-    padding: 0 20px;
-}
-
-.section_content{
-    margin: 0 auto;
-}
-
-.section_intro{
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 15px;
-    border-radius: 0 0 20px 20px;
-    border: 1px solid var(--ColorGray);
-    background-color: var(--ColorPrimary);
-    width: 100%;
-    view-transition-name: section-intro;
-
-    .hl1{
-        margin: 0;
-        font-size: 30px;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: var(--ColorWhite);
-        view-transition-name: section-introtitle;
-    }
-
-    p{
-        margin: 10px auto 0 auto;
-        font-size: 14px;
-        font-weight: 300;
-        color: var(--ColorGray);
-        max-width: 800px;
-    }
-}
-
 //Styles to make the footer stick to the bottom of the page
 body {
     min-height: 100vh;
@@ -77,7 +41,7 @@ body {
         "footer";
     width: 100%;
     overflow-x: hidden;
-    background-color: var(--ColorWhite);
+    background-color: var(--ColorLightGray);
 
     .area_header {
         grid-area: header;
@@ -88,7 +52,24 @@ body {
         grid-area: content;
         width: 100%;
         margin: 0 auto;
-        margin-top: 75px;
+
+        .section {
+            max-width: var(--MaxWidth);
+            margin: 50px auto;
+            padding: 0 20px;
+
+            &:first-of-type {
+                margin-top: 0;
+            }
+
+            &:last-of-type {
+                margin-bottom: 80px;
+            }
+        }
+
+        .section_content{
+            margin: 0 auto;
+        }
 
         @include media(max-medium) {
             margin-top: -2px;
@@ -138,12 +119,12 @@ body {
     top: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #79f291;
+    background-color: var(--ColorStatusGood);
     color: #000;
     padding: 10px 20px;
-    border-radius: 4px;
+    border-radius: var(--BorderRadiusSmall);
     font-size: 14px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--BoxShadowLight);
     opacity: 1;
     transition: all 0.5s ease;
     animation: fadeIn 0.3s;
@@ -154,75 +135,36 @@ body {
     }
 }
 
+.pwa-install-banner{
+    grid-column: span 2;
+    display: none; /* Hidden by default, shown via JS */
+    position: relative;
+    background: var(--ColorPrimaryLight);
+    padding: 1em;
+    text-align: center;
+    font-size: 1.1em;
+    border-radius: var(--BorderRadiusSmall);
+    margin-bottom: 20px;
+
+    .pwa-install-text{
+        margin: 0 0 5px 0;
+        padding: 0 20px;
+        color: var(--ColorPrimary);
+    }
+
+    .pwa-install-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: transparent;
+        color: var(--ColorPrimary);
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+    }
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-}
-
-dialog{
-    border: none;
-    max-width: 400px;
-    width: 90%;
-    border-radius: 10px;
-    border: none;
-    font-weight: 500;
-    padding: 0;
-    text-align: center;
-
-    form{
-        padding: 0;
-        border: none;
-        box-shadow: none;
-        background-color: transparent;
-    }
-
-    .dialog-header{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        width: 100%;
-        background-color: black;
-        padding: 15px 20px;
-        color: white;
-
-        .dialog-title{
-            margin: 0;
-        }
-
-        .dialog-date{
-            margin: 0;
-        }
-
-        .dialog-description{
-            margin: 0;
-            text-align: start;
-        }
-    }
-
-    .dialog-content{
-        padding: 20px;
-    }
-
-    .dialog-close{
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: white;
-    }
-
-    h1, h2, h3, h4{
-        margin: 0 0 10px 0;
-    }
-
-    &::backdrop {
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(5px);
-        z-index: -1;
-    }
 }

@@ -1,9 +1,6 @@
 @use "../variables" as *;
 
 .section.section--RegistrationPage {
-    margin: 0 auto;
-    padding: 0 20px;
-
     .section_content{
         text-align: center;
         .section_form {
@@ -19,7 +16,7 @@
                 font-weight: bold;
                 background-color: var(--ColorPrimary);
                 padding: 5px 10px;
-                border-radius: 5px;
+                border-radius: var(--BorderRadiusSmall);
                 border: none;
                 color: white;
 

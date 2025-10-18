@@ -10,6 +10,7 @@ use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
+use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\Model\List\GroupedList;
 
@@ -148,7 +149,14 @@ class EventDay extends DataObject
 
     public function getGroupedParticipations()
     {
-        return GroupedList::create($this->Participations());
+        // Sortiere nach fester Reihenfolge: Accept, Maybe, Decline (in PHP)
+        $order = ['Accept', 'Maybe', 'Decline'];
+        $participations = $this->Participations()->toArray();
+        usort($participations, function ($a, $b) use ($order) {
+            return array_search($a->Type, $order) <=> array_search($b->Type, $order);
+        });
+        $participationsdatalist = ArrayList::create($participations);
+        return GroupedList::create($participationsdatalist);
     }
 
     public function FormatTimeStart()

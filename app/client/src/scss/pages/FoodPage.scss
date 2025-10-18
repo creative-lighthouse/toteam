@@ -1,43 +1,85 @@
 @use "../variables" as *;
 
 .section.section--FoodPage{
-    margin: 0 auto 15px auto;
-
     .section_content{
         display: flex;
         flex-direction: column;
         gap: 20px;
         width: 100%;
 
-        .section_intro{
-            margin-bottom: 10px;
-        }
-
         .section_foodbox{
-            background-color: var(--ColorWhite);
-            border: 1px solid var(--ColorLightGrey);
-            border-radius: 8px;
 
-            .hl2{
-                margin-bottom: 10px;
-            }
-
-            p{
-                margin-bottom: 20px;
-            }
-
-            .section_dayslist{
+            .foodbox-grid{
+                gap: 20px;
                 list-style: none;
-                margin: 0;
                 padding: 0;
+                margin: 10px 0 0 0;
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
 
-                .section_day{
-                    background-color: var(--ColorGray);
-                    border-radius: 10px;
+                .foodbox-day{
+                    background-color: var(--ColorWhite);
+                    border-radius: var(--BorderRadiusMedium);
                     padding: 20px;
+                    margin: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+
+                    .meallist{
+                        list-style: none;
+                        padding: 0px;
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 15px;
+
+                        .meallist-entry{
+                            border: 1px solid var(--ColorLightGray);
+                            border-radius: var(--BorderRadiusSmall);
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+
+                            .meallist-entry-link{
+                                padding: 10px;
+                                flex-grow: 1;
+                                text-decoration: none;
+                                color: var(--ColorTextPrimary);
+
+                                &:hover{
+                                    background-color: var(--ColorVeryLightGray);
+                                }
+
+                                .foodlist {
+                                    list-style: none;
+                                    padding: 0;
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 10px;
+                                    margin-top: 10px;
+
+                                    .foodlist-entry{
+                                        background-color: var(--ColorLightGray);
+                                        border-radius: 20px;
+                                        display: inline-block;
+                                        padding: 5px 10px;
+
+                                        .food-title{
+                                            font-size: 0.9rem;
+                                            color: var(--ColorTextSecondary);
+
+                                            .foodlist-entry-supplier{
+                                                font-style: italic;
+                                                font-size: 12px;
+                                                color: var(--ColorTextLight);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 @include media(max-desktop) {
@@ -48,36 +90,67 @@
                     grid-template-columns: 1fr;
                 }
             }
+        }
 
-            .meallist{
+        hr{
+            background-color: var(--ColorWhite);
+            height: 2px;
+            width: 100%;
+            border: none;
+        }
+
+        .section_foodbox--suppliedfoods{
+            list-style: none;
+            padding: 20px ;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            background-color: var(--ColorWhite);
+            border-radius: var(--BorderRadiusMedium);
+
+            .foodbox-list{
                 list-style: none;
-                margin: 0;
                 padding: 0;
+                margin: 20px 0 0 0;
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
+                gap: 15px;
 
                 .meallist-entry{
+                    border-radius: var(--BorderRadiusSmall);
+                    border: 1px solid var(--ColorLightGray);
+                    padding: 10px 20px;
+                    margin: 0;
                     display: flex;
-                    justify-content: space-between;
                     align-items: center;
-                    background-color: var(--ColorLightGray);
-                    padding: 10px;
-                    border-radius: 5px;
-
-                    .food-actions{
-                        display: flex;
-                        gap: 10px;
-                        height: 100%;
-                        align-items: center;
-                    }
+                    justify-content: space-between;
                 }
+            }
 
-                &.meallist--suppliedfoods{
-                    .meallist-entry{
-                        background-color: var(--ColorGray);
-                    }
+            summary{
+                position: relative;
+                padding-right: 25px;
+                cursor: pointer;
+
+                &::after{
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    right: 10px;
+                    transform: translateY(30px);
+                    float: right;
+                    width: 15px;
+                    height: 15px;
+                    border-right: 2px solid var(--ColorGray);
+                    border-bottom: 2px solid var(--ColorGray);
+                    transform: translateY(-5px) rotate(45deg);
+                    transition: all 0.3s ease;
                 }
+            }
+
+            &[open] summary::after{
+                transform: translateY(-5px) rotate(225deg);
             }
         }
     }
@@ -102,7 +175,7 @@
             .fooditem{
                 background-color: var(--ColorLightGray);
                 padding: 20px;
-                border-radius: 10px;
+                border-radius: var(--BorderRadiusMedium);
                 position: relative;
 
                 p{

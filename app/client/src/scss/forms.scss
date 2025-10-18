@@ -11,9 +11,9 @@ form {
     margin: 0 auto;
     padding: 20px;
     border: 1px solid #ccc;
-    border-radius: 15px;
+    border-radius: var(--BorderRadiusMedium);
     background-color: #f9f9f9;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: var(--BoxShadowLight);
 
     fieldset{
         border: none;
@@ -56,7 +56,7 @@ form {
             padding: 10px;
             margin: 5px 0;
             border: 1px solid #ccc;
-            border-radius: 10px;
+            border-radius: var(--BorderRadiusMedium);
             height: 40px;
 
             &[type="checkbox"]{
@@ -86,7 +86,7 @@ form {
                     width: 35px;
                     height: 20px;
                     border: 1px solid #ccc;
-                    border-radius: 15px;
+                    border-radius: var(--BorderRadiusMedium);
                     background-color: #fff;
                     cursor: pointer;
                     position: absolute;
@@ -101,7 +101,7 @@ form {
                     display: block;
                     width: 15px;
                     height: 15px;
-                    border-radius: 10px;
+                    border-radius: var(--BorderRadiusMedium);
                     background-color: var(--ColorPrimary);
                     cursor: pointer;
                     position: absolute;
@@ -135,7 +135,7 @@ form {
         input[type="submit"], button{
             padding: 10px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--BorderRadiusSmall);
             background-color: var(--ColorPrimary);
             color: var(--ColorWhite);
             cursor: pointer;

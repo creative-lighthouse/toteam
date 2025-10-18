@@ -1,70 +1,32 @@
 <div class="section section--FoodPage">
+    <% include IntroBar Title="Essensplanung", Description="Hier findest du alles zum Thema essen. Biete Essen für die Mahlzeiten an oder schaue dir an welche Mahlzeiten geplant sind" %>
     <div class="section_content">
-        <div class="section_intro">
-            <h1 class="hl1">Essensplanung</h1>
-            <p>Hier findest du alles zum Thema essen. Biete Essen für die Mahlzeiten an oder schaue dir an welche Mahlzeiten geplant sind</p>
-        </div>
-
         <div class="section_foodbox">
-            <h2 class="hl2">Mahlzeiten ohne Gerichte</h2>
-            <p>Die folgenden Mahlzeiten haben noch keine Essensangebote. Wenn du Essen für eine dieser Mahlzeiten anbieten möchtest, klicke auf "Essen anbieten".</p>
-            <% if $MealsWithoutFood.GroupedBy('ParentID').Count > 0 %>
-                <ul class="section_dayslist dayslist--mealswithoutfood">
-                    <% loop $MealsWithoutFood.GroupedBy('ParentID') %>
-                        <li class="section_day">
+            <% if $Meals.GroupedBy('ParentID').First.Children.Count > 0 %>
+                <ul class="foodbox-grid">
+                    <% loop $Meals.GroupedBy('ParentID') %>
+                        <li class="foodbox-day">
                             <% with $Children.First.Parent %>
-                                <strong>$Title</strong> am $RenderDate
-                                <p>$Up.Children.Count Mahlzeiten <i>ohne Essensangebot</i></p>
+                                <h2>$Title</h2>
+                                <p>am $RenderDate</p>
                             <% end_with %>
                             <ul class="meallist eventday-meallist">
                                 <% loop $Children %>
-                                    <li class="meallist-entry mealwithoutfood">
-                                        <span class="mealwithoutfood-title"><b>$Title</b> um $RenderTime Uhr</span>
-                                        <div class="food-actions">
-                                            <a class="icon-button" onclick="document.getElementById('foodadd-modal-{$ID}').showModal()" aria-label="Essen für $Title am $Parent.RenderDate um $RenderTime Uhr anbieten" title="Essen anbieten">
-                                                <img src="../_resources/app/client/icons/actions/action_addfood.svg" alt="" class="button-icon" />
-                                            </a>
-                                        </div>
-
-                                        <dialog id="foodadd-modal-{$ID}" class="foodadd-modal">
-                                            <button class="dialog-close" onclick="document.getElementById('foodadd-modal-{$ID}').close()">×</button>
-                                            <div class="dialog-header">
-                                                <h3>Essen anbieten</h3>
-                                                <h4>$Parent.Title - $Title</h4>
-                                                <p class="dialog-date">$Parent.RenderDate um $RenderTime Uhr</p>
-                                            </div>
-                                            <div class="dialog-content">
-                                                <form method="post" action="$Top.FoodAddLink">
-                                                    <div class="field">
-                                                        <label for="title">Name des Gerichts:</label>
-                                                        <input type="text" id="title" name="title" required />
-                                                    </div>
-                                                    <div class="field">
-                                                        <label for="notes">Kurze Beschreibung:</label>
-                                                        <textarea id="notes" name="notes"></textarea>
-                                                    </div>
-                                                    <div class="field">
-                                                        <label for="foodpreference">Ist dein Gericht Vegan oder Vegetarisch?</label>
-                                                        <select id="foodpreference" name="foodpreference">
-                                                            <option value="">Nicht vegan oder vegetarisch</option>
-                                                            <option value="vegan">Vegan</option>
-                                                            <option value="vegetarisch">Vegetarisch</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="field">
-                                                        <legend>Welche Allergien kann dein Gericht auslösen?</legend>
-                                                        <% loop $Top.AllAllergies %>
-                                                            <div class="checkbox-entry">
-                                                                <input type="checkbox" id="allergy-$ID" name="allergies[]" value="$ID" />
-                                                                <label for="allergy-$ID">$Title</label>
-                                                            </div>
-                                                        <% end_loop %>
-                                                    </div>
-                                                    <input type="hidden" name="mealid" value="$ID" />
-                                                    <button type="submit" class="button">Essen anbieten</button>
-                                                </form>
-                                            </div>
-                                        </dialog>
+                                    <li class="meallist-entry allmeals_meal">
+                                        <a class="meallist-entry-link" href="$DetailsLink" title="Mahlzeit ansehen" aria-label="Mahlzeit $Title am $Parent.RenderDate um $RenderTime Uhr ansehen">
+                                            <span class="meal-title"><b>$Title</b> um $RenderTime Uhr</span>
+                                            <% if $Foods.Count > 0 %>
+                                            <ul class="foodlist">
+                                                <% loop $Foods %>
+                                                    <li class="foodlist-entry">
+                                                        <span class="food-title">$Title <i class="foodlist-entry-supplier">($Supplier.FirstName)</i></span>
+                                                    </li>
+                                                <% end_loop %>
+                                            </ul>
+                                            <% else %>
+                                                <p><i>Keine Gerichte verfügbar</i></p>
+                                            <% end_if %>
+                                        </a>
                                     </li>
                                 <% end_loop %>
                             </ul>
@@ -72,14 +34,18 @@
                     <% end_loop %>
                 </ul>
             <% else %>
-                <p>Es sind aktuell keine Mahlzeiten ohne Essensangebote vorhanden.</p>
+                <p>Es sind aktuell keine Mahlzeiten geplant.</p>
             <% end_if %>
         </div>
 
-        <div class="section_foodbox">
-            <h2 class="hl2">Von dir angebotene Gerichte:</h2>
-            <% if $UserSuppliedFoods.Count > 0 %>
-                <ul class="meallist meallist--suppliedfoods">
+        <hr>
+
+        <% if $UserSuppliedFoods.Count > 0 %>
+            <details class="section_foodbox section_foodbox--suppliedfoods">
+                <summary>
+                    <h2 class="hl2">Von dir angebotene Gerichte:</h2>
+                </summary>
+                <ul class="foodbox-list">
                     <% loop $UserSuppliedFoods %>
                         <% if $Meals.Count > 0 %>
                             <li class="meallist-entry">
@@ -142,37 +108,7 @@
                         <% end_if %>
                     <% end_loop %>
                 </ul>
-            <% else %>
-                <p>Es sind aktuell keine angebotenen Gerichte von dir in der Zukunft</p>
-            <% end_if %>
-        </div>
-
-        <div class="section_foodbox">
-            <h2 class="hl2">Alle anstehenden Mahlzeiten</h2>
-            <% if $Meals.GroupedBy('ParentID').First.Children.Count > 0 %>
-                <ul class="section_dayslist dayslist--allmeals">
-                    <% loop $Meals.GroupedBy('ParentID') %>
-                        <li class="section_day">
-                            <% with $Children.First.Parent %>
-                                <strong>$Title</strong> am $RenderDate
-                                <p>$Up.Children.Count anstehende Mahlzeiten</p>
-                            <% end_with %>
-                            <ul class="meallist eventday-meallist">
-                                <% loop $Children %>
-                                    <li class="meallist-entry allmeals_meal">
-                                        <span class="meal-title"><b>$Title</b> um $RenderTime Uhr</span>
-                                        <a href="$DetailsLink" class="icon-button" title="Mahlzeit ansehen" aria-label="Mahlzeit $Title am $Parent.RenderDate um $RenderTime Uhr ansehen">
-                                            <img src="../_resources/app/client/icons/actions/action_eye.svg" alt="" class="button-icon" />
-                                        </a>
-                                    </li>
-                                <% end_loop %>
-                            </ul>
-                        </li>
-                    <% end_loop %>
-                </ul>
-            <% else %>
-                <p>Es sind aktuell keine Mahlzeiten ohne Essensangebote vorhanden.</p>
-            <% end_if %>
-        </div>
+            </details>
+        <% end_if %>
     </div>
 </div>

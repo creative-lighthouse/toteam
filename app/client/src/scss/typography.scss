@@ -1,14 +1,14 @@
 @use "variables" as *;
 
 body{
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Encode Sans', sans-serif;
     font-size: 16px;
     font-weight: 400;
 }
 
 h1, h2, h3, h4, h5{
     font-weight: 700;
-
+    margin: 0;
 }
 
 h1{
@@ -16,7 +16,7 @@ h1{
 }
 
 p {
-    margin: 0 0 30px 0;
+    margin: 0;
 
     &.text-left {
         text-align: left;
@@ -58,19 +58,21 @@ a {
 }
 
 .button {
-    background-color: var(--ColorButton);
-    color: var(--ColorButtonText);
+    background-color: var(--ColorPrimary);
+    color: var(--ColorWhite);
     display: inline-block;
     font-size: 16px;
     text-wrap: nowrap;
     font-weight: bold;
-    border-radius: 4px;
+    border-radius: var(--BorderRadiusSmall);
     padding: 9px 12px;
     text-decoration: none;
     transition: 0.2s ease-in-out;
     box-shadow: none;
     appearance: none;
     border: none;
+    border: 1px solid transparent;
+    margin: 10px 0 0 0;
 
     &.button--arrow {
         padding-right: 25px;
@@ -95,7 +97,9 @@ a {
     }
 
     &:hover {
-        background-color: var(--ColorButtonHover);
+        background-color: transparent;
+        border: 1px solid var(--ColorPrimary);
+        color: var(--ColorPrimary);
     }
 
     @include media(max-desktop) {
@@ -111,7 +115,7 @@ a {
     font-size: 16px;
     text-wrap: nowrap;
     font-weight: bold;
-    border-radius: 4px;
+    border-radius: var(--BorderRadiusSmall);
     padding: 13px 35px;
     text-decoration: none;
     transition: 0.2s ease-in-out;
@@ -131,7 +135,7 @@ a {
 kbd {
     display: inline-block;
     width: auto;
-    border-radius: 3px;
+    border-radius: var(--BorderRadiusSmall);
     border: 1px solid #b4b4b4;
     color: #333333;
     display: inline-block;

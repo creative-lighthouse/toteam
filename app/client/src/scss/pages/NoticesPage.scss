@@ -1,15 +1,13 @@
 @use "../variables" as *;
 
 .section.section--NoticesPage {
-    margin: 0 auto;
-
     .section_content{
         .back-link{
             text-decoration: none;
             font-weight: bold;
             background-color: var(--ColorPrimary);
             padding: 5px 10px;
-            border-radius: 5px;
+            border-radius: var(--BorderRadiusSmall);
             border: none;
             color: white;
 
@@ -25,8 +23,7 @@
             .notice_item_wrapper{
                 margin-bottom: 20px;
                 background-color: var(--ColorWhite);
-                border-radius: 10px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                border-radius: var(--BorderRadiusMedium);
                 transition: box-shadow 0.3s ease;
 
                 .notice_item{
@@ -45,7 +42,7 @@
                 }
 
                 &:hover {
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    box-shadow: var(--BoxShadowLight);
                 }
             }
         }

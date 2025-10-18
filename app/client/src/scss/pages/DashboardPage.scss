@@ -1,9 +1,6 @@
 @use "../variables" as *;
 
 .section.section--DashboardPage {
-    margin: 0 auto;
-    margin-top: 20px;
-
     .section_content{
         display: grid;
         grid-template-columns: repeat(2, calc(50% - 10px));
@@ -14,7 +11,7 @@
             background-color: var(--ColorWhite);
             color: var(--ColorBlack);
             padding: 20px;
-            border-radius: 5px;
+            border-radius: var(--BorderRadiusMedium);
             width: 100%;
             height: 100%;
             display: flex;
@@ -22,7 +19,7 @@
             gap: 10px;
             justify-content: center;
             align-items: center;
-            border: 1px solid var(--ColorGray);
+            box-shadow: var(--BoxShadowLight);
 
             .hl1, p{
                 margin: 0;
@@ -41,10 +38,10 @@
                 li {
                     justify-content: space-between;
                     padding: 10px 15px;
-                    border-radius: 5px;
+                    border-radius: var(--BorderRadiusSmall);
                     background-color: var(--ColorWhite);
                     color: var(--ColorBlack);
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    box-shadow: var(--BoxShadowLight);
 
                     .hl3{
                         margin: 0;
@@ -67,7 +64,7 @@
                             background-color: var(--ColorGrayLight);
                             color: var(--ColorBlack);
                             padding: 3px 8px;
-                            border-radius: 3px;
+                            border-radius: var(--BorderRadiusSmall);
                             font-size: 0.9em;
                         }
                     }
@@ -95,54 +92,63 @@
                 }
             }
 
-            @include media(max-medium) {
+            &.infobox--welcome{
+                overflow: hidden;
+                position: relative;
+                background-color: var(--ColorPrimary);
                 grid-column: span 2;
-            }
-        }
 
-        .pwa-install-banner{
-            grid-column: span 2;
-            display: none; /* Hidden by default, shown via JS */
-            position: relative;
-            background: var(--ColorPrimary);
-            color: var(--ColorWhite);
-            padding: 1em;
-            text-align: center;
-            font-size: 1.1em;
-            border-radius: 5px;
+                .welcome_text{
+                    z-index: 1;
+                    text-align: left;
+                    width: 100%;
+                    padding-right: 70px;
+                    transform: rotate(-1deg);
+                    font-size: 18px;
+                    font-family: "Neucha", cursive;
+                }
 
-            .pwa-install-text{
-                margin: 0 0 5px 0;
-                padding: 0 20px;
-            }
+                .welcome_profileimage{
+                    position: absolute;
+                    top: 5px;
+                    right: -10px;
+                    height: 100%;
+                    border-radius: 50%;
+                    margin-bottom: 10px;
+                    overflow: hidden;
+                    z-index: 1;
 
-            .pwa-install-btn{
-                .pwa-install-btn-action {
-                    background: var(--ColorWhite);
-                    color: var(--ColorPrimary);
-                    border: none;
-                    padding: 0.5em 1em;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-weight: bold;
-                    margin-top: 0.5em;
-                    transition: 0.2s ease-in-out;
+                    img{
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                }
 
-                    &:hover {
-                        background: var(--ColorGray);
+                &::after {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: -5%;
+                    width: 110%;
+                    height: 100%;
+                    background: var(--ColorPrimaryLight);
+                    pointer-events: none;
+                    transform: rotate(-3deg);
+                }
+
+                @include media(medium) {
+                    aspect-ratio: 10 / 1;
+                    padding: 40px;
+
+                    .welcome_text{
+                        font-size: 24px;
                     }
                 }
             }
 
-            .pwa-install-close {
-                position: absolute;
-                top: 8px;
-                right: 8px;
-                background: transparent;
-                color: var(--ColorWhite);
-                border: none;
-                font-size: 1.5em;
-                cursor: pointer;
+            @include media(max-medium) {
+                grid-column: span 2;
             }
         }
     }

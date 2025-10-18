@@ -54,28 +54,31 @@
 
 body {
     --ColorPrimary: #3f567c;
-    --ColorPrimaryLight: #4E9DAE;
-    --ColorPrimaryDark: #0c2041;
-    --ColorSecondary: #C9A141;
-    --ColorSecondaryLight: #fad47a;
-    --ColorSecondaryDark: #806934;
-    --ColorDarkGray: rgb(161, 161, 161);
-    --ColorExtraDarkGray: rgb(211, 211, 211);
-    --ColorGray: #f0f0f0;
-    --ColorLightGray: #fafafa;
+    --ColorPrimaryLight: #C7DCFC;
+    --ColorPrimaryDark: #213345;
+    --ColorSecondary: #FDDFB2;
 
-    --ColorHeader: #0c2041;
+    --ColorLightGray: #e2e2e2; //Used for backgrounds
+    --ColorGray: #8B7F86; //Used for Navigation
 
     --ColorBlack: #000000;
     --ColorWhite: #FFFFFF;
 
-    --ColorFont: #000000;
-
-    --ColorButton: var(--ColorPrimary);
-    --ColorButtonHover: var(--ColorPrimaryDark);
-    --ColorButtonText: var(--ColorWhite);
-
     --MaxWidth: 1200px;
     --MaxWidthContent: 980px;
     --HeaderHeight: 120px;
+
+    --BorderRadiusSmall: 5px;
+    --BorderRadiusMedium: 10px;
+    --BorderRadiusLarge: 20px;
+
+    --ColorStatusGood: #4CAF50;
+    --ColorStatusGoodAccent: #e9ffea;
+    --ColorStatusWarning: #FFC107;
+    --ColorStatusWarningAccent: #fff8df;
+    --ColorStatusBad: #F44336;
+    --ColorStatusBadAccent: #ffe7e5;
+
+    --BoxShadowLight: 5px 5px 5px rgba(0,0,0,0.03);
+    --BoxShadowMenu: 0 2px 10px rgba(0,0,0,0.1);
 }

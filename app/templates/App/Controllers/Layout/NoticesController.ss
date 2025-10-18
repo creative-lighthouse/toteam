@@ -1,10 +1,7 @@
 <div class="section section--NoticesPage">
-    <div class="section_content">
-        <div class="section_intro">
-            <h1 class="hl1">Ankündigungen</h1>
-            <p>Hier findest du alle aktuellen Ankündigungen. Schau regelmäßig vorbei, um nichts zu verpassen!</p>
-        </div>
+    <% include IntroBar Title="Ankündigungen", Description="Hier findest du alle aktuellen Ankündigungen. Schau regelmäßig vorbei, um nichts zu verpassen!" %>
 
+    <div class="section_content">
         <% if $Notices.Count > 0 %>
             <ul class="notices-list">
                 <% loop $Notices %>

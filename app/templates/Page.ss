@@ -79,9 +79,6 @@
         <main class="area_content main">
                 $Layout
         </main>
-        <div class="area_footer">
-            <p class="footer_note"><i>ToTeam v0.1.2</i> <kbd>BETA</kbd></p>
-        </div>
         <script>
             function showOfflineBanner() {
                 if (!navigator.onLine) {
