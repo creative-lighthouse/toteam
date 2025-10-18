@@ -12,13 +12,12 @@ use SilverStripe\Security\Member;
  * Class \App\HumanResources\Allergy
  *
  * @property ?string $Title
- * @property int $SortOrder
  * @property int $IconID
  * @method \SilverStripe\Assets\Image Icon()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Food[] Foods()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -27,7 +26,6 @@ class Allergy extends DataObject
 {
     private static $db = [
         "Title" => "Varchar(255)",
-        "SortOrder" => "Int",
     ];
 
     private static $has_one = [
@@ -51,6 +49,8 @@ class Allergy extends DataObject
     private static $summary_fields = [
         "Title"
     ];
+
+    private static $default_sort = 'Title ASC';
 
     private static $table_name = 'Allergy';
     private static $singular_name = "Allergie";
