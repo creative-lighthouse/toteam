@@ -1,5 +1,5 @@
 <div class="section section--FoodPage">
-    <% include IntroBar Title="Essensplanung", Description="Hier findest du alles zum Thema essen. Biete Essen für die Mahlzeiten an oder schaue dir an welche Mahlzeiten geplant sind" %>
+    <% include IntroBar Title="Essensplanung", Description="Hier wird die Verpflegung geplant. In der Übersicht findest Du alle Termine, an denen Verpflegung angeboten wird. Wenn bereits Gerichte angeboten werden, werden dir diese hier ebenfalls angezeigt. Klicke auf einen Eintrag, um weitere Informationen zu erhalten. Dort kannst Du auch neue Gerichte anbieten." %>
     <div class="section_content">
         <div class="section_foodbox">
             <% if $Meals.GroupedBy('ParentID').First.Children.Count > 0 %>

@@ -1,6 +1,6 @@
 <div class="section section--FoodPageDetails">
     <div class="section_content">
-        <% include IntroBar Title="Essensplanung", Description="Hier findest du alles zum Thema essen. Biete Essen für die Mahlzeiten an oder schaue dir an welche Mahlzeiten geplant sind" %>
+        <% include IntroBar Title="Essensplanung", Description="Hier wird die Verpflegung geplant. Neben dem Termin findest Du hier auch weitere Informationen zu den angebotenen Gerichten und Teilnehmern. Reiche gerne Gerichte ein." %>
 
         <% with $Meal %>
             <div class="section_mealdetails">
