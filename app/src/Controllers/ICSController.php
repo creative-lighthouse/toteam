@@ -48,6 +48,8 @@ class ICSController extends BaseController
         $ics .= "METHOD:PUBLISH\r\n";
 
         foreach ($eventDays as $eventDay) {
+            $eventdescription = $eventDay->Description;
+
             $ics .= "BEGIN:VEVENT\r\n";
             $ics .= "UID:" . $eventDay->ID . "@toteam\r\n";
             $ics .= "SEQUENCE:" . $eventDay->ICSSequence . "\r\n";
@@ -56,7 +58,7 @@ class ICSController extends BaseController
             $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullEndDate())) . "\r\n";
             $ics .= "LAST-MODIFIED:" . gmdate('Ymd\THis\Z', strtotime($eventDay->LastEdited)) . "\r\n";
             $ics .= "SUMMARY:" . $eventDay->Title . "\r\n";
-            $ics .= "DESCRIPTION:" . $eventDay->Description . "\\n" . CalendarController::getUsersForDay($eventDay->ID) . "\\n" . CalendarController::getFoodForDay($eventDay->ID, $user->ID);
+            $ics .= "DESCRIPTION:" . ($eventdescription ? $eventdescription . "\\n" : "") . CalendarController::getUsersForDay($eventDay->ID) . "\\n" . CalendarController::getFoodForDay($eventDay->ID, $user->ID) . "\r\n";
             $ics .= "LOCATION:" . $eventDay->Location . "\r\n";
             $ics .= "CLASS:PUBLIC\r\n";
             $ics .= "END:VEVENT\r\n";
