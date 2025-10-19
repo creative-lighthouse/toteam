@@ -14,10 +14,10 @@ use SilverStripe\Security\Member;
  * @property ?string $Title
  * @property int $IconID
  * @method \SilverStripe\Assets\Image Icon()
- * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Food[] Foods()
- * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -36,12 +36,9 @@ class Allergy extends DataObject
         'Icon',
     ];
 
-    private static $many_many = [
-        "Members" => Member::class,
-    ];
-
     private static $belongs_many_many = [
         'Foods' => Food::class,
+        "Members" => Member::class,
     ];
 
     private static $field_labels = [];

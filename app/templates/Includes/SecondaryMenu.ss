@@ -34,7 +34,10 @@
                         <% end_if %>
                     <% end_with %>
                 </div>
-                <p class="nav_title">$CurrentUser.FirstName</p>
+                <div class="nav_text">
+                    <p class="nav_title">$CurrentUser.FirstName</p>
+                    <p class="nav_subtitle">Profil ansehen</p>
+                </div>
             </a>
             <a href="$LogoutURL" class="nav_logout" title="Abmelden">
                 <div class="nav_icon nav_icon--logout">

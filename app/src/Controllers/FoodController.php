@@ -72,6 +72,19 @@ class FoodController extends BaseController
         return Allergy::get()->sort('Title', 'ASC');
     }
 
+    public function getAllAllergiesWithUsers()
+    {
+        //Get all allergies which have at least one member having that allergy
+        $allergies = Allergy::get()->sort('Title', 'ASC');
+        $allergiesWithUsers = [];
+        foreach ($allergies as $allergy) {
+            if ($allergy->Members()->count() > 0) {
+                $allergiesWithUsers[] = $allergy;
+            }
+        }
+        return $allergiesWithUsers;
+    }
+
     public function meal($request)
     {
         $mealID = $request->param('ID');

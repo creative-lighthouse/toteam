@@ -38,12 +38,15 @@
                 li {
                     justify-content: space-between;
                     border-radius: var(--BorderRadiusSmall);
+                    border: 1px solid var(--ColorLightGray);
                     background-color: var(--ColorWhite);
                     color: var(--ColorBlack);
                     box-shadow: var(--BoxShadowLight);
+                    display: block;
 
                     a {
                         padding: 10px 15px;
+                        display: block;
                     }
 
                     .hl3{
@@ -81,10 +84,6 @@
                         opacity: 0.5;
                     }
 
-                    &:last-child {
-                        border-bottom: none;
-                    }
-
                     .item_label {
                         font-weight: bold;
                     }
@@ -96,6 +95,9 @@
 
                 &.agenda{
                     .agenda--item{
+                        box-shadow: none;
+                        border: none;
+
                         .hl4{
                             margin: 10px 0 5px 0;
                         }
@@ -105,7 +107,7 @@
                             margin: 0;
 
                             li{
-                                border: 1px solid var(--ColorGray);
+                                border: 1px solid var(--ColorLightGray);
                                 padding: 10px;
                                 border-radius: var(--BorderRadiusSmall);
                                 margin-bottom: 10px;
@@ -116,8 +118,8 @@
 
                 &.mealswithoutfood{
                     .mealswithoutfood--item{
-                        border: 1px solid var(--ColorGray);
-                        padding: 10px 0;
+                        border: 1px solid var(--ColorLightGray);
+                        padding: 10px;
                         border-radius: var(--BorderRadiusSmall);
                         margin-bottom: 10px;
 
@@ -144,7 +146,7 @@
                         }
 
                         &:last-of-type{
-                            margin-bottom: 0;
+                            margin-bottom: 1px;
                         }
                     }
                 }
@@ -171,6 +173,7 @@
                     top: 5px;
                     right: -10px;
                     height: 100%;
+                    aspect-ratio: 1;
                     border-radius: 50%;
                     margin-bottom: 10px;
                     overflow: hidden;

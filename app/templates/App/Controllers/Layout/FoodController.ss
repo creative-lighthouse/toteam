@@ -84,8 +84,8 @@
                                                     </select>
                                                 </div>
                                                 <div class="field">
-                                                    <legend>Welche Allergien kann dein Gericht auslösen?</legend>
-                                                    <% loop $Top.AllAllergies %>
+                                                    <legend>Allergien:</legend>
+                                                    <% loop $Top.AllAllergiesWithUsers %>
                                                         <div class="checkbox-entry">
                                                             <input <% if $IsInFood($Up.ID) %>checked<% end_if %> type="checkbox" id="allergy-$ID" name="allergies[]" value="$ID" />
                                                             <label for="allergy-$ID">$Title</label>

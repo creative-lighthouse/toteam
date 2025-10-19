@@ -60,15 +60,17 @@
                                         <option value="vegetarisch">Vegetarisch</option>
                                     </select>
                                 </div>
-                                <div class="field">
-                                    <legend>Welche Allergien kann dein Gericht auslösen?</legend>
-                                    <% loop $Top.AllAllergies %>
-                                        <div class="checkbox-entry">
-                                            <input type="checkbox" id="allergy-$ID" name="allergies[]" value="$ID" />
-                                            <label for="allergy-$ID">$Title</label>
-                                        </div>
-                                    <% end_loop %>
-                                </div>
+                                <% if $Top.AllAllergiesWithUsers.Count > 0 %>
+                                    <div class="field">
+                                        <legend>Allergien:</legend>
+                                        <% loop $Top.AllAllergiesWithUsers %>
+                                            <div class="checkbox-entry">
+                                                <input type="checkbox" id="allergy-$ID" name="allergies[]" value="$ID" />
+                                                <label for="allergy-$ID">$Title</label>
+                                            </div>
+                                        <% end_loop %>
+                                    </div>
+                                <% end_if %>
                                 <input type="hidden" name="mealid" value="$ID" />
                                 <button type="submit" class="button">Essen anbieten</button>
                             </form>
