@@ -15,3 +15,4 @@ SilverStripe\Control\Director:
     'registration//$Action/$ID/$Name': 'App\Controllers\RegistrationController'
     'suggestionbox//$Action/$ID/$Name': 'App\Controllers\SuggestionBoxController'
     'food//$Action/$ID/$Name': 'App\Controllers\FoodController'
+    'links//$Action/$ID/$Name': 'App\Controllers\LinksController'

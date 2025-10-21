@@ -3,6 +3,8 @@
 namespace App\HumanResources;
 
 use Override;
+use App\Links\TeamLink;
+use App\Links\TeamDownload;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 
@@ -12,6 +14,7 @@ use SilverStripe\ORM\DataObject;
  * @property ?string $Title
  * @property int $ImageID
  * @method \SilverStripe\Assets\Image Image()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Links\TeamLink[] TeamLinks()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -30,6 +33,10 @@ class Department extends DataObject
 
     private static $owns = [
         'Image',
+    ];
+
+    private static $belongs_many_many = [
+        'TeamLinks' => TeamLink::class,
     ];
 
     private static $field_labels = [];

@@ -21,6 +21,14 @@
                     <p class="nav_title">Kummerkasten</p>
                 </a>
             </li>
+            <li>
+                <a href="/links" class="nav_link<% if $IsCurrentRoute(links) %> nav_link--active<% end_if %>">
+                    <div class="nav_icon">
+                        <img src="_resources/app/client/icons/totems/downloads_totem.png" alt="Downloads Icon" class="profile_image">
+                    </div>
+                    <p class="nav_title">Links & Downloads</p>
+                </a>
+            </li>
         </ul>
         <p class="version_note"><i>ToTeam v0.1.2</i> <kbd>BETA</kbd></p>
         <div class="nav_profile_wrap">
