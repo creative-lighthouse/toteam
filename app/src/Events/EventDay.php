@@ -92,6 +92,7 @@ class EventDay extends DataObject
     private static $table_name = 'EventDay';
     private static $singular_name = "Veranstaltungs-Tag";
     private static $plural_name = "Veranstaltungs-Tage";
+    private static $default_sort = ['Date' => 'ASC'];
 
     #[Override]
     public function getCMSFields()

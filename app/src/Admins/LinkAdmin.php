@@ -17,6 +17,7 @@ class LinkAdmin extends ModelAdmin
     private static $menu_title = 'Links & Downloads';
 
     private static $url_segment = 'links-directory';
+    private static $menu_icon = 'app/client/icons/totems/downloads_totem_admin.png';
 
     private static $managed_models = [
         TeamLink::class,

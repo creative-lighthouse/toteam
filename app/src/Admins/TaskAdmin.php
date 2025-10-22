@@ -15,6 +15,7 @@ class TaskAdmin extends ModelAdmin
     private static $menu_title = 'Tasks';
 
     private static $url_segment = 'tasks-directory';
+    private static $menu_icon = 'app/client/icons/totems/todos_totem_admin.png';
 
     private static $managed_models = [
         Task::class,

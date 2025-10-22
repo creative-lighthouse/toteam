@@ -14,6 +14,7 @@ use SilverStripe\Forms\GridField\GridFieldToolbarHeader;
 use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
 use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordViewer;
 use SilverStripe\Forms\GridField\GridFieldEditButton;
 
 /**
@@ -80,10 +81,17 @@ class Event extends DataObject
         $eventDaysGrid = GridField::create(
             'EventDaysGrid',
             'Veranstaltungstage',
-            $this->EventDays(),
+            $this->EventDays()->filter('Date:GreaterThanOrEqual', date('Y-m-d')),
+            GridFieldConfig_RecordEditor::create()
+        );
+        $oldEventDaysGrid = GridField::create(
+            'OldEventDaysGrid',
+            'Vergangene Veranstaltungstage',
+            $this->EventDays()->filter('Date:LessThan', date('Y-m-d')),
             GridFieldConfig_RecordEditor::create()
         );
         $fields->addFieldToTab('Root.Main', $eventDaysGrid);
+        $fields->addFieldToTab('Root.Archiv', $oldEventDaysGrid);
         return $fields;
     }
 

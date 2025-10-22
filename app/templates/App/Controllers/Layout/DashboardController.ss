@@ -22,7 +22,7 @@
                         <li class="<% if $Type = 'Accept' %>accepted<% else_if $Type = 'Maybe' %>maybe<% end_if %>"><a href="$Parent.Link">$Parent.Title - <i>$Parent.RenderDateWithTime</i></a></li>
                     <% end_loop %>
                 <% else %>
-                    <li><p>Keine anstehenden Termine</p></li>
+                    <li><a href="calendar">Keine anstehenden Termine</a></li>
                 <% end_if %>
             </ul>
         </div>
