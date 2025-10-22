@@ -185,6 +185,27 @@ document.addEventListener("DOMContentLoaded", function () {
                                 }
                             }
                         }
+                        // Leere Kategorien ausblenden
+                        if (dialog) {
+                            const participantsList = dialog.querySelector('.participants-list');
+                            if (participantsList) {
+                                const groupTitles = Array.from(participantsList.querySelectorAll('.participant-group_title'));
+                                groupTitles.forEach(group => {
+                                    // Alle Teilnehmer nach dieser Gruppe
+                                    let next = group.nextElementSibling;
+                                    let hasParticipant = false;
+                                    while (next && next.classList.contains('participant')) {
+                                        hasParticipant = true;
+                                        break;
+                                    }
+                                    if (!hasParticipant) {
+                                        group.style.display = 'none';
+                                    } else {
+                                        group.style.display = '';
+                                    }
+                                });
+                            }
+                        }
                     }
                 })
                 .catch(error => {
@@ -247,6 +268,62 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
                 .catch(error => {
                     alert('Fehler beim Speichern der Zeit!');
+                });
+            });
+        });
+    });
+
+    // AJAX-Handling für Essensabfrage-Buttons
+    document.querySelectorAll('.event-response-actions[action^="/calendar/changeParticipationFood"]').forEach(function(form) {
+        form.querySelectorAll('button[name="response"]').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const formData = new FormData(form);
+                formData.set('response', btn.value); // Wert des gedrückten Buttons setzen
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.ok ? response.text() : Promise.reject(response))
+                .then(data => {
+                    // UI aktualisieren: Button-Status
+                    form.querySelectorAll('button[name="response"]').forEach(b => {
+                        b.classList.remove('selected', 'unselected');
+                        if (b.value === btn.value) {
+                            b.classList.add('selected');
+                        } else {
+                            b.classList.add('unselected');
+                        }
+                    });
+                    // Erfolgsmeldung anzeigen wie beim Dialog-Open
+                    const dialog = form.closest('dialog');
+                    if (dialog) {
+                        const statusMessage = document.createElement('div');
+                        statusMessage.className = `status-message status-message--success`;
+                        statusMessage.textContent = "Essensauswahl gespeichert";
+                        dialog.appendChild(statusMessage);
+                        setTimeout(() => {
+                            statusMessage.classList.add('status-message--hide');
+                        }, 3000);
+                        setTimeout(() => {
+                            statusMessage.remove();
+                        }, 6000);
+                        // Teilnehmerliste Essensstatus aktualisieren (optional, falls angezeigt)
+                        const myName = dialog.querySelector('.participant-name[data-me]');
+                        if (myName) {
+                            const foodSpan = myName.parentElement.querySelector('.participant-food');
+                            if (foodSpan) {
+                                // Setze Text oder Icon je nach Auswahl
+                                foodSpan.textContent = btn.textContent;
+                            }
+                        }
+                    }
+                })
+                .catch(() => {
+                    alert('Fehler beim Speichern der Essensauswahl!');
                 });
             });
         });
