@@ -29,7 +29,7 @@
                     <div class="event event--color-$ParticipationOfCurrentUser.Type" onclick="document.getElementById('event-modal-{$ID}').showModal()">
                         <p class="event_title">$Title</p>
                     </div>
-                    <% include CalendarDialog CurrentEventDayID=$Top.CurrentEventDayID %>
+                    <% include CalendarDialog CurrentEventDayID=$Top.CurrentEventDayID, Controller=$Top.Controller %>
                 <% end_loop %>
             </div>
         <% end_loop %>

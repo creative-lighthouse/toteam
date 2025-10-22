@@ -19,25 +19,24 @@
         <% end_if %>
         <div class="dialog-infobox infobox--participation">
             <p class="dialog-headline">Bist du dabei?</p>
-            <form class="event-response-actions" method="post" action="/calendar/changeParticipation/{$ID}">
+            <form class="event-response-actions js-participation-form" method="post" action="/calendar/changeParticipation/{$ID}">
                 <fieldset class="fieldset-availability">
                     <input type="hidden" name="csrf_token" value="$CSRFToken">
-                    <button type="submit" name="response" value="Accept" class="event-response-button event-response-accept <% if $ParticipationOfCurrentUser.Type == 'Accept' %>selected<% else_if $ParticipationOfCurrentUser %>unselected<% end_if %>">Ja</button>
-                    <button type="submit" name="response" value="Maybe" class="event-response-button event-response-maybe <% if $ParticipationOfCurrentUser.Type == 'Maybe' %>selected<% else_if $ParticipationOfCurrentUser %>unselected<% end_if %>">Vielleicht</button>
-                    <button type="submit" name="response" value="Decline" class="event-response-button event-response-decline <% if $ParticipationOfCurrentUser.Type == 'Decline' %>selected<% else_if $ParticipationOfCurrentUser %>unselected<% end_if %>">Nein</button>
+                    <button type="button" name="response" value="Accept" class="event-response-button event-response-accept <% if $ParticipationOfCurrentUser.Type == 'Accept' %>selected<% else_if $ParticipationOfCurrentUser %>unselected<% end_if %>">Ja</button>
+                    <button type="button" name="response" value="Maybe" class="event-response-button event-response-maybe <% if $ParticipationOfCurrentUser.Type == 'Maybe' %>selected<% else_if $ParticipationOfCurrentUser %>unselected<% end_if %>">Vielleicht</button>
+                    <button type="button" name="response" value="Decline" class="event-response-button event-response-decline <% if $ParticipationOfCurrentUser.Type == 'Decline' %>selected<% else_if $ParticipationOfCurrentUser %>unselected<% end_if %>">Nein</button>
                 </fieldset>
             </form>
-            <% if $ParticipationOfCurrentUser.Type == 'Accept' || $ParticipationOfCurrentUser.Type == 'Maybe' %>
+            <div id="participation-time-form-container-{$ID}" style="display:<% if $ParticipationOfCurrentUser.Type == 'Decline' %>none<% else %>block<% end_if %>">
                 <form class="event-response-actions" method="post" action="/calendar/changeParticipationTime/{$ID}">
                     <fieldset class="fieldset-update-time">
                         <p>Von</p>
                         <input type="time" name="timestart" value="$ParticipationOfCurrentUser.TimeStart" step="900" class="event-response-arrival-time">
                         <p>bis</p>
                         <input type="time" name="timeend" value="$ParticipationOfCurrentUser.TimeEnd" step="900" class="event-response-departure-time">
-                        <button type="submit" name="response" value="UpdateTime" class="button">Zeiten aktualisieren</button>
                     </fieldset>
                 </form>
-            <% end_if %>
+            </div>
         </div>
         <% if $Meals.Count > 0 %>
             <div class="dialog-infobox infobox--meals">
@@ -66,7 +65,7 @@
                         <h5 class="participant-group_title">$Children.First.RenderType</h5>
                         <% loop $Children %>
                             <div class="participant participant--status-$Type">
-                                <span class="participant-name">$Member.Name</span>
+                                <span class="participant-name" <% if $Top.Controller.IsCurrentMember($Member.ID) %> data-me="1"<% end_if %>>$Member.Name</span>
                                 <% if $RenderTime != $Up.Up.RenderTime %>
                                     <% if $Up.Type == 'Accept' || $Up.Type == 'Maybe' %>
                                         <span class="participant-status">($RenderTime)</span>

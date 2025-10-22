@@ -76,6 +76,10 @@ class CalendarController extends BaseController
             $eventDayParticipation->write();
         }
 
+        if ($this->getRequest()->isAjax()) {
+            return 'OK';
+        }
+
         $this->redirect('/calendar?date=' . $eventday->Date . '&eventID=' . $eventday->ID);
     }
 
@@ -241,5 +245,14 @@ class CalendarController extends BaseController
             return rtrim($returnstring, "\n");
         }
         return "";
+    }
+
+    public function IsCurrentMember($memberID)
+    {
+        $currentMember = Security::getCurrentUser();
+        if ($currentMember && $currentMember->ID == $memberID) {
+            return true;
+        }
+        return false;
     }
 }

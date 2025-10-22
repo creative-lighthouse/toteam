@@ -3,6 +3,7 @@
 
 namespace App\Events;
 
+use App\Controllers\CalendarController;
 use App\Events\EventDay;
 use App\Pages\CalendarPage;
 use SilverStripe\Model\ArrayData;
@@ -204,6 +205,7 @@ class Calendar
             'ActiveMonth' => $this->active_month,
             'ActiveDay' => $this->active_day,
             'CurrentEventDayID' => $this->currentEventDayID,
+            'Controller' => CalendarController::create(),
         ])->renderWith('Includes/Calendar');
     }
 }
