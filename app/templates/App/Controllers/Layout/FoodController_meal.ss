@@ -81,11 +81,11 @@
                 <div class="mealbox mealbox--eaters">
                     <h3 class="hl3">Teilnehmer:</h3>
                     <% if $Eaters.Count > 0 %>
-                        <ul class="section_eaterlist">
-                            <% loop $Eaters %>
+                        <ul class="section_eaterlist">       
+                            <% loop $Eaters.Filter('Type', 'Accept') %>
                                 <li class="eaterlist-entry">
+                                    <div class="eater-number">$Pos</div>
                                     <% with $Member %>
-                                        <div class="eater-number">$Pos</div>
                                         <div class="eater-avatar">
                                             <% if $ProfileImage %>
                                                 <img src="$ProfileImage.URL" alt="Profilbild von $FirstName $Surname" class="profile_image">
