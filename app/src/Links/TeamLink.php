@@ -18,8 +18,8 @@ use SilverStripe\LinkField\Models\Link;
  * @method \SilverStripe\LinkField\Models\Link Button()
  * @method \App\Links\TeamLinkType Type()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Department[] Departments()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
