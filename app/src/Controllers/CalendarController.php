@@ -224,25 +224,29 @@ class CalendarController extends BaseController
     {
         //Get all food statusses of users for this eventday in string format. Use "Dabei" and "Nicht dabei"
         $returnstring = "";
-        $returnstring .= "=== Mahlzeiten ===\\n";
 
         $eventDay = EventDay::get()->byID($eventDayID);
         if ($eventDay) {
             $meals = $eventDay->Meals();
+            if($meals->count() == 0){
+                return "";
+            }
+            
+            $returnstring .= "=== Mahlzeiten ===\\n";
             foreach ($meals as $meal) {
                 if (!is_object($meal)) {
                     continue;
                 }
-                $returnstring .= $meal->Title . " (" . $meal->RenderTime . "):\\n";
+                $returnstring .= $meal->Title . " (" . $meal->RenderTime() . "):\\n";
                 $eaters = $meal->Eaters();
                 foreach ($eaters as $eater) {
                     $member = $eater->Member();
                     if ($member) {
-                        $returnstring .= "- " . $member->getName() . " (" . $eater->Type . ")\n";
+                        $returnstring .= "- " . $member->getName() . " (" . $eater->Type . ")\\n";
                     }
                 }
             }
-            return rtrim($returnstring, "\n");
+            return rtrim($returnstring, "\\n");
         }
         return "";
     }

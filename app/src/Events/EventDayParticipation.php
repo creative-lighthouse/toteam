@@ -88,6 +88,19 @@ class EventDayParticipation extends DataObject
         }
     }
 
+    public function renderICSType(){
+        switch ($this->Type) {
+            case 'Accept':
+                return 'ACCEPTED';
+            case 'Maybe':
+                return 'TENTATIVE';
+            case 'Decline':
+                return 'DECLINED';
+            default:
+                return 'NEEDS-ACTION';
+        }
+    }
+
     public function FormatTimeStart()
     {
         return $this->TimeStart ? (new \DateTime($this->TimeStart))->format('H:i') : '';

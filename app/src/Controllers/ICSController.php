@@ -58,8 +58,13 @@ class ICSController extends BaseController
             $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($eventDay->getFullEndDate())) . "\r\n";
             $ics .= "LAST-MODIFIED:" . gmdate('Ymd\THis\Z', strtotime($eventDay->LastEdited)) . "\r\n";
             $ics .= "SUMMARY:" . $eventDay->Title . "\r\n";
-            $ics .= "DESCRIPTION:" . ($eventdescription ? $eventdescription . "\\n" : "") . CalendarController::getUsersForDay($eventDay->ID) . "\\n" . CalendarController::getFoodForDay($eventDay->ID, $user->ID) . "\r\n";
+            $ics .= "DESCRIPTION:" . ($eventdescription ? $eventdescription . "\\n\\n" : "") . CalendarController::getUsersForDay($eventDay->ID) . "\\n" . CalendarController::getFoodForDay($eventDay->ID, $user->ID) . "\r\n";
             $ics .= "LOCATION:" . $eventDay->Location . "\r\n";
+
+            foreach ($eventDay->Participations() as $participation) {
+                $ics .= "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;CN=" . $participation->Member->getName() . ";PARTSTAT=" . $participation->renderICSType() . ":mailto:" . $participation->Member->Email . "\r\n";
+            }
+            
             $ics .= "CLASS:PUBLIC\r\n";
             $ics .= "END:VEVENT\r\n";
         }
