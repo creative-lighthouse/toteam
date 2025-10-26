@@ -2,6 +2,12 @@ import Swiper, {Autoplay, EffectCoverflow, EffectFade, Navigation, Pagination} f
 import GLightbox from "glightbox";
 
 document.addEventListener("DOMContentLoaded", function () {
+        // Workaround: PWA-Session-Reload bei /registration
+        if (window.matchMedia('(display-mode: standalone)').matches && window.location.pathname === '/registration') {
+            setTimeout(() => {
+                window.location.reload();
+            }, 300);
+        }
     const mainnavButton = document.querySelector('[data-action="toggle-secnav"]');
 
     if (mainnavButton) {
