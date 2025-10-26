@@ -208,4 +208,28 @@ class EventDay extends DataObject
     {
         return $this->Date . ' ' . $this->TimeEnd;
     }
+
+    public function getAgenda()
+    {
+        $agendapoints = $this->AgendaPoints()->sort('StartTime', 'ASC');
+        $meals = $this->Meals()->sort('Time', 'ASC');
+
+        //Add all agendapoints and meals to a single list and sort them by time
+        $agenda = ArrayList::create();
+        foreach ($agendapoints as $point) {
+            $agenda->push([
+                'Type' => 'AgendaPoint',
+                'Item' => $point,
+                'Time' => $point->StartTime,
+            ]);
+        }
+        foreach ($meals as $meal) {
+            $agenda->push([
+                'Type' => 'Meal',
+                'Item' => $meal,
+                'Time' => $meal->Time,
+            ]);
+        }
+        return $agenda;
+    }
 }

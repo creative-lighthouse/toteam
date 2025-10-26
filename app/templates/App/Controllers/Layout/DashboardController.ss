@@ -39,26 +39,29 @@
                             <% if $Parent.Description %>
                                 <p>$Parent.Description</p>
                             <% end_if %>
-                            <% if $Parent.AgendaPoints %>
+                            <% if $Parent.Agenda %>
                                 <h4 class="hl4">Tagesplan</h4>
                                 <ul class="list--agenda-points">
-                                    <% loop $Parent.AgendaPoints %>
-                                        <li>
-                                            <p><strong>$RenderTime:</strong> $Title</p>
-                                            <div>
-                                                $Description
-                                            </div>
-                                        </li>
-                                    <% end_loop %>
-                                </ul>
-                            <% end_if %>
-                            <% if $Parent.Meals %>
-                                <h4 class="hl4">Mahlzeiten</h4>
-                                <ul class="list--meals">
-                                    <% loop $Parent.Meals %>
-                                        <li>
-                                            <p><strong>$RenderTime:</strong> $Title</p>
-                                        </li>
+                                    <% loop $Parent.Agenda %>
+                                        <% if $Type == "AgendaPoint" %>
+                                            <li>
+                                                <p><strong>$Item.RenderTime:</strong> $Item.Title</p>
+                                                <div>
+                                                    $Item.Description
+                                                </div>
+                                            </li>
+                                        <% else_if $Type == "Meal" %>
+                                            <li>
+                                                <p><strong>$Item.RenderTime:</strong> $Item.Title</p>
+                                                <% if $Item.Foods %>
+                                                    <% loop $Item.Foods %>
+                                                        <div>
+                                                            <p>- $Title</p>
+                                                        </div>
+                                                    <% end_loop %>
+                                                <% end_if %>
+                                            </li>
+                                        <% end_if %>
                                     <% end_loop %>
                                 </ul>
                             <% end_if %>
