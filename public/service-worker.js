@@ -36,11 +36,21 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(networkResponse => {
-          // Dashboard erfolgreich geladen: Cache aktualisieren
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(DASHBOARD_URL, responseClone);
-          });
+          // Nur cachen, wenn wirklich Dashboard-Seite (Status 200, kein Redirect, kein Registrieren/Login)
+          if (
+            networkResponse.status === 200 &&
+            networkResponse.type === 'basic' &&
+            networkResponse.url.endsWith(DASHBOARD_URL)
+          ) {
+            networkResponse.clone().text().then(text => {
+              // Prüfe, ob die Seite nicht die Registrieren-/Login-Seite ist
+              if (!text.includes('Registrieren') && !text.includes('Einloggen')) {
+                caches.open(CACHE_NAME).then(cache => {
+                  cache.put(DASHBOARD_URL, networkResponse.clone());
+                });
+              }
+            });
+          }
           return networkResponse;
         })
         .catch(() => {
