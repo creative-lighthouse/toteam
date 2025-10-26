@@ -57,20 +57,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.querySelectorAll('dialog[data-autoopen="true"]').forEach(dialog => {
         dialog.showModal();
-        const statusMessage = document.createElement('div');
-        statusMessage.className = `status-message status-message--success`;
-        statusMessage.textContent = "Gespeichert";
-        dialog.appendChild(statusMessage);
-        setTimeout(() => {
-            statusMessage.classList.add('status-message--hide');
-            //Delete eventID from URL
-            const url = new URL(window.location);
-            url.searchParams.delete('eventID');
-            window.history.replaceState({}, document.title, url.toString());
-        }, 3000);
-        setTimeout(() => {
-            statusMessage.remove();
-        }, 6000);
     });
 
     //Close dialog on outside click
