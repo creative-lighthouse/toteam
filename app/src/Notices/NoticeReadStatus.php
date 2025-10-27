@@ -39,6 +39,17 @@ class NoticeReadStatus extends DataObject
     ];
 
     private static $table_name = 'NoticeReadStatus';
+<<<<<<< Updated upstream
+=======
+    private static $singular_name = "Lesestatus";
+    private static $plural_name = "Lesestatus";
+
+    private static $summary_fields = [
+        "Member.Name" => "Mitglied",
+        "DateTime.Nice" => "Gelesen am",
+    ];
+
+>>>>>>> Stashed changes
 
     /**
      * Update Fields

@@ -7,7 +7,10 @@
                 <% loop $Notices %>
                     <li class="notice_item_wrapper">
                         <a href="$Link" class="notice_item">
-                            <p class="notice_date"><i>Veröffentlicht am</i> $Created.Nice <i>in</i> $Category.Title</p>
+                            <% if $IsNewForUser %>
+                                <span class="new_badge">NEU</span>
+                            <% end_if %>
+                            <p class="notice_date"><i>Veröffentlicht am</i> $Created.Nice <% if $Category %><i>in</i> $Category.Title<% end_if %></p>
                             <h3 class="notice_title">$Title</h3>
                             <p class="notice_text">$ShortText</p>
                         </a>

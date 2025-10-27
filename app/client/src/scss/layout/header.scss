@@ -56,10 +56,27 @@ header {
                 width: 50px;
                 height: 50px;
                 transition: all 0.3s ease-in-out;
+                position: relative;
 
                 .nav_image {
                     width: 100%;
                     height: 100%;
+                }
+
+                .nav_badge{
+                    position: absolute;
+                    display: block;
+                    top: 0px;
+                    right: 0px;
+                    width: 20px;
+                    height: 20px;
+                    aspect-ratio: 1;
+                    text-align: center;
+                    padding: 5px;
+                    border-radius: 50%;
+                    font-size: 9px;
+                    background-color: var(--ColorPrimaryDark);
+                    color: var(--ColorWhite);
                 }
             }
 
@@ -210,11 +227,22 @@ header {
                             height: 40px;
                             width: 40px;
                             margin-right: 15px;
+                            position: relative;
 
                             img{
                                 height: 100%;
                                 width: 100%;
                                 object-fit: contain;
+                            }
+
+                            .nav_badge{
+                                position: absolute;
+                                top: 10px;
+                                right: 10px;
+                                width: 12px;
+                                height: 12px;
+                                background-color: var(--ColorSecondary);
+                                color: var(--ColorWhite);
                             }
                         }
 
@@ -245,6 +273,7 @@ header {
                         aspect-ratio: 1;
                         border-radius: 50%;
                         overflow: hidden;
+                        position: relative;
 
                         img{
                             width: 100%;

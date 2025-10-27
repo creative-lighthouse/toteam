@@ -5,6 +5,7 @@ namespace App\Notices;
 use SilverStripe\ORM\DataObject;
 use App\Notices\NoticeReadStatus;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Notices\Notice
@@ -74,5 +75,16 @@ class Notice extends DataObject
     public function getLink()
     {
         return '/notices/view/' . $this->ID;
+    }
+
+    public function IsNewForUser()
+    {
+        $currentUser = Security::getCurrentUser();
+        if (!$currentUser) {
+            return false;
+        }
+
+        $readStatus = $this->ReadStatuses()->filter('MemberID', $currentUser->ID);
+        return $readStatus->count() === 0;
     }
 }

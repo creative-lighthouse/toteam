@@ -48,6 +48,23 @@ class NoticesController extends BaseController
             return $this->httpError(404, 'Ankündigung nicht gefunden');
         }
 
+        //Mark notice as read for current user
+        $currentUser = Security::getCurrentUser();
+        if ($currentUser) {
+            $readStatus = NoticeReadStatus::get()
+                ->filter([
+                    'ParentID' => $notice->ID,
+                    'MemberID' => $currentUser->ID,
+                ])->first();
+            if (!$readStatus) {
+                $readStatus = NoticeReadStatus::create();
+                $readStatus->ParentID = $notice->ID;
+                $readStatus->MemberID = $currentUser->ID;
+            }
+            $readStatus->DateTime = date('Y-m-d H:i:s');
+            $readStatus->write();
+        }
+
         return [
             'Notice' => $notice,
         ];

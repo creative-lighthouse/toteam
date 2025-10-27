@@ -29,6 +29,7 @@
                 .notice_item{
                     padding: 20px;
                     display: block;
+                    position: relative;
 
                     .notice_date{
                         margin: 0;
@@ -38,6 +39,17 @@
 
                     .notice_text{
                         margin: 0;
+                    }
+
+                    .new_badge {
+                        position: absolute;
+                        top: -5px;
+                        right: -5px;
+                        background-color: var(--ColorPrimaryDark);
+                        color: var(--ColorWhite);
+                        padding: 2px 6px;
+                        border-radius: 20px;
+                        font-size: 10px;
                     }
                 }
 

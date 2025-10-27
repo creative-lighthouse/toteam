@@ -20,7 +20,11 @@
                     <img src="_resources/app/client/icons/totems/nachrichten_totem_inactive.png" alt="Nachrichten Icon" class="nav_image">
                 <% end_if %>
                 <% if $CurrentUser.UnreadNotices.Count > 0 %>
+<<<<<<< Updated upstream
                     <p class="nav_badge"><% $CurrentUser.UnreadNotices.Count %>Test</p>
+=======
+                    <p class="nav_badge">$CurrentUser.UnreadNotices.Count</p>
+>>>>>>> Stashed changes
                 <% end_if %>
             </div>
             <p class="nav_title">Wichtiges</p>
