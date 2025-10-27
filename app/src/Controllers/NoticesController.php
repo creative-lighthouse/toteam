@@ -3,7 +3,10 @@
 namespace App\Controllers;
 
 use App\Notices\Notice;
+use App\Notices\NoticeReadStatus;
 use App\Controllers\BaseController;
+use SilverStripe\Security\Member;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Controllers\NoticesController
@@ -48,5 +51,32 @@ class NoticesController extends BaseController
         return [
             'Notice' => $notice,
         ];
+    }
+
+    public static function getUnreadNotices($memberID)
+    {
+        $allNotices = Notice::get();
+
+        //Filter notices based on release and expiry date
+        $currentDate = date('Y-m-d H:i:s');
+        $allNotices = $allNotices->filterAny([
+            'ReleaseDate:LessThanOrEqual' => $currentDate,
+            'ReleaseDate' => null,
+        ])->filterAny([
+            'ExpiryDate:GreaterThanOrEqual' => $currentDate,
+            'ExpiryDate' => null,
+        ]);
+
+        $readNoticeIDs = NoticeReadStatus::get()
+            ->filter('MemberID', $memberID)
+            ->column('ParentID');
+
+        if (!empty($readNoticeIDs)) {
+            $unreadNotices = $allNotices->exclude('ID', $readNoticeIDs);
+        } else {
+            $unreadNotices = $allNotices;
+        }
+
+        return $unreadNotices;
     }
 }

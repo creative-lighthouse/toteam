@@ -14,19 +14,6 @@
             </div>
         </div>
 
-        <div class="section_infobox">
-            <h2 class="hl2">Deine anstehenden Termine:</h2>
-            <ul class="infobox_list">
-                <% if $UpcomingEventDays %>
-                    <% loop $UpcomingEventDays %>
-                        <li class="<% if $Type = 'Accept' %>accepted<% else_if $Type = 'Maybe' %>maybe<% end_if %>"><a href="$Parent.Link">$Parent.Title - <i>$Parent.RenderDateWithTime</i></a></li>
-                    <% end_loop %>
-                <% else %>
-                    <li><a href="calendar">Keine anstehenden Termine</a></li>
-                <% end_if %>
-            </ul>
-        </div>
-
         <% if $CurrentUser.TodaysParticipations.Count > 0 %>
             <div class="section_infobox">
                 <h2 class="hl2">Das steht heute an:</h2>
@@ -71,6 +58,19 @@
                 </ul>
             </div>
         <% end_if %>
+
+        <div class="section_infobox">
+            <h2 class="hl2">Deine anstehenden Termine:</h2>
+            <ul class="infobox_list">
+                <% if $UpcomingEventDays %>
+                    <% loop $UpcomingEventDays %>
+                        <li class="<% if $Type = 'Accept' %>accepted<% else_if $Type = 'Maybe' %>maybe<% end_if %>"><a href="$Parent.Link">$Parent.Title - <i>$Parent.RenderDateWithTime</i></a></li>
+                    <% end_loop %>
+                <% else %>
+                    <li><a href="calendar">Keine anstehenden Termine</a></li>
+                <% end_if %>
+            </ul>
+        </div>
 
         <% if $MealsWithoutFoodSupplied %>
             <div class="section_infobox">

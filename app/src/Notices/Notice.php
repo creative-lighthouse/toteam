@@ -2,8 +2,8 @@
 
 namespace App\Notices;
 
-use App\Pages\NoticesPage;
 use SilverStripe\ORM\DataObject;
+use App\Notices\NoticeReadStatus;
 use SilverStripe\Security\Member;
 
 /**
@@ -18,6 +18,7 @@ use SilverStripe\Security\Member;
  * @property int $CategoryID
  * @method \SilverStripe\Security\Member Author()
  * @method \App\Notices\NoticeCategory Category()
+ * @method \SilverStripe\ORM\DataList|\App\Notices\NoticeReadStatus[] ReadStatuses()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -39,11 +40,19 @@ class Notice extends DataObject
         "Category" => NoticeCategory::class,
     ];
 
+    private static $has_many = [
+        "ReadStatuses" => NoticeReadStatus::class,
+    ];
+
     private static $field_labels = [
         "Title" => "Titel",
-        "Author.Name" => "Autor",
-        "Category.Title" => "Kategorie",
-        "Text" => "Text",
+        "ShortText" => "Kurztext",
+        "LongText" => "Langtext",
+        "ReleaseDate" => "Veröffentlichungsdatum",
+        "ExpiryDate" => "Ablaufdatum",
+        "Author" => "Autor",
+        "Category" => "Kategorie",
+        "ReadStatuses" => "Gelesen-Stati",
     ];
 
     private static $summary_fields = [

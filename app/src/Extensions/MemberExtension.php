@@ -2,6 +2,7 @@
 
 namespace App\Extensions;
 
+use App\Controllers\NoticesController;
 use SilverStripe\Forms\FieldList;
 use App\Tasks\Task;
 use SilverStripe\Assets\Image;
@@ -153,5 +154,10 @@ class MemberExtension extends Extension
     {
         $today = date('Y-m-d');
         return $this->getParticipations()->filter('Parent.Date', $today)->filterAny('Type', ['Accept', 'Maybe']);
+    }
+
+    public function getUnreadNotices()
+    {
+        return NoticesController::getUnreadNotices($this->owner->ID);
     }
 }
