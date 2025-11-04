@@ -190,7 +190,6 @@ class FoodController extends BaseController
 
     public static function getMealsWithoutFood()
     {
-
         $allmeals = Meal::get()->sort('ParentID', 'DESC')->sort('Time', 'ASC');
         $meals = $allmeals->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'));
 
@@ -201,7 +200,8 @@ class FoodController extends BaseController
             }
         }
 
-        //Filter mealswithoutfood for future date
+        // Filter and sort meals without food
+        $mealswithoutfood = $mealswithoutfood->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'));
         $mealswithoutfood = $mealswithoutfood->sort(['Parent.Date' => 'ASC', 'Time' => 'ASC']);
         $mealswithoutfood = GroupedList::create($mealswithoutfood);
         return $mealswithoutfood;
