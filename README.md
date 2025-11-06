@@ -1,15 +1,16 @@
-# Standard Silverstripe Template
-with Vite, SCSS and more
+# ToTeam Web App for managing teams and projects
+created with Vite, SCSS and based on Silverstripe
+
+Has ddev configured for a quick start:
 
 ## Installation
-1. Clone this repo
-2. Change `.env.example` to `.env` and change the values to your needs
-3. Run `yarn`
-4. Run `composer install`
-5. Run `yarn dev` to start the dev server
+1. Install DDev on your system
+2. Clone this repo
+3. Open the project and run 'ddev start'
+4. Open the link from the console in the browser (silverstripe-toteam.ddev.site)
 
 ## Build
-Run `yarn build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Run `ddev yarn build` to build styling and js
 
 ## Credits
 - [Silverstripe](https://silverstripe.org/)
