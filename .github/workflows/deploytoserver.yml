@@ -1,0 +1,30 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main # oder dein Deploy-Branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Deploy via SSH
+        run: |
+          ssh -p 222 -o StrictHostKeyChecking=no speuni@www553.your-server.de << 'EOF'
+            cd public_html/halloweenhaus-schmalenbeck/toteam/
+            git reset --hard
+            git pull
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+            yarn install
+            yarn build
+            php vendor/bin/sake dev/build flush=all
+          EOF
