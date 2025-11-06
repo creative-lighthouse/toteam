@@ -19,7 +19,7 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no speuni@www553.your-server.de << 'EOF'
+          ssh -p 222 -o StrictHostKeyChecking=no speuni@www553.your-server.de << 'EOF'
             cd public_html/halloweenhaus-schmalenbeck/toteam/
             git reset --hard
             git pull
