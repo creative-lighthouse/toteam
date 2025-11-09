@@ -121,7 +121,7 @@ class EventDay extends DataObject
     {
         $date = $this->dbObject('Date');
         if ($date instanceof DBField) {
-            return $this->dbObject('Date')->Format('dd.MM.YYYY');
+            return $this->dbObject('Date')->Format('dd.MM.yy');
         } else {
             return "Kein Datum";
         }
