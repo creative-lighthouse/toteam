@@ -1,5 +1,5 @@
 
-<dialog id="event-modal-{$ID}" class="event-modal" <% if $ID == $CurrentEventDayID %>data-autoopen="true"<% end_if %>>
+<dialog id="event-modal-{$ID}" class="event-modal" <% if $ID == $CurrentEventDayID %>data-autoopen="true"<% end_if %> data-date="$Date" data-previous-participation="$ParticipationOfCurrentUser.Type">
     <button class="dialog-close" onclick="document.getElementById('event-modal-{$ID}').close()">×</button>
     <div class="dialog-header">
         <h2 class="dialog-title">$Parent.Title</h2>
@@ -41,7 +41,7 @@
                     <% loop $AllOfSameTitleSuggestedEvents %>
                         <% if $RenderDate %>
                             <tr class="suggestion_row">
-                                <td class="suggestion_date"><a href="$Link">$RenderDate</a></td>
+                                <td class="suggestion_date" data-date="$Date"><a href="$Link">$RenderDate</a></td>
                                 <td class="suggestion_participants">$VotedYes</td>
                                 <td class="suggestion_participants">$VotedMaybe</td>
                                 <td class="suggestion_participants">$VotedNo</td>
@@ -52,7 +52,7 @@
             </div>
         <% else_if $Status = 'Cancelled' %>
             <div class="dialog-infobox infobox--cancelled">
-                <p class="dialog-headline">Diese Veranstaltung wurde abgesagt.</p>
+                <p class="dialog-headline">Dieser Termin wurde abgesagt.</p>
             </div>
         <% else %>
             <div class="dialog-infobox infobox--participation">
