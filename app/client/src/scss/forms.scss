@@ -77,8 +77,10 @@ form {
             margin-bottom: 20px;
 
             input[type="checkbox"]{
-                position: relative;
                 margin-right: 10px;
+                position: relative;
+                border: none;
+                background-color: transparent;
 
                 &::before{
                     content: '';

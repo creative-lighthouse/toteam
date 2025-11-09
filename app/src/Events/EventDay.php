@@ -24,6 +24,7 @@ use SilverStripe\Model\List\GroupedList;
  * @property ?string $Location
  * @property ?string $Description
  * @property int $ICSSequence
+ * @property ?string $Status
  * @property int $ParentID
  * @property int $ImageID
  * @property int $TypeID
@@ -49,6 +50,7 @@ class EventDay extends DataObject
         "Location" => "Varchar(511)",
         "Description" => "Text",
         "ICSSequence" => "Int",
+        "Status" => "Enum('Suggested,Scheduled,Cancelled','Scheduled')",
     ];
 
     private static $has_one = [
@@ -85,7 +87,7 @@ class EventDay extends DataObject
     ];
 
     private static $summary_fields = [
-        "Title" => "Titel",
+        "RenderTitle" => "Titel",
         "RenderDate" => "Tag",
     ];
 
@@ -169,11 +171,17 @@ class EventDay extends DataObject
 
     public function FormatTimeStart()
     {
+        if (!$this->TimeStart) {
+            return '';
+        }
         return $this->TimeStart ? (new \DateTime($this->TimeStart))->format('H:i') : '';
     }
 
     public function FormatTimeEnd()
     {
+        if (!$this->TimeEnd) {
+            return '';
+        }
         return $this->TimeEnd ? (new \DateTime($this->TimeEnd))->format('H:i') : '';
     }
 
@@ -231,5 +239,45 @@ class EventDay extends DataObject
             ]);
         }
         return $agenda;
+    }
+
+    public function RenderTitle()
+    {
+        if ($this->Status == 'Cancelled') {
+            return $this->getField('Title');
+        } elseif ($this->Status == 'Suggested') {
+            return $this->getField('Title') . ' (Vorschlag)';
+        } else {
+            return $this->getField('Title');
+        }
+    }
+
+    public function getVotedYes()
+    {
+        return $this->Participations()->filter('Type', 'Accept')->count();
+    }
+
+    public function getVotedMaybe()
+    {
+        return $this->Participations()->filter('Type', 'Maybe')->count();
+    }
+
+    public function getVotedNo()
+    {
+        return $this->Participations()->filter('Type', 'Decline')->count();
+    }
+
+    public function getAllOfSameTitleSuggestedEvents()
+    {
+        $alloptions = EventDay::get()->filter([
+            'Title' => $this->Title,
+            'Status' => 'Suggested',
+        ]);
+        // Sortiere in PHP nach Accept-Teilnahmen
+        $alloptionsArr = $alloptions->toArray();
+        usort($alloptionsArr, function ($a, $b) {
+            return $b->Participations()->filter('Type', 'Accept')->count() <=> $a->Participations()->filter('Type', 'Accept')->count();
+        });
+        return ArrayList::create($alloptionsArr);
     }
 }

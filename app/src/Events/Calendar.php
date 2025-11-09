@@ -5,7 +5,6 @@ namespace App\Events;
 
 use App\Controllers\CalendarController;
 use App\Events\EventDay;
-use App\Pages\CalendarPage;
 use SilverStripe\Model\ArrayData;
 use App\Events\EventDayParticipation;
 use SilverStripe\Model\List\ArrayList;
@@ -105,9 +104,13 @@ class Calendar
 
     public function getCalendarDays()
     {
-        $num_days = date('t', strtotime($this->active_year . '-' . $this->active_month . '-01'));
-        $num_days_last_month = date('j', strtotime('last day of previous month', strtotime($this->active_year . '-' . $this->active_month . '-01')));
-        $first_day_of_week = date('N', strtotime($this->active_year . '-' . $this->active_month . '-01')) - 1; // 0=Mon
+        // Fallbacks to avoid null passed to strtotime
+        $year = $this->active_year ?: date('Y');
+        $month = $this->active_month ?: date('m');
+        $dateString = $year . '-' . $month . '-01';
+        $num_days = date('t', strtotime($dateString));
+        $num_days_last_month = date('j', strtotime('last day of previous month', strtotime($dateString)));
+        $first_day_of_week = date('N', strtotime($dateString)) - 1; // 0=Mon
         $days = [];
 
         // Days from previous month (ignored)
@@ -116,21 +119,25 @@ class Calendar
 
             foreach ($this->events as $event) {
                 for ($d = 0; $d <= ($event[2] - 1); $d++) {
-                    $eventDate = date('Y-m-d', strtotime($event[1]));
-                    $compareDate = date('Y-m-d', strtotime($dateStr . ' -' . $d . ' day'));
-                    if ($compareDate === $eventDate) {
-                        $events[] = ArrayData::create([
-                            'Title' => $event[0],
-                            'Date' => $event[1],
-                            'Color' => trim($event[3]),
-                        ]);
+                    if ($event[1]) {
+                        $eventDate = date('Y-m-d', strtotime($event[1]));
+                        $compareDate = date('Y-m-d', strtotime($dateStr . ' -' . $d . ' day'));
+                        if ($compareDate === $eventDate) {
+                            $events[] = ArrayData::create([
+                                'Title' => $event[0],
+                                'Date' => $event[1],
+                                'Color' => trim($event[3]),
+                            ]);
+                        }
+                    } else {
+                        $events = [];
                     }
                 }
             }
             $currentDate = date('Y-m-d');
             $dateStr = date('Y-m-d', strtotime(($this->active_month - 1) . '/' . ($num_days_last_month - $i + 1) . '/' . $this->active_year));
             $isToday = ($dateStr === $currentDate);
-            
+
             $days[] = ArrayData::create([
                 'Number' => $num_days_last_month - $i + 1,
                 'IsCurrentMonth' => false,
@@ -149,14 +156,18 @@ class Calendar
             $events = [];
             foreach ($this->events as $event) {
                 for ($d = 0; $d <= ($event[2] - 1); $d++) {
-                    $eventDate = date('Y-m-d', strtotime($event[1]));
-                    $compareDate = date('Y-m-d', strtotime($dateStr . ' -' . $d . ' day'));
-                    if ($compareDate === $eventDate) {
-                        $events[] = ArrayData::create([
-                            'Title' => $event[0],
-                            'Date' => $event[1],
-                            'Color' => trim($event[3]),
-                        ]);
+                    if ($event[1]) {
+                        $eventDate = date('Y-m-d', strtotime($event[1]));
+                        $compareDate = date('Y-m-d', strtotime($dateStr . ' -' . $d . ' day'));
+                        if ($compareDate === $eventDate) {
+                            $events[] = ArrayData::create([
+                                'Title' => $event[0],
+                                'Date' => $event[1],
+                                'Color' => trim($event[3]),
+                            ]);
+                        }
+                    } else {
+                        $events = [];
                     }
                 }
             }
@@ -175,7 +186,7 @@ class Calendar
             $currentDate = date('Y-m-d');
             $dateStr = date('Y-m-d', strtotime(($this->active_month + 1) . '/' . $i . '/' . $this->active_year));
             $isToday = ($dateStr === $currentDate);
-            
+
             $days[] = ArrayData::create([
                 'Number' => $i,
                 'IsCurrentMonth' => false,
