@@ -69,6 +69,7 @@
             .event {
                 font-weight: 500;
                 font-size: 14px;
+                border: 2px solid transparent;
                 border-radius: var(--BorderRadiusSmall);
                 background-color: var(--ColorGray);
                 color: var(--ColorWhite);
@@ -79,7 +80,7 @@
                 cursor: pointer;
 
                 .event_title {
-                    text-align: right;
+                    text-align: center;
                     padding: 6px;
                 }
 
@@ -93,6 +94,31 @@
 
                 &.event--color-Decline{
                     background-color: var(--ColorStatusBad);
+                }
+
+                &.event--status-Suggested{
+                    color: var(--ColorGray);
+                    background-color: transparent;
+                    border: 2px solid var(--ColorGray);
+
+                    &.event--color-Accept{
+                        border-color: var(--ColorStatusGood);
+                    }
+
+                    &.event--color-Maybe{
+                        border-color: var(--ColorStatusWarning);
+                    }
+
+                    &.event--color-Decline{
+                        border-color: var(--ColorStatusBad);
+                    }
+                }
+
+                &.event--status-Cancelled{
+                    color: var(--ColorLightGray);
+                    background-color: transparent;
+                    border: 2px solid var(--ColorLightGray);
+                    text-decoration: line-through;
                 }
             }
 
@@ -344,6 +370,29 @@
                     &.participant--status-Decline{
                         border-left: 4px solid var(--ColorStatusBad);
                     }
+                }
+            }
+
+            .suggestion_table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+
+                .suggestion_row {
+                    border-bottom: 1px solid var(--ColorLightGray);
+                }
+
+                .suggestion_date {
+                    padding: 8px;
+                    font-weight: bold;
+                    color: var(--ColorGray);
+                    width: 40%;
+                }
+
+                .suggestion_participants {
+                    padding: 8px;
+                    text-align: center;
+                    width: 20%;
                 }
             }
         }

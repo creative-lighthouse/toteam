@@ -7,13 +7,22 @@
             <a class="button" href="$LinkToNextMonth">></a>
         </div>
         $Calendar
-        <% if $ICSLink %>
-            <div class="copy-container">
-                <button type="button" class="button copy-btn" data-copy-target="$ICSLink">
-                    Link für externe Kalender kopieren
-                </button>
-                <span class="copy-feedback" style="display:none; color:green;">✓ Link kopiert</span>
+        <div class="calendar_actions">
+            <% if $ICSLink %>
+                <div class="copy-container">
+                    <button type="button" class="button copy-btn" data-copy-target="$ICSLink">
+                        Link für externe Kalender kopieren
+                    </button>
+                    <span class="copy-feedback" style="display:none; color:green;">✓ Link kopiert</span>
+                </div>
+            <% end_if %>
+            <div class="calendar_filter">
+                <select id="calendar-filter-select" onchange="location = this.value;">
+                    <option value="/calendar" <% if not $FilterType %>selected<% end_if %>>Alle Veranstaltungen</option>
+                    <option value="/calendar?filter=my" <% if $FilterType == 'my' %>selected<% end_if %>>Meine Veranstaltungen</option>
+                    <option value="/calendar?filter=suggested" <% if $FilterType == 'suggested' %>selected<% end_if %>>Vorgeschlagene Veranstaltungen</option>
+                </select>
             </div>
-        <% end_if %>
+        </div>
     </div>
 </div>

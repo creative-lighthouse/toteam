@@ -2,6 +2,20 @@ import Swiper, {Autoplay, EffectCoverflow, EffectFade, Navigation, Pagination} f
 import GLightbox from "glightbox";
 
 document.addEventListener("DOMContentLoaded", function () {
+    // Seite neu laden mit ?date=... wenn ein Datumsmodal geschlossen wird
+    document.querySelectorAll('dialog.event-modal').forEach(dialog => {
+        dialog.addEventListener('close', function () {
+            console.log('Dialog geschlossen');
+            const date = dialog.getAttribute('data-date');
+            if (date) {
+                // Aktuelle URL ohne Query-Parameter
+                const url = new URL(window.location.href);
+                url.searchParams.set('date', date);
+                    url.searchParams.set('eventID', '');
+                    window.location.href = url.toString();
+            }
+        });
+    });
         // Workaround: PWA-Session-Reload bei /registration
         if (window.matchMedia('(display-mode: standalone)').matches && window.location.pathname === '/registration') {
             setTimeout(() => {
@@ -198,6 +212,35 @@ document.addEventListener("DOMContentLoaded", function () {
                                 });
                             }
                         }
+
+                        // === Vorschlagstabelle aktualisieren ===
+                        // Hole das aktuelle Datum (data-date Attribut im Dialog)
+                        const currentDate = dialog.getAttribute('data-date');
+                        // Hole die vorherige Auswahl (aus data-attribute am Dialog oder speichere sie vorher im JS)
+                        let previous = dialog.getAttribute('data-previous-participation');
+                        // Finde die Tabellenzeile mit dem aktuellen Datum
+                        const suggestionTable = dialog.querySelector('.suggestion_table');
+                        if (suggestionTable && currentDate) {
+                            // Suche die Tabellenzeile mit passendem data-date
+                            const dateCell = suggestionTable.querySelector('.suggestion_date[data-date="' + currentDate + '"]');
+                            if (dateCell) {
+                                const row = dateCell.closest('tr');
+                                const yesCell = row.querySelectorAll('td')[1];
+                                const maybeCell = row.querySelectorAll('td')[2];
+                                const noCell = row.querySelectorAll('td')[3];
+                                // Vorherige Auswahl runterzählen
+                                if (previous === 'Accept' && yesCell) yesCell.textContent = Math.max(0, parseInt(yesCell.textContent, 10) - 1);
+                                if (previous === 'Maybe' && maybeCell) maybeCell.textContent = Math.max(0, parseInt(maybeCell.textContent, 10) - 1);
+                                if (previous === 'Decline' && noCell) noCell.textContent = Math.max(0, parseInt(noCell.textContent, 10) - 1);
+                                // Neue Auswahl hochzählen
+                                if (btn.value === 'Accept' && yesCell) yesCell.textContent = parseInt(yesCell.textContent, 10) + 1;
+                                if (btn.value === 'Maybe' && maybeCell) maybeCell.textContent = parseInt(maybeCell.textContent, 10) + 1;
+                                if (btn.value === 'Decline' && noCell) noCell.textContent = parseInt(noCell.textContent, 10) + 1;
+                            }
+                        }
+                        // Speichere die neue Auswahl als previous
+                        dialog.setAttribute('data-previous-participation', btn.value);
+                        // === Ende Vorschlagstabelle aktualisieren ===
                     }
                 })
                 .catch(error => {
