@@ -16,13 +16,13 @@
                     <span class="copy-feedback" style="display:none; color:green;">✓ Link kopiert</span>
                 </div>
             <% end_if %>
-            <div class="calendar_filter">
+            <!--<div class="calendar_filter">
                 <select id="calendar-filter-select" onchange="location = this.value;">
                     <option value="/calendar" <% if not $FilterType %>selected<% end_if %>>Alle Veranstaltungen</option>
                     <option value="/calendar?filter=my" <% if $FilterType == 'my' %>selected<% end_if %>>Meine Veranstaltungen</option>
                     <option value="/calendar?filter=suggested" <% if $FilterType == 'suggested' %>selected<% end_if %>>Vorgeschlagene Veranstaltungen</option>
                 </select>
-            </div>
+            </div>-->
         </div>
     </div>
 </div>
