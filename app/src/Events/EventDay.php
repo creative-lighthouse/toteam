@@ -132,11 +132,11 @@ class EventDay extends DataObject
         $date = $this->dbObject('Date');
         if ($date instanceof DBField) {
             if ($this->TimeStart && $this->TimeEnd) {
-                return $this->dbObject('Date')->Format('dd.MM.YY') . ', ' . $this->dbObject('TimeStart')->Format('HH:mm') . ' - ' . $this->dbObject('TimeEnd')->Format('HH:mm');
+                return $this->dbObject('Date')->Format('dd.MM.yy') . ', ' . $this->dbObject('TimeStart')->Format('HH:mm') . ' - ' . $this->dbObject('TimeEnd')->Format('HH:mm');
             } elseif ($this->TimeStart) {
-                return $this->dbObject('Date')->Format('dd.MM.YY') . ', Ab' . $this->dbObject('TimeStart')->Format('HH:mm');
+                return $this->dbObject('Date')->Format('dd.MM.yy') . ', Ab' . $this->dbObject('TimeStart')->Format('HH:mm');
             } else {
-                return $this->dbObject('Date')->Format('dd.MM.YY');
+                return $this->dbObject('Date')->Format('dd.MM.yy');
             }
         } else {
             return "Kein Datum";
