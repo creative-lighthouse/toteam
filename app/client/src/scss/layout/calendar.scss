@@ -387,6 +387,16 @@
                     font-weight: bold;
                     color: var(--ColorGray);
                     width: 40%;
+
+                    &.date--color-Accept {
+                        color: var(--ColorStatusGood);
+                    }
+                    &.date--color-Maybe {
+                        color: var(--ColorStatusWarning);
+                    }
+                    &.date--color-Decline {
+                        color: var(--ColorStatusBad);
+                    }
                 }
 
                 .suggestion_participants {
