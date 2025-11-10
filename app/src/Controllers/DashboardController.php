@@ -46,13 +46,15 @@ class DashboardController extends BaseController
         $futureEventDays = EventDay::get()
             ->filter('Date:GreaterThanOrEqual', date('Y-m-d'))
             ->sort('Date', 'ASC');
-        $eventdaysWithoutFeedback = DataList::create(EventDay::class);
+        $eventdaysWithoutFeedback = DataList::create(EventDay::class)
+            ->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'))
+            ->sort('Date', 'ASC');
         foreach($futureEventDays as $key => $eventday) {
             $participation = EventDayParticipation::get()
                 ->filter(['ParentID' => $eventday->ID, 'MemberID' => $currentuser->ID])
                 ->first();
             if ($participation) {
-                $eventdaysWithoutFeedback->remove($eventday);
+                // $eventdaysWithoutFeedback->remove($eventday);
             }
         }
         $participationToday = EventDayParticipation::get()
