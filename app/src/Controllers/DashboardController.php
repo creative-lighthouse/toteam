@@ -5,8 +5,10 @@ namespace App\Controllers;
 use App\Tasks\Task;
 use App\Food\MealEater;
 use App\Controllers\BaseController;
+use App\Events\EventDay;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
+use SilverStripe\ORM\DataList;
 
 /**
  * Class \App\Controllers\DashboardController
@@ -41,6 +43,18 @@ class DashboardController extends BaseController
             ->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'))
             ->sort('Parent.Date', 'ASC')
             ->limit(5);
+        $futureEventDays = EventDay::get()
+            ->filter('Date:GreaterThanOrEqual', date('Y-m-d'))
+            ->sort('Date', 'ASC');
+        $eventdaysWithoutFeedback = DataList::create(EventDay::class);
+        foreach($futureEventDays as $key => $eventday) {
+            $participation = EventDayParticipation::get()
+                ->filter(['ParentID' => $eventday->ID, 'MemberID' => $currentuser->ID])
+                ->first();
+            if ($participation) {
+                $eventdaysWithoutFeedback->remove($eventday);
+            }
+        }
         $participationToday = EventDayParticipation::get()
             ->filter(['MemberID' => $currentuser->ID, 'Type' => 'Accept', 'Parent.Date' => date('Y-m-d')])->first();
 
@@ -49,6 +63,7 @@ class DashboardController extends BaseController
             'LatestParticipations' => $latestparticipations,
             'LatestTasks' => $latesttasks,
             'UpcomingEventDays' => $upcomingeventdays,
+            'EventDaysWithoutFeedback' => $eventdaysWithoutFeedback,
             'MealsToday' => $this->getAllMealsParticipatedToday(),
             'ParticipationToday' => $participationToday,
         ]);
