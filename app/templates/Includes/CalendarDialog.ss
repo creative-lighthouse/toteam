@@ -41,7 +41,7 @@
                     <% loop $AllOfSameTitleSuggestedEvents %>
                         <% if $RenderDate %>
                             <tr class="suggestion_row">
-                                <td class="suggestion_date" data-date="$Date"><a href="$Link">$RenderDate</a></td>
+                                <td class="suggestion_date date--color-$ParticipationOfCurrentUser.Type" data-date="$Date"><a href="$Link">$RenderDate</a></td>
                                 <td class="suggestion_participants">$VotedYes</td>
                                 <td class="suggestion_participants">$VotedMaybe</td>
                                 <td class="suggestion_participants">$VotedNo</td>
