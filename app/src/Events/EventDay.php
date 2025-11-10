@@ -89,6 +89,7 @@ class EventDay extends DataObject
     private static $summary_fields = [
         "RenderTitle" => "Titel",
         "RenderDate" => "Tag",
+        "Status" => "Status",
     ];
 
     private static $table_name = 'EventDay';
