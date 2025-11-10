@@ -72,18 +72,16 @@
             </ul>
         </div>
 
-        <div class="section_infobox">
-            <h2 class="hl2">Termine ohne deine Rückmeldung:</h2>
-            <ul class="infobox_list">
-                <% if $EventDaysWithoutFeedback %>
+        <% if $EventDaysWithoutFeedback %>
+            <div class="section_infobox">
+                <h2 class="hl2">Termine ohne deine Rückmeldung:</h2>
+                <ul class="infobox_list">
                     <% loop $EventDaysWithoutFeedback %>
                         <li class="käse"><a href="$Link">$Title - <i>$RenderDateWithTime</i></a></li>
                     <% end_loop %>
-                <% else %>
-                    <li><a href="calendar">Keine ausstehenden Umfragen</a></li>
-                <% end_if %>
-            </ul>
-        </div>
+                </ul>
+            </div>
+        <% end_if %>
 
         <% if $MealsWithoutFoodSupplied %>
             <div class="section_infobox">
