@@ -39,6 +39,7 @@ class DashboardController extends BaseController
             ->limit(5);
         $upcomingeventdays = EventDayParticipation::get()
             ->filter('MemberID', $currentuser->ID)
+            ->exclude('Status', 'Cancelled')
             ->filter(['Type' => ['Accept', 'Maybe']])
             ->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'))
             ->sort('Parent.Date', 'ASC')
@@ -46,6 +47,7 @@ class DashboardController extends BaseController
 
         $eventDaysWithoutParticipation = EventDay::get()
             ->filter('Date:GreaterThanOrEqual', date('Y-m-d'))
+            ->exclude('Status', 'Cancelled')
             ->leftJoin(
                 'EventDayParticipation',
                 "\"EventDayParticipation\".\"ParentID\" = \"EventDay\".\"ID\" AND \"EventDayParticipation\".\"MemberID\" = {$currentuser->ID}"
