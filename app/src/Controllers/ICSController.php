@@ -39,7 +39,7 @@ class ICSController extends BaseController
 
     private function generateICS($user)
     {
-        $eventDays = EventDay::get();
+        $eventDays = EventDay::get()->exclude('Status', 'Cancelled');
 
         $ics = "BEGIN:VCALENDAR\r\n";
         $ics .= "VERSION:2.0\r\n";
