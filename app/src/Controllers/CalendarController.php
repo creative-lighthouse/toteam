@@ -49,6 +49,11 @@ class CalendarController extends BaseController
 
         $eventday = EventDay::get()->byID($dateID);
         $member = Security::getCurrentUser();
+        if (!$member) {
+            //Redirect to login
+            $this->redirect('/login?BackURL=' . urlencode($this->getRequest()->getURL()));
+            return;
+        }
         $eventDayParticipation = $eventday->Participations()->filter(['MemberID' => $member->ID])->first();
         if (!$eventDayParticipation) {
             $eventDayParticipation = EventDayParticipation::create();
@@ -95,6 +100,12 @@ class CalendarController extends BaseController
 
         $meal = Meal::get()->byID($mealID);
         $member = Security::getCurrentUser();
+        if (!$member) {
+            //Redirect to login
+            $this->redirect('/login?BackURL=' . urlencode($this->getRequest()->getURL()));
+            return;
+        }
+
         $eventday = EventDay::get()->byID($dateID);
         $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
 
@@ -129,6 +140,12 @@ class CalendarController extends BaseController
 
         $eventday = EventDay::get()->byID($dateID);
         $member = Security::getCurrentUser();
+        if (!$member) {
+            //Redirect to login
+            $this->redirect('/login?BackURL=' . urlencode($this->getRequest()->getURL()));
+            return;
+        }
+
         $eventDayParticipation = $eventday->Participations()->filter(['MemberID' => $member->ID])->first();
         if ($eventDayParticipation) {
             if (!is_object($eventDayParticipation)) {
@@ -231,7 +248,7 @@ class CalendarController extends BaseController
             if($meals->count() == 0){
                 return "";
             }
-            
+
             $returnstring .= "=== Mahlzeiten ===\\n";
             foreach ($meals as $meal) {
                 if (!is_object($meal)) {
