@@ -6,6 +6,7 @@ use SilverStripe\ORM\DataObject;
 use App\Notices\NoticeReadStatus;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
+use App\Notifications\PushNotificationService;
 
 /**
  * Class \App\Notices\Notice
@@ -20,8 +21,8 @@ use SilverStripe\Security\Security;
  * @method \SilverStripe\Security\Member Author()
  * @method \App\Notices\NoticeCategory Category()
  * @method \SilverStripe\ORM\DataList|\App\Notices\NoticeReadStatus[] ReadStatuses()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -86,5 +87,21 @@ class Notice extends DataObject
 
         $readStatus = $this->ReadStatuses()->filter('MemberID', $currentUser->ID);
         return $readStatus->count() === 0;
+    }
+
+    /**
+     * Send push notification for new notices
+     */
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        // Only send notification for newly created notices
+        $changedFields = $this->getChangedFields(false, 1);
+        $isNew = isset($changedFields['ID']) && empty($changedFields['ID']['before']);
+
+        if ($isNew) {
+            PushNotificationService::notifyNewNotice($this);
+        }
     }
 }

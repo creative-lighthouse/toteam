@@ -1,6 +1,6 @@
 .introbar {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
     align-items: center;
     padding: 10px 0;
     view-transition-name: introbar;
