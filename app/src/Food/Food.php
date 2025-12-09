@@ -4,6 +4,7 @@ namespace App\Food;
 
 use Override;
 use App\Food\Meal;
+use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use App\HumanResources\Allergy;
 use SilverStripe\ORM\DataObject;
@@ -18,8 +19,10 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @property ?string $FoodPreference
  * @property ?string $Notes
  * @property ?string $Status
+ * @property int $ParentID
  * @property int $ImageID
  * @property int $SupplierID
+ * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\Security\Member Supplier()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
@@ -40,6 +43,7 @@ class Food extends DataObject
     ];
 
     private static $has_one = [
+        "Parent" => Organization::class,
         "Image" => Image::class,
         "Supplier" => Member::class,
     ];
@@ -62,6 +66,7 @@ class Food extends DataObject
         "Supplier" => "Anbieter",
         "Allergies" => "Allergien",
         "Meals" => "Mahlzeiten",
+        "Parent" => "Organisation",
     ];
 
     private static $summary_fields = [

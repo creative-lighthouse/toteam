@@ -4,6 +4,7 @@ namespace App\SuggestionBox;
 
 use Override;
 use App\Food\Food;
+use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
@@ -16,8 +17,10 @@ use SilverStripe\Security\Member;
  * @property bool $HasRecipient
  * @property bool $SeenByRecipient
  * @property bool $IsAnonymous
+ * @property int $ParentID
  * @property int $RecipientID
  * @property int $SenderID
+ * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Security\Member Recipient()
  * @method \SilverStripe\Security\Member Sender()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
@@ -37,6 +40,7 @@ class Suggestion extends DataObject
     ];
 
     private static $has_one = [
+        "Parent" => Organization::class,
         "Recipient" => Member::class,
         "Sender" => Member::class,
     ];
@@ -44,7 +48,16 @@ class Suggestion extends DataObject
     private static $owns = [
     ];
 
-    private static $field_labels = [];
+    private static $field_labels = [
+        "Parent" => "Organisation",
+        "Recipient" => "Empfänger",
+        "Sender" => "Absender",
+        "Title" => "Titel",
+        "Description" => "Beschreibung",
+        "HasRecipient" => "Hat Empfänger",
+        "SeenByRecipient" => "Vom Empfänger gesehen",
+        "IsAnonymous" => "Ist anonym",
+    ];
 
     private static $summary_fields = [
         "Title"
