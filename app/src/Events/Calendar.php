@@ -26,7 +26,14 @@ class Calendar
         $this->member = $member;
         $this->currentEventDayID = $eventdayID;
         if ($this->member) {
-            $this->eventdays = EventDay::get();
+            // Filter eventdays by user's organizations
+            $organizationIDs = $this->member->getOrganizationIDs();
+            if (!empty($organizationIDs)) {
+                $this->eventdays = EventDay::get()->filter('Parent.ParentID', $organizationIDs);
+            } else {
+                $this->eventdays = EventDay::get()->filter('ID', 0); // Empty list
+            }
+
             foreach ($this->eventdays as $day) {
                 $memberparticipation = EventDayParticipation::get()->filter(['ParentID' => $day->ID, 'MemberID' => $this->member->ID])->first();
                 if ($memberparticipation) {
@@ -201,7 +208,13 @@ class Calendar
 
     public function getEventsForDay($day)
     {
-        $events = EventDay::get()->filter('Date', $day);
+        // Use the already filtered eventdays instead of querying all EventDays
+        if ($this->eventdays) {
+            $events = $this->eventdays->filter('Date', $day);
+        } else {
+            // Fallback if eventdays not set (shouldn't happen normally)
+            $events = ArrayList::create([]);
+        }
         //Sort by Date and Time
         $events = $events->sort('Date', 'ASC')->sort('TimeStart', 'ASC');
         return $events;

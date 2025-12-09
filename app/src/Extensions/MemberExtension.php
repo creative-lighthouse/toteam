@@ -12,6 +12,7 @@ use SilverStripe\Forms\FieldList;
 use App\Events\EventDayParticipation;
 use SilverStripe\Forms\DropdownField;
 use App\Controllers\NoticesController;
+use App\Teams\Organization;
 use App\Teams\Project;
 use App\Teams\Team;
 
@@ -28,7 +29,7 @@ use App\Teams\Team;
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Department[] Departments()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Project[] Projects()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Team[] Teams()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organizations()
  */
 class MemberExtension extends Extension
 {
@@ -55,7 +56,7 @@ class MemberExtension extends Extension
     private static $belongs_many_many = [
         "Departments" => Department::class,
         "Projects" => Project::class,
-        "Teams" => Team::class,
+        "Organizations" => Organization::class,
     ];
 
     private static $owns = [
@@ -169,5 +170,41 @@ class MemberExtension extends Extension
     public function getUnreadNotices()
     {
         return NoticesController::getUnreadNotices($this->owner->ID);
+    }
+
+    /**
+     * Get all Organization IDs that this member belongs to
+     * @return array
+     */
+    public function getOrganizationIDs()
+    {
+        $organizationIDs = [];
+
+        // Direct organization memberships
+        if ($this->owner->Organizations()->exists()) {
+            foreach ($this->owner->Organizations() as $org) {
+                $organizationIDs[] = $org->ID;
+            }
+        }
+
+        // Organizations through departments
+        if ($this->owner->Departments()->exists()) {
+            foreach ($this->owner->Departments() as $dept) {
+                if ($dept->ParentID) {
+                    $organizationIDs[] = $dept->ParentID;
+                }
+            }
+        }
+
+        // Organizations through projects
+        if ($this->owner->Projects()->exists()) {
+            foreach ($this->owner->Projects() as $project) {
+                if ($project->Parent()->exists() && $project->Parent()->ParentID) {
+                    $organizationIDs[] = $project->Parent()->ParentID;
+                }
+            }
+        }
+
+        return array_unique($organizationIDs);
     }
 }

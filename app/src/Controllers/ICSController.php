@@ -41,6 +41,16 @@ class ICSController extends BaseController
     {
         $eventDays = EventDay::get()->exclude('Status', 'Cancelled');
 
+        // Filter by user's organizations
+        if ($user) {
+            $organizationIDs = $user->getOrganizationIDs();
+            if (!empty($organizationIDs)) {
+                $eventDays = $eventDays->filter('Parent.ParentID', $organizationIDs);
+            } else {
+                $eventDays = EventDay::get()->filter('ID', 0); // Empty list
+            }
+        }
+
         $ics = "BEGIN:VCALENDAR\r\n";
         $ics .= "VERSION:2.0\r\n";
         $ics .= "PRODID:-//ToTeam//Creative Lighthouse//DE\r\n";
@@ -64,7 +74,7 @@ class ICSController extends BaseController
             foreach ($eventDay->Participations() as $participation) {
                 $ics .= "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;CN=" . $participation->Member->getName() . ";PARTSTAT=" . $participation->renderICSType() . ":mailto:" . $participation->Member->Email . "\r\n";
             }
-            
+
             $ics .= "CLASS:PUBLIC\r\n";
             $ics .= "END:VEVENT\r\n";
         }

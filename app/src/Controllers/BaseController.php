@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use SilverStripe\Control\Controller;
 use SilverStripe\View\SSViewer;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Controllers\BaseController
@@ -11,6 +12,38 @@ use SilverStripe\View\SSViewer;
  */
 class BaseController extends Controller
 {
+    /**
+     * Get the Organization IDs that the current user has access to
+     * @return array
+     */
+    protected function getUserOrganizationIDs()
+    {
+        $currentUser = Security::getCurrentUser();
+        if (!$currentUser) {
+            return [];
+        }
+
+        return $currentUser->getOrganizationIDs();
+    }
+
+    /**
+     * Filter a DataList by user's organizations
+     * Assumes the DataList has a Parent relation to Organization
+     * @param \SilverStripe\ORM\DataList $list
+     * @return \SilverStripe\ORM\DataList
+     */
+    protected function filterByUserOrganizations($list)
+    {
+        $organizationIDs = $this->getUserOrganizationIDs();
+
+        if (empty($organizationIDs)) {
+            // If user has no organizations, return empty list
+            return $list->filter('ID', 0);
+        }
+
+        return $list->filter('ParentID', $organizationIDs);
+    }
+
     public function getViewer($action)
     {
         // Hard-coded templates

@@ -48,6 +48,16 @@ class CalendarController extends BaseController
         }
 
         $eventday = EventDay::get()->byID($dateID);
+        if (!$eventday) {
+            return $this->httpError(404, 'Event not found');
+        }
+
+        // Security check: Verify user has access to this organization
+        $organizationIDs = $this->getUserOrganizationIDs();
+        if (!in_array($eventday->Parent()->ParentID, $organizationIDs)) {
+            return $this->httpError(403, 'Access denied');
+        }
+
         $member = Security::getCurrentUser();
         if (!$member) {
             //Redirect to login
@@ -99,6 +109,16 @@ class CalendarController extends BaseController
         }
 
         $meal = Meal::get()->byID($mealID);
+        if (!$meal) {
+            return $this->httpError(404, 'Meal not found');
+        }
+
+        // Security check: Verify user has access to this organization
+        $eventday = $meal->Parent();
+        $organizationIDs = $this->getUserOrganizationIDs();
+        if (!$eventday || !in_array($eventday->Parent()->ParentID, $organizationIDs)) {
+            return $this->httpError(403, 'Access denied');
+        }
         $member = Security::getCurrentUser();
         if (!$member) {
             //Redirect to login
