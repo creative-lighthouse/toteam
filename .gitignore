@@ -13,3 +13,5 @@ public/_graphql/
 public/assets/
 
 .vscode/
+
+firebase-service-account.json
