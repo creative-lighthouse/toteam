@@ -2,6 +2,7 @@
 
 namespace App\Notices;
 
+use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
 use App\Notices\NoticeReadStatus;
 use SilverStripe\Security\Member;
@@ -16,8 +17,10 @@ use App\Notifications\PushNotificationService;
  * @property ?string $LongText
  * @property ?string $ReleaseDate
  * @property ?string $ExpiryDate
+ * @property int $ParentID
  * @property int $AuthorID
  * @property int $CategoryID
+ * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Security\Member Author()
  * @method \App\Notices\NoticeCategory Category()
  * @method \SilverStripe\ORM\DataList|\App\Notices\NoticeReadStatus[] ReadStatuses()
@@ -38,6 +41,7 @@ class Notice extends DataObject
     ];
 
     private static $has_one = [
+        "Parent" => Organization::class,
         "Author" => Member::class,
         "Category" => NoticeCategory::class,
     ];
@@ -55,6 +59,7 @@ class Notice extends DataObject
         "Author" => "Autor",
         "Category" => "Kategorie",
         "ReadStatuses" => "Gelesen-Stati",
+        "Parent" => "Organisation",
     ];
 
     private static $summary_fields = [

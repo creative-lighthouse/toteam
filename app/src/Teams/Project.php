@@ -2,7 +2,6 @@
 
 namespace App\Teams;
 
-use App\Tasks\TaskGroup;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
@@ -13,12 +12,9 @@ use SilverStripe\Security\Member;
  * @property ?string $Description
  * @property bool $AllowsSelfJoining
  * @property int $ParentID
- * @property int $ParentProjectID
- * @method \App\Teams\Team Parent()
- * @method \App\Teams\Project ParentProject()
+ * @method \App\Teams\Department Parent()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Heads()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Project[] SubProjects()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -34,14 +30,12 @@ class Project extends DataObject
     ];
 
     private static $has_one = [
-        "Parent" => Team::class,
-        "ParentProject" => Project::class,
+        "Parent" => Department::class,
     ];
 
     private static $many_many = [
         "Heads" => Member::class,
         "Members" => Member::class,
-        "SubProjects" => Project::class,
     ];
 
     private static $owns = [
@@ -49,11 +43,19 @@ class Project extends DataObject
     ];
 
     private static $field_labels = [
-
+        "Title" => "Titel",
+        "Description" => "Beschreibung",
+        "AllowsSelfJoining" => "Erlaubt Selbstbeitritt",
+        "Parent" => "Arbeits-Bereich",
+        "Heads" => "Leiter",
+        "Members" => "Mitglieder",
     ];
 
     private static $summary_fields = [
         "Title" => "Titel",
+        "AllowsSelfJoining" => "Erlaubt Selbstbeitritt",
+        "Heads.Count" => "Anzahl Leiter",
+        "Members.Count" => "Anzahl Mitglieder",
     ];
 
     private static $table_name = 'Project';

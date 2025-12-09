@@ -3,6 +3,7 @@
 namespace App\Tasks;
 
 use App\Tasks\TaskGroup;
+use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
@@ -11,10 +12,10 @@ use SilverStripe\Security\Member;
  *
  * @property ?string $Title
  * @property ?string $Description
- * @property int $OwnerID
  * @property int $ParentID
- * @method \SilverStripe\Security\Member Owner()
+ * @property int $OwnerID
  * @method \App\Tasks\Task Parent()
+ * @method \SilverStripe\Security\Member Owner()
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\TaskGroup[] TaskGroups()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Supporters()
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\Task[] SubTasks()
@@ -32,6 +33,7 @@ class Task extends DataObject
     ];
 
     private static $has_one = [
+        "Parent" => Organization::class,
         "Owner" => Member::class,
         "Parent" => Task::class,
     ];
@@ -47,7 +49,13 @@ class Task extends DataObject
     ];
 
     private static $field_labels = [
-
+        "Title" => "Titel",
+        "Description" => "Beschreibung",
+        "Owner" => "Verantwortlicher",
+        "TaskGroups" => "Aufgaben-Gruppen",
+        "Supporters" => "Unterstützer",
+        "SubTasks" => "Unteraufgaben",
+        "Parent" => "Organisation",
     ];
 
     private static $summary_fields = [

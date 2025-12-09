@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Teams\Organization;
 use Override;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
@@ -23,7 +24,9 @@ use SilverStripe\Forms\GridField\GridFieldEditButton;
  * @property ?string $Title
  * @property ?string $Start
  * @property ?string $End
+ * @property int $ParentID
  * @property int $ImageID
+ * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDay[] EventDays()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
@@ -41,6 +44,7 @@ class Event extends DataObject
     ];
 
     private static $has_one = [
+        "Parent" => Organization::class,
         "Image" => Image::class,
     ];
 
@@ -58,6 +62,7 @@ class Event extends DataObject
         "Title" => "Titel",
         "Start" => "Start",
         "End" => "Ende",
+        "Parent" => "Organisation",
     ];
 
     private static $summary_fields = [

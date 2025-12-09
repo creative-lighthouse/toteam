@@ -2,16 +2,18 @@
 
 namespace App\Extensions;
 
-use App\Controllers\NoticesController;
-use SilverStripe\Forms\FieldList;
 use App\Tasks\Task;
+use App\Teams\Department;
 use SilverStripe\Assets\Image;
 use App\HumanResources\Allergy;
 use SilverStripe\Core\Extension;
-use App\HumanResources\Department;
-use App\Events\EventDayParticipation;
 use App\SuggestionBox\Suggestion;
+use SilverStripe\Forms\FieldList;
+use App\Events\EventDayParticipation;
 use SilverStripe\Forms\DropdownField;
+use App\Controllers\NoticesController;
+use App\Teams\Project;
+use App\Teams\Team;
 
 /**
  * Class \App\Extensions\MemberExtension
@@ -24,6 +26,9 @@ use SilverStripe\Forms\DropdownField;
  * @property int $ProfileImageID
  * @method \SilverStripe\Assets\Image ProfileImage()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Department[] Departments()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Project[] Projects()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Team[] Teams()
  */
 class MemberExtension extends Extension
 {
@@ -43,9 +48,14 @@ class MemberExtension extends Extension
     ];
 
     private static $belongs_many = [
-        "Departments" => Department::class,
         "Tasks" => Task::class,
         "Suggestions" => Suggestion::class,
+    ];
+
+    private static $belongs_many_many = [
+        "Departments" => Department::class,
+        "Projects" => Project::class,
+        "Teams" => Team::class,
     ];
 
     private static $owns = [

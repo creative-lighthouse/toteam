@@ -1,20 +1,20 @@
 <?php
 
-namespace App\HumanResources;
+namespace App\Teams;
 
 use Override;
-use App\Links\TeamLink;
-use App\Links\TeamDownload;
-use SilverStripe\Assets\Image;
+use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Member;
 
 /**
- * Class \App\HumanResources\Department
+ * Class \App\Teams\Department
  *
  * @property ?string $Title
- * @property int $ImageID
- * @method \SilverStripe\Assets\Image Image()
- * @method \SilverStripe\ORM\ManyManyList|\App\Links\TeamLink[] TeamLinks()
+ * @property bool $AllowsSelfJoining
+ * @property int $ParentID
+ * @method \App\Teams\Organization Parent()
+ * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -25,24 +25,28 @@ class Department extends DataObject
 {
     private static $db = [
         "Title" => "Varchar(255)",
+        "AllowsSelfJoining" => "Boolean",
     ];
 
     private static $has_one = [
-        "Image" => Image::class,
+        "Parent" => Organization::class,
     ];
 
-    private static $owns = [
-        'Image',
+    private static $many_many = [
+        "Members" => Member::class,
     ];
 
-    private static $belongs_many_many = [
-        'TeamLinks' => TeamLink::class,
+    private static $field_labels = [
+        "Title" => "Titel",
+        "AllowsSelfJoining" => "Erlaubt Selbstbeitritt",
+        "Parent" => "Organisation",
+        "Members" => "Mitglieder",
     ];
-
-    private static $field_labels = [];
 
     private static $summary_fields = [
         "Title" => "Titel",
+        "AllowsSelfJoining" => "Erlaubt Selbstbeitritt",
+        "Members.Count" => "Anzahl Mitglieder",
     ];
 
     private static $table_name = 'Department';

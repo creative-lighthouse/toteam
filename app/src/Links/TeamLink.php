@@ -3,21 +3,22 @@
 namespace App\Links;
 
 use Override;
-use SilverStripe\Assets\Image;
+use App\Teams\Department;
+use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
-use App\HumanResources\Department;
 use SilverStripe\LinkField\Models\Link;
 
 /**
- * Class \App\HumanResources\TeamLink
+ * Class \App\Links\TeamLink
  *
  * @property ?string $Title
  * @property int $SortOrder
+ * @property int $ParentID
  * @property int $ButtonID
  * @property int $TypeID
+ * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\LinkField\Models\Link Button()
  * @method \App\Links\TeamLinkType Type()
- * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Department[] Departments()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -32,12 +33,9 @@ class TeamLink extends DataObject
     ];
 
     private static $has_one = [
+        "Parent" => Organization::class,
         "Button" => Link::class,
         "Type" => TeamLinkType::class,
-    ];
-
-    private static $many_many = [
-        "Departments" => Department::class,
     ];
 
     private static $owns = [
@@ -48,6 +46,8 @@ class TeamLink extends DataObject
         "Title" => "Titel",
         "Button" => "Link",
         "Type" => "Link-Typ",
+        "SortOrder" => "Sortierreihenfolge",
+        "Parent" => "Organisation",
     ];
 
     private static $summary_fields = [
