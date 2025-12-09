@@ -6,6 +6,25 @@ use App\Tasks\TaskGroup;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
+/**
+ * Class \App\Teams\Project
+ *
+ * @property ?string $Title
+ * @property ?string $Description
+ * @property bool $AllowsSelfJoining
+ * @property int $ParentID
+ * @property int $ParentProjectID
+ * @method \App\Teams\Team Parent()
+ * @method \App\Teams\Project ParentProject()
+ * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Heads()
+ * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Project[] SubProjects()
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class Project extends DataObject
 {
     private static $db = [
