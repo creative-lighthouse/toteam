@@ -14,7 +14,6 @@ use SilverStripe\Security\Member;
  *
  * @property ?string $Title
  * @property ?string $Description
- * @property bool $HasRecipient
  * @property bool $SeenByRecipient
  * @property bool $IsAnonymous
  * @property int $ParentID
@@ -34,7 +33,6 @@ class Suggestion extends DataObject
     private static $db = [
         "Title" => "Varchar(255)",
         "Description" => "Text",
-        "HasRecipient" => "Boolean",
         "SeenByRecipient" => "Boolean",
         "IsAnonymous" => "Boolean",
     ];
@@ -54,7 +52,6 @@ class Suggestion extends DataObject
         "Sender" => "Absender",
         "Title" => "Titel",
         "Description" => "Beschreibung",
-        "HasRecipient" => "Hat Empfänger",
         "SeenByRecipient" => "Vom Empfänger gesehen",
         "IsAnonymous" => "Ist anonym",
     ];

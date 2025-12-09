@@ -28,7 +28,17 @@ class FoodController extends BaseController
     public function index()
     {
         //Only show meals today or in the future
-        $allmeals = Meal::get()->sort('ParentID', 'DESC')->sort('Time', 'ASC');
+        $organizationIDs = $this->getUserOrganizationIDs();
+
+        if (!empty($organizationIDs)) {
+            $allmeals = Meal::get()
+                ->filter('Parent.Parent.ParentID', $organizationIDs) // Filter by organization through EventDay and Event
+                ->sort('ParentID', 'DESC')
+                ->sort('Time', 'ASC');
+        } else {
+            $allmeals = Meal::get()->filter('ID', 0); // Return empty list
+        }
+
         $meals = $allmeals->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'));
 
         $mealswithoutfood = DataList::create(Meal::class);
@@ -93,6 +103,13 @@ class FoodController extends BaseController
             return $this->httpError(404, 'Meal not found');
         }
 
+        // Security check: Verify user has access to this organization
+        $organizationIDs = $this->getUserOrganizationIDs();
+        $eventDay = $meal->Parent();
+        if (!$eventDay || !in_array($eventDay->Parent()->ParentID, $organizationIDs)) {
+            return $this->httpError(403, 'Access denied');
+        }
+
         return $this->render([
             'Meal' => $meal,
         ]);
@@ -108,12 +125,21 @@ class FoodController extends BaseController
                 return $this->httpError(404, 'Meal not found');
             }
 
+            // Security check: Verify user has access to this organization
+            $organizationIDs = $this->getUserOrganizationIDs();
+            $eventDay = $meal->Parent();
+            if (!$eventDay || !in_array($eventDay->Parent()->ParentID, $organizationIDs)) {
+                return $this->httpError(403, 'Access denied');
+            }
+
             // Create a new food item
             $food = new Food();
             $food->Title = $request->postVar('title');
             $food->Notes = $request->postVar('notes');
             $food->FoodPreference = $request->postVar('foodpreference');
             $food->SupplierID = Security::getCurrentUser()->ID;
+            // Set organization from the event
+            $food->ParentID = $eventDay->Parent()->ParentID;
             $food->Meals()->add($meal);
 
             $allergyIDs = $request->postVar('allergies'); // This should be an array of allergy IDs
@@ -146,10 +172,23 @@ class FoodController extends BaseController
                 return $this->httpError(404, 'Food not found');
             }
 
+            // Security check: Verify user is the supplier or has access
+            $currentUser = \SilverStripe\Security\Security::getCurrentUser();
+            if ($food->SupplierID != $currentUser->ID) {
+                return $this->httpError(403, 'Access denied');
+            }
+
             $mealID = $request->postVar('mealid');
             $meal = Meal::get()->byID($mealID);
             if (!$meal) {
                 return $this->httpError(404, 'Meal not found');
+            }
+
+            // Security check: Verify meal organization access
+            $organizationIDs = $this->getUserOrganizationIDs();
+            $eventDay = $meal->Parent();
+            if (!$eventDay || !in_array($eventDay->Parent()->ParentID, $organizationIDs)) {
+                return $this->httpError(403, 'Access denied');
             }
 
             // Update food item

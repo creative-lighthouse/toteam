@@ -25,6 +25,9 @@ class NoticesController extends BaseController
         //Check if there is a date param. Else use current date and redirect
         $notices = Notice::get()->sort('Created', 'DESC');
 
+        // Filter by user's organizations
+        $notices = $this->filterByUserOrganizations($notices);
+
         //Filter notices based on release and expiry date
         $currentDate = date('Y-m-d H:i:s');
         $notices = $notices->filterAny([
@@ -72,7 +75,20 @@ class NoticesController extends BaseController
 
     public static function getUnreadNotices($memberID)
     {
+        $member = \SilverStripe\Security\Member::get()->byID($memberID);
+        if (!$member) {
+            return Notice::get()->filter('ID', 0); // Return empty list
+        }
+
+        $organizationIDs = $member->getOrganizationIDs();
         $allNotices = Notice::get();
+
+        // Filter by user's organizations
+        if (!empty($organizationIDs)) {
+            $allNotices = $allNotices->filter('ParentID', $organizationIDs);
+        } else {
+            return Notice::get()->filter('ID', 0); // Return empty list
+        }
 
         //Filter notices based on release and expiry date
         $currentDate = date('Y-m-d H:i:s');
