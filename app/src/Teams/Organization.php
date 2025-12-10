@@ -5,6 +5,8 @@ namespace App\Teams;
 use App\Teams\Department;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 
 /**
  * Class \App\Teams\Organization
@@ -20,7 +22,7 @@ use SilverStripe\Security\Member;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Organization extends DataObject
+class Organization extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -60,5 +62,55 @@ class Organization extends DataObject
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_ORGANIZATIONS' => [
+                'name' => 'Organisationen erstellen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Erstellen, von Organisationen'
+            ],
+            'DELETE_ORGANIZATIONS' => [
+                'name' => 'Organisationen löschen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Löschen, von Organisationen'
+            ],
+            'EDIT_ORGANIZATIONS' => [
+                'name' => 'Organisationen bearbeiten',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Bearbeiten, von Organisationen'
+            ],
+            'VIEW_ORGANIZATIONS' => [
+                'name' => 'Organisationen ansehen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Ansehen, von Organisationen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        //Check user for CREATE_ORGANIZATIONS permission
+        return Permission::check('CREATE_ORGANIZATIONS', 'any', $member);
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        //Check user for EDIT_ORGANIZATIONS permission
+        return Permission::check('EDIT_ORGANIZATIONS', 'any', $member);
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        //Check user for DELETE_ORGANIZATIONS permission
+        return Permission::check('DELETE_ORGANIZATIONS', 'any', $member);
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        //Check user for VIEW_ORGANIZATIONS permission
+        return Permission::check('VIEW_ORGANIZATIONS', 'any', $member);
     }
 }

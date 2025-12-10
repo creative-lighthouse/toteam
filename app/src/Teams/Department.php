@@ -6,6 +6,8 @@ use Override;
 use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 
 /**
  * Class \App\Teams\Department
@@ -21,7 +23,7 @@ use SilverStripe\Security\Member;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Department extends DataObject
+class Department extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -58,5 +60,55 @@ class Department extends DataObject
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_DEPARTMENTS' => [
+                'name' => 'Arbeits-Bereiche erstellen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Erstellen, von Arbeits-Bereichen'
+            ],
+            'MANAGE_DEPARTMENTS' => [
+                'name' => 'Arbeits-Bereiche verwalten',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Erstellen, Bearbeiten und Löschen von Arbeits-Bereichen'
+            ],
+            'VIEW_DEPARTMENTS' => [
+                'name' => 'Arbeits-Bereiche ansehen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Ansehen von Arbeits-Bereichen'
+            ],
+            'DELETE_DEPARTMENTS' => [
+                'name' => 'Arbeits-Bereiche löschen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Löschen von Arbeits-Bereichen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        //Check user for CREATE_DEPARTMENTS permission
+        return Permission::check('CREATE_DEPARTMENTS', 'any', $member);
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        //Check user for EDIT_DEPARTMENTS permission
+        return Permission::check('EDIT_DEPARTMENTS', 'any', $member);
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        //Check user for DELETE_DEPARTMENTS permission
+        return Permission::check('DELETE_DEPARTMENTS', 'any', $member);
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        //Check user for VIEW_DEPARTMENTS permission
+        return Permission::check('VIEW_DEPARTMENTS', 'any', $member);
     }
 }

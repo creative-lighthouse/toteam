@@ -4,6 +4,8 @@ namespace App\Teams;
 
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 
 /**
  * Class \App\Teams\Project
@@ -21,7 +23,7 @@ use SilverStripe\Security\Member;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Project extends DataObject
+class Project extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -66,5 +68,55 @@ class Project extends DataObject
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    public function providePermissions()
+    {
+        return [
+            "CREATE_PROJECTS" => [
+                'name' => 'Projekte erstellen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Erstellen von Projekten.',
+            ],
+            "EDIT_PROJECTS" => [
+                'name' => 'Projekte bearbeiten',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Erstellen, Bearbeiten und Löschen von Projekten.',
+            ],
+            "VIEW_PROJECTS" => [
+                'name' => 'Projekte ansehen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Ansehen von Projekten.',
+            ],
+            "DELETE_PROJECTS" => [
+                'name' => 'Projekte löschen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Löschen von Projekten.',
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        //Check user for CREATE_PROJECTS permission
+        return Permission::checkMember($member, 'CREATE_PROJECTS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        //Check user for EDIT_PROJECTS permission
+        return Permission::checkMember($member, 'EDIT_PROJECTS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        //Check user for DELETE_PROJECTS permission
+        return Permission::checkMember($member, 'DELETE_PROJECTS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        //Check user for VIEW_PROJECTS permission
+        return Permission::checkMember($member, 'VIEW_PROJECTS');
     }
 }
