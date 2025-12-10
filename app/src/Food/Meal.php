@@ -7,6 +7,7 @@ use App\Food\MealEater;
 use App\Events\EventDay;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
+use App\Notifications\PushNotificationService;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 
 /**
@@ -100,5 +101,21 @@ class Meal extends DataObject
     public function getDetailsLink()
     {
         return '/food/meal/' . $this->ID;
+    }
+
+    /**
+     * Send push notification for new meals
+     */
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        // Only send notification for newly created meals
+        $changedFields = $this->getChangedFields(false, 1);
+        $isNew = isset($changedFields['ID']) && empty($changedFields['ID']['before']);
+
+        if ($isNew) {
+            PushNotificationService::notifyNewMeal($this);
+        }
     }
 }

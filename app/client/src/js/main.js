@@ -1,7 +1,53 @@
 import Swiper, {Autoplay, EffectCoverflow, EffectFade, Navigation, Pagination} from 'swiper';
 import GLightbox from "glightbox";
+import { requestNotificationPermission, onMessageListener } from './notifications';
+import { initNotificationInbox, loadNotifications, openNotificationsDialog } from './notificationInbox';
+
+// Make openNotificationsDialog globally available for onclick handlers
+window.openNotificationsDialog = openNotificationsDialog;
 
 document.addEventListener("DOMContentLoaded", function () {
+    // Initialize notification inbox
+    initNotificationInbox();
+
+    // Load notifications if on notifications page
+    if (document.getElementById('notificationList')) {
+        loadNotifications();
+    }
+
+    // Initialize push notifications
+    if ('serviceWorker' in navigator && 'Notification' in window) {
+        // Request permission after a delay (better UX)
+        setTimeout(() => {
+            console.log('Notification permission:', Notification.permission);
+            if (Notification.permission === 'default') {
+                console.log('Requesting notification permission...');
+                requestNotificationPermission();
+            } else if (Notification.permission === 'granted') {
+                console.log('Permission already granted, getting token...');
+                requestNotificationPermission();
+            }
+        }, 3000);
+
+        // Listen for foreground messages and show notifications
+        console.log('Setting up foreground message listener...');
+        onMessageListener().then(payload => {
+            console.log('Received foreground message:', payload);
+            // Show notification in foreground (when tab is active)
+            if (Notification.permission === 'granted' && payload.data) {
+                console.log('Showing foreground notification:', payload.data.title);
+                new Notification(payload.data.title || 'Neue Benachrichtigung', {
+                    body: payload.data.body || '',
+                    icon: '/_resources/app/client/icons/icon_192.png',
+                    badge: '/_resources/app/client/icons/ToTeam-Favicon-x64.png',
+                    data: { url: payload.data.url || '/' }
+                });
+            }
+        }).catch(err => {
+            console.error('Error in foreground message listener:', err);
+        });
+    }
+
     // Seite neu laden mit ?date=... wenn ein Datumsmodal geschlossen wird
     document.querySelectorAll('dialog.event-modal').forEach(dialog => {
         dialog.addEventListener('close', function () {
