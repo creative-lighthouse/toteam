@@ -39,7 +39,7 @@ class DashboardController extends BaseController
             ->limit(5);
         $upcomingeventdays = EventDayParticipation::get()
             ->filter('MemberID', $currentuser->ID)
-            ->exclude('Status', 'Cancelled')
+            ->exclude(['Status' => ['Cancelled', 'Suggested']])
             ->filter(['Type' => ['Accept', 'Maybe']])
             ->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'))
             ->sort('Parent.Date', 'ASC')
@@ -58,6 +58,17 @@ class DashboardController extends BaseController
         $participationToday = EventDayParticipation::get()
             ->filter(['MemberID' => $currentuser->ID, 'Type' => 'Accept', 'Parent.Date' => date('Y-m-d')])->first();
 
+        $anycardsactive = false;
+        if ($latesttasks->count() > 0) {
+            $anycardsactive = true;
+        } else if ($upcomingeventdays->count() > 0) {
+            $anycardsactive = true;
+        } else if ($eventDaysWithoutParticipation->count() > 0) {
+            $anycardsactive = true;
+        } else if ($this->getAllMealsParticipatedToday()->count() > 0) {
+            $anycardsactive = true;
+        }
+
         return $this->render([
             'User' => $currentuser,
             'LatestParticipations' => $latestparticipations,
@@ -66,6 +77,7 @@ class DashboardController extends BaseController
             'EventDaysWithoutFeedback' => $eventDaysWithoutParticipation,
             'MealsToday' => $this->getAllMealsParticipatedToday(),
             'ParticipationToday' => $participationToday,
+            'AnyCardsActive' => $anycardsactive,
         ]);
     }
 
