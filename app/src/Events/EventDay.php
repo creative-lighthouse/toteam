@@ -13,6 +13,7 @@ use App\Events\EventDayParticipation;
 use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\Model\List\GroupedList;
+use App\Notifications\PushNotificationService;
 
 /**
  * Class \App\Events\EventDay
@@ -116,6 +117,47 @@ class EventDay extends DataObject
     {
         parent::onBeforeWrite();
         $this->ICSSequence = ($this->ICSSequence ?? 0) + 1;
+    }
+
+    /**
+     * Send push notification for new events and status changes
+     */
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        $changedFields = $this->getChangedFields(false, 1);
+        $isNew = isset($changedFields['ID']) && empty($changedFields['ID']['before']);
+        $statusChanged = isset($changedFields['Status']);
+
+        if ($isNew) {
+            // New event created - send notification after request completes
+            $event = $this;
+            if ($this->Status === 'Suggested') {
+                register_shutdown_function(function() use ($event) {
+                    PushNotificationService::notifyEventSuggested($event);
+                });
+            } elseif ($this->Status === 'Scheduled') {
+                register_shutdown_function(function() use ($event) {
+                    PushNotificationService::notifyEventScheduled($event);
+                });
+            }
+        } elseif ($statusChanged) {
+            // Status changed on existing event
+            $oldStatus = $changedFields['Status']['before'];
+            $newStatus = $changedFields['Status']['after'];
+            $event = $this;
+
+            if ($newStatus === 'Scheduled') {
+                register_shutdown_function(function() use ($event) {
+                    PushNotificationService::notifyEventScheduled($event);
+                });
+            } elseif ($newStatus === 'Cancelled') {
+                register_shutdown_function(function() use ($event) {
+                    PushNotificationService::notifyEventCancelled($event);
+                });
+            }
+        }
     }
 
     public function RenderDate()

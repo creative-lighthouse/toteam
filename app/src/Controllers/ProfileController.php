@@ -11,6 +11,7 @@ use SilverStripe\Forms\TextField;
 use SilverStripe\Security\Member;
 use SilverStripe\Forms\FormAction;
 use App\Controllers\BaseController;
+use SilverStripe\AssetAdmin\Forms\UploadField;
 use SilverStripe\Security\Security;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\CheckboxSetField;
@@ -44,7 +45,7 @@ class ProfileController extends BaseController
         }
         $currentUser = Member::get()->filter("ID", $currentMember->ID)->first();
         if ($currentUser) {
-            $upload = new FileField("ProfileImage", "Profilbild");
+            $upload = new UploadField("ProfileImage", "Profilbild");
             $upload->setFolderName("ProfileImages");
             $upload->setAllowedFileCategories("image");
             $textFieldFirstName = new TextField("FirstName", "Vorname");
@@ -57,10 +58,6 @@ class ProfileController extends BaseController
                 'Vegan' => 'Vegan',
             ]);
             $dropdownFieldFoodPreference->setValue($currentUser->FoodPreference);
-            $allergies = Allergy::get();
-            if ($allergies->count() > 0) {
-                $dropdownFieldAllergies = CheckboxSetField::create('Allergies', 'Allergien', $allergies->map('ID', 'Title'));
-            }
 
             $fields = new FieldList(
                 $upload,
@@ -68,9 +65,14 @@ class ProfileController extends BaseController
                 $textFieldLastName,
                 $textFieldEmail,
                 $dateFieldBirthdate,
-                $dropdownFieldFoodPreference,
-                $dropdownFieldAllergies ?? null
+                $dropdownFieldFoodPreference
             );
+
+            $allergies = Allergy::get();
+            if ($allergies->count() > 0) {
+                $dropdownFieldAllergies = CheckboxSetField::create('Allergies', 'Allergien', $allergies->map('ID', 'Title'));
+                $fields->push($dropdownFieldAllergies);
+            }
 
             $actions = new FieldList(
                 new FormAction("editProfile", "Profil speichern")
