@@ -2,9 +2,10 @@
 
 namespace App\Notifications;
 
-use App\Events\EventDay;
-use App\Notices\Notice;
+use App\Maps\Map;
 use App\Food\Meal;
+use App\Notices\Notice;
+use App\Events\EventDay;
 use SilverStripe\Security\Member;
 use SilverStripe\Core\Environment;
 
@@ -95,6 +96,15 @@ class PushNotificationService
         $url = '/notices';
 
         self::sendToUsers('notices', $title, $body, $url);
+    }
+
+    public static function notifyNewMap(Map $map)
+    {
+        $title = 'Neuer Lageplan verfügbar';
+        $body = $map->Title;
+        $url = '/maps';
+
+        self::sendToUsers('maps', $title, $body, $url);
     }
 
     /**

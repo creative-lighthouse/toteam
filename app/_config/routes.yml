@@ -16,4 +16,5 @@ SilverStripe\Control\Director:
     'suggestionbox//$Action/$ID/$Name': 'App\Controllers\SuggestionBoxController'
     'food//$Action/$ID/$Name': 'App\Controllers\FoodController'
     'links//$Action/$ID/$Name': 'App\Controllers\LinksController'
+    'maps//$Action/$ID/$Name': 'App\Controllers\MapController'
     'api/notifications//$Action': 'App\Controllers\NotificationApiController'
