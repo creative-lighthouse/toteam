@@ -73,22 +73,22 @@ class TeamLink extends DataObject implements PermissionProvider
     public function providePermissions()
     {
         return [
-            'CREATE_TEAMLINKS' => [
+            'CREATE_LINKS' => [
                 'name' => 'Links erstellen',
                 'category' => 'Links',
                 'help' => 'Erlaubt das Erstellen, von Links'
             ],
-            'EDIT_TEAMLINKS' => [
+            'EDIT_LINKS' => [
                 'name' => 'Links bearbeiten',
                 'category' => 'Links',
                 'help' => 'Erlaubt das Bearbeiten von Links'
             ],
-            'VIEW_TEAMLINKS' => [
+            'VIEW_LINKS' => [
                 'name' => 'Links ansehen',
                 'category' => 'Links',
                 'help' => 'Erlaubt das Ansehen von Links'
             ],
-            'DELETE_TEAMLINKS' => [
+            'DELETE_LINKS' => [
                 'name' => 'Links löschen',
                 'category' => 'Links',
                 'help' => 'Erlaubt das Löschen von Links'
@@ -98,21 +98,21 @@ class TeamLink extends DataObject implements PermissionProvider
 
     public function canCreate($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'CREATE_TEAMLINKS');
+        return Permission::checkMember($member, 'CREATE_LINKS');
     }
 
     public function canEdit($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'EDIT_TEAMLINKS');
+        return Permission::checkMember($member, 'EDIT_LINKS');
     }
 
     public function canView($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'VIEW_TEAMLINKS');
+        return Permission::checkMember($member, 'VIEW_LINKS');
     }
 
     public function canDelete($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'DELETE_TEAMLINKS');
+        return Permission::checkMember($member, 'DELETE_LINKS');
     }
 }

@@ -47,22 +47,22 @@ class TeamLinkType extends DataObject implements PermissionProvider
     public function providePermissions()
     {
         return [
-            'CREATE_TEAMLINKTYPES' => [
+            'CREATE_LINKTYPES' => [
                 'name' => 'Link-Typen erstellen',
                 'category' => 'Links',
                 'help' => 'Erlaubt das Erstellen, von Link-Typen'
             ],
-            'EDIT_TEAMLINKTYPES' => [
+            'EDIT_LINKTYPES' => [
                 'name' => 'Link-Typen bearbeiten',
                 'category' => 'Links',
                 'help' => 'Erlaubt das Bearbeiten von Link-Typen'
             ],
-            'VIEW_TEAMLINKTYPES' => [
+            'VIEW_LINKTYPES' => [
                 'name' => 'Link-Typen ansehen',
                 'category' => 'Links',
                 'help' => 'Erlaubt das Ansehen von Link-Typen'
             ],
-            'DELETE_TEAMLINKTYPES' => [
+            'DELETE_LINKTYPES' => [
                 'name' => 'Link-Typen löschen',
                 'category' => 'Links',
                 'help' => 'Erlaubt das Löschen von Link-Typen'
@@ -72,21 +72,21 @@ class TeamLinkType extends DataObject implements PermissionProvider
 
     public function canCreate($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'CREATE_TEAMLINKTYPES');
+        return Permission::checkMember($member, 'CREATE_LINKTYPES');
     }
 
     public function canEdit($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'EDIT_TEAMLINKTYPES');
+        return Permission::checkMember($member, 'EDIT_LINKTYPES');
     }
 
     public function canView($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'VIEW_TEAMLINKTYPES');
+        return Permission::checkMember($member, 'VIEW_LINKTYPES');
     }
 
     public function canDelete($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'DELETE_TEAMLINKTYPES');
+        return Permission::checkMember($member, 'DELETE_LINKTYPES');
     }
 }

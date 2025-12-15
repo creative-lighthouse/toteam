@@ -5,30 +5,36 @@
             <h2 class="nav_title">ToTeam - $SiteConfig.Title</h2>
         </div>
         <ul class="secondary_menu">
-            <li>
-                <a href="/food" class="nav_link<% if $IsCurrentRoute(food) %> nav_link--active<% end_if %>">
-                    <div class="nav_icon">
-                        <img src="_resources/app/client/icons/totems/essen_totem.png" alt="Essen Icon" class="nav_image">
-                    </div>
-                    <p class="nav_title">Essen</p>
-                </a>
-            </li>
-            <li>
-                <a href="/suggestionbox" class="nav_link<% if $IsCurrentRoute(suggestionbox) %> nav_link--active<% end_if %>">
-                    <div class="nav_icon">
-                        <img src="_resources/app/client/icons/totems/kummerkasten_totem.png" alt="Kummerkasten Icon" class="profile_image">
-                    </div>
-                    <p class="nav_title">Kummerkasten</p>
-                </a>
-            </li>
-            <li>
-                <a href="/links" class="nav_link<% if $IsCurrentRoute(links) %> nav_link--active<% end_if %>">
-                    <div class="nav_icon">
-                        <img src="_resources/app/client/icons/totems/downloads_totem.png" alt="Downloads Icon" class="profile_image">
-                    </div>
-                    <p class="nav_title">Links & Downloads</p>
-                </a>
-            </li>
+            <% if $CheckUserPermission('VIEW_FOODS') || $CheckUserPermission('VIEW_MEALS') %>
+                <li>
+                    <a href="/food" class="nav_link<% if $IsCurrentRoute(food) %> nav_link--active<% end_if %>">
+                        <div class="nav_icon">
+                            <img src="_resources/app/client/icons/totems/essen_totem.png" alt="Essen Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Essen</p>
+                    </a>
+                </li>
+            <% end_if %>
+            <% if $CheckUserPermission('VIEW_SUGGESTIONS') %>
+                <li>
+                    <a href="/suggestionbox" class="nav_link<% if $IsCurrentRoute(suggestionbox) %> nav_link--active<% end_if %>">
+                        <div class="nav_icon">
+                            <img src="_resources/app/client/icons/totems/kummerkasten_totem.png" alt="Kummerkasten Icon" class="profile_image">
+                        </div>
+                        <p class="nav_title">Kummerkasten</p>
+                    </a>
+                </li>
+            <% end_if %>
+            <% if $CheckUserPermission('VIEW_LINKS') %>
+                <li>
+                    <a href="/links" class="nav_link<% if $IsCurrentRoute(links) %> nav_link--active<% end_if %>">
+                        <div class="nav_icon">
+                            <img src="_resources/app/client/icons/totems/downloads_totem.png" alt="Downloads Icon" class="profile_image">
+                        </div>
+                        <p class="nav_title">Links & Downloads</p>
+                    </a>
+                </li>
+            <% end_if %>
         </ul>
         <p class="version_note"><i>ToTeam v0.1.3</i> <kbd>BETA</kbd></p>
         <div class="nav_profile_wrap">

@@ -2,9 +2,10 @@
 
 namespace App\Controllers;
 
-use SilverStripe\Control\Controller;
 use SilverStripe\View\SSViewer;
 use SilverStripe\Security\Security;
+use SilverStripe\Control\Controller;
+use SilverStripe\Security\Permission;
 
 /**
  * Class \App\Controllers\BaseController
@@ -84,12 +85,12 @@ class BaseController extends Controller
         return str_contains($currentURL, $route);
     }
 
-    public function checkPermission($permission)
+    public function CheckUserPermission($permission)
     {
         $member = Security::getCurrentUser();
         if (!$member) {
             return false;
         }
-        return $member->checkPermission($permission);
+        return Permission::checkMember($member, $permission);
     }
 }
