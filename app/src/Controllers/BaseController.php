@@ -83,4 +83,13 @@ class BaseController extends Controller
         //check if current URL includes the route
         return str_contains($currentURL, $route);
     }
+
+    public function checkPermission($permission)
+    {
+        $member = Security::getCurrentUser();
+        if (!$member) {
+            return false;
+        }
+        return $member->checkPermission($permission);
+    }
 }

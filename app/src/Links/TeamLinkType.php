@@ -4,8 +4,8 @@ namespace App\Links;
 
 use Override;
 use SilverStripe\ORM\DataObject;
-use App\HumanResources\Department;
-use SilverStripe\LinkField\Models\Link;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 
 /**
  * Class \App\Links\TeamLinkType
@@ -18,7 +18,7 @@ use SilverStripe\LinkField\Models\Link;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class TeamLinkType extends DataObject
+class TeamLinkType extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -42,5 +42,51 @@ class TeamLinkType extends DataObject
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_TEAMLINKTYPES' => [
+                'name' => 'Link-Typen erstellen',
+                'category' => 'Links',
+                'help' => 'Erlaubt das Erstellen, von Link-Typen'
+            ],
+            'EDIT_TEAMLINKTYPES' => [
+                'name' => 'Link-Typen bearbeiten',
+                'category' => 'Links',
+                'help' => 'Erlaubt das Bearbeiten von Link-Typen'
+            ],
+            'VIEW_TEAMLINKTYPES' => [
+                'name' => 'Link-Typen ansehen',
+                'category' => 'Links',
+                'help' => 'Erlaubt das Ansehen von Link-Typen'
+            ],
+            'DELETE_TEAMLINKTYPES' => [
+                'name' => 'Link-Typen löschen',
+                'category' => 'Links',
+                'help' => 'Erlaubt das Löschen von Link-Typen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_TEAMLINKTYPES');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_TEAMLINKTYPES');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_TEAMLINKTYPES');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_TEAMLINKTYPES');
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Events;
 
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 
 /**
  * Class \App\Events\EventDayAgendaPoint
@@ -19,7 +21,7 @@ use SilverStripe\ORM\DataObject;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class EventDayAgendaPoint extends DataObject
+class EventDayAgendaPoint extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -71,5 +73,51 @@ class EventDayAgendaPoint extends DataObject
         $fields = parent::getCMSFields();
         $fields->removeByName("ParentID");
         return $fields;
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_AGENDA_POINTS' => [
+                'name' => 'Tagesordnungspunkte erstellen',
+                'category' => 'Tagesordnungspunkte',
+                'help' => 'Erlaubt das Erstellen, von Tagesordnungspunkten'
+            ],
+            'EDIT_AGENDA_POINTS' => [
+                'name' => 'Tagesordnungspunkte verwalten',
+                'category' => 'Tagesordnungspunkte',
+                'help' => 'Erlaubt das Erstellen, Bearbeiten und Löschen von Tagesordnungspunkten'
+            ],
+            'VIEW_AGENDA_POINTS' => [
+                'name' => 'Tagesordnungspunkte ansehen',
+                'category' => 'Tagesordnungspunkte',
+                'help' => 'Erlaubt das Ansehen von Tagesordnungspunkten'
+            ],
+            'DELETE_AGENDA_POINTS' => [
+                'name' => 'Tagesordnungspunkte löschen',
+                'category' => 'Tagesordnungspunkte',
+                'help' => 'Erlaubt das Löschen von Tagesordnungspunkten'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_AGENDA_POINTS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_AGENDA_POINTS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_AGENDA_POINTS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_AGENDA_POINTS');
     }
 }

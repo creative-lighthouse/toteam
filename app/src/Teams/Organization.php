@@ -72,11 +72,6 @@ class Organization extends DataObject implements PermissionProvider
                 'category' => 'Teams',
                 'help' => 'Erlaubt das Erstellen, von Organisationen'
             ],
-            'DELETE_ORGANIZATIONS' => [
-                'name' => 'Organisationen löschen',
-                'category' => 'Teams',
-                'help' => 'Erlaubt das Löschen, von Organisationen'
-            ],
             'EDIT_ORGANIZATIONS' => [
                 'name' => 'Organisationen bearbeiten',
                 'category' => 'Teams',
@@ -86,6 +81,11 @@ class Organization extends DataObject implements PermissionProvider
                 'name' => 'Organisationen ansehen',
                 'category' => 'Teams',
                 'help' => 'Erlaubt das Ansehen, von Organisationen'
+            ],
+            'DELETE_ORGANIZATIONS' => [
+                'name' => 'Organisationen löschen',
+                'category' => 'Teams',
+                'help' => 'Erlaubt das Löschen, von Organisationen'
             ],
         ];
     }

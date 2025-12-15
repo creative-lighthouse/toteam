@@ -8,6 +8,8 @@ use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 
 /**
  * Class \App\SuggestionBox\Suggestion
@@ -28,7 +30,7 @@ use SilverStripe\Security\Member;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Suggestion extends DataObject
+class Suggestion extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -69,5 +71,51 @@ class Suggestion extends DataObject
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_SUGGESTIONS' => [
+                'name' => 'Kummerkasten-Eintrag erstellen',
+                'category' => 'Kummerkasten',
+                'help' => 'Erlaubt das Erstellen, von Einträgen im Kummerkasten'
+            ],
+            'EDIT_SUGGESTIONS' => [
+                'name' => 'Kummerkasten-Einträge bearbeiten',
+                'category' => 'Kummerkasten',
+                'help' => 'Erlaubt das Bearbeiten von Einträgen im Kummerkasten'
+            ],
+            'VIEW_SUGGESTIONS' => [
+                'name' => 'Kummerkasten-Einträge ansehen',
+                'category' => 'Kummerkasten',
+                'help' => 'Erlaubt das Ansehen von Einträgen im Kummerkasten'
+            ],
+            'DELETE_SUGGESTIONS' => [
+                'name' => 'Kummerkasten-Einträge löschen',
+                'category' => 'Kummerkasten',
+                'help' => 'Erlaubt das Löschen von Einträgen im Kummerkasten'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_SUGGESTIONS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_SUGGESTIONS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_SUGGESTIONS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_SUGGESTIONS');
     }
 }

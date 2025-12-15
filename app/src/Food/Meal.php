@@ -7,6 +7,8 @@ use App\Food\MealEater;
 use App\Events\EventDay;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 use App\Notifications\PushNotificationService;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 
@@ -25,7 +27,7 @@ use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Meal extends DataObject
+class Meal extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -117,5 +119,51 @@ class Meal extends DataObject
         if ($isNew) {
             PushNotificationService::notifyNewMeal($this);
         }
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_MEALS' => [
+                'name' => 'Mahlzeiten erstellen',
+                'category' => 'Essen',
+                'help' => 'Erlaubt das Erstellen, von Mahlzeiten'
+            ],
+            'EDIT_MEALS' => [
+                'name' => 'Mahlzeiten bearbeiten',
+                'category' => 'Essen',
+                'help' => 'Erlaubt das Bearbeiten von Mahlzeiten'
+            ],
+            'VIEW_MEALS' => [
+                'name' => 'Mahlzeiten ansehen',
+                'category' => 'Essen',
+                'help' => 'Erlaubt das Ansehen von Mahlzeiten'
+            ],
+            'DELETE_MEALS' => [
+                'name' => 'Mahlzeiten löschen',
+                'category' => 'Essen',
+                'help' => 'Erlaubt das Löschen von Mahlzeiten'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_MEALS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_MEALS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_MEALS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_MEALS');
     }
 }

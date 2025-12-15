@@ -70,10 +70,10 @@ class Department extends DataObject implements PermissionProvider
                 'category' => 'Teams',
                 'help' => 'Erlaubt das Erstellen, von Arbeits-Bereichen'
             ],
-            'MANAGE_DEPARTMENTS' => [
-                'name' => 'Arbeits-Bereiche verwalten',
+            'EDIT_DEPARTMENTS' => [
+                'name' => 'Arbeits-Bereiche bearbeiten',
                 'category' => 'Teams',
-                'help' => 'Erlaubt das Erstellen, Bearbeiten und Löschen von Arbeits-Bereichen'
+                'help' => 'Erlaubt das Bearbeiten von Arbeits-Bereichen'
             ],
             'VIEW_DEPARTMENTS' => [
                 'name' => 'Arbeits-Bereiche ansehen',
