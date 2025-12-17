@@ -93,4 +93,20 @@ class BaseController extends Controller
         }
         return Permission::checkMember($member, $permission);
     }
+
+    /**
+     * Get the application version from composer.json
+     * @return string
+     */
+    public function getAppVersion()
+    {
+        $composerFile = BASE_PATH . '/composer.json';
+        if (file_exists($composerFile)) {
+            $composerData = json_decode(file_get_contents($composerFile), true);
+            if (isset($composerData['version'])) {
+                return $composerData['version'];
+            }
+        }
+        return 'unknown';
+    }
 }

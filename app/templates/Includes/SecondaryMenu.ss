@@ -36,7 +36,7 @@
                 </li>
             <% end_if %>
         </ul>
-        <p class="version_note"><i>ToTeam v0.1.3</i> <kbd>BETA</kbd></p>
+        <p class="version_note"><i>ToTeam v$AppVersion</i> <kbd>BETA</kbd></p>
         <div class="nav_profile_wrap">
             <a href="/profile" class="nav_profile">
                 <div class="nav_icon nav_icon--profile">

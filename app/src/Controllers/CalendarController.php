@@ -40,6 +40,12 @@ class CalendarController extends BaseController
 
     public function changeParticipation($request)
     {
+        $member = Security::getCurrentUser();
+        if (!$member) {
+            //Redirect to login
+            $this->redirect('/login?BackURL=' . urlencode($this->getRequest()->getURL()));
+            return;
+        }
         $dateID = $request->param('ID');
         //Get new type of participation with POST
         $type = $this->getRequest()->postVar('response'); // This gets the response value from the form
@@ -58,12 +64,6 @@ class CalendarController extends BaseController
             return $this->httpError(403, 'Access denied');
         }
 
-        $member = Security::getCurrentUser();
-        if (!$member) {
-            //Redirect to login
-            $this->redirect('/login?BackURL=' . urlencode($this->getRequest()->getURL()));
-            return;
-        }
         $eventDayParticipation = $eventday->Participations()->filter(['MemberID' => $member->ID])->first();
         if (!$eventDayParticipation) {
             $eventDayParticipation = EventDayParticipation::create();
