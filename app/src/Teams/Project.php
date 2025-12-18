@@ -40,10 +40,6 @@ class Project extends DataObject implements PermissionProvider
         "Members" => Member::class,
     ];
 
-    private static $owns = [
-        "SubProjects",
-    ];
-
     private static $field_labels = [
         "Title" => "Titel",
         "Description" => "Beschreibung",
