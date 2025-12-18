@@ -2,9 +2,10 @@
 
 namespace App\Controllers;
 
-use SilverStripe\Control\Controller;
 use SilverStripe\View\SSViewer;
 use SilverStripe\Security\Security;
+use SilverStripe\Control\Controller;
+use SilverStripe\Security\Permission;
 
 /**
  * Class \App\Controllers\BaseController
@@ -82,5 +83,30 @@ class BaseController extends Controller
         $currentURL = $this->getRequest()->getURL();
         //check if current URL includes the route
         return str_contains($currentURL, $route);
+    }
+
+    public function CheckUserPermission($permission)
+    {
+        $member = Security::getCurrentUser();
+        if (!$member) {
+            return false;
+        }
+        return Permission::checkMember($member, $permission);
+    }
+
+    /**
+     * Get the application version from composer.json
+     * @return string
+     */
+    public function getAppVersion()
+    {
+        $composerFile = BASE_PATH . '/composer.json';
+        if (file_exists($composerFile)) {
+            $composerData = json_decode(file_get_contents($composerFile), true);
+            if (isset($composerData['version'])) {
+                return $composerData['version'];
+            }
+        }
+        return 'unknown';
     }
 }

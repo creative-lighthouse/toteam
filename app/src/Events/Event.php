@@ -2,13 +2,16 @@
 
 namespace App\Events;
 
-use App\Teams\Organization;
 use Override;
+use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Permission;
 use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Security\PermissionProvider;
 use SilverStripe\Forms\GridField\GridFieldConfig;
 use SilverStripe\Forms\GridField\GridFieldButtonRow;
+use SilverStripe\Forms\GridField\GridFieldEditButton;
 use Symbiote\GridFieldExtensions\GridFieldTitleHeader;
 use SilverStripe\Forms\GridField\GridFieldDeleteAction;
 use SilverStripe\Forms\GridField\GridFieldToolbarHeader;
@@ -16,7 +19,6 @@ use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
 use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordViewer;
-use SilverStripe\Forms\GridField\GridFieldEditButton;
 
 /**
  * Class \App\Events\Event
@@ -35,7 +37,7 @@ use SilverStripe\Forms\GridField\GridFieldEditButton;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Event extends DataObject
+class Event extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -108,5 +110,55 @@ class Event extends DataObject
     public function RenderEndDate()
     {
         return $this->dbObject('End')->Format('dd.MM.YYYY H:mm');
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_EVENTS' => [
+                'name' => 'Veranstaltungen erstellen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Erstellen, von Veranstaltungen'
+            ],
+            'EDIT_EVENTS' => [
+                'name' => 'Veranstaltungen bearbeiten',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Bearbeiten von Veranstaltungen'
+            ],
+            'VIEW_EVENTS' => [
+                'name' => 'Veranstaltungen ansehen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Ansehen von Veranstaltungen'
+            ],
+            'DELETE_EVENTS' => [
+                'name' => 'Veranstaltungen löschen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Löschen von Veranstaltungen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        //Check user for CREATE_EVENTS permission
+        return Permission::check('CREATE_EVENTS', 'any', $member);
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        //Check user for EDIT_EVENTS permission
+        return Permission::check('EDIT_EVENTS', 'any', $member);
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        //Check user for DELETE_EVENTS permission
+        return Permission::check('DELETE_EVENTS', 'any', $member);
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        //Check user for VIEW_EVENTS permission
+        return Permission::check('VIEW_EVENTS', 'any', $member);
     }
 }
