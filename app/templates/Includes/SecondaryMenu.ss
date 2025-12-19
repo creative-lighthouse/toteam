@@ -29,6 +29,14 @@
                     <p class="nav_title">Links & Downloads</p>
                 </a>
             </li>
+            <li>
+                <a href="/maps" class="nav_link<% if $IsCurrentRoute(maps) %> nav_link--active<% end_if %>">
+                    <div class="nav_icon">
+                        <img src="_resources/app/client/icons/totems/karten_totem.png" alt="Karten Icon" class="profile_image">
+                    </div>
+                    <p class="nav_title">Lagepläne</p>
+                </a>
+            </li>
         </ul>
         <p class="version_note"><i>ToTeam v0.1.3</i> <kbd>BETA</kbd></p>
         <div class="nav_profile_wrap">

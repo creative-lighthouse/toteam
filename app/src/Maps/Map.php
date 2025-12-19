@@ -8,6 +8,27 @@ use SilverStripe\Security\Member;
 use App\Notifications\PushNotificationService;
 use SilverStripe\Assets\Image;
 
+/**
+ * Class \App\Maps\Map
+ *
+ * @property ?string $Title
+ * @property ?string $ShortText
+ * @property ?string $CoordinatesUpperLeft
+ * @property ?string $CoordinatesLowerRight
+ * @property bool $Active
+ * @property int $ParentID
+ * @property int $AuthorID
+ * @property int $BackgroundImageID
+ * @method \App\Teams\Organization Parent()
+ * @method \SilverStripe\Security\Member Author()
+ * @method \SilverStripe\Assets\Image BackgroundImage()
+ * @method \SilverStripe\ORM\DataList|\App\Maps\MapLayer[] MapLayers()
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class Map extends DataObject
 {
     private static $db = [

@@ -5,6 +5,21 @@ namespace App\Maps;
 use App\Maps\MapLayer;
 use SilverStripe\ORM\DataObject;
 
+/**
+ * Class \App\Maps\MapPOI
+ *
+ * @property ?string $Title
+ * @property ?string $Description
+ * @property bool $Active
+ * @property ?string $Position
+ * @property int $ParentID
+ * @method \App\Maps\MapLayer Parent()
+ * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
+ * @mixin \SilverStripe\Versioned\RecursivePublishable
+ * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ */
 class MapPOI extends DataObject
 {
     private static $db = [
