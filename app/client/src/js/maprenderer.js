@@ -48,6 +48,13 @@ class SimpleMapRenderer {
         this.mouseCanvasY = 0;
         this.popupPOI = null; // POI for which popup is shown
 
+        // Edit mode state
+        this.isEditMode = mapConfig.editMode || false;
+        this.draggedPOI = null; // POI being dragged
+        this.isDraggingPOI = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+
         console.log('SimpleMapRenderer initialized:', {
             backgroundImage: mapConfig.backgroundImage,
             corners: {
@@ -410,11 +417,22 @@ class SimpleMapRenderer {
         this.canvas.addEventListener('mousedown', (e) => {
             // Check if clicking on a POI
             if (this.hoveredPOI) {
-                this.showPOIPopup(this.hoveredPOI);
+                if (this.isEditMode) {
+                    // In edit mode, start dragging the POI
+                    this.draggedPOI = this.hoveredPOI;
+                    this.isDraggingPOI = true;
+                    this.dragStartX = this.mouseCanvasX;
+                    this.dragStartY = this.mouseCanvasY;
+                    this.canvas.style.cursor = 'grabbing';
+                } else {
+                    // In view mode, show popup
+                    this.showPOIPopup(this.hoveredPOI);
+                }
                 e.preventDefault();
                 return;
             }
 
+            // Start dragging the map
             this.isDragging = true;
             this.lastX = e.clientX;
             this.lastY = e.clientY;
@@ -430,7 +448,12 @@ class SimpleMapRenderer {
             this.mouseCanvasX = (mouseX - this.offsetX) / this.scale;
             this.mouseCanvasY = (mouseY - this.offsetY) / this.scale;
 
-            if (this.isDragging) {
+            if (this.isDraggingPOI && this.draggedPOI) {
+                // Dragging a POI - update its position
+                this.updatePOIPosition(this.draggedPOI, this.mouseCanvasX, this.mouseCanvasY);
+                this.render();
+            } else if (this.isDragging) {
+                // Dragging the map
                 const dx = e.clientX - this.lastX;
                 const dy = e.clientY - this.lastY;
                 this.offsetX += dx;
@@ -451,12 +474,22 @@ class SimpleMapRenderer {
         });
 
         this.canvas.addEventListener('mouseup', () => {
+            if (this.isDraggingPOI && this.draggedPOI) {
+                // Finished dragging POI - show popup in edit mode
+                if (this.isEditMode) {
+                    this.showPOIPopup(this.draggedPOI);
+                }
+            }
             this.isDragging = false;
+            this.isDraggingPOI = false;
+            this.draggedPOI = null;
             this.canvas.style.cursor = this.hoveredPOI ? 'pointer' : 'grab';
         });
 
         this.canvas.addEventListener('mouseleave', () => {
             this.isDragging = false;
+            this.isDraggingPOI = false;
+            this.draggedPOI = null;
             this.hoveredPOI = null;
             this.canvas.style.cursor = 'grab';
             this.render();
@@ -873,6 +906,12 @@ class SimpleMapRenderer {
         // Create popup
         const popup = document.createElement('div');
         popup.className = 'map-poi-popup';
+        
+        // Different content for edit mode vs view mode
+        const deleteButton = this.isEditMode ? 
+            `<button class="btn btn--danger btn--small map-poi-popup__delete" data-poi-id="${poi.id}">Löschen</button>` : 
+            '';
+        
         popup.innerHTML = `
             <div class="map-poi-popup__content">
                 <button class="map-poi-popup__close" aria-label="Schließen">&times;</button>
@@ -880,6 +919,7 @@ class SimpleMapRenderer {
                 <div class="map-poi-popup__description">
                     ${poi.description || 'Keine Beschreibung verfügbar.'}
                 </div>
+                ${deleteButton}
             </div>
         `;
 
@@ -892,6 +932,19 @@ class SimpleMapRenderer {
         closeBtn.addEventListener('click', () => {
             popup.remove();
         });
+
+        // Delete button handler (edit mode only)
+        if (this.isEditMode) {
+            const deleteBtn = popup.querySelector('.map-poi-popup__delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm(`Möchten Sie den Marker "${poi.title}" wirklich löschen?`)) {
+                        this.deletePOI(poiData);
+                        popup.remove();
+                    }
+                });
+            }
+        }
 
         // Close on escape
         const escapeHandler = (e) => {
@@ -908,6 +961,75 @@ class SimpleMapRenderer {
                 popup.remove();
             }
         });
+    }
+
+    /**
+     * Update POI position based on canvas coordinates
+     */
+    updatePOIPosition(poiData, canvasX, canvasY) {
+        // Convert canvas coordinates back to geographic coordinates
+        const geoCoords = this.canvasToGeo(canvasX, canvasY);
+        
+        // Find the POI in the layers and update its position
+        const layer = this.layers.find(l => l.id === poiData.layerId);
+        if (layer) {
+            const poi = layer.pois.find(p => p.id === poiData.poiId);
+            if (poi) {
+                poi.position = `${geoCoords.lat},${geoCoords.lng}`;
+                
+                // Notify about the change
+                if (window.updateLayerState) {
+                    window.updateLayerState({ pois: layer.pois });
+                }
+            }
+        }
+    }
+
+    /**
+     * Convert canvas coordinates back to geographic coordinates
+     */
+    canvasToGeo(x, y) {
+        // Get all 4 corner coordinates
+        const ul = this.parseCoordinates(this.config.coordinatesUpperLeft);
+        const ur = this.parseCoordinates(this.config.coordinatesUpperRight);
+        const ll = this.parseCoordinates(this.config.coordinatesLowerLeft);
+        const lr = this.parseCoordinates(this.config.coordinatesLowerRight);
+
+        if (!ul || !ur || !ll || !lr) {
+            return { lat: 0, lng: 0 };
+        }
+
+        // Convert from canvas coordinates (centered at 0,0) to normalized (0-1)
+        const u = (x / this.renderWidth) + 0.5;
+        const v = (y / this.renderHeight) + 0.5;
+
+        // Calculate geographic coordinates using the parallelogram formula
+        // P = UL + u*(UR-UL) + v*(LL-UL)
+        const lat = ul.lat + u * (ur.lat - ul.lat) + v * (ll.lat - ul.lat);
+        const lng = ul.lng + u * (ur.lng - ul.lng) + v * (ll.lng - ul.lng);
+
+        return { lat, lng };
+    }
+
+    /**
+     * Delete a POI
+     */
+    deletePOI(poiData) {
+        const layer = this.layers.find(l => l.id === poiData.layerId);
+        if (layer) {
+            const index = layer.pois.findIndex(p => p.id === poiData.poiId);
+            if (index !== -1) {
+                layer.pois.splice(index, 1);
+                
+                // Notify about the change
+                if (window.updateLayerState) {
+                    window.updateLayerState({ pois: layer.pois });
+                }
+                
+                // Re-render to remove the POI from the map
+                this.render();
+            }
+        }
     }
 
     /**
@@ -1107,14 +1229,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Parse map configuration with all 4 corners
     let layers = [];
+    const isEditMode = mapRenderer.dataset.editMode === 'true';
+    
     try {
-        const layersData = mapRenderer.dataset.layers;
-        if (layersData) {
-            layers = JSON.parse(layersData);
-            console.log('Parsed layers:', layers);
+        // In edit mode, use single layer data; otherwise use layers array
+        const layerData = isEditMode ? mapRenderer.dataset.layer : mapRenderer.dataset.layers;
+        
+        if (layerData) {
+            if (isEditMode) {
+                // Single layer for edit mode
+                const layer = JSON.parse(layerData);
+                layers = [layer];
+                console.log('Edit mode - Parsed single layer:', layer);
+            } else {
+                // Multiple layers for view mode
+                layers = JSON.parse(layerData);
+                console.log('View mode - Parsed layers:', layers);
+            }
         }
     } catch (e) {
-        console.error('Failed to parse layers data:', e);
+        console.error('Failed to parse layer(s) data:', e);
     }
 
     const mapConfig = {
@@ -1123,7 +1257,8 @@ document.addEventListener('DOMContentLoaded', () => {
         coordinatesUpperRight: mapRenderer.dataset.coordinatesupperright,
         coordinatesLowerLeft: mapRenderer.dataset.coordinateslowerleft,
         coordinatesLowerRight: mapRenderer.dataset.coordinateslowerright,
-        layers: layers
+        layers: layers,
+        editMode: isEditMode
     };
 
     console.log('Initializing map with config:', mapConfig);
@@ -1219,4 +1354,68 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 350); // Wait for animation to complete
         });
     }
-});
+
+    // Edit mode functionality
+    if (isEditMode && layers.length > 0) {
+        const layer = layers[0]; // Single layer in edit mode
+        let layerState = {
+            id: layer.id,
+            title: layer.title,
+            imageUrl: layer.imageUrl,
+            pois: layer.pois || []
+        };
+
+        // Track changes to layer state
+        window.updateLayerState = function(updates) {
+            layerState = { ...layerState, ...updates };
+            console.log('Layer state updated:', layerState);
+        };
+
+        // Save button functionality
+        const saveButton = document.getElementById('saveLayer');
+        const saveStatus = document.getElementById('saveStatus');
+
+        if (saveButton) {
+            saveButton.addEventListener('click', async () => {
+                saveButton.disabled = true;
+                saveButton.textContent = 'Speichert...';
+                saveStatus.textContent = '';
+                saveStatus.className = 'save-status';
+
+                try {
+                    const response = await fetch(`/maps/savelayer/${layer.id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify(layerState)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        saveStatus.textContent = '✓ ' + result.message;
+                        saveStatus.className = 'save-status save-status--success';
+                        
+                        // Clear success message after 3 seconds
+                        setTimeout(() => {
+                            saveStatus.textContent = '';
+                        }, 3000);
+                    } else {
+                        throw new Error(result.error || 'Fehler beim Speichern');
+                    }
+                } catch (error) {
+                    console.error('Save error:', error);
+                    saveStatus.textContent = '✗ ' + error.message;
+                    saveStatus.className = 'save-status save-status--error';
+                } finally {
+                    saveButton.disabled = false;
+                    saveButton.textContent = 'Änderungen speichern';
+                }
+            });
+        }
+
+        // Make layer state accessible globally for future POI editing
+        window.layerState = layerState;
+    }});

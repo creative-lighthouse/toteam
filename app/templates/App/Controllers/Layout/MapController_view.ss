@@ -20,13 +20,21 @@
                             <h4>Ebenen</h4>
                             <div class="map-layers-list">
                                 <% loop $MapLayers %>
-                                    <label class="map-layer-item">
-                                        <input type="checkbox"
-                                               class="map-layer-toggle"
-                                               data-layer-id="$ID"
-                                               <% if $Active %>checked<% end_if %>>
-                                        <span class="map-layer-title">$Title</span>
-                                    </label>
+                                    <div class="map-layer-item-wrapper">
+                                        <label class="map-layer-item">
+                                            <input type="checkbox"
+                                                   class="map-layer-toggle"
+                                                   data-layer-id="$ID"
+                                                   <% if $Active %>checked<% end_if %>>
+                                            <span class="map-layer-title">$Title</span>
+                                        </label>
+                                        <a href="$Top.Link(layeredit)/$ID" class="map-layer-edit" title="Ebene bearbeiten">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                            </svg>
+                                        </a>
+                                    </div>
                                 <% end_loop %>
                             </div>
                         </div>
