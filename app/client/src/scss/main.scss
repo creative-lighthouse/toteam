@@ -20,6 +20,8 @@
 @use "pages/SuggestionPage.scss";
 @use "pages/FoodPage.scss";
 
+@use "components/map-renderer.scss";
+
 @view-transition {
     navigation: auto;
 }

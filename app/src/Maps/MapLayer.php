@@ -18,10 +18,11 @@ use App\Notifications\PushNotificationService;
  * @property ?string $CoordinatesLowerRight
  * @property int $ParentID
  * @property int $ImageID
- * @method \App\Teams\Organization Parent()
+ * @method \App\Maps\Map Parent()
  * @method \SilverStripe\Assets\Image Image()
- * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @method \SilverStripe\ORM\DataList|\App\Maps\MapPOI[] POIs()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -37,12 +38,17 @@ class MapLayer extends DataObject
     ];
 
     private static $has_one = [
-        "Parent" => Organization::class,
+        "Parent" => Map::class,
         "Image" => Image::class,
+    ];
+
+    private static $has_many = [
+        "POIs" => MapPOI::class,
     ];
 
     private static $owns = [
         'Image',
+        'POIs',
     ];
 
     private static $field_labels = [
@@ -64,5 +70,31 @@ class MapLayer extends DataObject
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    public function getCoordinatesUL()
+    {
+        if($this->CoordinatesUpperLeft) {
+            return $this->CoordinatesUpperLeft;
+        } else {
+            if($this->Parent() && $this->Parent()->CoordinatesUpperLeft) {
+                return $this->Parent()->CoordinatesUpperLeft;
+            } else {
+                return "0,0";
+            }
+        }
+    }
+
+    public function getCoordinatesLR()
+    {
+        if($this->CoordinatesLowerRight) {
+            return $this->CoordinatesLowerRight;
+        } else {
+            if($this->Parent() && $this->Parent()->CoordinatesLowerRight) {
+                return $this->Parent()->CoordinatesLowerRight;
+            } else {
+                return "0,0";
+            }
+        }
     }
 }

@@ -2,6 +2,8 @@ import Swiper, {Autoplay, EffectCoverflow, EffectFade, Navigation, Pagination} f
 import GLightbox from "glightbox";
 import { requestNotificationPermission, onMessageListener } from './notifications';
 import { initNotificationInbox, loadNotifications, openNotificationsDialog } from './notificationInbox';
+// import './maprenderer.js'; // Complex version - disabled for now
+import './maprenderer.js'; // Simplified version for testing
 
 // Make openNotificationsDialog globally available for onclick handlers
 window.openNotificationsDialog = openNotificationsDialog;

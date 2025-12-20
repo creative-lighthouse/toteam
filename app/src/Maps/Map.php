@@ -14,7 +14,10 @@ use SilverStripe\Assets\Image;
  * @property ?string $Title
  * @property ?string $ShortText
  * @property ?string $CoordinatesUpperLeft
+ * @property ?string $CoordinatesUpperRight
+ * @property ?string $CoordinatesLowerLeft
  * @property ?string $CoordinatesLowerRight
+ * @property float $NorthRotation
  * @property bool $Active
  * @property int $ParentID
  * @property int $AuthorID
@@ -23,8 +26,8 @@ use SilverStripe\Assets\Image;
  * @method \SilverStripe\Security\Member Author()
  * @method \SilverStripe\Assets\Image BackgroundImage()
  * @method \SilverStripe\ORM\DataList|\App\Maps\MapLayer[] MapLayers()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -35,7 +38,10 @@ class Map extends DataObject
         "Title" => "Varchar(255)",
         "ShortText" => "Text",
         "CoordinatesUpperLeft" => "Varchar(100)",
+        "CoordinatesUpperRight" => "Varchar(100)",
+        "CoordinatesLowerLeft" => "Varchar(100)",
         "CoordinatesLowerRight" => "Varchar(100)",
+        "NorthRotation" => "Float",
         "Active" => "Boolean",
     ];
 
@@ -57,13 +63,19 @@ class Map extends DataObject
     private static $field_labels = [
         "Title" => "Titel",
         "ShortText" => "Kurztext",
-        "Coordinates" => "Koordinaten",
+        "CoordinatesUpperLeft" => "Koordinaten obere linke Ecke",
+        "CoordinatesLowerRight" => "Koordinaten untere rechte Ecke",
+        "NorthRotation" => "Nordrichtung (Grad, 0=oben, 90=rechts)",
         "ReleaseDate" => "Veröffentlichungsdatum",
         "ExpiryDate" => "Ablaufdatum",
         "Author" => "Autor",
+        "Active" => "Aktiv",
+        "BackgroundImage" => "Hintergrundbild",
+        "Parent" => "Organisation",
     ];
 
     private static $summary_fields = [
+        "BackgroundImage.CMSThumbnail" => "Hintergrundbild",
         "Title" => "Titel",
         "Active.Nice" => "Aktiv",
     ];

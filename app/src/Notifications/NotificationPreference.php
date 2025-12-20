@@ -11,10 +11,11 @@ use SilverStripe\Security\Member;
  * @property bool $NotifyEvents
  * @property bool $NotifyNotices
  * @property bool $NotifyMeals
+ * @property bool $NotifyMaps
  * @property int $MemberID
  * @method \SilverStripe\Security\Member Member()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -24,7 +25,8 @@ class NotificationPreference extends DataObject
     private static $db = [
         'NotifyEvents' => 'Boolean(1)',
         'NotifyNotices' => 'Boolean(1)',
-        'NotifyMeals' => 'Boolean(1)'
+        'NotifyMeals' => 'Boolean(1)',
+        'NotifyMaps' => 'Boolean(1)',
     ];
 
     private static $has_one = [

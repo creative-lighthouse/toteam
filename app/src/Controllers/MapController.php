@@ -44,4 +44,14 @@ class MapController extends BaseController
             'Map' => $map,
         ];
     }
+
+    public function getActiveMaps ()
+    {
+        $maps = Map::get()->filter('Active', true)->sort('Created', 'DESC');
+
+        // Filter by user's organizations
+        $maps = $this->filterByUserOrganizations($maps);
+
+        return $maps;
+    }
 }
