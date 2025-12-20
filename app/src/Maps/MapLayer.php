@@ -14,15 +14,13 @@ use App\Notifications\PushNotificationService;
  * @property ?string $Title
  * @property ?string $Description
  * @property bool $Active
- * @property ?string $CoordinatesUpperLeft
- * @property ?string $CoordinatesLowerRight
  * @property int $ParentID
  * @property int $ImageID
  * @method \App\Maps\Map Parent()
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\ORM\DataList|\App\Maps\MapPOI[] POIs()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -33,8 +31,6 @@ class MapLayer extends DataObject
         "Title" => "Varchar(255)",
         "Description" => "Text",
         "Active" => "Boolean",
-        "CoordinatesUpperLeft" => "Varchar(100)",
-        "CoordinatesLowerRight" => "Varchar(100)",
     ];
 
     private static $has_one = [
@@ -49,6 +45,10 @@ class MapLayer extends DataObject
     private static $owns = [
         'Image',
         'POIs',
+    ];
+
+    private static $defaults = [
+        "Active" => true,
     ];
 
     private static $field_labels = [
@@ -69,6 +69,7 @@ class MapLayer extends DataObject
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
+        $fields->removeByName('ParentID');
         return $fields;
     }
 

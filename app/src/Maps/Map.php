@@ -17,7 +17,6 @@ use SilverStripe\Assets\Image;
  * @property ?string $CoordinatesUpperRight
  * @property ?string $CoordinatesLowerLeft
  * @property ?string $CoordinatesLowerRight
- * @property float $NorthRotation
  * @property bool $Active
  * @property int $ParentID
  * @property int $AuthorID
@@ -26,8 +25,8 @@ use SilverStripe\Assets\Image;
  * @method \SilverStripe\Security\Member Author()
  * @method \SilverStripe\Assets\Image BackgroundImage()
  * @method \SilverStripe\ORM\DataList|\App\Maps\MapLayer[] MapLayers()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -41,7 +40,6 @@ class Map extends DataObject
         "CoordinatesUpperRight" => "Varchar(100)",
         "CoordinatesLowerLeft" => "Varchar(100)",
         "CoordinatesLowerRight" => "Varchar(100)",
-        "NorthRotation" => "Float",
         "Active" => "Boolean",
     ];
 
@@ -53,6 +51,10 @@ class Map extends DataObject
 
     private static $has_many = [
         "MapLayers" => MapLayer::class,
+    ];
+
+    private static $defaults = [
+        "Active" => true,
     ];
 
     private static $owns = [

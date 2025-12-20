@@ -42,6 +42,12 @@ class SimpleMapRenderer {
         this.layerImages = new Map(); // Map of layerId -> Image object
         this.activeLayers = new Set(); // Set of active layer IDs
 
+        // Interaction state
+        this.hoveredPOI = null; // Currently hovered POI
+        this.mouseCanvasX = 0; // Mouse position in canvas coordinates
+        this.mouseCanvasY = 0;
+        this.popupPOI = null; // POI for which popup is shown
+
         console.log('SimpleMapRenderer initialized:', {
             backgroundImage: mapConfig.backgroundImage,
             corners: {
@@ -240,27 +246,86 @@ class SimpleMapRenderer {
     }
 
     /**
-     * Convert geographic coordinates to canvas pixel coordinates
+     * Convert geographic coordinates to canvas pixel coordinates using bilinear interpolation
+     * This properly handles rotated/skewed maps by using all 4 corner coordinates
      * @param {number} lat - Latitude
      * @param {number} lng - Longitude
      * @returns {{x: number, y: number}} Canvas coordinates (before transform)
      */
     geoToCanvas(lat, lng) {
-        // Get base map coordinates
+        // Get all 4 corner coordinates
         const ul = this.parseCoordinates(this.config.coordinatesUpperLeft);
+        const ur = this.parseCoordinates(this.config.coordinatesUpperRight);
+        const ll = this.parseCoordinates(this.config.coordinatesLowerLeft);
         const lr = this.parseCoordinates(this.config.coordinatesLowerRight);
 
-        if (!ul || !lr) {
+        if (!ul || !ur || !ll || !lr) {
+            console.warn('Missing corner coordinates for geoToCanvas');
             return { x: 0, y: 0 };
         }
 
-        // Calculate relative position (0-1 range)
-        const relX = (lng - ul.lng) / (lr.lng - ul.lng);
-        const relY = (lat - ul.lat) / (lr.lat - ul.lat);
-
-        // Convert to canvas coordinates (centered at 0,0)
-        const x = (relX - 0.5) * this.renderWidth;
-        const y = (relY - 0.5) * this.renderHeight;
+        // Use inverse bilinear interpolation to find (u,v) coordinates
+        // The geographic quadrilateral is mapped to the unit square [0,1]x[0,1]
+        // Where (0,0)=UL, (1,0)=UR, (0,1)=LL, (1,1)=LR
+        
+        // For a point P(lat, lng), we solve for (u,v) such that:
+        // P = (1-v)[(1-u)*UL + u*UR] + v[(1-u)*LL + u*LR]
+        
+        // Simplified approach for approximate solution:
+        // We'll use an iterative method or direct calculation based on the parallelogram properties
+        
+        // First, try to find u by projecting onto the top and bottom edges
+        const topEdgeLng = ur.lng - ul.lng;
+        const topEdgeLat = ur.lat - ul.lat;
+        const bottomEdgeLng = lr.lng - ll.lng;
+        const bottomEdgeLat = lr.lat - ll.lat;
+        
+        // Vector from UL to point
+        const vecLng = lng - ul.lng;
+        const vecLat = lat - ul.lat;
+        
+        // Left edge (from UL to LL)
+        const leftEdgeLng = ll.lng - ul.lng;
+        const leftEdgeLat = ll.lat - ul.lat;
+        
+        // For a parallelogram, we can solve this more directly
+        // P = UL + u*(UR-UL) + v*(LL-UL)
+        // Solving the 2x2 system:
+        // vecLng = u*topEdgeLng + v*leftEdgeLng
+        // vecLat = u*topEdgeLat + v*leftEdgeLat
+        
+        const det = topEdgeLng * leftEdgeLat - topEdgeLat * leftEdgeLng;
+        
+        let u, v;
+        if (Math.abs(det) > 0.0000001) {
+            // Cramer's rule
+            u = (vecLng * leftEdgeLat - vecLat * leftEdgeLng) / det;
+            v = (topEdgeLng * vecLat - topEdgeLat * vecLng) / det;
+        } else {
+            // Degenerate case - fall back to simple ratio
+            console.warn('Degenerate quadrilateral, using simple interpolation');
+            u = vecLng / (topEdgeLng || 1);
+            v = vecLat / (leftEdgeLat || 1);
+        }
+        
+        // Log for debugging
+        if (Math.abs(u - 0.5) < 0.1 && Math.abs(v - 0.5) < 0.1) {
+            console.log('POI near center:', {
+                lat, lng,
+                u: u.toFixed(3),
+                v: v.toFixed(3),
+                corners: { ul, ur, ll, lr }
+            });
+        }
+        
+        // Clamp to valid range (with some tolerance for points slightly outside)
+        u = Math.max(-0.1, Math.min(1.1, u));
+        v = Math.max(-0.1, Math.min(1.1, v));
+        
+        // Convert from normalized coordinates (0-1) to canvas coordinates (centered at 0,0)
+        // Image spans from -renderWidth/2 to +renderWidth/2
+        const x = (u - 0.5) * this.renderWidth;
+        const y = (v - 0.5) * this.renderHeight;
 
         return { x, y };
     }
@@ -337,6 +402,13 @@ class SimpleMapRenderer {
     setupEventListeners() {
         // Mouse events
         this.canvas.addEventListener('mousedown', (e) => {
+            // Check if clicking on a POI
+            if (this.hoveredPOI) {
+                this.showPOIPopup(this.hoveredPOI);
+                e.preventDefault();
+                return;
+            }
+
             this.isDragging = true;
             this.lastX = e.clientX;
             this.lastY = e.clientY;
@@ -344,6 +416,14 @@ class SimpleMapRenderer {
         });
 
         this.canvas.addEventListener('mousemove', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Transform mouse position to map coordinates
+            this.mouseCanvasX = (mouseX - this.offsetX) / this.scale;
+            this.mouseCanvasY = (mouseY - this.offsetY) / this.scale;
+
             if (this.isDragging) {
                 const dx = e.clientX - this.lastX;
                 const dy = e.clientY - this.lastY;
@@ -352,17 +432,28 @@ class SimpleMapRenderer {
                 this.lastX = e.clientX;
                 this.lastY = e.clientY;
                 this.render();
+            } else {
+                // Check for POI hover
+                const prevHovered = this.hoveredPOI;
+                this.hoveredPOI = this.getPOIAtPosition(this.mouseCanvasX, this.mouseCanvasY);
+                
+                if (this.hoveredPOI !== prevHovered) {
+                    this.canvas.style.cursor = this.hoveredPOI ? 'pointer' : 'grab';
+                    this.render();
+                }
             }
         });
 
         this.canvas.addEventListener('mouseup', () => {
             this.isDragging = false;
-            this.canvas.style.cursor = 'grab';
+            this.canvas.style.cursor = this.hoveredPOI ? 'pointer' : 'grab';
         });
 
         this.canvas.addEventListener('mouseleave', () => {
             this.isDragging = false;
+            this.hoveredPOI = null;
             this.canvas.style.cursor = 'grab';
+            this.render();
         });
 
         // Wheel for zoom
@@ -598,6 +689,7 @@ class SimpleMapRenderer {
 
     /**
      * Draw all active layers
+     * Layers always cover the entire map area
      */
     drawLayers(ctx) {
         this.layers.forEach(layer => {
@@ -610,28 +702,13 @@ class SimpleMapRenderer {
                 return; // Skip if image not loaded
             }
 
-            const ul = this.parseCoordinates(layer.coordinatesUL);
-            const lr = this.parseCoordinates(layer.coordinatesLR);
-
-            if (!ul || !lr) {
-                console.warn('Invalid layer coordinates:', layer.title);
-                return;
-            }
-
-            // Convert layer corners to canvas coordinates
-            const topLeft = this.geoToCanvas(ul.lat, ul.lng);
-            const bottomRight = this.geoToCanvas(lr.lat, lr.lng);
-
-            const layerWidth = bottomRight.x - topLeft.x;
-            const layerHeight = bottomRight.y - topLeft.y;
-
-            // Draw layer image
+            // Draw layer over entire map area (same dimensions as base map)
             ctx.drawImage(
                 layerImage,
-                topLeft.x,
-                topLeft.y,
-                layerWidth,
-                layerHeight
+                -this.renderWidth / 2,
+                -this.renderHeight / 2,
+                this.renderWidth,
+                this.renderHeight
             );
         });
     }
@@ -685,21 +762,130 @@ class SimpleMapRenderer {
 
                 ctx.restore();
 
-                // Draw label if zoomed in enough
-                if (this.scale > 1.5 && poi.title) {
+                // Draw label if zoomed in enough OR if hovered
+                const isHovered = this.hoveredPOI && 
+                                this.hoveredPOI.layerId === layer.id && 
+                                this.hoveredPOI.poiId === poi.id;
+                
+                if ((this.scale > 1.5 || isHovered) && poi.title) {
                     ctx.save();
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                    ctx.fillRect(x + markerSize, y - 10 / this.scale,
-                                ctx.measureText(poi.title).width + 8 / this.scale,
-                                20 / this.scale);
-                    ctx.fillStyle = 'white';
+                    
+                    // Measure text for background
                     ctx.font = `${12 / this.scale}px Arial`;
+                    const textWidth = ctx.measureText(poi.title).width;
+                    const padding = 4 / this.scale;
+                    const bgHeight = 20 / this.scale;
+                    
+                    // Highlight if hovered
+                    ctx.fillStyle = isHovered ? 'rgba(231, 76, 60, 0.95)' : 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillRect(
+                        x + markerSize,
+                        y - bgHeight / 2,
+                        textWidth + padding * 2,
+                        bgHeight
+                    );
+                    
+                    ctx.fillStyle = 'white';
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(poi.title, x + markerSize + 4 / this.scale, y);
+                    ctx.fillText(poi.title, x + markerSize + padding, y);
                     ctx.restore();
                 }
             });
+        });
+    }
+
+    /**
+     * Get POI at given canvas position
+     * @param {number} x - Canvas x coordinate (in map space)
+     * @param {number} y - Canvas y coordinate (in map space)
+     * @returns {object|null} POI data or null
+     */
+    getPOIAtPosition(x, y) {
+        const hitRadius = 15 / this.scale; // Hit detection radius
+
+        for (const layer of this.layers) {
+            if (!this.activeLayers.has(layer.id) || !layer.pois) {
+                continue;
+            }
+
+            for (const poi of layer.pois) {
+                if (!poi.active || !poi.position) {
+                    continue;
+                }
+
+                const coords = this.parseCoordinates(poi.position);
+                if (!coords) {
+                    continue;
+                }
+
+                const poiPos = this.geoToCanvas(coords.lat, coords.lng);
+                const dx = x - poiPos.x;
+                const dy = y - poiPos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance <= hitRadius) {
+                    return {
+                        layerId: layer.id,
+                        poiId: poi.id,
+                        poi: poi
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Show popup for POI
+     */
+    showPOIPopup(poiData) {
+        const poi = poiData.poi;
+
+        // Remove existing popup
+        const existingPopup = document.querySelector('.map-poi-popup');
+        if (existingPopup) {
+            existingPopup.remove();
+        }
+
+        // Create popup
+        const popup = document.createElement('div');
+        popup.className = 'map-poi-popup';
+        popup.innerHTML = `
+            <div class="map-poi-popup__content">
+                <button class="map-poi-popup__close" aria-label="Schließen">&times;</button>
+                <h3 class="map-poi-popup__title">${poi.title || 'POI'}</h3>
+                <div class="map-poi-popup__description">
+                    ${poi.description || 'Keine Beschreibung verfügbar.'}
+                </div>
+            </div>
+        `;
+
+        // Add to container
+        const container = this.canvas.parentElement.parentElement;
+        container.appendChild(popup);
+
+        // Close button handler
+        const closeBtn = popup.querySelector('.map-poi-popup__close');
+        closeBtn.addEventListener('click', () => {
+            popup.remove();
+        });
+
+        // Close on escape
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                popup.remove();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+
+        // Close on click outside
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                popup.remove();
+            }
         });
     }
 

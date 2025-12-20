@@ -11,11 +11,11 @@ use SilverStripe\ORM\DataObject;
  * @property ?string $Title
  * @property ?string $Description
  * @property bool $Active
- * @property ?string $Position
+ * @property ?string $Coordinates
  * @property int $ParentID
  * @method \App\Maps\MapLayer Parent()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -26,7 +26,7 @@ class MapPOI extends DataObject
         "Title" => "Varchar(255)",
         "Description" => "Text",
         "Active" => "Boolean",
-        "Position" => "Varchar(100)",
+        "Coordinates" => "Varchar(100)",
     ];
 
     private static $has_one = [
@@ -37,6 +37,11 @@ class MapPOI extends DataObject
         "Title" => "Titel",
         "Description" => "Beschreibung",
         "Active" => "Aktiv",
+        "Coordinates" => "Koordinaten",
+    ];
+
+    private static $defaults = [
+        "Active" => true,
     ];
 
     private static $summary_fields = [
@@ -51,6 +56,12 @@ class MapPOI extends DataObject
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
+        $fields->removeByName('ParentID');
         return $fields;
+    }
+
+    public function getDetailInfo()
+    {
+        return $this->Description;
     }
 }

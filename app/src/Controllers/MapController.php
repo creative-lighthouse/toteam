@@ -50,7 +50,7 @@ class MapController extends BaseController
                     'title' => $poi->Title,
                     'description' => $poi->Description,
                     'active' => (bool)$poi->Active,
-                    'position' => $poi->Position
+                    'position' => $poi->Coordinates,
                 ];
             }
 
