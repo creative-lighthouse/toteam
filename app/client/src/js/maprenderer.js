@@ -37,6 +37,11 @@ class SimpleMapRenderer {
         this.scaleIndicator = null;
         this.compassRose = null;
 
+        // Layers and POIs
+        this.layers = mapConfig.layers || [];
+        this.layerImages = new Map(); // Map of layerId -> Image object
+        this.activeLayers = new Set(); // Set of active layer IDs
+
         console.log('SimpleMapRenderer initialized:', {
             backgroundImage: mapConfig.backgroundImage,
             corners: {
@@ -44,6 +49,14 @@ class SimpleMapRenderer {
                 upperRight: mapConfig.coordinatesUpperRight,
                 lowerLeft: mapConfig.coordinatesLowerLeft,
                 lowerRight: mapConfig.coordinatesLowerRight
+            },
+            layersCount: this.layers.length
+        });
+
+        // Initialize active layers from config
+        this.layers.forEach(layer => {
+            if (layer.active) {
+                this.activeLayers.add(layer.id);
             }
         });
 
@@ -153,6 +166,9 @@ class SimpleMapRenderer {
         // Load map image
         await this.loadMapImage();
 
+        // Load layer images
+        await this.loadLayerImages();
+
         // Set canvas size
         this.resizeCanvas();
 
@@ -193,6 +209,72 @@ class SimpleMapRenderer {
             };
             img.src = this.config.backgroundImage;
         });
+    }
+
+    /**
+     * Load all layer images
+     */
+    async loadLayerImages() {
+        const loadPromises = this.layers.map(layer => {
+            if (!layer.imageUrl) {
+                return Promise.resolve();
+            }
+
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    this.layerImages.set(layer.id, img);
+                    console.log('Layer image loaded:', layer.title);
+                    resolve();
+                };
+                img.onerror = () => {
+                    console.error('Failed to load layer image:', layer.title);
+                    resolve(); // Continue even if layer fails
+                };
+                img.src = layer.imageUrl;
+            });
+        });
+
+        await Promise.all(loadPromises);
+        console.log(`Loaded ${this.layerImages.size} layer images`);
+    }
+
+    /**
+     * Convert geographic coordinates to canvas pixel coordinates
+     * @param {number} lat - Latitude
+     * @param {number} lng - Longitude
+     * @returns {{x: number, y: number}} Canvas coordinates (before transform)
+     */
+    geoToCanvas(lat, lng) {
+        // Get base map coordinates
+        const ul = this.parseCoordinates(this.config.coordinatesUpperLeft);
+        const lr = this.parseCoordinates(this.config.coordinatesLowerRight);
+
+        if (!ul || !lr) {
+            return { x: 0, y: 0 };
+        }
+
+        // Calculate relative position (0-1 range)
+        const relX = (lng - ul.lng) / (lr.lng - ul.lng);
+        const relY = (lat - ul.lat) / (lr.lat - ul.lat);
+
+        // Convert to canvas coordinates (centered at 0,0)
+        const x = (relX - 0.5) * this.renderWidth;
+        const y = (relY - 0.5) * this.renderHeight;
+
+        return { x, y };
+    }
+
+    /**
+     * Toggle layer visibility
+     */
+    toggleLayer(layerId) {
+        if (this.activeLayers.has(layerId)) {
+            this.activeLayers.delete(layerId);
+        } else {
+            this.activeLayers.add(layerId);
+        }
+        this.render();
     }
 
     /**
@@ -501,11 +583,124 @@ class SimpleMapRenderer {
             this.renderHeight
         );
 
+        // Draw active layers
+        this.drawLayers(ctx);
+
+        // Draw POIs from active layers
+        this.drawPOIs(ctx);
+
         // Restore context
         ctx.restore();
 
         // Update scale indicator
         this.updateScaleIndicator();
+    }
+
+    /**
+     * Draw all active layers
+     */
+    drawLayers(ctx) {
+        this.layers.forEach(layer => {
+            if (!this.activeLayers.has(layer.id)) {
+                return; // Skip inactive layers
+            }
+
+            const layerImage = this.layerImages.get(layer.id);
+            if (!layerImage) {
+                return; // Skip if image not loaded
+            }
+
+            const ul = this.parseCoordinates(layer.coordinatesUL);
+            const lr = this.parseCoordinates(layer.coordinatesLR);
+
+            if (!ul || !lr) {
+                console.warn('Invalid layer coordinates:', layer.title);
+                return;
+            }
+
+            // Convert layer corners to canvas coordinates
+            const topLeft = this.geoToCanvas(ul.lat, ul.lng);
+            const bottomRight = this.geoToCanvas(lr.lat, lr.lng);
+
+            const layerWidth = bottomRight.x - topLeft.x;
+            const layerHeight = bottomRight.y - topLeft.y;
+
+            // Draw layer image
+            ctx.drawImage(
+                layerImage,
+                topLeft.x,
+                topLeft.y,
+                layerWidth,
+                layerHeight
+            );
+        });
+    }
+
+    /**
+     * Draw POIs from active layers
+     */
+    drawPOIs(ctx) {
+        this.layers.forEach(layer => {
+            if (!this.activeLayers.has(layer.id) || !layer.pois) {
+                return;
+            }
+
+            layer.pois.forEach(poi => {
+                if (!poi.active || !poi.position) {
+                    return;
+                }
+
+                const coords = this.parseCoordinates(poi.position);
+                if (!coords) {
+                    return;
+                }
+
+                const { x, y } = this.geoToCanvas(coords.lat, coords.lng);
+
+                // Draw POI marker
+                const markerSize = 20 / this.scale; // Adjust size based on zoom
+
+                ctx.save();
+
+                // Shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetY = 2;
+
+                // Marker pin
+                ctx.fillStyle = '#e74c3c';
+                ctx.strokeStyle = '#c0392b';
+                ctx.lineWidth = 2 / this.scale;
+
+                ctx.beginPath();
+                ctx.arc(x, y, markerSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // White center
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(x, y, markerSize / 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+
+                // Draw label if zoomed in enough
+                if (this.scale > 1.5 && poi.title) {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillRect(x + markerSize, y - 10 / this.scale,
+                                ctx.measureText(poi.title).width + 8 / this.scale,
+                                20 / this.scale);
+                    ctx.fillStyle = 'white';
+                    ctx.font = `${12 / this.scale}px Arial`;
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(poi.title, x + markerSize + 4 / this.scale, y);
+                    ctx.restore();
+                }
+            });
+        });
     }
 
     /**
@@ -656,12 +851,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Parse map configuration with all 4 corners
+    let layers = [];
+    try {
+        const layersData = mapRenderer.dataset.layers;
+        if (layersData) {
+            layers = JSON.parse(layersData);
+            console.log('Parsed layers:', layers);
+        }
+    } catch (e) {
+        console.error('Failed to parse layers data:', e);
+    }
+
     const mapConfig = {
         backgroundImage: mapRenderer.dataset.backgroundimage,
         coordinatesUpperLeft: mapRenderer.dataset.coordinatesupperleft,
         coordinatesUpperRight: mapRenderer.dataset.coordinatesupperright,
         coordinatesLowerLeft: mapRenderer.dataset.coordinateslowerleft,
-        coordinatesLowerRight: mapRenderer.dataset.coordinateslowerright
+        coordinatesLowerRight: mapRenderer.dataset.coordinateslowerright,
+        layers: layers
     };
 
     console.log('Initializing map with config:', mapConfig);
@@ -680,6 +887,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Layer toggle checkboxes
+    const layerToggles = document.querySelectorAll('.map-layer-toggle');
+    layerToggles.forEach(toggle => {
+        toggle.addEventListener('change', (e) => {
+            const layerId = parseInt(e.target.dataset.layerId);
+            renderer.toggleLayer(layerId);
+            console.log('Toggled layer:', layerId, e.target.checked);
+        });
+    });
+
     // Sidebar toggle
     const toggleButton = document.getElementById('toggleSidebar');
     const sidebar = document.querySelector('.map-controls');
@@ -688,6 +905,12 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleButton.addEventListener('click', () => {
             sidebar.classList.toggle('is-hidden');
             wrapper.classList.toggle('sidebar-hidden');
+
+            // Resize canvas when sidebar is toggled
+            setTimeout(() => {
+                renderer.resizeCanvas();
+                renderer.render();
+            }, 350); // Wait for animation to complete
         });
     }
 });

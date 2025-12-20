@@ -40,8 +40,34 @@ class MapController extends BaseController
             return $this->httpError(403, 'Zugriff verweigert');
         }
 
+        // Prepare layers data as JSON
+        $layersData = [];
+        foreach ($map->MapLayers() as $layer) {
+            $poisData = [];
+            foreach ($layer->POIs() as $poi) {
+                $poisData[] = [
+                    'id' => $poi->ID,
+                    'title' => $poi->Title,
+                    'description' => $poi->Description,
+                    'active' => (bool)$poi->Active,
+                    'position' => $poi->Position
+                ];
+            }
+
+            $layersData[] = [
+                'id' => $layer->ID,
+                'title' => $layer->Title,
+                'active' => (bool)$layer->Active,
+                'imageUrl' => $layer->Image()->exists() ? $layer->Image()->URL : '',
+                'coordinatesUL' => $layer->getCoordinatesUL(),
+                'coordinatesLR' => $layer->getCoordinatesLR(),
+                'pois' => $poisData
+            ];
+        }
+
         return [
             'Map' => $map,
+            'LayersJSON' => json_encode($layersData)
         ];
     }
 

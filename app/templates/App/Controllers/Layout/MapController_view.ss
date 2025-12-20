@@ -15,6 +15,23 @@
                         </button>
                     </div>
 
+                    <% if $MapLayers.Count > 0 %>
+                        <div class="map-controls__layers">
+                            <h4>Ebenen</h4>
+                            <div class="map-layers-list">
+                                <% loop $MapLayers %>
+                                    <label class="map-layer-item">
+                                        <input type="checkbox"
+                                               class="map-layer-toggle"
+                                               data-layer-id="$ID"
+                                               <% if $Active %>checked<% end_if %>>
+                                        <span class="map-layer-title">$Title</span>
+                                    </label>
+                                <% end_loop %>
+                            </div>
+                        </div>
+                    <% end_if %>
+
                     <div class="map-controls__info">
                         <p class="map-controls__help">
                             <strong>Bedienung:</strong><br>
@@ -37,7 +54,8 @@
                          data-coordinatesupperleft="$CoordinatesUpperLeft"
                          data-coordinatesupperright="$CoordinatesUpperRight"
                          data-coordinateslowerleft="$CoordinatesLowerLeft"
-                         data-coordinateslowerright="$CoordinatesLowerRight">
+                         data-coordinateslowerright="$CoordinatesLowerRight"
+                         data-layers='$Top.LayersJSON.RAW'>
                         <canvas id="mapCanvas"></canvas>
                     </div>
                 </div>
