@@ -2,11 +2,13 @@
 
 namespace App\Maps;
 
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use App\Notifications\PushNotificationService;
+use Symbiote\GridFieldExtensions\GridFieldAddExistingSearchButton;
 
 /**
  * Class \App\Maps\MapLayer
@@ -14,6 +16,7 @@ use App\Notifications\PushNotificationService;
  * @property ?string $Title
  * @property ?string $Description
  * @property bool $Active
+ * @property ?string $LayerColor
  * @property int $ParentID
  * @property int $ImageID
  * @method \App\Maps\Map Parent()
@@ -31,6 +34,7 @@ class MapLayer extends DataObject
         "Title" => "Varchar(255)",
         "Description" => "Text",
         "Active" => "Boolean",
+        "LayerColor" => "Varchar(7)",
     ];
 
     private static $has_one = [
@@ -55,11 +59,14 @@ class MapLayer extends DataObject
         "Title" => "Titel",
         "Description" => "Beschreibung",
         "Active" => "Aktiv",
+        "Image" => "Bild",
+        "POIs" => "Marker",
     ];
 
     private static $summary_fields = [
         "Title" => "Titel",
         "Active.Nice" => "Aktiv",
+        "POIs.Count" => "Anzahl Marker",
     ];
 
     private static $table_name = 'MapLayer';
@@ -70,6 +77,21 @@ class MapLayer extends DataObject
     {
         $fields = parent::getCMSFields();
         $fields->removeByName('ParentID');
+
+        //Move gridfield for pois in main tab
+        $poisField = $fields->dataFieldByName('POIs');
+        if ($poisField) {
+            $poisfieldConfig = GridFieldConfig_RecordEditor::create();
+            $poisField->setConfig($poisfieldConfig);
+            $fields->removeByName('POIs');
+            $fields->addFieldToTab('Root.Main', $poisField);
+        }
+
+        //Set type of layercolor to colorpicker
+        $layerColorField = $fields->dataFieldByName('LayerColor');
+        if ($layerColorField) {
+            $layerColorField->setAttribute('type', 'color');
+        }
         return $fields;
     }
 

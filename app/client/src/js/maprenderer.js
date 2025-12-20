@@ -354,23 +354,29 @@ class SimpleMapRenderer {
         this.canvas.width = containerWidth;
         this.canvas.height = containerHeight;
 
-        // Calculate aspect ratio from real-world dimensions
-        const mapAspectRatio = this.mapWidthMeters / this.mapHeightMeters;
+        // Use the ACTUAL image aspect ratio, not the geographic aspect ratio
+        // This prevents circles from becoming ovals
+        let imageAspectRatio = 1;
+        if (this.mapImage) {
+            imageAspectRatio = this.mapImage.width / this.mapImage.height;
+        }
+        
         const containerAspectRatio = containerWidth / containerHeight;
 
-        // Calculate the size for the rendered image to maintain aspect ratio
-        if (containerAspectRatio > mapAspectRatio) {
+        // Calculate the size for the rendered image to maintain its natural aspect ratio
+        if (containerAspectRatio > imageAspectRatio) {
             // Container is wider - fit to height
             this.renderHeight = containerHeight;
-            this.renderWidth = containerHeight * mapAspectRatio;
+            this.renderWidth = containerHeight * imageAspectRatio;
         } else {
             // Container is taller - fit to width
             this.renderWidth = containerWidth;
-            this.renderHeight = containerWidth / mapAspectRatio;
+            this.renderHeight = containerWidth / imageAspectRatio;
         }
 
         // Calculate pixels per meter for scale based on render size
-        if (this.mapImage) {
+        // Use the larger dimension to maintain reasonable scale
+        if (this.mapImage && this.mapWidthMeters > 0) {
             this.pixelsPerMeter = this.renderWidth / this.mapWidthMeters;
         }
 
@@ -390,7 +396,7 @@ class SimpleMapRenderer {
             canvasHeight: this.canvas.height,
             renderWidth: this.renderWidth,
             renderHeight: this.renderHeight,
-            mapAspectRatio: mapAspectRatio.toFixed(2),
+            imageAspectRatio: imageAspectRatio.toFixed(2),
             pixelsPerMeter: this.pixelsPerMeter.toFixed(2),
             initialScale: this.scale.toFixed(2)
         });
@@ -734,19 +740,24 @@ class SimpleMapRenderer {
 
                 const { x, y } = this.geoToCanvas(coords.lat, coords.lng);
 
-                // Draw POI marker
-                const markerSize = 20 / this.scale; // Adjust size based on zoom
+                // Draw POI marker with custom color and text
+                const markerSize = 24 / this.scale; // Adjust size based on zoom
+                const markerColor = poi.markerColor || '#e74c3c';
+                const markerText = poi.markerText || '';
+
+                // Darken the marker color for the border
+                const darkerColor = this.darkenColor(markerColor, 0.2);
 
                 ctx.save();
 
                 // Shadow
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-                ctx.shadowBlur = 4;
-                ctx.shadowOffsetY = 2;
+                ctx.shadowBlur = 4 / this.scale;
+                ctx.shadowOffsetY = 2 / this.scale;
 
-                // Marker pin
-                ctx.fillStyle = '#e74c3c';
-                ctx.strokeStyle = '#c0392b';
+                // Marker circle
+                ctx.fillStyle = markerColor;
+                ctx.strokeStyle = darkerColor;
                 ctx.lineWidth = 2 / this.scale;
 
                 ctx.beginPath();
@@ -754,11 +765,21 @@ class SimpleMapRenderer {
                 ctx.fill();
                 ctx.stroke();
 
-                // White center
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(x, y, markerSize / 4, 0, Math.PI * 2);
-                ctx.fill();
+                // Reset shadow for text
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+
+                // Draw text on marker if available
+                if (markerText) {
+                    // Choose text color based on background brightness
+                    const textColor = this.getContrastColor(markerColor);
+                    ctx.fillStyle = textColor;
+                    ctx.font = `bold ${10 / this.scale}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(markerText, x, y);
+                }
 
                 ctx.restore();
 
@@ -887,6 +908,54 @@ class SimpleMapRenderer {
                 popup.remove();
             }
         });
+    }
+
+    /**
+     * Darken a hex color by a given amount
+     * @param {string} color - Hex color (e.g., '#ff0000')
+     * @param {number} amount - Amount to darken (0-1)
+     * @returns {string} Darkened hex color
+     */
+    darkenColor(color, amount) {
+        // Remove # if present
+        color = color.replace('#', '');
+        
+        // Parse RGB
+        let r = parseInt(color.substring(0, 2), 16);
+        let g = parseInt(color.substring(2, 4), 16);
+        let b = parseInt(color.substring(4, 6), 16);
+        
+        // Darken
+        r = Math.floor(r * (1 - amount));
+        g = Math.floor(g * (1 - amount));
+        b = Math.floor(b * (1 - amount));
+        
+        // Convert back to hex
+        return '#' + 
+            r.toString(16).padStart(2, '0') + 
+            g.toString(16).padStart(2, '0') + 
+            b.toString(16).padStart(2, '0');
+    }
+
+    /**
+     * Get contrast color (black or white) for a given background color
+     * @param {string} bgColor - Hex color (e.g., '#ff0000')
+     * @returns {string} 'white' or 'black'
+     */
+    getContrastColor(bgColor) {
+        // Remove # if present
+        bgColor = bgColor.replace('#', '');
+        
+        // Parse RGB
+        const r = parseInt(bgColor.substring(0, 2), 16);
+        const g = parseInt(bgColor.substring(2, 4), 16);
+        const b = parseInt(bgColor.substring(4, 6), 16);
+        
+        // Calculate relative luminance using ITU-R BT.709
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        
+        // Return black for light backgrounds, white for dark backgrounds
+        return luminance > 0.5 ? 'black' : 'white';
     }
 
     /**
@@ -1082,6 +1151,57 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Toggled layer:', layerId, e.target.checked);
         });
     });
+
+    // Apply layer colors to layer items
+    layerToggles.forEach(toggle => {
+        const layerId = parseInt(toggle.dataset.layerId);
+        const layer = layers.find(l => l.id === layerId);
+        
+        if (layer && layer.layerColor) {
+            const layerItem = toggle.closest('.map-layer-item');
+            if (layerItem) {
+                // Set background color
+                layerItem.style.backgroundColor = layer.layerColor;
+                
+                // Calculate contrast text color
+                const textColor = renderer.getContrastColor(layer.layerColor);
+                layerItem.style.color = textColor;
+                
+                // Update hover color (slightly lighter or darker)
+                const isLight = textColor === 'black';
+                const hoverColor = isLight ? 
+                    renderer.darkenColor(layer.layerColor, 0.1) : 
+                    lightenColor(layer.layerColor, 0.1);
+                
+                layerItem.dataset.hoverColor = hoverColor;
+                
+                // Add hover effect
+                layerItem.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = this.dataset.hoverColor;
+                });
+                layerItem.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = layer.layerColor;
+                });
+            }
+        }
+    });
+
+    // Helper function to lighten a color
+    function lightenColor(color, amount) {
+        color = color.replace('#', '');
+        let r = parseInt(color.substring(0, 2), 16);
+        let g = parseInt(color.substring(2, 4), 16);
+        let b = parseInt(color.substring(4, 6), 16);
+        
+        r = Math.min(255, Math.floor(r + (255 - r) * amount));
+        g = Math.min(255, Math.floor(g + (255 - g) * amount));
+        b = Math.min(255, Math.floor(b + (255 - b) * amount));
+        
+        return '#' + 
+            r.toString(16).padStart(2, '0') + 
+            g.toString(16).padStart(2, '0') + 
+            b.toString(16).padStart(2, '0');
+    }
 
     // Sidebar toggle
     const toggleButton = document.getElementById('toggleSidebar');

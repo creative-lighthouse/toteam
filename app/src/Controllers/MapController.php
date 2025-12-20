@@ -51,6 +51,8 @@ class MapController extends BaseController
                     'description' => $poi->Description,
                     'active' => (bool)$poi->Active,
                     'position' => $poi->Coordinates,
+                    'markerColor' => $poi->getMarkerColor(),
+                    'markerText' => $poi->getMarkerText(),
                 ];
             }
 
@@ -61,6 +63,7 @@ class MapController extends BaseController
                 'imageUrl' => $layer->Image()->exists() ? $layer->Image()->URL : '',
                 'coordinatesUL' => $layer->getCoordinatesUL(),
                 'coordinatesLR' => $layer->getCoordinatesLR(),
+                'layerColor' => $layer->LayerColor ?: '#999999',
                 'pois' => $poisData
             ];
         }

@@ -204,20 +204,22 @@ section.section--MapView {
                     background: #f9f9f9;
                     border-radius: 4px;
                     cursor: pointer;
-                    transition: background 0.2s ease;
+                    transition: background 0.2s ease, color 0.2s ease;
 
+                    // Default hover will be overridden by JS if layer has a color
                     &:hover {
                         background: #f0f0f0;
                     }
 
                     input[type="checkbox"] {
                         cursor: pointer;
+                        accent-color: currentColor; // Match checkbox to text color
                     }
 
                     .map-layer-title {
                         flex: 1;
                         font-size: 0.875rem;
-                        color: #333;
+                        // Color will be set by JS based on background
                     }
                 }
             }

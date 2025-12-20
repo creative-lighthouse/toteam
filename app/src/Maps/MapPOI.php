@@ -64,4 +64,14 @@ class MapPOI extends DataObject
     {
         return $this->Description;
     }
+
+    public function getMarkerText()
+    {
+        return "42";
+    }
+
+    public function getMarkerColor()
+    {
+        return $this->Parent()->LayerColor;
+    }
 }
