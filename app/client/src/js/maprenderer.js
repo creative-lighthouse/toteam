@@ -315,16 +315,6 @@ class MapRenderer {
             v = vecLat / (leftEdgeLat || 1);
         }
 
-        // Log for debugging
-        if (Math.abs(u - 0.5) < 0.1 && Math.abs(v - 0.5) < 0.1) {
-            console.log('POI near center:', {
-                lat, lng,
-                u: u.toFixed(3),
-                v: v.toFixed(3),
-                corners: { ul, ur, ll, lr }
-            });
-        }
-
         // Clamp to valid range (with some tolerance for points slightly outside)
         u = Math.max(-0.1, Math.min(1.1, u));
         v = Math.max(-0.1, Math.min(1.1, v));
@@ -1021,15 +1011,72 @@ class MapRenderer {
             if (index !== -1) {
                 layer.pois.splice(index, 1);
 
+                // Update layerState if in edit mode
+                if (window.layerState && window.layerState.pois) {
+                    const stateIndex = window.layerState.pois.findIndex(p => p.id === poiData.poiId);
+                    if (stateIndex !== -1) {
+                        window.layerState.pois.splice(stateIndex, 1);
+                    }
+                }
+
                 // Notify about the change
                 if (window.updateLayerState) {
                     window.updateLayerState({ pois: layer.pois });
+                }
+
+                // Remove POI from sidebar list
+                const poiElement = document.querySelector(`.poi-item[data-poi-id="${poiData.poiId}"]`);
+                if (poiElement) {
+                    poiElement.remove();
+                }
+
+                // Show "no POIs" message if list is empty
+                const poisList = document.querySelector('.pois-list');
+                if (poisList && poisList.children.length === 0) {
+                    poisList.remove();
+                    const poisContainer = document.querySelector('.map-controls_pois');
+                    const addPOIButton = document.getElementById('addPOI');
+                    if (poisContainer && addPOIButton) {
+                        const emptyMessage = document.createElement('p');
+                        emptyMessage.className = 'pois-empty';
+                        emptyMessage.textContent = 'Noch keine Marker vorhanden';
+                        poisContainer.insertBefore(emptyMessage, addPOIButton);
+                    }
                 }
 
                 // Re-render to remove the POI from the map
                 this.render();
             }
         }
+    }
+
+    /**
+     * Pan the map to center on a POI's coordinates
+     * @param {number} lat - Latitude
+     * @param {number} lng - Longitude
+     */
+    panToPOI(lat, lng) {
+        // Convert geo coordinates to canvas coordinates
+        const { x, y } = this.geoToCanvas(lat, lng);
+
+        // Zoom to maximum level
+        this.scale = 5;
+
+        // Calculate offset needed to center this point at the new zoom level
+        // We want the point at canvas center, so offset should be:
+        // offsetX = canvasCenter.x - point.x (in render space)
+        // offsetY = canvasCenter.y - point.y (in render space)
+
+        const canvasCenterX = this.canvas.width / 2;
+        const canvasCenterY = this.canvas.height / 2;
+
+        // The point (x, y) is in render coordinates
+        // We need to adjust offset so that this point appears at canvas center
+        this.offsetX = canvasCenterX - (x * this.scale);
+        this.offsetY = canvasCenterY - (y * this.scale);
+
+        // Re-render with new pan position
+        this.render();
     }
 
     /**
@@ -1361,6 +1408,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let layerState = {
             id: layer.id,
             title: layer.title,
+            description: layer.description || '',
+            layerColor: layer.layerColor || '#999999',
             imageUrl: layer.imageUrl,
             pois: layer.pois || []
         };
@@ -1371,18 +1420,256 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Layer state updated:', layerState);
         };
 
-        // Save button functionality
+        // Title input
+        const titleInput = document.getElementById('layerTitle');
+        if (titleInput) {
+            titleInput.addEventListener('input', (e) => {
+                updateLayerState({ title: e.target.value });
+            });
+        }
+
+        // Description textarea
+        const descriptionInput = document.getElementById('layerDescription');
+        if (descriptionInput) {
+            descriptionInput.addEventListener('input', (e) => {
+                updateLayerState({ description: e.target.value });
+            });
+        }
+
+        // Color picker
+        const colorInput = document.getElementById('layerColor');
+        const colorTextInput = document.getElementById('layerColorText');
+
+        if (colorInput && colorTextInput) {
+            colorInput.addEventListener('input', (e) => {
+                const color = e.target.value;
+                colorTextInput.value = color;
+                updateLayerState({ layerColor: color });
+
+                // Update all POI marker colors immediately
+                layerState.pois.forEach(poi => {
+                    poi.markerColor = color;
+                });
+                renderer.layers[0].pois.forEach(poi => {
+                    poi.markerColor = color;
+                });
+                renderer.render();
+            });
+
+            colorTextInput.addEventListener('input', (e) => {
+                const color = e.target.value;
+                if (/^#[0-9A-F]{6}$/i.test(color)) {
+                    colorInput.value = color;
+                    updateLayerState({ layerColor: color });
+
+                    // Update all POI marker colors immediately
+                    layerState.pois.forEach(poi => {
+                        poi.markerColor = color;
+                    });
+                    renderer.layers[0].pois.forEach(poi => {
+                        poi.markerColor = color;
+                    });
+                    renderer.render();
+                }
+            });
+        }
+
+        // Add POI button
+        const addPOIButton = document.getElementById('addPOI');
+        if (addPOIButton) {
+            addPOIButton.addEventListener('click', () => {
+                const title = prompt('Titel des neuen Markers:');
+                if (!title) return;
+
+                // Get center of current view
+                const centerLat = (parseFloat(mapConfig.coordinatesUpperLeft.split(',')[0]) +
+                                  parseFloat(mapConfig.coordinatesLowerRight.split(',')[0])) / 2;
+                const centerLng = (parseFloat(mapConfig.coordinatesUpperLeft.split(',')[1]) +
+                                  parseFloat(mapConfig.coordinatesLowerRight.split(',')[1])) / 2;
+
+                const newPOI = {
+                    id: Date.now(), // Temporary ID
+                    title: title,
+                    description: '',
+                    active: true,
+                    position: `${centerLat},${centerLng}`,
+                    markerColor: layerState.layerColor || '#e74c3c',
+                    markerText: title.charAt(0).toUpperCase(),
+                    isNew: true // Flag for backend
+                };
+
+                layerState.pois.push(newPOI);
+                updateLayerState({ pois: layerState.pois });
+
+                // Add to renderer's layer (not duplicating, using layerState reference)
+                renderer.layers[0].pois = layerState.pois;
+                renderer.render();
+
+                // Add POI to the sidebar list
+                const poisList = document.querySelector('.pois-list');
+                const poisEmpty = document.querySelector('.pois-empty');
+
+                if (poisEmpty) {
+                    poisEmpty.remove(); // Remove "no POIs" message
+                }
+
+                if (!poisList) {
+                    // Create list if it doesn't exist
+                    const poisContainer = document.querySelector('.map-controls_pois');
+                    const newList = document.createElement('div');
+                    newList.className = 'pois-list';
+                    poisContainer.insertBefore(newList, addPOIButton);
+                }
+
+                const list = document.querySelector('.pois-list');
+                if (list) {
+                    const poiElement = document.createElement('div');
+                    poiElement.className = 'poi-item';
+                    poiElement.setAttribute('data-poi-id', newPOI.id);
+                    poiElement.setAttribute('data-poi-position', newPOI.position);
+                    poiElement.innerHTML = `
+                        <div class="poi-marker" style="background-color: ${newPOI.markerColor};">
+                            <span style="color: white;">${newPOI.markerText}</span>
+                        </div>
+                        <div class="poi-info">
+                            <strong>${newPOI.title}</strong>
+                            ${newPOI.description ? `<small>${newPOI.description}</small>` : ''}
+                        </div>
+                        <button class="poi-item_delete" data-poi-id="${newPOI.id}" title="Marker löschen">
+                            <div style="mask-image: url('_resources/app/client/icons/actions/action_trash.svg');" class="icon--small"></div>
+                        </button>
+                    `;
+                    list.appendChild(poiElement);
+
+                    // Add event listeners to the new POI item
+                    attachPOIItemListeners(poiElement, renderer);
+                }
+
+                console.log('POI added:', newPOI);
+            });
+        }
+
+        // Helper function to attach listeners to POI items
+        const attachPOIItemListeners = (poiElement, renderer) => {
+            const poiId = poiElement.getAttribute('data-poi-id');
+            const poiPosition = poiElement.getAttribute('data-poi-position');
+
+            // Click on POI info to pan and show popup
+            const poiInfo = poiElement.querySelector('.poi-info, .poi-marker');
+            if (poiInfo) {
+                poiInfo.style.cursor = 'pointer';
+                poiInfo.addEventListener('click', () => {
+                    if (poiPosition && renderer) {
+                        const coords = poiPosition.split(',');
+                        const lat = parseFloat(coords[0]);
+                        const lng = parseFloat(coords[1]);
+
+                        // Find the POI in the layer
+                        const layer = renderer.layers[0];
+                        const poi = layer.pois.find(p => p.id == poiId);
+
+                        if (poi) {
+                            // Pan to POI
+                            renderer.panToPOI(lat, lng);
+
+                            // Show popup after a short delay to let pan complete
+                            setTimeout(() => {
+                                renderer.showPOIPopup({
+                                    layerId: layer.id,
+                                    poiId: poi.id,
+                                    poi: poi
+                                });
+                            }, 300);
+                        }
+                    }
+                });
+            }
+
+            // Delete button
+            const deleteBtn = poiElement.querySelector('.poi-item_delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent triggering poi-info click
+
+                    const layer = renderer.layers[0];
+                    const poi = layer.pois.find(p => p.id == poiId);
+
+                    if (poi && confirm(`Möchten Sie den Marker "${poi.title}" wirklich löschen?`)) {
+                        renderer.deletePOI({
+                            layerId: layer.id,
+                            poiId: poi.id
+                        });
+                    }
+                });
+            }
+        };
+
+        // Attach listeners to existing POI items from template
+        document.querySelectorAll('.poi-item').forEach(poiElement => {
+            attachPOIItemListeners(poiElement, renderer);
+        });
+
+        // Save button functionality with icon states
         const saveButton = document.getElementById('saveLayer');
-        const saveStatus = document.getElementById('saveStatus');
+        const saveIconButton = document.querySelector('.headerSave_button');
+        const saveIconSaving = document.querySelector('.headerSave_saving');
+        const saveIconSaved = document.querySelector('.headerSave_saved');
+
+        // Helper function to toggle save icon states
+        const toggleSaveIcon = (state) => {
+            if (!saveIconButton || !saveIconSaving || !saveIconSaved) return;
+
+            // Hide all icons first
+            saveIconButton.style.display = 'none';
+            saveIconSaving.style.display = 'none';
+            saveIconSaved.style.display = 'none';
+
+            // Show the requested icon
+            if (state === 'button') {
+                saveIconButton.style.display = 'block';
+            } else if (state === 'saving') {
+                saveIconSaving.style.display = 'block';
+            } else if (state === 'saved') {
+                saveIconSaved.style.display = 'block';
+            }
+        };
 
         if (saveButton) {
             saveButton.addEventListener('click', async () => {
                 saveButton.disabled = true;
-                saveButton.textContent = 'Speichert...';
-                saveStatus.textContent = '';
-                saveStatus.className = 'save-status';
+                toggleSaveIcon('saving');
 
                 try {
+                    // First, upload image if one was selected
+                    if (layerState.pendingImageFile) {
+                        const formData = new FormData();
+                        formData.append('image', layerState.pendingImageFile);
+                        formData.append('layerID', layer.id);
+
+                        const uploadResponse = await fetch(`/maps/uploadlayerimage/${layer.id}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        });
+
+                        const uploadResult = await uploadResponse.json();
+
+                        if (!uploadResult.success) {
+                            throw new Error(uploadResult.error || 'Fehler beim Hochladen des Bildes');
+                        }
+
+                        // Update imageUrl in layerState with uploaded image
+                        if (uploadResult.imageUrl) {
+                            layerState.imageUrl = uploadResult.imageUrl;
+                        }
+
+                        // Clear pending file
+                        delete layerState.pendingImageFile;
+                    }
+
+                    // Then save all other layer changes
                     const response = await fetch(`/maps/savelayer/${layer.id}`, {
                         method: 'POST',
                         headers: {
@@ -1395,24 +1682,75 @@ document.addEventListener('DOMContentLoaded', () => {
                     const result = await response.json();
 
                     if (result.success) {
-                        saveStatus.textContent = '✓ ' + result.message;
-                        saveStatus.className = 'save-status save-status--success';
+                        // Show saved icon
+                        toggleSaveIcon('saved');
 
-                        // Clear success message after 3 seconds
+                        // Reset file input
+                        if (imageUploadInput) {
+                            imageUploadInput.value = '';
+                        }
+
+                        // Return to button icon after 4 seconds
                         setTimeout(() => {
-                            saveStatus.textContent = '';
-                        }, 3000);
+                            toggleSaveIcon('button');
+                            saveButton.disabled = false;
+                        }, 4000);
                     } else {
                         throw new Error(result.error || 'Fehler beim Speichern');
                     }
                 } catch (error) {
                     console.error('Save error:', error);
-                    saveStatus.textContent = '✗ ' + error.message;
-                    saveStatus.className = 'save-status save-status--error';
-                } finally {
+                    alert('Fehler beim Speichern: ' + error.message);
+                    toggleSaveIcon('button');
                     saveButton.disabled = false;
-                    saveButton.textContent = 'Änderungen speichern';
                 }
+            });
+        }
+
+// Image upload functionality - Preview only, actual upload on save
+        const imageUploadInput = document.getElementById('layerImageUpload');
+        if (imageUploadInput) {
+            imageUploadInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Bitte wählen Sie eine Bilddatei aus.');
+                    e.target.value = ''; // Reset input
+                    return;
+                }
+
+                // Store file in layerState for later upload
+                layerState.pendingImageFile = file;
+
+                // Create preview URL
+                const previewUrl = URL.createObjectURL(file);
+
+                // Update preview in sidebar
+                const preview = document.querySelector('.layer-image-preview');
+                if (preview) {
+                    preview.innerHTML = `<img src="${previewUrl}" alt="Vorschau">`;
+                }
+
+                // Update renderer - load image and render
+                const img = new Image();
+                img.onload = () => {
+                    // Update the layer's image in the renderer's layerImages Map
+                    if (renderer && renderer.layers && renderer.layers[0]) {
+                        const layerId = renderer.layers[0].id;
+                        renderer.layerImages.set(layerId, img);
+                        renderer.render();
+                        console.log('Preview image loaded and rendered for layer:', layerId);
+                    }
+                };
+                img.onerror = () => {
+                    console.error('Error loading preview image');
+                    alert('Fehler beim Laden der Bildvorschau');
+                };
+                img.src = previewUrl;
+
+                console.log('Image preview loaded - remember to save changes');
             });
         }
 

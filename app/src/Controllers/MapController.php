@@ -18,6 +18,7 @@ class MapController extends BaseController
         "view",
         "layeredit",
         "savelayer",
+        "uploadlayerimage",
     ];
 
     public function index()
@@ -181,17 +182,177 @@ class MapController extends BaseController
             return json_encode(['success' => false, 'error' => 'Ungültige Daten']);
         }
 
-        // Store the layer data as JSON
-        // For now, we'll just log it - in next steps we can update POIs, image, etc.
-        error_log('Saving layer data: ' . print_r($data, true));
+        try {
+            // Update layer properties if provided
+            if (isset($data['title'])) {
+                $layer->Title = $data['title'];
+            }
 
-        // TODO: In next steps, update layer image, POIs, etc. based on $data
+            if (isset($data['description'])) {
+                $layer->Description = $data['description'];
+            }
 
-        $this->getResponse()->setStatusCode(200);
-        $this->getResponse()->addHeader('Content-Type', 'application/json');
-        return json_encode([
-            'success' => true,
-            'message' => 'Änderungen gespeichert'
-        ]);
+            if (isset($data['layerColor'])) {
+                $layer->LayerColor = $data['layerColor'];
+            }
+
+            // Handle POIs updates
+            if (isset($data['pois']) && is_array($data['pois'])) {
+                // Get list of POI IDs from the request
+                $sentPoiIds = [];
+
+                foreach ($data['pois'] as $poiData) {
+                    if (!isset($poiData['id'])) {
+                        continue;
+                    }
+
+                    // Check if this is a new POI (temporary ID or marked as new)
+                    $isNew = isset($poiData['isNew']) && $poiData['isNew'];
+
+                    if ($isNew) {
+                        // Create new POI
+                        $poi = \App\Maps\MapPOI::create();
+                        $poi->ParentID = $layer->ID;
+                        $poi->Active = true;
+                    } else {
+                        // Track existing POI IDs
+                        $sentPoiIds[] = $poiData['id'];
+
+                        // Update existing POI
+                        $poi = \App\Maps\MapPOI::get()->byID($poiData['id']);
+
+                        // Verify POI belongs to this layer
+                        if (!$poi || $poi->ParentID != $layer->ID) {
+                            continue;
+                        }
+                    }
+
+                    // Update POI properties
+                    if (isset($poiData['title'])) {
+                        $poi->Title = $poiData['title'];
+                    }
+
+                    if (isset($poiData['description'])) {
+                        $poi->Description = $poiData['description'];
+                    }
+
+                    if (isset($poiData['position'])) {
+                        $poi->Coordinates = $poiData['position'];
+                    }
+
+                    if (isset($poiData['markerColor'])) {
+                        $poi->MarkerColor = $poiData['markerColor'];
+                    }
+
+                    if (isset($poiData['markerText'])) {
+                        $poi->MarkerText = $poiData['markerText'];
+                    }
+
+                    if (isset($poiData['active'])) {
+                        $poi->Active = (bool)$poiData['active'];
+                    }
+
+                    $poi->write();
+                }
+
+                // Delete POIs that are no longer in the list
+                $existingPOIs = $layer->POIs();
+                foreach ($existingPOIs as $existingPOI) {
+                    if (!in_array($existingPOI->ID, $sentPoiIds)) {
+                        // This POI was not in the sent list, delete it
+                        $existingPOI->delete();
+                    }
+                }
+            }
+
+            // Save layer
+            $layer->write();
+
+            $this->getResponse()->setStatusCode(200);
+            $this->getResponse()->addHeader('Content-Type', 'application/json');
+            return json_encode([
+                'success' => true,
+                'message' => 'Änderungen gespeichert'
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Error saving layer: ' . $e->getMessage());
+            $this->getResponse()->setStatusCode(500);
+            $this->getResponse()->addHeader('Content-Type', 'application/json');
+            return json_encode([
+                'success' => false,
+                'error' => 'Fehler beim Speichern: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function uploadlayerimage($request)
+    {
+        try {
+            $layerID = $request->param('ID');
+            $layer = MapLayer::get()->byID($layerID);
+
+            if (!$layer) {
+                throw new \Exception('Ebene nicht gefunden');
+            }
+
+            // Check access permissions
+            $map = Map::get()->byID($layer->ParentID);
+            $organizationIDs = $this->getUserOrganizationIDs();
+            if (!in_array($map->ParentID, $organizationIDs)) {
+                throw new \Exception('Zugriff verweigert');
+            }
+
+            // Check if file was uploaded
+            if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+                throw new \Exception('Keine Datei hochgeladen oder Upload-Fehler');
+            }
+
+            // Create upload validator for SilverStripe 6
+            $validator = new \SilverStripe\Assets\Upload_Validator();
+            $validator->setAllowedExtensions(['jpg', 'jpeg', 'png', 'gif', 'webp']);
+            $validator->setAllowedMaxFileSize(10 * 1024 * 1024); // 10MB
+
+            // Create upload handler
+            $upload = new \SilverStripe\Assets\Upload();
+            $upload->setValidator($validator);
+
+            // Create new file object
+            $file = new \SilverStripe\Assets\Image();
+
+            // Perform the upload
+            $result = $upload->loadIntoFile($_FILES['image'], $file, 'MapLayers');
+
+            if (!$result) {
+                $errors = $upload->getErrors();
+                throw new \Exception('Fehler beim Hochladen: ' . implode(', ', $errors));
+            }
+
+            // Write file to get ID
+            $file->write();
+            $file->publishSingle();
+
+            // Attach image to layer
+            $layer->ImageID = $file->ID;
+            $layer->write();
+
+            $this->getResponse()->setStatusCode(200);
+            $this->getResponse()->addHeader('Content-Type', 'application/json');
+            return json_encode([
+                'success' => true,
+                'message' => 'Bild erfolgreich hochgeladen',
+                'imageUrl' => $file->getAbsoluteURL()
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Error uploading layer image: ' . $e->getMessage());
+            error_log('Upload data: ' . print_r($_FILES, true));
+            $this->getResponse()->setStatusCode(500);
+            $this->getResponse()->addHeader('Content-Type', 'application/json');
+            return json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

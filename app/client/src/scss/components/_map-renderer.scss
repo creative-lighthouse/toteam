@@ -137,64 +137,32 @@ section.section--MapView {
             display: flex;
             flex-direction: column;
 
-            // Header area (non-scrolling)
-            > h3,
-            > .map-controls__toggle {
-                flex-shrink: 0;
-            }
+            .map-controls_wrap {
+                overflow-y: scroll;
+                overflow-x: hidden;
+                padding: 20px;
 
-            > h3 {
-                padding: 1.5rem 1.5rem 0 1.5rem;
-                margin: 0 0 1rem 0;
-                font-size: 1.25rem;
-                font-weight: 600;
-                color: #333;
-            }
+                // Scrollbar styling
+                &::-webkit-scrollbar {
+                    width: 6px;
+                }
 
-            // Scrollable content area
-            > *:not(h3):not(.map-controls__toggle) {
-                padding-left: 1.5rem;
-                padding-right: 1.5rem;
-            }
+                &::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 4px;
+                }
 
-            // Create scrollable wrapper for content
-            &__actions,
-            &__layers,
-            &__layer-upload,
-            &__pois,
-            &__info {
-                flex-shrink: 0;
-            }
+                &::-webkit-scrollbar-thumb {
+                    background: #ccc;
+                    border-radius: 4px;
 
-            // Enable scrolling for the middle section
-            overflow-y: auto;
-            overflow-x: hidden;
-
-            // Scrollbar styling
-            &::-webkit-scrollbar {
-                width: 8px;
-            }
-
-            &::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 4px;
-            }
-
-            &::-webkit-scrollbar-thumb {
-                background: #ccc;
-                border-radius: 4px;
-
-                &:hover {
-                    background: #999;
+                    &:hover {
+                        background: #999;
+                    }
                 }
             }
 
-            // Add bottom padding to last element
-            > *:last-child {
-                padding-bottom: 1.5rem;
-            }
-
-            .map-controls__toggle {
+            .map-controls_toggle {
                 position: absolute;
                 top: 10px;
                 right: -40px;
@@ -225,7 +193,7 @@ section.section--MapView {
                 }
             }
 
-            &__save {
+            .map-controls_save {
                 margin-bottom: 1.5rem;
                 display: flex;
                 flex-direction: column;
@@ -256,20 +224,131 @@ section.section--MapView {
                 }
             }
 
-            &__actions {
+            .map-controls_edit-fields {
                 margin-bottom: 1.5rem;
 
-                .btn {
-                    width: 100%;
-                    margin-bottom: 0.5rem;
+                .edit-field {
+                    margin-bottom: 1rem;
 
-                    &:last-child {
-                        margin-bottom: 0;
+                    label {
+                        display: block;
+                        margin-bottom: 0.5rem;
+                        font-weight: 600;
+                        font-size: 0.875rem;
+                        color: #333;
+                    }
+
+                    .form-control {
+                        width: 100%;
+                        padding: 0.5rem;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        font-size: 0.875rem;
+                        font-family: inherit;
+
+                        &:focus {
+                            outline: none;
+                            border-color: #007bff;
+                            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+                        }
+                    }
+
+                    textarea.form-control {
+                        resize: vertical;
+                        min-height: 60px;
+                    }
+
+                    .color-picker-wrapper {
+                        display: flex;
+                        gap: 0.5rem;
+                        align-items: center;
+
+                        input[type="color"] {
+                            width: 50px;
+                            height: 38px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            cursor: pointer;
+
+                            &::-webkit-color-swatch-wrapper {
+                                padding: 2px;
+                            }
+
+                            &::-webkit-color-swatch {
+                                border: none;
+                                border-radius: 2px;
+                            }
+                        }
+
+                        input[type="text"] {
+                            flex: 1;
+                        }
                     }
                 }
             }
 
-            &__layers {
+            .map-controls_header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 15px 20px;
+                background-color: var(--ColorPrimary);
+                color: var(--ColorWhite);
+                border-radius: 0 8px 0 0;
+
+                h3 {
+                    margin: 0;
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                }
+
+                .header_save {
+                    margin: 0;
+                    background-color: var(--ColorWhite);
+                    width: 32px;
+                    height: 32px;
+                    padding: 5px;
+
+                    .headerSave_button, .headerSave_saving, .headerSave_saved {
+                        background-color: var(--ColorPrimary);
+                        mask-size: 100%;
+                        mask-repeat: no-repeat;
+                        mask-position: center;
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+            }
+
+            .map-controls_actions {
+                display: flex;
+                padding: 10px 20px;
+                background-color: var(--ColorLightGray);
+                border-radius: 0 0 8px 0;
+                justify-content: space-between;
+
+                .button {
+                    margin: 0;
+                }
+
+                .action_recenter {
+                    height: 40px;
+                    aspect-ratio: 1;
+                    display: flex;
+                    padding: 10px;
+
+                    .resetMapView_button {
+                        background-color: var(--ColorWhite);
+                        mask-size: 100%;
+                        width: 100%;
+                        height: 100%;
+                        mask-repeat: no-repeat;
+                        mask-position: center;
+                    }
+                }
+            }
+
+            .map-controls_layers {
                 margin-bottom: 1.5rem;
 
                 h4 {
@@ -343,7 +422,7 @@ section.section--MapView {
             }
 
             // Edit mode specific styles
-            &__layer-upload {
+            .map-controls_layer-upload {
                 margin-bottom: 1.5rem;
 
                 h4 {
@@ -391,7 +470,7 @@ section.section--MapView {
                 }
             }
 
-            &__pois {
+            .map-controls_pois {
                 margin-bottom: 1.5rem;
 
                 h4 {
@@ -468,14 +547,14 @@ section.section--MapView {
                 }
             }
 
-            &__info {
+            .map-controls_info {
                 padding: 1rem;
                 background: #f5f5f5;
                 border-radius: 4px;
                 font-size: 0.875rem;
             }
 
-            &__help {
+            .map-controls_help {
                 margin: 0;
                 line-height: 1.6;
                 color: #666;
