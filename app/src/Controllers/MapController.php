@@ -355,4 +355,26 @@ class MapController extends BaseController
             ]);
         }
     }
+
+    /**
+     * Calculate contrast color (black or white) for a given background color
+     * @param string $bgColor Hex color code (e.g., #FF5733)
+     * @return string 'black' or 'white'
+     */
+    public function getContrastColorForPOI($bgColor)
+    {
+        // Remove # if present
+        $bgColor = str_replace('#', '', $bgColor);
+
+        // Parse RGB
+        $r = hexdec(substr($bgColor, 0, 2));
+        $g = hexdec(substr($bgColor, 2, 2));
+        $b = hexdec(substr($bgColor, 4, 2));
+
+        // Calculate relative luminance using ITU-R BT.709
+        $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+
+        // Return black for light backgrounds, white for dark backgrounds
+        return $luminance > 0.5 ? 'black' : 'white';
+    }
 }

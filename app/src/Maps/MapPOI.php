@@ -9,6 +9,7 @@ use SilverStripe\ORM\DataObject;
  * Class \App\Maps\MapPOI
  *
  * @property ?string $Title
+ * @property ?string $MarkerText
  * @property ?string $Description
  * @property bool $Active
  * @property ?string $Coordinates
@@ -24,6 +25,7 @@ class MapPOI extends DataObject
 {
     private static $db = [
         "Title" => "Varchar(255)",
+        "MarkerText" => "Varchar(4)",
         "Description" => "Text",
         "Active" => "Boolean",
         "Coordinates" => "Varchar(100)",
@@ -67,6 +69,10 @@ class MapPOI extends DataObject
 
     public function getMarkerText()
     {
+        $markerText = $this->getField('MarkerText');
+        if(!empty($markerText)) {
+            return $markerText;
+        }
         return "42";
     }
 

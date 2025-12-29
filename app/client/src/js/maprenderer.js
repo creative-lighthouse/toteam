@@ -413,6 +413,7 @@ class MapRenderer {
                     this.isDraggingPOI = true;
                     this.dragStartX = this.mouseCanvasX;
                     this.dragStartY = this.mouseCanvasY;
+                    this.poiWasDragged = false; // Track if POI was actually moved
                     this.canvas.style.cursor = 'grabbing';
                 } else {
                     // In view mode, show popup
@@ -439,6 +440,13 @@ class MapRenderer {
             this.mouseCanvasY = (mouseY - this.offsetY) / this.scale;
 
             if (this.isDraggingPOI && this.draggedPOI) {
+                // Check if POI position has changed significantly (more than 1 pixel in canvas coords)
+                const dx = Math.abs(this.mouseCanvasX - this.dragStartX);
+                const dy = Math.abs(this.mouseCanvasY - this.dragStartY);
+                if (dx > 1 || dy > 1) {
+                    this.poiWasDragged = true;
+                }
+
                 // Dragging a POI - update its position
                 this.updatePOIPosition(this.draggedPOI, this.mouseCanvasX, this.mouseCanvasY);
                 this.render();
@@ -465,14 +473,15 @@ class MapRenderer {
 
         this.canvas.addEventListener('mouseup', () => {
             if (this.isDraggingPOI && this.draggedPOI) {
-                // Finished dragging POI - show popup in edit mode
-                if (this.isEditMode) {
+                // Only show popup if POI was clicked (not dragged)
+                if (this.isEditMode && !this.poiWasDragged) {
                     this.showPOIPopup(this.draggedPOI);
                 }
             }
             this.isDragging = false;
             this.isDraggingPOI = false;
             this.draggedPOI = null;
+            this.poiWasDragged = false;
             this.canvas.style.cursor = this.hoveredPOI ? 'pointer' : 'grab';
         });
 
@@ -898,20 +907,58 @@ class MapRenderer {
         popup.className = 'map-poi-popup';
 
         // Different content for edit mode vs view mode
-        const deleteButton = this.isEditMode ?
-            `<button class="btn btn--danger btn--small map-poi-popup__delete" data-poi-id="${poi.id}">Löschen</button>` :
-            '';
+        let popupContent;
 
-        popup.innerHTML = `
-            <div class="map-poi-popup__content">
-                <button class="map-poi-popup__close" aria-label="Schließen">&times;</button>
-                <h3 class="map-poi-popup__title">${poi.title || 'POI'}</h3>
-                <div class="map-poi-popup__description">
-                    ${poi.description || 'Keine Beschreibung verfügbar.'}
+        if (this.isEditMode) {
+            // Edit mode - show editable fields
+            popupContent = `
+                <div class="map-poi-popup__content">
+                    <button class="map-poi-popup__close" aria-label="Schließen">&times;</button>
+                    <h3 class="map-poi-popup__title">Marker bearbeiten</h3>
+
+                    <div class="poi-edit-form">
+                        <div class="poi-edit-field">
+                            <label for="poiTitle">Titel</label>
+                            <input type="text" id="poiTitle" class="form-control" value="${poi.title || ''}" placeholder="Marker-Titel">
+                        </div>
+
+                        <div class="poi-edit-field">
+                            <label for="poiMarkerText">Marker-Text (max. 4 Zeichen)</label>
+                            <input type="text" id="poiMarkerText" class="form-control" value="${poi.markerText || ''}" maxlength="4" placeholder="z.B. A, 1, AB">
+                        </div>
+
+                        <div class="poi-edit-field">
+                            <label for="poiDescription">Beschreibung</label>
+                            <textarea id="poiDescription" class="form-control" rows="3" placeholder="Beschreibung des Markers">${poi.description || ''}</textarea>
+                        </div>
+
+                        <div class="poi-edit-field">
+                            <label for="poiCoordinates">Koordinaten (Lat, Lng)</label>
+                            <input type="text" id="poiCoordinates" class="form-control" value="${poi.position || ''}" placeholder="47.1234, 8.5678">
+                            <small class="form-text">Format: Latitude, Longitude</small>
+                        </div>
+                    </div>
+
+                    <div class="poi-edit-actions">
+                        <button class="btn btn--danger btn--small map-poi-popup__delete" data-poi-id="${poi.id}">Löschen</button>
+                        <button class="btn btn--secondary btn--small map-poi-popup__cancel">Abbrechen</button>
+                    </div>
                 </div>
-                ${deleteButton}
-            </div>
-        `;
+            `;
+        } else {
+            // View mode - show read-only
+            popupContent = `
+                <div class="map-poi-popup__content">
+                    <button class="map-poi-popup__close" aria-label="Schließen">&times;</button>
+                    <h3 class="map-poi-popup__title">${poi.title || 'POI'}</h3>
+                    <div class="map-poi-popup__description">
+                        ${poi.description || 'Keine Beschreibung verfügbar.'}
+                    </div>
+                </div>
+            `;
+        }
+
+        popup.innerHTML = popupContent;
 
         // Add to container
         const container = this.canvas.parentElement.parentElement;
@@ -923,8 +970,55 @@ class MapRenderer {
             popup.remove();
         });
 
-        // Delete button handler (edit mode only)
+        // Edit mode specific handlers
         if (this.isEditMode) {
+            // Title input
+            const titleInput = popup.querySelector('#poiTitle');
+            if (titleInput) {
+                titleInput.addEventListener('input', (e) => {
+                    poi.title = e.target.value;
+                    this.updatePOIInState(poiData.layerId, poi);
+                    this.render();
+                });
+            }
+
+            // Marker text input
+            const markerTextInput = popup.querySelector('#poiMarkerText');
+            if (markerTextInput) {
+                markerTextInput.addEventListener('input', (e) => {
+                    poi.markerText = e.target.value.substring(0, 4); // Enforce 4 char limit
+                    this.updatePOIInState(poiData.layerId, poi);
+                    this.render();
+                });
+            }
+
+            // Description textarea
+            const descriptionInput = popup.querySelector('#poiDescription');
+            if (descriptionInput) {
+                descriptionInput.addEventListener('input', (e) => {
+                    poi.description = e.target.value;
+                    this.updatePOIInState(poiData.layerId, poi);
+                });
+            }
+
+            // Coordinates input
+            const coordinatesInput = popup.querySelector('#poiCoordinates');
+            if (coordinatesInput) {
+                coordinatesInput.addEventListener('change', (e) => {
+                    const coords = e.target.value.trim();
+                    // Validate format (should be "lat, lng")
+                    if (/^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/.test(coords)) {
+                        poi.position = coords;
+                        this.updatePOIInState(poiData.layerId, poi);
+                        this.render();
+                    } else {
+                        alert('Ungültiges Koordinatenformat. Bitte verwenden Sie: Latitude, Longitude (z.B. 47.1234, 8.5678)');
+                        coordinatesInput.value = poi.position || '';
+                    }
+                });
+            }
+
+            // Delete button
             const deleteBtn = popup.querySelector('.map-poi-popup__delete');
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', () => {
@@ -932,6 +1026,14 @@ class MapRenderer {
                         this.deletePOI(poiData);
                         popup.remove();
                     }
+                });
+            }
+
+            // Cancel button
+            const cancelBtn = popup.querySelector('.map-poi-popup__cancel');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    popup.remove();
                 });
             }
         }
@@ -954,6 +1056,58 @@ class MapRenderer {
     }
 
     /**
+     * Update POI in layerState (for saving)
+     */
+    updatePOIInState(layerId, poi) {
+        if (window.layerState && window.layerState.pois) {
+            const stateIndex = window.layerState.pois.findIndex(p => p.id === poi.id);
+            if (stateIndex !== -1) {
+                // Update existing POI in state
+                window.layerState.pois[stateIndex] = { ...poi };
+
+                // Update POI in sidebar list
+                const poiElement = document.querySelector(`.poi-item[data-poi-id="${poi.id}"]`);
+                if (poiElement) {
+                    // Update title
+                    const titleElement = poiElement.querySelector('.poi-info strong');
+                    if (titleElement) {
+                        titleElement.textContent = poi.title;
+                    }
+
+                    // Update marker text
+                    const markerTextElement = poiElement.querySelector('.poi-marker span');
+                    if (markerTextElement) {
+                        markerTextElement.textContent = poi.markerText;
+                    }
+
+                    // Update description
+                    const descElement = poiElement.querySelector('.poi-info small');
+                    if (poi.description) {
+                        if (descElement) {
+                            descElement.textContent = poi.description.substring(0, 50);
+                        } else {
+                            const poiInfo = poiElement.querySelector('.poi-info');
+                            const small = document.createElement('small');
+                            small.textContent = poi.description.substring(0, 50);
+                            poiInfo.appendChild(small);
+                        }
+                    } else if (descElement) {
+                        descElement.remove();
+                    }
+
+                    // Update position data attribute
+                    poiElement.setAttribute('data-poi-position', poi.position);
+                }
+
+                // Notify about the change
+                if (window.updateLayerState) {
+                    window.updateLayerState({ pois: window.layerState.pois });
+                }
+            }
+        }
+    }
+
+    /**
      * Update POI position based on canvas coordinates
      */
     updatePOIPosition(poiData, canvasX, canvasY) {
@@ -966,6 +1120,12 @@ class MapRenderer {
             const poi = layer.pois.find(p => p.id === poiData.poiId);
             if (poi) {
                 poi.position = `${geoCoords.lat},${geoCoords.lng}`;
+
+                // Update sidebar list data-poi-position attribute
+                const poiElement = document.querySelector(`.poi-item[data-poi-id="${poi.id}"]`);
+                if (poiElement) {
+                    poiElement.setAttribute('data-poi-position', poi.position);
+                }
 
                 // Notify about the change
                 if (window.updateLayerState) {
@@ -1316,6 +1476,53 @@ document.addEventListener('DOMContentLoaded', () => {
     // Store renderer globally
     window.mapRenderer = renderer;
 
+    // Set text color for existing POI markers based on contrast
+    document.querySelectorAll('.poi-marker').forEach(marker => {
+        const bgColor = marker.style.backgroundColor;
+        if (bgColor) {
+            // Convert rgb(r,g,b) to hex
+            const rgb = bgColor.match(/\d+/g);
+            if (rgb && rgb.length === 3) {
+                const hex = '#' +
+                    parseInt(rgb[0]).toString(16).padStart(2, '0') +
+                    parseInt(rgb[1]).toString(16).padStart(2, '0') +
+                    parseInt(rgb[2]).toString(16).padStart(2, '0');
+                const textColor = renderer.getContrastColor(hex);
+                marker.style.color = textColor;
+            }
+        }
+    });
+
+    // Apply layer color to header and buttons in edit mode
+    if (isEditMode && layers.length > 0) {
+        const layerColor = layers[0].layerColor || '#999999';
+        const textColor = renderer.getContrastColor(layerColor);
+
+        // Apply to header
+        const header = document.querySelector('.map-controls_header');
+        if (header) {
+            header.style.backgroundColor = layerColor;
+            header.style.color = textColor;
+        }
+
+        // Apply to back button
+        const backButton = document.querySelector('.action_back');
+        if (backButton) {
+            backButton.style.backgroundColor = layerColor;
+            backButton.style.color = textColor;
+        }
+
+        // Apply to reset button
+        const resetButton = document.querySelector('.action_recenter');
+        if (resetButton) {
+            resetButton.style.backgroundColor = layerColor;
+            const resetIcon = resetButton.querySelector('.resetMapView_button');
+            if (resetIcon) {
+                resetIcon.style.backgroundColor = textColor;
+            }
+        }
+    }
+
     // Reset view button
     const resetButton = document.getElementById('resetMapView');
     if (resetButton) {
@@ -1453,6 +1660,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderer.layers[0].pois.forEach(poi => {
                     poi.markerColor = color;
                 });
+
+                // Update marker colors in sidebar list
+                const textColor = renderer.getContrastColor(color);
+                document.querySelectorAll('.poi-marker').forEach(marker => {
+                    marker.style.backgroundColor = color;
+                    const span = marker.querySelector('span');
+                    if (span) {
+                        span.style.color = textColor;
+                    }
+                });
+
+                // Update header and button colors
+                const header = document.querySelector('.map-controls_header');
+                if (header) {
+                    header.style.backgroundColor = color;
+                    header.style.color = textColor;
+                }
+
+                const backButton = document.querySelector('.action_back');
+                if (backButton) {
+                    backButton.style.backgroundColor = color;
+                    backButton.style.color = textColor;
+                }
+
+                const resetButton = document.querySelector('.action_recenter');
+                if (resetButton) {
+                    resetButton.style.backgroundColor = color;
+                    const resetIcon = resetButton.querySelector('.resetMapView_button');
+                    if (resetIcon) {
+                        resetIcon.style.backgroundColor = textColor;
+                    }
+                }
+
                 renderer.render();
             });
 
@@ -1469,6 +1709,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderer.layers[0].pois.forEach(poi => {
                         poi.markerColor = color;
                     });
+
+                    // Update marker colors in sidebar list
+                    const textColor = renderer.getContrastColor(color);
+                    document.querySelectorAll('.poi-marker').forEach(marker => {
+                        marker.style.backgroundColor = color;
+                        const span = marker.querySelector('span');
+                        if (span) {
+                            span.style.color = textColor;
+                        }
+                    });
+
+                    // Update header and button colors
+                    const header = document.querySelector('.map-controls_header');
+                    if (header) {
+                        header.style.backgroundColor = color;
+                        header.style.color = textColor;
+                    }
+
+                    const backButton = document.querySelector('.action_back');
+                    if (backButton) {
+                        backButton.style.backgroundColor = color;
+                        backButton.style.color = textColor;
+                    }
+
+                    const resetButton = document.querySelector('.action_recenter');
+                    if (resetButton) {
+                        resetButton.style.backgroundColor = color;
+                        const resetIcon = resetButton.querySelector('.resetMapView_button');
+                        if (resetIcon) {
+                            resetIcon.style.backgroundColor = textColor;
+                        }
+                    }
+
                     renderer.render();
                 }
             });
@@ -1523,13 +1796,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const list = document.querySelector('.pois-list');
                 if (list) {
+                    const textColor = renderer.getContrastColor(newPOI.markerColor);
                     const poiElement = document.createElement('div');
                     poiElement.className = 'poi-item';
                     poiElement.setAttribute('data-poi-id', newPOI.id);
                     poiElement.setAttribute('data-poi-position', newPOI.position);
                     poiElement.innerHTML = `
-                        <div class="poi-marker" style="background-color: ${newPOI.markerColor};">
-                            <span style="color: white;">${newPOI.markerText}</span>
+                        <div class="poi-marker" style="background-color: ${newPOI.markerColor}; color: ${textColor};">
+                            <span>${newPOI.markerText}</span>
                         </div>
                         <div class="poi-info">
                             <strong>${newPOI.title}</strong>
@@ -1552,13 +1826,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Helper function to attach listeners to POI items
         const attachPOIItemListeners = (poiElement, renderer) => {
             const poiId = poiElement.getAttribute('data-poi-id');
-            const poiPosition = poiElement.getAttribute('data-poi-position');
 
             // Click on POI info to pan and show popup
             const poiInfo = poiElement.querySelector('.poi-info, .poi-marker');
             if (poiInfo) {
                 poiInfo.style.cursor = 'pointer';
                 poiInfo.addEventListener('click', () => {
+                    // Read position on click to get updated coordinates after drag
+                    const poiPosition = poiElement.getAttribute('data-poi-position');
+
                     if (poiPosition && renderer) {
                         const coords = poiPosition.split(',');
                         const lat = parseFloat(coords[0]);
