@@ -22,8 +22,8 @@ use Symbiote\GridFieldExtensions\GridFieldAddExistingSearchButton;
  * @method \App\Maps\Map Parent()
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\ORM\DataList|\App\Maps\MapPOI[] POIs()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

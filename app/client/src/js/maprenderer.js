@@ -1,7 +1,7 @@
 /**
  * Simplified MapRenderer - Renders a single map image with automatic rotation from 4 corner coordinates
  */
-class SimpleMapRenderer {
+class MapRenderer {
     constructor(canvasId, mapConfig) {
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas) {
@@ -55,7 +55,7 @@ class SimpleMapRenderer {
         this.dragStartX = 0;
         this.dragStartY = 0;
 
-        console.log('SimpleMapRenderer initialized:', {
+        console.log('MapRenderer initialized:', {
             backgroundImage: mapConfig.backgroundImage,
             corners: {
                 upperLeft: mapConfig.coordinatesUpperLeft,
@@ -274,35 +274,35 @@ class SimpleMapRenderer {
         // Use inverse bilinear interpolation to find (u,v) coordinates
         // The geographic quadrilateral is mapped to the unit square [0,1]x[0,1]
         // Where (0,0)=UL, (1,0)=UR, (0,1)=LL, (1,1)=LR
-        
+
         // For a point P(lat, lng), we solve for (u,v) such that:
         // P = (1-v)[(1-u)*UL + u*UR] + v[(1-u)*LL + u*LR]
-        
+
         // Simplified approach for approximate solution:
         // We'll use an iterative method or direct calculation based on the parallelogram properties
-        
+
         // First, try to find u by projecting onto the top and bottom edges
         const topEdgeLng = ur.lng - ul.lng;
         const topEdgeLat = ur.lat - ul.lat;
         const bottomEdgeLng = lr.lng - ll.lng;
         const bottomEdgeLat = lr.lat - ll.lat;
-        
+
         // Vector from UL to point
         const vecLng = lng - ul.lng;
         const vecLat = lat - ul.lat;
-        
+
         // Left edge (from UL to LL)
         const leftEdgeLng = ll.lng - ul.lng;
         const leftEdgeLat = ll.lat - ul.lat;
-        
+
         // For a parallelogram, we can solve this more directly
         // P = UL + u*(UR-UL) + v*(LL-UL)
         // Solving the 2x2 system:
         // vecLng = u*topEdgeLng + v*leftEdgeLng
         // vecLat = u*topEdgeLat + v*leftEdgeLat
-        
+
         const det = topEdgeLng * leftEdgeLat - topEdgeLat * leftEdgeLng;
-        
+
         let u, v;
         if (Math.abs(det) > 0.0000001) {
             // Cramer's rule
@@ -314,7 +314,7 @@ class SimpleMapRenderer {
             u = vecLng / (topEdgeLng || 1);
             v = vecLat / (leftEdgeLat || 1);
         }
-        
+
         // Log for debugging
         if (Math.abs(u - 0.5) < 0.1 && Math.abs(v - 0.5) < 0.1) {
             console.log('POI near center:', {
@@ -324,11 +324,11 @@ class SimpleMapRenderer {
                 corners: { ul, ur, ll, lr }
             });
         }
-        
+
         // Clamp to valid range (with some tolerance for points slightly outside)
         u = Math.max(-0.1, Math.min(1.1, u));
         v = Math.max(-0.1, Math.min(1.1, v));
-        
+
         // Convert from normalized coordinates (0-1) to canvas coordinates (centered at 0,0)
         // Image spans from -renderWidth/2 to +renderWidth/2
         const x = (u - 0.5) * this.renderWidth;
@@ -367,7 +367,7 @@ class SimpleMapRenderer {
         if (this.mapImage) {
             imageAspectRatio = this.mapImage.width / this.mapImage.height;
         }
-        
+
         const containerAspectRatio = containerWidth / containerHeight;
 
         // Calculate the size for the rendered image to maintain its natural aspect ratio
@@ -465,7 +465,7 @@ class SimpleMapRenderer {
                 // Check for POI hover
                 const prevHovered = this.hoveredPOI;
                 this.hoveredPOI = this.getPOIAtPosition(this.mouseCanvasX, this.mouseCanvasY);
-                
+
                 if (this.hoveredPOI !== prevHovered) {
                     this.canvas.style.cursor = this.hoveredPOI ? 'pointer' : 'grab';
                     this.render();
@@ -817,19 +817,19 @@ class SimpleMapRenderer {
                 ctx.restore();
 
                 // Draw label if zoomed in enough OR if hovered
-                const isHovered = this.hoveredPOI && 
-                                this.hoveredPOI.layerId === layer.id && 
+                const isHovered = this.hoveredPOI &&
+                                this.hoveredPOI.layerId === layer.id &&
                                 this.hoveredPOI.poiId === poi.id;
-                
+
                 if ((this.scale > 1.5 || isHovered) && poi.title) {
                     ctx.save();
-                    
+
                     // Measure text for background
                     ctx.font = `${12 / this.scale}px Arial`;
                     const textWidth = ctx.measureText(poi.title).width;
                     const padding = 4 / this.scale;
                     const bgHeight = 20 / this.scale;
-                    
+
                     // Highlight if hovered
                     ctx.fillStyle = isHovered ? 'rgba(231, 76, 60, 0.95)' : 'rgba(0, 0, 0, 0.8)';
                     ctx.fillRect(
@@ -838,7 +838,7 @@ class SimpleMapRenderer {
                         textWidth + padding * 2,
                         bgHeight
                     );
-                    
+
                     ctx.fillStyle = 'white';
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
@@ -906,12 +906,12 @@ class SimpleMapRenderer {
         // Create popup
         const popup = document.createElement('div');
         popup.className = 'map-poi-popup';
-        
+
         // Different content for edit mode vs view mode
-        const deleteButton = this.isEditMode ? 
-            `<button class="btn btn--danger btn--small map-poi-popup__delete" data-poi-id="${poi.id}">Löschen</button>` : 
+        const deleteButton = this.isEditMode ?
+            `<button class="btn btn--danger btn--small map-poi-popup__delete" data-poi-id="${poi.id}">Löschen</button>` :
             '';
-        
+
         popup.innerHTML = `
             <div class="map-poi-popup__content">
                 <button class="map-poi-popup__close" aria-label="Schließen">&times;</button>
@@ -969,14 +969,14 @@ class SimpleMapRenderer {
     updatePOIPosition(poiData, canvasX, canvasY) {
         // Convert canvas coordinates back to geographic coordinates
         const geoCoords = this.canvasToGeo(canvasX, canvasY);
-        
+
         // Find the POI in the layers and update its position
         const layer = this.layers.find(l => l.id === poiData.layerId);
         if (layer) {
             const poi = layer.pois.find(p => p.id === poiData.poiId);
             if (poi) {
                 poi.position = `${geoCoords.lat},${geoCoords.lng}`;
-                
+
                 // Notify about the change
                 if (window.updateLayerState) {
                     window.updateLayerState({ pois: layer.pois });
@@ -1020,12 +1020,12 @@ class SimpleMapRenderer {
             const index = layer.pois.findIndex(p => p.id === poiData.poiId);
             if (index !== -1) {
                 layer.pois.splice(index, 1);
-                
+
                 // Notify about the change
                 if (window.updateLayerState) {
                     window.updateLayerState({ pois: layer.pois });
                 }
-                
+
                 // Re-render to remove the POI from the map
                 this.render();
             }
@@ -1041,21 +1041,21 @@ class SimpleMapRenderer {
     darkenColor(color, amount) {
         // Remove # if present
         color = color.replace('#', '');
-        
+
         // Parse RGB
         let r = parseInt(color.substring(0, 2), 16);
         let g = parseInt(color.substring(2, 4), 16);
         let b = parseInt(color.substring(4, 6), 16);
-        
+
         // Darken
         r = Math.floor(r * (1 - amount));
         g = Math.floor(g * (1 - amount));
         b = Math.floor(b * (1 - amount));
-        
+
         // Convert back to hex
-        return '#' + 
-            r.toString(16).padStart(2, '0') + 
-            g.toString(16).padStart(2, '0') + 
+        return '#' +
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
             b.toString(16).padStart(2, '0');
     }
 
@@ -1067,15 +1067,15 @@ class SimpleMapRenderer {
     getContrastColor(bgColor) {
         // Remove # if present
         bgColor = bgColor.replace('#', '');
-        
+
         // Parse RGB
         const r = parseInt(bgColor.substring(0, 2), 16);
         const g = parseInt(bgColor.substring(2, 4), 16);
         const b = parseInt(bgColor.substring(4, 6), 16);
-        
+
         // Calculate relative luminance using ITU-R BT.709
         const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        
+
         // Return black for light backgrounds, white for dark backgrounds
         return luminance > 0.5 ? 'black' : 'white';
     }
@@ -1230,11 +1230,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Parse map configuration with all 4 corners
     let layers = [];
     const isEditMode = mapRenderer.dataset.editMode === 'true';
-    
+
     try {
         // In edit mode, use single layer data; otherwise use layers array
         const layerData = isEditMode ? mapRenderer.dataset.layer : mapRenderer.dataset.layers;
-        
+
         if (layerData) {
             if (isEditMode) {
                 // Single layer for edit mode
@@ -1264,7 +1264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Initializing map with config:', mapConfig);
 
     // Create renderer
-    const renderer = new SimpleMapRenderer('mapCanvas', mapConfig);
+    const renderer = new MapRenderer('mapCanvas', mapConfig);
 
     // Store renderer globally
     window.mapRenderer = renderer;
@@ -1291,25 +1291,25 @@ document.addEventListener('DOMContentLoaded', () => {
     layerToggles.forEach(toggle => {
         const layerId = parseInt(toggle.dataset.layerId);
         const layer = layers.find(l => l.id === layerId);
-        
+
         if (layer && layer.layerColor) {
             const layerItem = toggle.closest('.map-layer-item');
             if (layerItem) {
                 // Set background color
                 layerItem.style.backgroundColor = layer.layerColor;
-                
+
                 // Calculate contrast text color
                 const textColor = renderer.getContrastColor(layer.layerColor);
                 layerItem.style.color = textColor;
-                
+
                 // Update hover color (slightly lighter or darker)
                 const isLight = textColor === 'black';
-                const hoverColor = isLight ? 
-                    renderer.darkenColor(layer.layerColor, 0.1) : 
+                const hoverColor = isLight ?
+                    renderer.darkenColor(layer.layerColor, 0.1) :
                     lightenColor(layer.layerColor, 0.1);
-                
+
                 layerItem.dataset.hoverColor = hoverColor;
-                
+
                 // Add hover effect
                 layerItem.addEventListener('mouseenter', function() {
                     this.style.backgroundColor = this.dataset.hoverColor;
@@ -1327,14 +1327,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let r = parseInt(color.substring(0, 2), 16);
         let g = parseInt(color.substring(2, 4), 16);
         let b = parseInt(color.substring(4, 6), 16);
-        
+
         r = Math.min(255, Math.floor(r + (255 - r) * amount));
         g = Math.min(255, Math.floor(g + (255 - g) * amount));
         b = Math.min(255, Math.floor(b + (255 - b) * amount));
-        
-        return '#' + 
-            r.toString(16).padStart(2, '0') + 
-            g.toString(16).padStart(2, '0') + 
+
+        return '#' +
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
             b.toString(16).padStart(2, '0');
     }
 
@@ -1397,7 +1397,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (result.success) {
                         saveStatus.textContent = '✓ ' + result.message;
                         saveStatus.className = 'save-status save-status--success';
-                        
+
                         // Clear success message after 3 seconds
                         setTimeout(() => {
                             saveStatus.textContent = '';

@@ -25,8 +25,8 @@ use SilverStripe\Assets\Image;
  * @method \SilverStripe\Security\Member Author()
  * @method \SilverStripe\Assets\Image BackgroundImage()
  * @method \SilverStripe\ORM\DataList|\App\Maps\MapLayer[] MapLayers()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
