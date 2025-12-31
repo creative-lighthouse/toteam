@@ -2,6 +2,7 @@
     "name": "creativelighthouse/silverstripe-toteam",
     "type": "silverstripe-recipe",
     "description": "An organizing tool for groups and freelancers",
+    "version": "0.1.3",
     "repositories": [
         {
             "type": "git",

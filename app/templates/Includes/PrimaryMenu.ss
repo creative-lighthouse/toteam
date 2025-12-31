@@ -11,21 +11,35 @@
             <p class="nav_title">Dashboard</p>
         </a>
     </li>
-    <li>
-        <a href="/notices" class="nav_link<% if $IsCurrentRoute(notices) %> nav_link--active<% end_if %>">
-            <div class="nav_icon">
-                <% if $IsCurrentRoute(notices) %>
-                    <img src="_resources/app/client/icons/totems/nachrichten_totem.png" alt="Nachrichten Icon" class="nav_image">
-                <% else %>
+    <% if $CheckUserPermission('VIEW_NOTICES') %>
+        <li>
+            <a href="/notices" class="nav_link<% if $IsCurrentRoute(notices) %> nav_link--active<% end_if %>">
+                <div class="nav_icon">
+                    <% if $IsCurrentRoute(notices) %>
+                        <img src="_resources/app/client/icons/totems/nachrichten_totem.png" alt="Nachrichten Icon" class="nav_image">
+                    <% else %>
+                        <img src="_resources/app/client/icons/totems/nachrichten_totem_inactive.png" alt="Nachrichten Icon" class="nav_image">
+                    <% end_if %>
+                    <% if $CurrentUser.UnreadNotices.Count > 0 %>
+                        <p class="nav_badge">$CurrentUser.UnreadNotices.Count</p>
+                    <% end_if %>
+                </div>
+                <p class="nav_title">Wichtiges</p>
+            </a>
+        </li>
+    <% else %>
+        <li>
+            <div class="nav_link inactive">
+                <div class="nav_icon">
                     <img src="_resources/app/client/icons/totems/nachrichten_totem_inactive.png" alt="Nachrichten Icon" class="nav_image">
-                <% end_if %>
-                <% if $CurrentUser.UnreadNotices.Count > 0 %>
-                    <p class="nav_badge">$CurrentUser.UnreadNotices.Count</p>
-                <% end_if %>
+                    <% if $CurrentUser.UnreadNotices.Count > 0 %>
+                        <p class="nav_badge">$CurrentUser.UnreadNotices.Count</p>
+                    <% end_if %>
+                </div>
+                <p class="nav_title">Wichtiges</p>
             </div>
-            <p class="nav_title">Wichtiges</p>
-        </a>
-    </li>
+        </li>
+    <% end_if %>
     <li>
         <a href="/calendar" class="nav_link<% if $IsCurrentRoute(calendar) %> nav_link--active<% end_if %>">
             <div class="nav_icon">

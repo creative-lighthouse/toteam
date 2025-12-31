@@ -7,6 +7,8 @@ use SilverStripe\ORM\DataObject;
 use App\Notices\NoticeReadStatus;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 use App\Notifications\PushNotificationService;
 
 /**
@@ -30,7 +32,7 @@ use App\Notifications\PushNotificationService;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Notice extends DataObject
+class Notice extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -108,5 +110,51 @@ class Notice extends DataObject
         if ($isNew) {
             PushNotificationService::notifyNewNotice($this);
         }
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_NOTICES' => [
+                'name' => 'Ankündigungen erstellen',
+                'category' => 'Ankündigungen',
+                'help' => 'Erlaubt das Erstellen, von Ankündigungen'
+            ],
+            'EDIT_NOTICES' => [
+                'name' => 'Ankündigungen bearbeiten',
+                'category' => 'Ankündigungen',
+                'help' => 'Erlaubt das Bearbeiten von Ankündigungen'
+            ],
+            'VIEW_NOTICES' => [
+                'name' => 'Ankündigungen ansehen',
+                'category' => 'Ankündigungen',
+                'help' => 'Erlaubt das Ansehen von Ankündigungen'
+            ],
+            'DELETE_NOTICES' => [
+                'name' => 'Ankündigungen löschen',
+                'category' => 'Ankündigungen',
+                'help' => 'Erlaubt das Löschen von Ankündigungen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_NOTICES');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_NOTICES');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_NOTICES');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_NOTICES');
     }
 }

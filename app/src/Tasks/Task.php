@@ -6,6 +6,8 @@ use App\Tasks\TaskGroup;
 use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 
 /**
  * Class \App\Tasks\Task
@@ -25,7 +27,7 @@ use SilverStripe\Security\Member;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Task extends DataObject
+class Task extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -70,5 +72,51 @@ class Task extends DataObject
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_TASKS' => [
+                'name' => 'Aufgaben erstellen',
+                'category' => 'Aufgaben',
+                'help' => 'Erlaubt das Erstellen, von Aufgaben'
+            ],
+            'EDIT_TASKS' => [
+                'name' => 'Aufgaben bearbeiten',
+                'category' => 'Aufgaben',
+                'help' => 'Erlaubt das Bearbeiten von Aufgaben'
+            ],
+            'VIEW_TASKS' => [
+                'name' => 'Aufgaben ansehen',
+                'category' => 'Aufgaben',
+                'help' => 'Erlaubt das Ansehen von Aufgaben'
+            ],
+            'DELETE_TASKS' => [
+                'name' => 'Aufgaben löschen',
+                'category' => 'Aufgaben',
+                'help' => 'Erlaubt das Löschen von Aufgaben'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_TASKS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_TASKS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_TASKS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_TASKS');
     }
 }

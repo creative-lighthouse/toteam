@@ -7,6 +7,7 @@ use App\Food\Food;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
 
 /**
  * Class \App\HumanResources\Allergy
@@ -67,5 +68,51 @@ class Allergy extends DataObject
             return true;
         }
         return false;
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_ALLERGIES' => [
+                'name' => 'Allergien erstellen',
+                'category' => 'Administration',
+                'help' => 'Erlaubt das Erstellen, von Allergien'
+            ],
+            'EDIT_ALLERGIES' => [
+                'name' => 'Allergien bearbeiten',
+                'category' => 'Administration',
+                'help' => 'Erlaubt das Bearbeiten von Allergien'
+            ],
+            'VIEW_ALLERGIES' => [
+                'name' => 'Allergien ansehen',
+                'category' => 'Administration',
+                'help' => 'Erlaubt das Ansehen von Allergien'
+            ],
+            'DELETE_ALLERGIES' => [
+                'name' => 'Allergien löschen',
+                'category' => 'Administration',
+                'help' => 'Erlaubt das Löschen von Allergien'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_ALLERGIES');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_ALLERGIES');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_ALLERGIES');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_ALLERGIES');
     }
 }
