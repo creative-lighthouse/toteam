@@ -61,22 +61,22 @@ class MealEater extends DataObject implements PermissionProvider
         return [
             'CREATE_MEALEATERS' => [
                 'name' => 'Mahlzeit-Teilnehmer erstellen',
-                'category' => 'Food',
+                'category' => 'Essen',
                 'help' => 'Erlaubt das Erstellen, von Mahlzeit-Teilnehmern'
             ],
             'EDIT_MEALEATERS' => [
                 'name' => 'Mahlzeit-Teilnehmer bearbeiten',
-                'category' => 'Food',
+                'category' => 'Essen',
                 'help' => 'Erlaubt das Bearbeiten von Mahlzeit-Teilnehmern'
             ],
             'VIEW_MEALEATERS' => [
                 'name' => 'Mahlzeit-Teilnehmer ansehen',
-                'category' => 'Food',
+                'category' => 'Essen',
                 'help' => 'Erlaubt das Ansehen von Mahlzeit-Teilnehmern'
             ],
             'DELETE_MEALEATERS' => [
                 'name' => 'Mahlzeit-Teilnehmer löschen',
-                'category' => 'Food',
+                'category' => 'Essen',
                 'help' => 'Erlaubt das Löschen von Mahlzeit-Teilnehmern'
             ],
         ];

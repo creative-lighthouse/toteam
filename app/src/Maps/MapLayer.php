@@ -2,12 +2,14 @@
 
 namespace App\Maps;
 
-use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 use App\Notifications\PushNotificationService;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use Symbiote\GridFieldExtensions\GridFieldAddExistingSearchButton;
 
 /**
@@ -28,7 +30,7 @@ use Symbiote\GridFieldExtensions\GridFieldAddExistingSearchButton;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class MapLayer extends DataObject
+class MapLayer extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -119,5 +121,46 @@ class MapLayer extends DataObject
                 return "0,0";
             }
         }
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_MAPLAYERS' => [
+                'name' => 'Lageplan-Ebenen erstellen',
+                'category' => 'Lagepläne',
+                'help' => 'Erlaubt das Erstellen, von Lageplan-Ebenen'
+            ],
+            'EDIT_MAPLAYERS' => [
+                'name' => 'Lageplan-Ebenen bearbeiten',
+                'category' => 'Lagepläne',
+                'help' => 'Erlaubt das Bearbeiten von Lageplan-Ebenen'
+            ],
+            'DELETE_MAPLAYERS' => [
+                'name' => 'Lageplan-Ebenen löschen',
+                'category' => 'Lagepläne',
+                'help' => 'Erlaubt das Löschen von Lageplan-Ebenen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_MAPLAYERS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_MAPLAYERS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_MAPS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_MAPLAYERS');
     }
 }

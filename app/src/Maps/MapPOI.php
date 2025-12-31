@@ -4,6 +4,7 @@ namespace App\Maps;
 
 use App\Maps\MapLayer;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Permission;
 
 /**
  * Class \App\Maps\MapPOI
@@ -79,5 +80,25 @@ class MapPOI extends DataObject
     public function getMarkerColor()
     {
         return $this->Parent()->LayerColor;
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_MAPLAYERS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_MAPLAYERS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_MAPS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_MAPLAYERS');
     }
 }

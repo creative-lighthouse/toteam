@@ -3,10 +3,12 @@
 namespace App\Maps;
 
 use App\Teams\Organization;
+use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 use App\Notifications\PushNotificationService;
-use SilverStripe\Assets\Image;
 
 /**
  * Class \App\Maps\Map
@@ -31,7 +33,7 @@ use SilverStripe\Assets\Image;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Map extends DataObject
+class Map extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -112,5 +114,51 @@ class Map extends DataObject
         if ($isNew) {
             PushNotificationService::notifyNewMap($this);
         }
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_MAPS' => [
+                'name' => 'Lagepläne erstellen',
+                'category' => 'Lagepläne',
+                'help' => 'Erlaubt das Erstellen, von Lageplänen'
+            ],
+            'EDIT_MAPS' => [
+                'name' => 'Lagepläne bearbeiten',
+                'category' => 'Lagepläne',
+                'help' => 'Erlaubt das Bearbeiten von Lageplänen'
+            ],
+            'VIEW_MAPS' => [
+                'name' => 'Lagepläne ansehen',
+                'category' => 'Lagepläne',
+                'help' => 'Erlaubt das Ansehen von Lageplänen'
+            ],
+            'DELETE_MAPS' => [
+                'name' => 'Lagepläne löschen',
+                'category' => 'Lagepläne',
+                'help' => 'Erlaubt das Löschen von Lageplänen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_MAPS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_MAPS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_MAPS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_MAPS');
     }
 }
