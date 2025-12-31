@@ -52,6 +52,9 @@
                     </div>
 
                     <div class="map-controls_actions">
+                        <a href="$Top.Link()" class="button action_back">
+                            ← Alle Lagepläne
+                        </a>
                         <button class="button action_recenter" id="resetMapView">
                             <div class="resetMapView_button" style="mask-image: url('_resources/app/client/icons/actions/action_recenter.svg');" alt="Icon" class="icon--small"></div>
                         </button>

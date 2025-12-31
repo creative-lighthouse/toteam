@@ -322,6 +322,7 @@ section.section--MapView {
 
             .map-controls_actions {
                 display: flex;
+                gap: 10px;
                 padding: 10px 20px;
                 background-color: var(--ColorLightGray);
                 border-radius: 0 0 8px 0;
@@ -514,6 +515,29 @@ section.section--MapView {
                         flex-shrink: 0;
                     }
 
+                    .poi-item_delete {
+                        padding: 0px;
+                        background-color: transparent;
+                        border: none;
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50%;
+                        padding: 5px;
+
+                        .icon--small {
+                            mask-size: 100%;
+                            mask-repeat: no-repeat;
+                            mask-position: center;
+                            background-color: var(--ColorPrimary);
+                            width: 100%;
+                            height: 100%;
+                        }
+
+                        &:hover {
+                            background: var(--ColorLightGray);
+                        }
+                    }
+
                     .poi-info {
                         flex: 1;
                         min-width: 0;
@@ -687,7 +711,6 @@ section.section--MapView {
             .map-controls {
                 width: 240px;
                 min-width: 240px;
-                padding: 1rem;
             }
 
             .map-renderer-wrapper {
