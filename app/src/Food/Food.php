@@ -4,11 +4,14 @@ namespace App\Food;
 
 use Override;
 use App\Food\Meal;
+use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use App\HumanResources\Allergy;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\Forms\DropdownField;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
 use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 
 /**
@@ -18,19 +21,21 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @property ?string $FoodPreference
  * @property ?string $Notes
  * @property ?string $Status
+ * @property int $ParentID
  * @property int $ImageID
  * @property int $SupplierID
+ * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\Security\Member Supplier()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Meal[] Meals()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Food extends DataObject
+class Food extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
@@ -40,6 +45,7 @@ class Food extends DataObject
     ];
 
     private static $has_one = [
+        "Parent" => Organization::class,
         "Image" => Image::class,
         "Supplier" => Member::class,
     ];
@@ -62,6 +68,7 @@ class Food extends DataObject
         "Supplier" => "Anbieter",
         "Allergies" => "Allergien",
         "Meals" => "Mahlzeiten",
+        "Parent" => "Organisation",
     ];
 
     private static $summary_fields = [
@@ -138,5 +145,51 @@ class Food extends DataObject
             default:
                 return $this->Status;
         }
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_FOODS' => [
+                'name' => 'Gerichte erstellen',
+                'category' => 'Essen',
+                'help' => 'Erlaubt das Erstellen, von Gerichten'
+            ],
+            'EDIT_FOODS' => [
+                'name' => 'Gerichte bearbeiten',
+                'category' => 'Essen',
+                'help' => 'Erlaubt das Bearbeiten von Gerichten'
+            ],
+            'VIEW_FOODS' => [
+                'name' => 'Gerichte ansehen',
+                'category' => 'Essen',
+                'help' => 'Erlaubt das Ansehen von Gerichten'
+            ],
+            'DELETE_FOODS' => [
+                'name' => 'Gerichte löschen',
+                'category' => 'Essen',
+                'help' => 'Erlaubt das Löschen von Gerichten'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'CREATE_FOODS');
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'EDIT_FOODS');
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'VIEW_FOODS');
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        return Permission::checkMember($member, 'DELETE_FOODS');
     }
 }

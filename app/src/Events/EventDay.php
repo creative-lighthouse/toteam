@@ -10,9 +10,12 @@ use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
+use SilverStripe\Security\Permission;
 use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\Model\List\GroupedList;
+use SilverStripe\Security\PermissionProvider;
+use App\Notifications\PushNotificationService;
 
 /**
  * Class \App\Events\EventDay
@@ -34,13 +37,13 @@ use SilverStripe\Model\List\GroupedList;
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayParticipation[] Participations()
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayAgendaPoint[] AgendaPoints()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class EventDay extends DataObject
+class EventDay extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar",
@@ -116,6 +119,47 @@ class EventDay extends DataObject
     {
         parent::onBeforeWrite();
         $this->ICSSequence = ($this->ICSSequence ?? 0) + 1;
+    }
+
+    /**
+     * Send push notification for new events and status changes
+     */
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        $changedFields = $this->getChangedFields(false, 1);
+        $isNew = isset($changedFields['ID']) && empty($changedFields['ID']['before']);
+        $statusChanged = isset($changedFields['Status']);
+
+        if ($isNew) {
+            // New event created - send notification after request completes
+            $event = $this;
+            if ($this->Status === 'Suggested') {
+                register_shutdown_function(function() use ($event) {
+                    PushNotificationService::notifyEventSuggested($event);
+                });
+            } elseif ($this->Status === 'Scheduled') {
+                register_shutdown_function(function() use ($event) {
+                    PushNotificationService::notifyEventScheduled($event);
+                });
+            }
+        } elseif ($statusChanged) {
+            // Status changed on existing event
+            $oldStatus = $changedFields['Status']['before'];
+            $newStatus = $changedFields['Status']['after'];
+            $event = $this;
+
+            if ($newStatus === 'Scheduled') {
+                register_shutdown_function(function() use ($event) {
+                    PushNotificationService::notifyEventScheduled($event);
+                });
+            } elseif ($newStatus === 'Cancelled') {
+                register_shutdown_function(function() use ($event) {
+                    PushNotificationService::notifyEventCancelled($event);
+                });
+            }
+        }
     }
 
     public function RenderDate()
@@ -280,5 +324,55 @@ class EventDay extends DataObject
             return $b->Participations()->filter('Type', 'Accept')->count() <=> $a->Participations()->filter('Type', 'Accept')->count();
         });
         return ArrayList::create($alloptionsArr);
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_EVENTDAYS' => [
+                'name' => 'Veranstaltungstag erstellen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Erstellen, von Veranstaltungstagen'
+            ],
+            'EDIT_EVENTDAYS' => [
+                'name' => 'Veranstaltungstage bearbeiten',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Bearbeiten von Veranstaltungstagen'
+            ],
+            'VIEW_EVENTDAYS' => [
+                'name' => 'Veranstaltungstage ansehen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Ansehen von Veranstaltungstagen'
+            ],
+            'DELETE_EVENTDAYS' => [
+                'name' => 'Veranstaltungstage löschen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Löschen von Veranstaltungstagen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        //Check user for CREATE_EVENTDAYS permission
+        return Permission::check('CREATE_EVENTDAYS', 'any', $member);
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        //Check user for EDIT_EVENTDAYS permission
+        return Permission::check('EDIT_EVENTDAYS', 'any', $member);
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        //Check user for DELETE_EVENTDAYS permission
+        return Permission::check('DELETE_EVENTDAYS', 'any', $member);
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        //Check user for VIEW_EVENTDAYS permission
+        return Permission::check('VIEW_EVENTDAYS', 'any', $member);
     }
 }

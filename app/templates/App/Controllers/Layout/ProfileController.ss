@@ -1,7 +1,7 @@
 <% with $CurrentUser %>
     <div class="section section--ProfilePage">
         <div class="section_content">
-            <h1 class="hl1 section_title">Profil von $FirstName $Surname</h1>
+            <% include IntroBar Title="Dein Profil", Description="Hier kannst du dein Profil einsehen, dieses anpassen und Benachrichtigungen einstellen" %>
             <div class="section_profileimage">
                 <% if $ProfileImage %>
                     <img src="$ProfileImage.URL" alt="Profilbild von $FirstName $Surname" class="profile_image">
@@ -36,6 +36,11 @@
                 </tr>
             </table>
             <a class="button" onclick="document.getElementById('editProfileDialog').showModal()">Profil bearbeiten</a>
+
+            <hr>
+
+            <% include NotificationSettings %>
+
             <hr>
             <a class="button" href="$LogoutURL">Ausloggen</a>
 

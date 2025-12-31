@@ -62,6 +62,6 @@ class RegistrationController extends BaseController
         $form->saveInto($member);
         $member->write();
 
-        return $this->redirect('Security/login?BackURL=%2Fhome&registration=1');
+        return $this->redirect('Security/login?BackURL=%2Fdashboard&registration=1');
     }
 }

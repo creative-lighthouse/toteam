@@ -108,7 +108,7 @@ form {
                     cursor: pointer;
                     position: absolute;
                     top: 50%;
-                    left: 30%;
+                    left: 25%;
                     transform: translate(-50%, -50%);
                     transition: 0.3s;
                 }
@@ -116,7 +116,7 @@ form {
                 &:checked
                 {
                     &::after{
-                        left: 70%;
+                        left: 72%;
                         background-color: var(--ColorWhite);
                     }
 

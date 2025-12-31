@@ -6,7 +6,11 @@
         </div>
         <div class="section_addnew">
             <h2>Neuen Eintrag hinzufügen</h2>
-            $SuggestionBoxForm
+            <% if $SuggestionBoxForm %>
+                $SuggestionBoxForm
+            <% else %>
+                <p class="message message--warning">Du gehörst keiner Organisation an und kannst daher keine Einträge erstellen.</p>
+            <% end_if %>
         </div>
         <div class="section_newsuggestions">
             <h2>Neue Einträge<a href="/suggestionbox/markallasseen/$ID" class="button button--small btn_markall">Alle als gelesen markieren</a></h2>
@@ -14,7 +18,7 @@
                 <% loop $NewSuggestions %>
                     <div class="suggestion">
                         <p class="recipient_note">
-                            <% if $HasRecipient %>
+                            <% if $RecipientID %>
                                 <b>An dich</b>
                             <% else %>
                                 <b>An alle</b>
@@ -38,9 +42,9 @@
             <h2>Ältere Einträge</h2>
             <% if $OldSuggestions %>
                 <% loop $OldSuggestions %>
-                    <div class="suggestion <% if $HasRecipient %>suggestion--personal<% end_if %>">
+                    <div class="suggestion <% if $RecipientID %>suggestion--personal<% end_if %>">
                         <p class="recipient_note">
-                            <% if $HasRecipient %>
+                            <% if $RecipientID %>
                                 <b>An dich</b>
                             <% else %>
                                 <b>An alle</b>

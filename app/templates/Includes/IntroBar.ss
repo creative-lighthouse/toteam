@@ -6,6 +6,9 @@
     <a class="introbar-action" onclick="document.querySelector('#introbar-info-dialog').showModal()">
         <img class="introbar-icon" src="_resources/app/client/icons/actions/action_help.svg" alt="Help Icon">
     </a>
+    <a class="introbar-action" data-action="open-notifications" href="#">
+        <img class="introbar-icon" src="_resources/app/client/icons/actions/action_notifications.svg" alt="Notifications Icon">
+    </a>
     <dialog id="introbar-info-dialog" class="introbar-info-dialog">
         <button class="dialog-close" onclick="document.getElementById('introbar-info-dialog').close()">×</button>
         <div class="dialog-header">
@@ -13,6 +16,16 @@
         </div>
         <div class="dialog-content">
             <p>$Description</p>
+        </div>
+    </dialog>
+
+    <dialog id="introbar-notifications-dialog" class="introbar-notifications-dialog">
+        <button class="dialog-close" onclick="document.getElementById('introbar-notifications-dialog').close()">×</button>
+        <div class="dialog-header">
+            <h3>Benachrichtigungen</h3>
+        </div>
+        <div class="notifications-list" data-behaviour="notifications-list" style="max-height: 60vh; overflow-y: auto; margin-top: 16px;">
+            <p style="text-align: center; padding: 24px; color: #666;">Lade Benachrichtigungen...</p>
         </div>
     </dialog>
 </div>

@@ -19,6 +19,9 @@
 @use "pages/CalendarPage.scss";
 @use "pages/SuggestionPage.scss";
 @use "pages/FoodPage.scss";
+@use "pages/MapPage.scss";
+
+@use "components/map-renderer.scss";
 
 @view-transition {
     navigation: auto;

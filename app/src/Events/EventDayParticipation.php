@@ -2,10 +2,12 @@
 
 namespace App\Events;
 
-use SilverStripe\ORM\FieldType\DBField;
 use Override;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
+use SilverStripe\ORM\FieldType\DBField;
+use SilverStripe\Security\PermissionProvider;
 
 /**
  * Class \App\Events\EventDayParticipation
@@ -18,13 +20,13 @@ use SilverStripe\Security\Member;
  * @property int $MemberID
  * @method \App\Events\EventDay Parent()
  * @method \SilverStripe\Security\Member Member()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class EventDayParticipation extends DataObject
+class EventDayParticipation extends DataObject implements PermissionProvider
 {
     private static $db = [
         "TimeStart" => "Time",
@@ -122,5 +124,55 @@ class EventDayParticipation extends DataObject
         } else {
             return "Kein Datum";
         }
+    }
+
+    public function providePermissions()
+    {
+        return [
+            'CREATE_EVENTDAYPARTICIPATIONS' => [
+                'name' => 'Teilnahmen erstellen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Erstellen, von Teilnahmen'
+            ],
+            'EDIT_EVENTDAYPARTICIPATIONS' => [
+                'name' => 'Teilnahmen bearbeiten',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Bearbeiten von Teilnahmen'
+            ],
+            'VIEW_EVENTDAYPARTICIPATIONS' => [
+                'name' => 'Teilnahmen ansehen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Ansehen von Teilnahmen'
+            ],
+            'DELETE_EVENTDAYPARTICIPATIONS' => [
+                'name' => 'Teilnahmen löschen',
+                'category' => 'Events',
+                'help' => 'Erlaubt das Löschen von Teilnahmen'
+            ],
+        ];
+    }
+
+    public function canCreate($member = null, $context = [])
+    {
+        //Check user for CREATE_EVENTDAYPARTICIPATIONS permission
+        return Permission::check('CREATE_EVENTDAYPARTICIPATIONS', 'any', $member);
+    }
+
+    public function canEdit($member = null, $context = [])
+    {
+        //Check user for EDIT_EVENTDAYPARTICIPATIONS permission
+        return Permission::check('EDIT_EVENTDAYPARTICIPATIONS', 'any', $member);
+    }
+
+    public function canDelete($member = null, $context = [])
+    {
+        //Check user for DELETE_EVENTDAYPARTICIPATIONS permission
+        return Permission::check('DELETE_EVENTDAYPARTICIPATIONS', 'any', $member);
+    }
+
+    public function canView($member = null, $context = [])
+    {
+        //Check user for VIEW_EVENTDAYPARTICIPATIONS permission
+        return Permission::check('VIEW_EVENTDAYPARTICIPATIONS', 'any', $member);
     }
 }

@@ -34,29 +34,51 @@ class DashboardController extends BaseController
             ->sort('Created', 'DESC')
             ->limit(5);
         $latesttasks = Task::get()
-            ->filter(['OwnerID' => $currentuser->ID])
-            ->sort('Created', 'DESC')
-            ->limit(5);
-        $upcomingeventdays = EventDayParticipation::get()
-            ->filter('MemberID', $currentuser->ID)
-            ->exclude('Status', 'Cancelled')
-            ->filter(['Type' => ['Accept', 'Maybe']])
-            ->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'))
-            ->sort('Parent.Date', 'ASC')
+            ->filter(['OwnerID' => $currentuser->ID]);
+        // Filter tasks by user's organizations
+        $latesttasks = $this->filterByUserOrganizations($latesttasks);
+        $latesttasks = $latesttasks->sort('Created', 'DESC')
             ->limit(5);
 
-        $eventDaysWithoutParticipation = EventDay::get()
-            ->filter('Date:GreaterThanOrEqual', date('Y-m-d'))
-            ->exclude('Status', 'Cancelled')
-            ->leftJoin(
-                'EventDayParticipation',
-                "\"EventDayParticipation\".\"ParentID\" = \"EventDay\".\"ID\" AND \"EventDayParticipation\".\"MemberID\" = {$currentuser->ID}"
-            )
-            ->where('"EventDayParticipation"."ID" IS NULL');
+        $organizationIDs = $this->getUserOrganizationIDs();
+        if (!empty($organizationIDs)) {
+            $upcomingeventdays = EventDayParticipation::get()
+                ->filter('MemberID', $currentuser->ID)
+                ->exclude(['Status' => ['Cancelled', 'Suggested']])
+                ->filter(['Type' => ['Accept', 'Maybe']])
+                ->filter('Parent.Date:GreaterThanOrEqual', date('Y-m-d'))
+                ->filter('Parent.Parent.ParentID', $organizationIDs) // Filter by organization through Event
+                ->sort('Parent.Date', 'ASC')
+                ->limit(5);
+
+            $eventDaysWithoutParticipation = EventDay::get()
+                ->filter('Date:GreaterThanOrEqual', date('Y-m-d'))
+                ->exclude('Status', 'Cancelled')
+                ->filter('Parent.ParentID', $organizationIDs) // Filter by organization
+                ->leftJoin(
+                    'EventDayParticipation',
+                    "\"EventDayParticipation\".\"ParentID\" = \"EventDay\".\"ID\" AND \"EventDayParticipation\".\"MemberID\" = {$currentuser->ID}"
+                )
+                ->where('"EventDayParticipation"."ID" IS NULL');
+        } else {
+            $upcomingeventdays = EventDayParticipation::get()->filter('ID', 0);
+            $eventDaysWithoutParticipation = EventDay::get()->filter('ID', 0);
+        }
 
 
         $participationToday = EventDayParticipation::get()
             ->filter(['MemberID' => $currentuser->ID, 'Type' => 'Accept', 'Parent.Date' => date('Y-m-d')])->first();
+
+        $anycardsactive = false;
+        if ($latesttasks->count() > 0) {
+            $anycardsactive = true;
+        } else if ($upcomingeventdays->count() > 0) {
+            $anycardsactive = true;
+        } else if ($eventDaysWithoutParticipation->count() > 0) {
+            $anycardsactive = true;
+        } else if ($this->getAllMealsParticipatedToday()->count() > 0) {
+            $anycardsactive = true;
+        }
 
         return $this->render([
             'User' => $currentuser,
@@ -66,6 +88,7 @@ class DashboardController extends BaseController
             'EventDaysWithoutFeedback' => $eventDaysWithoutParticipation,
             'MealsToday' => $this->getAllMealsParticipatedToday(),
             'ParticipationToday' => $participationToday,
+            'AnyCardsActive' => $anycardsactive,
         ]);
     }
 

@@ -40,6 +40,12 @@ class CalendarController extends BaseController
 
     public function changeParticipation($request)
     {
+        $member = Security::getCurrentUser();
+        if (!$member) {
+            //Redirect to login
+            $this->redirect('/login?BackURL=' . urlencode($this->getRequest()->getURL()));
+            return;
+        }
         $dateID = $request->param('ID');
         //Get new type of participation with POST
         $type = $this->getRequest()->postVar('response'); // This gets the response value from the form
@@ -48,7 +54,16 @@ class CalendarController extends BaseController
         }
 
         $eventday = EventDay::get()->byID($dateID);
-        $member = Security::getCurrentUser();
+        if (!$eventday) {
+            return $this->httpError(404, 'Event not found');
+        }
+
+        // Security check: Verify user has access to this organization
+        $organizationIDs = $this->getUserOrganizationIDs();
+        if (!in_array($eventday->Parent()->ParentID, $organizationIDs)) {
+            return $this->httpError(403, 'Access denied');
+        }
+
         $eventDayParticipation = $eventday->Participations()->filter(['MemberID' => $member->ID])->first();
         if (!$eventDayParticipation) {
             $eventDayParticipation = EventDayParticipation::create();
@@ -94,7 +109,23 @@ class CalendarController extends BaseController
         }
 
         $meal = Meal::get()->byID($mealID);
+        if (!$meal) {
+            return $this->httpError(404, 'Meal not found');
+        }
+
+        // Security check: Verify user has access to this organization
+        $eventday = $meal->Parent();
+        $organizationIDs = $this->getUserOrganizationIDs();
+        if (!$eventday || !in_array($eventday->Parent()->ParentID, $organizationIDs)) {
+            return $this->httpError(403, 'Access denied');
+        }
         $member = Security::getCurrentUser();
+        if (!$member) {
+            //Redirect to login
+            $this->redirect('/login?BackURL=' . urlencode($this->getRequest()->getURL()));
+            return;
+        }
+
         $eventday = EventDay::get()->byID($dateID);
         $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
 
@@ -129,6 +160,12 @@ class CalendarController extends BaseController
 
         $eventday = EventDay::get()->byID($dateID);
         $member = Security::getCurrentUser();
+        if (!$member) {
+            //Redirect to login
+            $this->redirect('/login?BackURL=' . urlencode($this->getRequest()->getURL()));
+            return;
+        }
+
         $eventDayParticipation = $eventday->Participations()->filter(['MemberID' => $member->ID])->first();
         if ($eventDayParticipation) {
             if (!is_object($eventDayParticipation)) {
@@ -231,7 +268,7 @@ class CalendarController extends BaseController
             if($meals->count() == 0){
                 return "";
             }
-            
+
             $returnstring .= "=== Mahlzeiten ===\\n";
             foreach ($meals as $meal) {
                 if (!is_object($meal)) {
