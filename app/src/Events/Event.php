@@ -31,8 +31,8 @@ use SilverStripe\Forms\GridField\GridFieldConfig_RecordViewer;
  * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDay[] EventDays()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -84,33 +84,39 @@ class Event extends DataObject implements PermissionProvider
 
         // Remove EventDays field initially
         $fields->removeByName('EventDays');
-        
+
         // Only show EventDays GridFields if the Event has been saved
         if ($this->isInDB()) {
+            $eventDaysConfig = GridFieldConfig_RecordEditor::create();
+
             $eventDaysGrid = GridField::create(
-                'EventDaysGrid',
+                'EventDays',
                 'Veranstaltungstage',
                 $this->EventDays()->filter('Date:GreaterThanOrEqual', date('Y-m-d')),
-                GridFieldConfig_RecordEditor::create()
+                $eventDaysConfig
             );
+
+            $oldEventDaysConfig = GridFieldConfig_RecordEditor::create();
+
             $oldEventDaysGrid = GridField::create(
-                'OldEventDaysGrid',
+                'OldEventDays',
                 'Vergangene Veranstaltungstage',
                 $this->EventDays()->filter('Date:LessThan', date('Y-m-d')),
-                GridFieldConfig_RecordEditor::create()
+                $oldEventDaysConfig
             );
+
             $fields->addFieldToTab('Root.Main', $eventDaysGrid);
             $fields->addFieldToTab('Root.Archiv', $oldEventDaysGrid);
         } else {
             // Show a message that the Event needs to be saved first
-            $fields->addFieldToTab('Root.Main', 
+            $fields->addFieldToTab('Root.Main',
                 \SilverStripe\Forms\LiteralField::create(
                     'EventDaysNotice',
                     '<p class="message notice">Bitte speichern Sie die Veranstaltung zunächst, bevor Sie Veranstaltungstage hinzufügen können.</p>'
                 )
             );
         }
-        
+
         return $fields;
     }
 

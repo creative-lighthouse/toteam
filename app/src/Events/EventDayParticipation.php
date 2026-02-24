@@ -20,8 +20,8 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $MemberID
  * @method \App\Events\EventDay Parent()
  * @method \SilverStripe\Security\Member Member()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
