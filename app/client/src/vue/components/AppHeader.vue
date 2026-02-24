@@ -1,138 +1,185 @@
 <template>
-  <header class="app-header">
-    <div class="header_content">
-      <div class="header_logo">
-        <router-link to="/">
-          <h1>ToTeam</h1>
+  <header>
+    <!-- Primary Menu -->
+    <ul class="primary_menu">
+      <li>
+        <router-link to="/" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Dashboard' }">
+          <div class="nav_icon">
+            <img 
+              class="nav_image" 
+              :src="$route.name === 'Dashboard' ? dashboardTotem : dashboardTotemInactive" 
+              alt="ToTeam Logo - Zum Dashboard"
+            >
+          </div>
+          <p class="nav_title">Dashboard</p>
         </router-link>
-      </div>
+      </li>
       
-      <nav class="header_nav" v-if="authStore.isAuthenticated">
-        <router-link to="/" class="nav-link" :class="{ active: $route.name === 'Dashboard' }">
-          Dashboard
+      <li>
+        <router-link to="/notices" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Notices' }">
+          <div class="nav_icon">
+            <img 
+              :src="$route.name === 'Notices' ? nachrichtenTotem : nachrichtenTotemInactive" 
+              alt="Nachrichten Icon" 
+              class="nav_image"
+            >
+            <p v-if="noticesStore.unreadCount > 0" class="nav_badge">{{ noticesStore.unreadCount }}</p>
+          </div>
+          <p class="nav_title">Wichtiges</p>
         </router-link>
-        <router-link to="/calendar" class="nav-link" :class="{ active: $route.name === 'Calendar' }">
-          Kalender
+      </li>
+      
+      <li>
+        <router-link to="/calendar" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Calendar' }">
+          <div class="nav_icon">
+            <img 
+              class="nav_image" 
+              :src="$route.name === 'Calendar' ? kalenderTotem : kalenderTotemInactive" 
+              alt="Kalender Icon"
+            >
+          </div>
+          <p class="nav_title">Kalender</p>
         </router-link>
-        <router-link to="/food" class="nav-link" :class="{ active: $route.name === 'Food' }">
-          Essen
-        </router-link>
-        <router-link to="/notices" class="nav-link" :class="{ active: $route.name === 'Notices' }">
-          Mitteilungen
-          <span v-if="noticesStore.unreadCount > 0" class="badge">
-            {{ noticesStore.unreadCount }}
-          </span>
-        </router-link>
-        <router-link to="/map" class="nav-link" :class="{ active: $route.name === 'Map' }">
-          Karte
-        </router-link>
-        <router-link to="/links" class="nav-link" :class="{ active: $route.name === 'Links' }">
-          Links
-        </router-link>
-        <router-link to="/profile" class="nav-link" :class="{ active: $route.name === 'Profile' }">
-          Profil
-        </router-link>
-      </nav>
+      </li>
+      
+      <li>
+        <div class="nav_link" @click="toggleSecondaryMenu">
+          <div class="nav_icon">
+            <div class="nav_button" :class="{ active: isSecondaryMenuOpen }">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+          <p class="nav_title">Mehr</p>
+        </div>
+      </li>
+    </ul>
+    
+    <!-- Secondary Menu -->
+    <div class="secondarynav_wrap">
+      <div class="secondarynav">
+        <div class="nav_top">
+          <img class="nav_logo" :src="dashboardTotem" alt="ToTeam Logo - Zum Dashboard">
+          <h2 class="nav_title">ToTeam</h2>
+        </div>
+        <ul class="secondary_menu">
+          <li>
+            <router-link to="/food" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Food' }" @click="closeSecondaryMenu">
+              <div class="nav_icon">
+                <img :src="essenTotem" alt="Essen Icon" class="nav_image">
+              </div>
+              <p class="nav_title">Essen</p>
+            </router-link>
+          </li>
+          
+          <li>
+            <router-link to="/links" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Links' }" @click="closeSecondaryMenu">
+              <div class="nav_icon">
+                <img :src="downloadsTotem" alt="Links Icon" class="nav_image">
+              </div>
+              <p class="nav_title">Links & Downloads</p>
+            </router-link>
+          </li>
+          
+          <li>
+            <router-link to="/map" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Map' }" @click="closeSecondaryMenu">
+              <div class="nav_icon">
+                <img :src="kartenTotem" alt="Karte Icon" class="nav_image">
+              </div>
+              <p class="nav_title">Lagepläne</p>
+            </router-link>
+          </li>
+        </ul>
+        <p class="version_note"><i>ToTeam Vue</i> <kbd>BETA</kbd></p>
+        <div class="nav_profile_wrap">
+          <router-link to="/profile" class="nav_profile" @click="closeSecondaryMenu">
+            <div class="nav_icon nav_icon--profile">
+              <img 
+                v-if="authStore.user?.ProfileImage" 
+                :src="authStore.user.ProfileImage.URL" 
+                :alt="`Profilbild von ${authStore.user.FirstName}`" 
+                class="profile_image"
+              >
+              <img 
+                v-else 
+                :src="authStore.user?.Gravatar" 
+                alt="Standard Profilbild" 
+                class="profile_image"
+              >
+            </div>
+            <div class="nav_text">
+              <p class="nav_title">{{ authStore.user?.FirstName }}</p>
+              <p class="nav_subtitle">Profil ansehen</p>
+            </div>
+          </router-link>
+          <button @click="handleLogout" class="nav_logout" title="Abmelden">
+            <div class="nav_icon nav_icon--logout">
+              <img :src="actionLogout" alt="Abmelden Icon" class="logout_image">
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useNoticesStore } from '@stores/notices'
 
+// Import totem icons
+import dashboardTotem from '../../../icons/totems/dashboard_totem.png'
+import dashboardTotemInactive from '../../../icons/totems/dashboard_totem_inactive.png'
+import nachrichtenTotem from '../../../icons/totems/nachrichten_totem.png'
+import nachrichtenTotemInactive from '../../../icons/totems/nachrichten_totem_inactive.png'
+import kalenderTotem from '../../../icons/totems/kalender_totem.png'
+import kalenderTotemInactive from '../../../icons/totems/kalender_totem_inactive.png'
+import essenTotem from '../../../icons/totems/essen_totem.png'
+import downloadsTotem from '../../../icons/totems/downloads_totem.png'
+import kartenTotem from '../../../icons/totems/karten_totem.png'
+import actionLogout from '../../../icons/actions/action_logout.svg'
+
+const router = useRouter()
 const authStore = useAuthStore()
 const noticesStore = useNoticesStore()
+const isSecondaryMenuOpen = ref(false)
+
+function toggleSecondaryMenu() {
+  // Toggle body class like the original JavaScript does
+  document.body.classList.toggle('secnav--open')
+  isSecondaryMenuOpen.value = document.body.classList.contains('secnav--open')
+}
+
+function closeSecondaryMenu() {
+  document.body.classList.remove('secnav--open')
+  isSecondaryMenuOpen.value = false
+}
+
+async function handleLogout() {
+  await authStore.logout()
+  closeSecondaryMenu()
+  router.push({ name: 'Login' })
+}
 
 onMounted(() => {
   if (authStore.isAuthenticated) {
-    // Load unread count for badge
-    noticesStore.fetchNotices()
+    // Load unread count for badge - but don't fail if it errors
+    noticesStore.fetchNotices().catch(err => {
+      console.warn('Could not fetch notices for badge:', err)
+    })
   }
+})
+
+onUnmounted(() => {
+  // Clean up body class when component is destroyed
+  closeSecondaryMenu()
 })
 </script>
 
 <style scoped>
-.app-header {
-  background-color: var(--ColorPrimary, #4E9DAE);
-  color: white;
-  padding: 1rem 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.header_content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header_logo h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: white;
-}
-
-.header_logo a {
-  text-decoration: none;
-  color: white;
-}
-
-.header_nav {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.nav-link {
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-  position: relative;
-}
-
-.nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-link.active {
-  background-color: rgba(255, 255, 255, 0.2);
-  font-weight: 500;
-}
-
-.badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background-color: #f44336;
-  color: white;
-  border-radius: 10px;
-  padding: 0.125rem 0.375rem;
-  font-size: 0.75rem;
-  font-weight: bold;
-  transform: translate(25%, -25%);
-}
-
-@media (max-width: 768px) {
-  .header_content {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .header_nav {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .nav-link {
-    font-size: 0.875rem;
-    padding: 0.375rem 0.75rem;
-  }
-}
+/* All styles are inherited from main.scss - this component uses existing classes */
 </style>

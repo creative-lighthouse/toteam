@@ -1,12 +1,10 @@
 <template>
   <div class="section section--NoticesPage">
-    <div class="intro-bar">
-      <h1 class="hl1">Mitteilungen</h1>
-      <p>Hier findest du alle wichtigen Mitteilungen deines Teams.</p>
+    <IntroBar title="Mitteilungen" description="Hier findest du alle wichtigen Mitteilungen deines Teams.">
       <span v-if="noticesStore.unreadCount > 0" class="badge">
         {{ noticesStore.unreadCount }} ungelesen
       </span>
-    </div>
+    </IntroBar>
     
     <div class="section_content">
       <!-- Category Filter -->
@@ -52,7 +50,8 @@
             <h3 class="hl3">{{ notice.Title }}</h3>
             <span class="notice-date">{{ notice.Created }}</span>
           </div>
-          <div class="notice-content" v-html="notice.Content"></div>
+          <div class="notice-short-text">{{ notice.ShortText }}</div>
+          <div class="notice-content" v-html="notice.LongText"></div>
           <div class="notice-footer">
             <span class="notice-category">{{ notice.Category?.Title }}</span>
             <button 
@@ -83,6 +82,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useNoticesStore } from '@stores/notices'
+import IntroBar from '@components/IntroBar.vue'
 
 const noticesStore = useNoticesStore()
 

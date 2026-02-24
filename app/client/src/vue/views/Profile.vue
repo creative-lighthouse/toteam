@@ -1,9 +1,6 @@
 <template>
   <div class="section section--ProfilePage">
-    <div class="intro-bar">
-      <h1 class="hl1">Profil</h1>
-      <p>Verwalte dein Profil und deine Einstellungen.</p>
-    </div>
+    <IntroBar title="Profil" description="Verwalte dein Profil und deine Einstellungen." />
     
     <div class="section_content">
       <div class="section_infobox" v-if="authStore.user">
@@ -33,6 +30,7 @@
 
 <script setup>
 import { useAuthStore } from '@stores/auth'
+import IntroBar from '@components/IntroBar.vue'
 
 const authStore = useAuthStore()
 </script>

@@ -1,9 +1,6 @@
 <template>
   <div class="section section--LinksPage">
-    <div class="intro-bar">
-      <h1 class="hl1">Links</h1>
-      <p>Wichtige Links und Ressourcen für dein Team.</p>
-    </div>
+    <IntroBar title="Links" description="Wichtige Links und Ressourcen für dein Team." />
     
     <div class="section_content">
       <div class="section_infobox">
@@ -15,5 +12,6 @@
 </template>
 
 <script setup>
+import IntroBar from '@components/IntroBar.vue'
 // Links logic will be implemented here
 </script>

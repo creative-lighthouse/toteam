@@ -1,9 +1,6 @@
 <template>
   <div class="section section--FoodPage">
-    <div class="intro-bar">
-      <h1 class="hl1">Essensplan</h1>
-      <p>Hier findest du den Essensplan und kannst deine Präferenzen angeben.</p>
-    </div>
+    <IntroBar title="Essensplan" description="Hier findest du den Essensplan und kannst deine Präferenzen angeben." />
     
     <div class="section_content">
       <div class="section_infobox">
@@ -15,5 +12,6 @@
 </template>
 
 <script setup>
+import IntroBar from '@components/IntroBar.vue'
 // Food logic will be implemented here
 </script>

@@ -1,9 +1,6 @@
 <template>
   <div class="section section--MapPage">
-    <div class="intro-bar">
-      <h1 class="hl1">Karte</h1>
-      <p>Finde Orte und POIs auf der Karte.</p>
-    </div>
+    <IntroBar title="Karte" description="Finde Orte und POIs auf der Karte." />
     
     <div class="section_content">
       <div class="section_infobox">
@@ -15,5 +12,6 @@
 </template>
 
 <script setup>
+import IntroBar from '@components/IntroBar.vue'
 // Map logic will be implemented here
 </script>
