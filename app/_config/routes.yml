@@ -21,4 +21,5 @@ SilverStripe\Control\Director:
     'api/v1/auth//$Action': 'App\Controllers\Api\AuthApiController'
     'api/v1/dashboard//$Action': 'App\Controllers\Api\DashboardApiController'
     'api/v1/notices': 'App\Controllers\Api\NoticesApiController'
+    'api/v1/calendar//$Action/$ID': 'App\Controllers\Api\CalendarApiController'
     'api/notifications//$Action': 'App\Controllers\NotificationApiController'

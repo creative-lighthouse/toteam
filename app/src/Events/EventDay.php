@@ -37,8 +37,8 @@ use App\Notifications\PushNotificationService;
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayParticipation[] Participations()
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayAgendaPoint[] AgendaPoints()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -107,6 +107,11 @@ class EventDay extends DataObject implements PermissionProvider
         $fields->removeByName("ParentID");
         $fields->removeByName("ICSSequence");
 
+        // Make TypeID dropdown optional
+        if ($typeField = $fields->dataFieldByName('TypeID')) {
+            $typeField->setEmptyString('-- Kein Typ --');
+        }
+
         return $fields;
     }
 
@@ -164,12 +169,15 @@ class EventDay extends DataObject implements PermissionProvider
 
     public function RenderDate()
     {
-        $date = $this->dbObject('Date');
-        if ($date instanceof DBField) {
-            return $this->dbObject('Date')->Format('dd.MM.yy');
-        } else {
-            return "Kein Datum";
+        try {
+            $date = $this->dbObject('Date');
+            if ($date && $date instanceof DBField && !$date->isNull()) {
+                return $date->Format('dd.MM.yy');
+            }
+        } catch (\Exception $e) {
+            // Silently handle errors for new records
         }
+        return "Kein Datum";
     }
 
     public function RenderDateWithTime()
@@ -288,12 +296,16 @@ class EventDay extends DataObject implements PermissionProvider
 
     public function RenderTitle()
     {
-        if ($this->Status == 'Cancelled') {
-            return $this->getField('Title');
-        } elseif ($this->Status == 'Suggested') {
-            return $this->getField('Title') . ' (Vorschlag)';
+        // Safely get title even if object doesn't exist yet
+        $title = $this->getField('Title') ?: '';
+        $status = $this->getField('Status') ?: 'Scheduled';
+
+        if ($status == 'Cancelled') {
+            return $title;
+        } elseif ($status == 'Suggested') {
+            return $title . ' (Vorschlag)';
         } else {
-            return $this->getField('Title');
+            return $title;
         }
     }
 
