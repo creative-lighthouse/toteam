@@ -21,8 +21,8 @@ use SilverStripe\Security\PermissionProvider;
  * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\LinkField\Models\Link Button()
  * @method \App\Links\TeamLinkType Type()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
