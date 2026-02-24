@@ -82,23 +82,35 @@ class Event extends DataObject implements PermissionProvider
     {
         $fields = parent::getCMSFields();
 
-        //Move EventDays to Main Tab
-        $eventDaysGrid = $fields->dataFieldByName('EventDays');
+        // Remove EventDays field initially
         $fields->removeByName('EventDays');
-        $eventDaysGrid = GridField::create(
-            'EventDaysGrid',
-            'Veranstaltungstage',
-            $this->EventDays()->filter('Date:GreaterThanOrEqual', date('Y-m-d')),
-            GridFieldConfig_RecordEditor::create()
-        );
-        $oldEventDaysGrid = GridField::create(
-            'OldEventDaysGrid',
-            'Vergangene Veranstaltungstage',
-            $this->EventDays()->filter('Date:LessThan', date('Y-m-d')),
-            GridFieldConfig_RecordEditor::create()
-        );
-        $fields->addFieldToTab('Root.Main', $eventDaysGrid);
-        $fields->addFieldToTab('Root.Archiv', $oldEventDaysGrid);
+        
+        // Only show EventDays GridFields if the Event has been saved
+        if ($this->isInDB()) {
+            $eventDaysGrid = GridField::create(
+                'EventDaysGrid',
+                'Veranstaltungstage',
+                $this->EventDays()->filter('Date:GreaterThanOrEqual', date('Y-m-d')),
+                GridFieldConfig_RecordEditor::create()
+            );
+            $oldEventDaysGrid = GridField::create(
+                'OldEventDaysGrid',
+                'Vergangene Veranstaltungstage',
+                $this->EventDays()->filter('Date:LessThan', date('Y-m-d')),
+                GridFieldConfig_RecordEditor::create()
+            );
+            $fields->addFieldToTab('Root.Main', $eventDaysGrid);
+            $fields->addFieldToTab('Root.Archiv', $oldEventDaysGrid);
+        } else {
+            // Show a message that the Event needs to be saved first
+            $fields->addFieldToTab('Root.Main', 
+                \SilverStripe\Forms\LiteralField::create(
+                    'EventDaysNotice',
+                    '<p class="message notice">Bitte speichern Sie die Veranstaltung zunächst, bevor Sie Veranstaltungstage hinzufügen können.</p>'
+                )
+            );
+        }
+        
         return $fields;
     }
 
