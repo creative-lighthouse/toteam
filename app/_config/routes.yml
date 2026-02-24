@@ -18,3 +18,8 @@ SilverStripe\Control\Director:
     'links//$Action/$ID/$Name': 'App\Controllers\LinksController'
     'maps//$Action/$ID/$Name': 'App\Controllers\MapController'
     'api/notifications//$Action': 'App\Controllers\NotificationApiController'
+    'api/v1/auth//$Action': 'App\Controllers\Api\AuthApiController'
+    'api/v1/dashboard//$Action': 'App\Controllers\Api\DashboardApiController'
+    'api/v1/notices//$Action/$ID': 'App\Controllers\Api\NoticesApiController'
+    'api//$Action': 'App\Controllers\ApiController'
+    'app': 'App\Controllers\VueAppController'
