@@ -16,28 +16,20 @@ class VueAppController extends Controller
     private static $url_segment = 'app';
     
     private static $allowed_actions = [
-        'index',
-        'login'
+        'index'
+    ];
+    
+    private static $url_handlers = [
+        '$Action/$ID/$OtherID' => 'index'
     ];
     
     /**
-     * Serve the Vue app
+     * Serve the Vue app - Vue Router handles all client-side routing
+     * This catches all URLs under /app/* and serves the same SPA
      */
     public function index(HTTPRequest $request)
     {
-        // Load Vue app assets
-        Requirements::javascript(ViteHelper::Vite('app/client/src/vue/app.js'));
-        
-        // Return template
-        return $this->renderWith('VueApp');
-    }
-
-    public function login(HTTPRequest $request)
-    {
-        // Load Vue app assets
-        Requirements::javascript(ViteHelper::Vite('app/client/src/vue/app.js'));
-        
-        // Return template
+        // Template loads Vite assets directly
         return $this->renderWith('VueApp');
     }
 }

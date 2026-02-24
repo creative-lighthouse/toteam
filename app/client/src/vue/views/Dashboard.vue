@@ -1,9 +1,9 @@
 <template>
   <div class="section section--DashboardPage">
-    <div class="intro-bar">
-      <h1 class="hl1">Vue-Dashboard</h1>
-      <p>Willkommen auf deinem ToTeam Dashboard! Hier findest du eine Übersicht über deine anstehenden Termine und heutigen Mahlzeiten.</p>
-    </div>
+    <IntroBar 
+      title="Dashboard" 
+      description="Willkommen auf deinem ToTeam Dashboard! Hier findest du eine Übersicht über deine anstehenden Termine und heutigen Mahlzeiten."
+    />
     
     <div class="section_content">
       <!-- Welcome Box -->
@@ -94,6 +94,7 @@
 import { onMounted } from 'vue'
 import { useAuthStore } from '@stores/auth'
 import { useDashboardStore } from '@stores/dashboard'
+import IntroBar from '@components/IntroBar.vue'
 
 const authStore = useAuthStore()
 const dashboardStore = useDashboardStore()

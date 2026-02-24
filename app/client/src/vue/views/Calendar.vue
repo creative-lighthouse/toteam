@@ -1,9 +1,6 @@
 <template>
   <div class="section section--CalendarPage">
-    <div class="intro-bar">
-      <h1 class="hl1">Kalender</h1>
-      <p>Verwalte deine Termine und Events.</p>
-    </div>
+    <IntroBar title="Kalender" description="Verwalte deine Termine und Events." />
     
     <div class="section_content">
       <div class="section_infobox">
@@ -15,5 +12,6 @@
 </template>
 
 <script setup>
+import IntroBar from '@components/IntroBar.vue'
 // Calendar logic will be implemented here
 </script>

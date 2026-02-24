@@ -42,7 +42,8 @@ class ApiController extends Controller
         $member = Security::getCurrentUser();
         
         if (!$member) {
-            $this->httpError(401, 'Unauthorized');
+            // Don't use httpError, return null instead
+            return null;
         }
         
         return $member;

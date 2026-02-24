@@ -18,6 +18,14 @@
         <!-- Vue App Script -->
         <script type="module" src="$Vite('app/client/src/vue/app.js')"></script>
         
+        <!-- Prevent loading of old main.js -->
+        <style>
+            body {
+                min-height: 100vh;
+                background-color: var(--ColorLightGray, #f5f5f5);
+            }
+        </style>
+        
         <!-- Favicons -->
         <link rel="apple-touch-icon" sizes="120x120" href="/_resources/app/client/icons/apple-touch-icon_120.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/_resources/app/client/icons/apple-touch-icon_180.png" />

@@ -22,7 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
       
-      const response = await apiGet('/auth/check', true, 60000) // Cache for 1 minute
+      const response = await apiGet('/auth/check', false) // Don't cache auth check
       
       if (response.authenticated) {
         user.value = response.user

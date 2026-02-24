@@ -1,8 +1,10 @@
 <template>
   <div id="vue-app">
-    <AppHeader v-if="authStore.isAuthenticated" />
+    <div class="area_header" v-if="authStore.isAuthenticated">
+      <AppHeader />
+    </div>
     
-    <main class="app-main">
+    <main class="area_content main">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -37,9 +39,26 @@ onMounted(() => {
   opacity: 0;
 }
 
-.app-main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
+/* Ensure Vue app uses existing layout styles */
+#vue-app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header"
+    "content"
+    "footer";
+  width: 100%;
+  overflow-x: hidden;
+  background-color: var(--ColorLightGray, #f5f5f5);
+}
+
+#vue-app .area_header {
+  grid-area: header;
+}
+
+#vue-app .area_content {
+  grid-area: content;
 }
 </style>

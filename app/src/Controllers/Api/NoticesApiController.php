@@ -23,9 +23,16 @@ class NoticesApiController extends ApiController
     ];
     
     private static $url_handlers = [
-        '$ID/read' => 'read',
-        '' => 'index'
+        '$ID/read' => 'read'
     ];
+    
+    /**
+     * Default action - serves as index when no action specified
+     */
+    protected function getDefaultAction()
+    {
+        return 'index';
+    }
     
     /**
      * Get all notices
@@ -34,45 +41,62 @@ class NoticesApiController extends ApiController
     {
         $member = $this->requireAuth();
         
-        // Get all notices
-        $notices = Notice::get()->sort('Created DESC');
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
         
-        $noticesData = [];
-        foreach ($notices as $notice) {
-            // Check if read by current user
-            $isRead = NoticeReadStatus::get()->filter([
-                'NoticeID' => $notice->ID,
-                'MemberID' => $member->ID
-            ])->exists();
+        try {
+            // Get all notices
+            $notices = Notice::get()->sort('Created DESC');
             
-            $noticesData[] = [
-                'ID' => $notice->ID,
-                'Title' => $notice->Title,
-                'Content' => $notice->Content,
-                'Created' => $notice->dbObject('Created')->Nice(),
-                'CategoryID' => $notice->CategoryID,
-                'Category' => $notice->Category()->exists() ? [
-                    'ID' => $notice->Category()->ID,
-                    'Title' => $notice->Category()->Title
-                ] : null,
-                'IsRead' => $isRead
-            ];
+            $noticesData = [];
+            foreach ($notices as $notice) {
+                try {
+                    // Check if read by current user
+                    $isRead = NoticeReadStatus::get()->filter([
+                        'NoticeID' => $notice->ID,
+                        'MemberID' => $member->ID
+                    ])->exists();
+                    
+                    $noticesData[] = [
+                        'ID' => $notice->ID,
+                        'Title' => $notice->Title,
+                        'ShortText' => $notice->ShortText,
+                        'LongText' => $notice->LongText,
+                        'Created' => $notice->dbObject('Created')->Nice(),
+                        'ReleaseDate' => $notice->ReleaseDate ? $notice->dbObject('ReleaseDate')->Nice() : null,
+                        'ExpiryDate' => $notice->ExpiryDate ? $notice->dbObject('ExpiryDate')->Nice() : null,
+                        'CategoryID' => $notice->CategoryID,
+                        'Category' => $notice->Category()->exists() ? [
+                            'ID' => $notice->Category()->ID,
+                            'Title' => $notice->Category()->Title
+                        ] : null,
+                        'IsRead' => $isRead
+                    ];
+                } catch (\Exception $e) {
+                    // Log but continue with other notices
+                    error_log('Error processing notice ' . $notice->ID . ': ' . $e->getMessage());
+                }
+            }
+            
+            // Get all categories
+            $categories = NoticeCategory::get();
+            $categoriesData = [];
+            foreach ($categories as $category) {
+                $categoriesData[] = [
+                    'ID' => $category->ID,
+                    'Title' => $category->Title
+                ];
+            }
+            
+            return $this->jsonResponse([
+                'notices' => $noticesData,
+                'categories' => $categoriesData
+            ]);
+        } catch (\Exception $e) {
+            error_log('NoticesApiController error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            return $this->errorResponse('Error fetching notices: ' . $e->getMessage(), 500);
         }
-        
-        // Get all categories
-        $categories = NoticeCategory::get();
-        $categoriesData = [];
-        foreach ($categories as $category) {
-            $categoriesData[] = [
-                'ID' => $category->ID,
-                'Title' => $category->Title
-            ];
-        }
-        
-        return $this->jsonResponse([
-            'notices' => $noticesData,
-            'categories' => $categoriesData
-        ]);
     }
     
     /**

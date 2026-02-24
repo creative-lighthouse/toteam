@@ -1,9 +1,6 @@
 <template>
   <div class="section section--LoginPage">
-    <div class="intro-bar">
-      <h1 class="hl1">Login</h1>
-      <p>Melde dich mit deinen Zugangsdaten an.</p>
-    </div>
+    <IntroBar title="Login" description="Melde dich mit deinen Zugangsdaten an." />
     
     <div class="section_content">
       <div class="section_infobox">
@@ -53,6 +50,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
+import IntroBar from '@components/IntroBar.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

@@ -25,6 +25,10 @@ class DashboardApiController extends ApiController
     {
         $member = $this->requireAuth();
         
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        
         // Get today's participations
         $todaysParticipations = [];
         if ($member->hasMethod('TodaysParticipations')) {

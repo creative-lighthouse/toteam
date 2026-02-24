@@ -68,9 +68,9 @@ class AuthApiController extends ApiController
         ], $request);
         
         if ($member) {
-            // Login the member
+            // Login the member with "remember me" enabled for session persistence
             $identityStore = \SilverStripe\Core\Injector\Injector::inst()->get(IdentityStore::class);
-            $identityStore->logIn($member, false, $request);
+            $identityStore->logIn($member, true, $request); // Set remember to true
             
             return $this->jsonResponse([
                 'success' => true,
