@@ -209,9 +209,9 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useCalendarStore } from '@stores/calendar'
+import { useEventsStore } from '@stores/events'
 
-const calendarStore = useCalendarStore()
+const eventsStore = useEventsStore()
 
 const props = defineProps({
   event: {
@@ -273,7 +273,7 @@ async function changeParticipation(type) {
   submitting.value = true
 
   try {
-    const response = await calendarStore.changeParticipation(props.event.ID, type)
+    const response = await eventsStore.changeParticipation(props.event.ID, type)
 
     // Update time inputs
     if (response.TimeStart && response.TimeEnd) {
@@ -299,7 +299,7 @@ async function updateTime() {
   submitting.value = true
 
   try {
-    const response = await calendarStore.changeParticipationTime(
+    const response = await eventsStore.changeParticipationTime(
       props.event.ID,
       timeStart.value + ':00',
       timeEnd.value + ':00'
@@ -322,7 +322,7 @@ async function changeFoodParticipation(mealId, type) {
   submitting.value = true
 
   try {
-    await calendarStore.changeFoodParticipation(mealId, type)
+    await eventsStore.changeFoodParticipation(mealId, type)
 
     emit('food-changed', mealId, type)
 
