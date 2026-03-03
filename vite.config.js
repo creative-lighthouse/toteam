@@ -38,6 +38,7 @@ export default defineConfig(({ command }) => {
                 '@views': '/app/client/src/vue/views',
                 '@stores': '/app/client/src/vue/stores',
                 '@utils': '/app/client/src/vue/utils',
+                '@models': '/app/client/src/vue/models',
             }
         },
         // base: (command === 'build') ? '/_resources/app/client/dist/' : '/', // TODO: .env variable, only on build

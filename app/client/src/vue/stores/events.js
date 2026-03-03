@@ -1,21 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiGet, apiPost, clearCacheForEndpoint } from '@utils/api'
+import { Event } from '@models/Event'
 
-export const useCalendarStore = defineStore('calendar', () => {
+export const useEventsStore = defineStore('events', () => {
   // State
   const events = ref([])
-  const currentYear = ref(new Date().getFullYear())
-  const currentMonth = ref(new Date().getMonth() + 1)
   const loading = ref(false)
   const error = ref(null)
 
-  // Getters
-  const currentMonthKey = computed(() => {
-    return `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}`
-  })
-
-  const eventsGroupedByDate = computed(() => {
+  // Computed - Events gruppiert nach Datum
+  const eventsByDate = computed(() => {
     const grouped = {}
     events.value.forEach(event => {
       if (!grouped[event.Date]) {
@@ -26,35 +21,49 @@ export const useCalendarStore = defineStore('calendar', () => {
     return grouped
   })
 
+  // Computed - Zukünftige Events
   const upcomingEvents = computed(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     return events.value
       .filter(e => new Date(e.Date) >= today)
-      .slice(0, 5)
+      .sort((a, b) => a.Date.localeCompare(b.Date))
   })
 
   // Actions
+
+  /**
+   * Lädt Events für einen bestimmten Monat
+   * @param {number} year - Jahr (z.B. 2024)
+   * @param {number} month - Monat (1-12)
+   * @param {boolean} forceRefresh - Cache ignorieren
+   */
   async function fetchEvents(year, month, forceRefresh = false) {
     try {
       loading.value = true
       error.value = null
-
-      currentYear.value = year
-      currentMonth.value = month
 
       if (forceRefresh) {
         await clearCacheForEndpoint('/calendar')
       }
 
       const monthParam = `${year}-${String(month).padStart(2, '0')}`
-      const response = await apiGet(`/calendar?month=${monthParam}`, !forceRefresh, 60 * 1000) // Cache for 1 minute
+      const response = await apiGet(`/calendar?month=${monthParam}`, !forceRefresh, 60 * 1000)
 
-      events.value = response.events || []
+      // Konvertiere API-Daten zu Event-Instanzen
+      const newEvents = (response.events || []).map(data => Event.fromAPI(data))
 
-      return events.value
+      // Merge mit existierenden Events (keine Duplikate)
+      const existingIds = new Set(events.value.map(e => e.ID))
+      const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.ID))
+
+      events.value = [...events.value, ...uniqueNewEvents].sort((a, b) =>
+        a.Date.localeCompare(b.Date)
+      )
+
+      return newEvents
     } catch (err) {
-      console.error('Failed to fetch calendar events:', err)
+      console.error('Failed to fetch events:', err)
       error.value = err.message
       throw err
     } finally {
@@ -62,10 +71,46 @@ export const useCalendarStore = defineStore('calendar', () => {
     }
   }
 
-  async function fetchCurrentMonth(forceRefresh = false) {
-    return await fetchEvents(currentYear.value, currentMonth.value, forceRefresh)
+  /**
+   * Lädt Events für mehrere Monate
+   * @param {number} startYear - Start Jahr
+   * @param {number} startMonth - Start Monat
+   * @param {number} endYear - End Jahr
+   * @param {number} endMonth - End Monat
+   */
+  async function fetchEventRange(startYear, startMonth, endYear, endMonth) {
+    const promises = []
+    let year = startYear
+    let month = startMonth
+
+    while (year < endYear || (year === endYear && month <= endMonth)) {
+      promises.push(fetchEvents(year, month))
+
+      if (month === 12) {
+        month = 1
+        year++
+      } else {
+        month++
+      }
+    }
+
+    await Promise.all(promises)
   }
 
+  /**
+   * Findet einen Event anhand seiner ID
+   * @param {number} eventId
+   * @returns {Event|undefined}
+   */
+  function getEventById(eventId) {
+    return events.value.find(e => e.ID === eventId)
+  }
+
+  /**
+   * Ändert die Teilnahme an einem Event
+   * @param {number} eventId
+   * @param {string} type - 'Accept', 'Maybe', oder 'Decline'
+   */
   async function changeParticipation(eventId, type) {
     try {
       const response = await apiPost(`/calendar/participation/${eventId}`, {
@@ -73,17 +118,11 @@ export const useCalendarStore = defineStore('calendar', () => {
       })
 
       // Update local state
-      const event = events.value.find(e => e.ID === eventId)
+      const event = getEventById(eventId)
       if (event) {
-        if (!event.UserParticipation) {
-          event.UserParticipation = {}
-        }
-        event.UserParticipation.ID = response.data.ID
-        event.UserParticipation.Type = response.data.Type
-        event.UserParticipation.TimeStart = response.data.TimeStart
-        event.UserParticipation.TimeEnd = response.data.TimeEnd
+        event.updateUserParticipation(response.data)
 
-        // Update in participations list if available
+        // Update in participations list
         if (event.Participations) {
           const userParticipation = event.Participations.find(p => p.IsCurrentUser)
           if (userParticipation) {
@@ -94,7 +133,6 @@ export const useCalendarStore = defineStore('calendar', () => {
         }
       }
 
-      // Clear cache to ensure fresh data on reload
       await clearCacheForEndpoint('/calendar')
 
       return response.data
@@ -104,6 +142,12 @@ export const useCalendarStore = defineStore('calendar', () => {
     }
   }
 
+  /**
+   * Ändert die Zeitangabe der Teilnahme
+   * @param {number} eventId
+   * @param {string} timeStart - Format: HH:mm:ss
+   * @param {string} timeEnd - Format: HH:mm:ss
+   */
   async function changeParticipationTime(eventId, timeStart, timeEnd) {
     try {
       const response = await apiPost(`/calendar/participationTime/${eventId}`, {
@@ -112,7 +156,7 @@ export const useCalendarStore = defineStore('calendar', () => {
       })
 
       // Update local state
-      const event = events.value.find(e => e.ID === eventId)
+      const event = getEventById(eventId)
       if (event && event.UserParticipation) {
         event.UserParticipation.TimeStart = response.data.TimeStart
         event.UserParticipation.TimeEnd = response.data.TimeEnd
@@ -136,6 +180,11 @@ export const useCalendarStore = defineStore('calendar', () => {
     }
   }
 
+  /**
+   * Ändert die Essens-Teilnahme
+   * @param {number} mealId
+   * @param {string} type - Teilnahme-Typ
+   */
   async function changeFoodParticipation(mealId, type) {
     try {
       const response = await apiPost(`/calendar/participationFood/${mealId}`, {
@@ -162,60 +211,29 @@ export const useCalendarStore = defineStore('calendar', () => {
     }
   }
 
-  function getEventById(eventId) {
-    return events.value.find(e => e.ID === eventId)
-  }
-
-  function setMonth(year, month) {
-    currentYear.value = year
-    currentMonth.value = month
-  }
-
-  function nextMonth() {
-    if (currentMonth.value === 12) {
-      currentMonth.value = 1
-      currentYear.value++
-    } else {
-      currentMonth.value++
-    }
-    return { year: currentYear.value, month: currentMonth.value }
-  }
-
-  function previousMonth() {
-    if (currentMonth.value === 1) {
-      currentMonth.value = 12
-      currentYear.value--
-    } else {
-      currentMonth.value--
-    }
-    return { year: currentYear.value, month: currentMonth.value }
-  }
-
-  async function refresh() {
-    await fetchCurrentMonth(true)
+  /**
+   * Leert alle Events (z.B. für Logout)
+   */
+  function clearEvents() {
+    events.value = []
+    error.value = null
   }
 
   return {
     // State
     events,
-    currentYear,
-    currentMonth,
     loading,
     error,
-    // Getters
-    currentMonthKey,
-    eventsGroupedByDate,
+    // Computed
+    eventsByDate,
     upcomingEvents,
     // Actions
     fetchEvents,
-    fetchCurrentMonth,
+    fetchEventRange,
+    getEventById,
     changeParticipation,
     changeParticipationTime,
     changeFoodParticipation,
-    getEventById,
-    setMonth,
-    nextMonth,
-    previousMonth,
-    refresh
+    clearEvents
   }
 })
