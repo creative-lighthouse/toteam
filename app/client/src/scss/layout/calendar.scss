@@ -2,13 +2,23 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin: 0 auto 20px auto;
     gap: 15px;
+    max-width: 400px;
 
     .hl2 {
         color: var(--ColorPrimary);
         flex: 1;
         text-align: center;
+    }
+
+    .btn-nav {
+        background-color: var(--ColorPrimary);
+        border: none;
+        color: var(--ColorWhite);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        cursor: pointer;
     }
 
     .button--icon {
@@ -556,6 +566,149 @@
                             width: 100%;
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+
+
+
+//New styling for vue
+.events-calendar {
+    .calendar-grid {
+        max-width: 400px;
+        margin: 0 auto;
+        background-color: var(--ColorPrimaryLight);
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusMedium);
+        overflow: hidden;
+        gap: 1px;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+
+        .calendar-weekday {
+            text-align: center;
+            padding: 5px 10px;
+            outline: 1px solid var(--ColorWhite);
+        }
+
+        .calendar-day {
+            background-color: var(--ColorWhite);
+            padding: 5px;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s ease-in-out;
+
+            .day-number {
+                font-size: 12px;
+                font-weight: bold;
+            }
+
+            .event-count {
+                font-size: 10px;
+                color: var(--ColorGray);
+                background-color: var(--ColorLightGray);
+                padding: 2px 4px;
+                border-radius: 50%;
+                aspect-ratio: 1 / 1;
+                text-align: center;
+            }
+
+            &:hover {
+                cursor: pointer;
+            }
+
+            &.calendar-day--has-events {
+                background-color: var(--ColorPrimary);
+                color: var(--ColorWhite);
+            }
+
+            &.calendar-day--today {
+                border: 2px solid var(--ColorPrimary);
+            }
+
+            &.calendar-day--selected {
+                border: 2px solid var(--ColorPrimaryDark);
+                transform: scale(0.95);
+            }
+        }
+    }
+
+    .selected-day-events {
+        margin: 20px auto 10px auto;
+
+        .events-list {
+            border-top: 1px solid var(--ColorGray);
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 10px;
+            gap: 10px;
+
+            .event-card {
+                background-color: var(--ColorWhite);
+                border: 1px solid var(--ColorLightGray);
+                border-radius: var(--BorderRadiusSmall);
+                padding: 10px;
+                box-shadow: var(--BoxShadowLight);
+                transition: 0.2s ease-in-out;
+
+                &:hover {
+                    box-shadow: var(--BoxShadowMedium);
+                    cursor: pointer;
+                }
+
+                .event-card_header {
+                    display: flex;
+                    gap: 10px;
+                    justify-content: space-between;
+                    padding-bottom: 10px;
+                }
+
+                .event-card_footer {
+                    border-top: 1px solid var(--ColorLightGray);
+                    margin: 0 auto;
+                    padding-top: 10px;
+                    display: flex;
+                    justify-content: space-between;
+
+                    .event-card_participation {
+                        background-color: var(--ColorLightGray);
+                        padding: 4px 6px;
+                        border-radius: var(--BorderRadiusSmall);
+                        font-size: 12px;
+
+                        &.participation--accept {
+                            background-color: var(--ColorStatusGoodAccent);
+                            color: var(--ColorStatusGood);
+                        }
+
+                        &.participation--maybe {
+                            background-color: var(--ColorStatusWarningAccent);
+                            color: var(--ColorStatusWarning);
+                        }
+
+                        &.participation--decline {
+                            background-color: var(--ColorStatusBadAccent);
+                            color: var(--ColorStatusBad);
+                        }
+                    }
+                }
+
+                .event-title {
+                    font-size: 14px;
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                }
+
+                .event-time {
+                    font-size: 12px;
+                    color: var(--ColorGray);
                 }
             }
         }
