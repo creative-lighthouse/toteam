@@ -91,7 +91,7 @@ class EventDay extends DataObject implements PermissionProvider
 
     private static $summary_fields = [
         "RenderTitle" => "Titel",
-        "RenderDate" => "Tag",
+        "RenderDateWithTime" => "Datum & Zeit",
         "Status" => "Status",
     ];
 
@@ -171,7 +171,7 @@ class EventDay extends DataObject implements PermissionProvider
     {
         try {
             $date = $this->dbObject('Date');
-            if ($date && $date instanceof DBField && !$date->isNull()) {
+            if ($date && !$date->isNull()) {
                 return $date->Format('dd.MM.yy');
             }
         } catch (\Exception $e) {
@@ -183,7 +183,7 @@ class EventDay extends DataObject implements PermissionProvider
     public function RenderDateWithTime()
     {
         $date = $this->dbObject('Date');
-        if ($date instanceof DBField) {
+        if ($date) {
             if ($this->TimeStart && $this->TimeEnd) {
                 return $this->dbObject('Date')->Format('dd.MM.yy') . ', ' . $this->dbObject('TimeStart')->Format('HH:mm') . ' - ' . $this->dbObject('TimeEnd')->Format('HH:mm');
             } elseif ($this->TimeStart) {

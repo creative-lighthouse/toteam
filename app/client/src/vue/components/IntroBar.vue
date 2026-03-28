@@ -9,18 +9,14 @@
 </template>
 
 <script setup>
-defineProps({
-  title: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    default: ''
-  }
-})
+    defineProps({
+    title: {
+        type: String,
+        required: true
+    },
+    description: {
+        type: String,
+        default: ''
+    }
+    })
 </script>
-
-<style scoped>
-/* All styles are inherited from main.scss - uses existing intro_bar classes */
-</style>

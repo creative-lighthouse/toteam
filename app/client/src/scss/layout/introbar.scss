@@ -1,9 +1,26 @@
-.introbar {
-    display: grid;
-    grid-template-columns: auto 1fr auto auto;
+.intro_bar {
     align-items: center;
     padding: 10px 0;
     view-transition-name: introbar;
+    background-color: var(--ColorPrimaryLight);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 50;
+    box-shadow: var(--BoxShadowLight);
+
+    .intro_bar_content {
+        max-width: var(--MaxWidth);
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .intro_bar_content {
+        max-width: var(--MaxWidth);
+        margin: 0 auto;
+        padding: 0 20px;
+    }
 
     .introbar-title{
         text-align: center;
