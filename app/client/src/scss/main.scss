@@ -21,6 +21,9 @@
 @use "pages/FoodPage.scss";
 @use "pages/MapPage.scss";
 
+
+@use "landingpage/landingpage.scss";
+
 @use "components/map-renderer.scss";
 
 @view-transition {

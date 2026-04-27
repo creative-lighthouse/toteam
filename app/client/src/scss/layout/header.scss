@@ -2,9 +2,6 @@
 
 header {
     overflow: visible;
-    max-width: 100%;
-    background-color: var(--ColorHeader);
-    width: 100%;
     filter: none;
     position: fixed;
     view-transition-name: area-header;
@@ -12,24 +9,81 @@ header {
 
     .primary_menu {
         position: fixed;
-        bottom: -6px;
-        left: -1px;
-        width: 100%;
-        right: -1px;
+        bottom: 5px;
+        left: 5px;
+        width: calc(100% - 10px);
+        right: 5px;
         height: 84px;
         display: flex;
-        justify-content: space-around;
+        justify-content: space-between;
+        padding: 10px;
         align-items: center;
         list-style: none;
-        padding: 0;
         margin: 0 auto;
         background-color: var(--ColorWhite);
-        border-bottom: none;
-        border-radius: var(--BorderRadiusMedium) var(--BorderRadiusMedium) 0 0;
+        border-radius: 60px;
         box-shadow: var(--BoxShadowMenu);
-        padding-bottom: 15px;
         z-index: 100;
         view-transition-name: primary-menu;
+
+        gap: 20px;
+        height: auto;
+        max-height: 80px;
+
+        li {
+            width: calc(100% / 5);
+            height: auto;
+            max-width: 60px;
+            aspect-ratio: 1;
+
+            .nav_link {
+                width: 100%;
+                height: 100%;
+
+                .nav_icon {
+                    width: 100%;
+                    height: 100%;
+
+                    &.nav_icon--profile {
+                        position: relative;
+
+                        &::after, &::before {
+                            content: "";
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            width: 70%;
+                            height: 3px;
+                            background-color: var(--ColorWhite);
+                            opacity: 0;
+                            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+                            transform: translate(-50%, -50%) rotate(0deg);
+                        }
+
+                        &::before {
+                            transform: translate(-50%, -50%) rotate(90deg);
+                        }
+
+                        .profilenav--open &{
+                            transform: scale(1.1);
+                            filter: brightness(0.6);
+
+                            &::after, &::before {
+                                opacity: 1;
+                            }
+
+                            &::after {
+                                transform: translate(-50%, -50%) rotate(45deg);
+                            }
+
+                            &::before {
+                                transform: translate(-50%, -50%) rotate(135deg);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         .nav_link {
             display: flex;
@@ -37,11 +91,7 @@ header {
             justify-content: center;
             align-items: center;
             color: var(--ColorGray);
-            text-decoration: none;
-            font-size: 10px;
-            height: 100%;
-            width: 80px;
-            height: 80px;
+            cursor: pointer;
 
             &.inactive {
                 opacity: 0.3;
@@ -53,14 +103,20 @@ header {
 
             .nav_icon {
                 display: block;
-                margin-bottom: 6px;
                 background-color: var(--ColorWhite);
                 border-radius: 50%;
-                padding: 10px;
-                width: 50px;
-                height: 50px;
+                width: 60px;
+                height: 60px;
                 transition: all 0.3s ease-in-out;
                 position: relative;
+
+                .profile_image {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 50%;
+                    display: block;
+                }
 
                 .nav_image {
                     width: 100%;
@@ -86,8 +142,8 @@ header {
 
             .nav_button{
                 position: relative;
-                width: 29px;
-                height: 29px;
+                height: 100%;
+                aspect-ratio: 1;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-around;
@@ -95,46 +151,28 @@ header {
                 cursor: pointer;
                 z-index: 110;
                 transition: all 0.3s ease;
+                border: 3px solid var(--ColorGray);
+                border-radius: 50%;
+                padding: 10px;
 
                 span{
                     position: absolute;
                     top: 50%;
-                    left: 0;
-                    transform: translateY(-50%);
+                    left: 50%;
+                    transform: translate(-50%, -50%);
                     display: block;
-                    width: 100%;
+                    width: 80%;
                     height: 3px;
                     background-color: var(--ColorGray);
                     border-radius: var(--BorderRadiusSmall);
                     transition: all 0.3s ease;
 
                     &:nth-child(1){
-                        top: 10%;
-                    }
-                    &:nth-child(2), &:nth-child(3){
-                    }
-                    &:nth-child(4){
-                        top: 90%;
+                        transform: translate(-50%, -50%) rotate(0deg);
                     }
 
-                    .secnav--open &{
-                        background-color: var(--ColorPrimary);
-
-                        &:nth-child(1){
-                            opacity: 0;
-                        }
-
-                        &:nth-child(2){
-                            transform: rotate(45deg);
-                        }
-
-                        &:nth-child(3){
-                            transform: rotate(-45deg);
-                        }
-
-                        &:nth-child(4){
-                            opacity: 0;
-                        }
+                    &:nth-child(1){
+                        transform: translate(-50%, -50%) rotate(90deg);
                     }
                 }
             }
@@ -142,7 +180,10 @@ header {
             &:has(.nav_button) {
                 .nav_icon {
                     .secnav--open &{
-                        transform: translateY(-10px) scale(1.1);
+                        transform: scale(1.1);
+                        .nav_button {
+                            transform: rotate(45deg);
+                        }
                     }
                 }
             }
@@ -152,176 +193,85 @@ header {
                 font-weight: 500;
 
                 .nav_icon {
-                    transform: translateY(-10px) scale(1.1);
+                    transform: scale(1.1);
                 }
             }
         }
+
+        @include media(max-medium) {
+
+        }
     }
 
-    .secondarynav_wrap {
+    .secondarynav {
         position: fixed;
         bottom: -100vh;
         right: 15px;
-        width: calc(100% - 30px);
+        width: auto;
         max-width: 600px;
-        height: calc(90vh - 30px);
+        height: auto;
         transition: bottom 0.3s ease-in-out;
         overflow: hidden;
         background-color: var(--ColorWhite);
-        border-radius: var(--BorderRadiusMedium) var(--BorderRadiusMedium) 0 0;
+        border-radius: var(--BorderRadiusMedium);
         box-shadow: var(--BoxShadowMenu);
 
-        .secondarynav{
-            height: 100%;
+        .secondary_menu{
+            list-style: none;
+            padding: 0 0 30px 0;
+            margin: 0;
             width: 100%;
-            display: grid;
-            grid-template-rows: 70px 1fr 25px 80px;
-            align-items: center;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            overflow-y: auto;
 
-            .nav_top{
-                background-color: var(--ColorPrimary);
+            li{
                 width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: var(--ColorWhite);
-                padding: 20px;
-                height: 100%;
 
-                .nav_logo{
-                    height: 100%;
-                    width: auto;
-                    margin-right: 15px;
-                }
-            }
-
-            .version_note {
-                font-size: 12px;
-                color: var(--ColorGrayDark);
-                text-align: center;
-                width: 100%;
-                height: 100%;
-            }
-
-            .secondary_menu{
-                list-style: none;
-                padding: 0;
-                margin: 0;
-                width: 100%;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start;
-                overflow-y: auto;
-
-                li{
-                    width: 100%;
-
-                    .nav_link{
-                        display: flex;
-                        padding: 20px;
-                        color: var(--ColorBlack);
-                        text-decoration: none;
-                        border-bottom: 1px solid var(--ColorLightGray);
-                        height: 70px;
-                        align-items: center;
-                        justify-content: flex-start;
-
-                        .nav_icon{
-                            height: 40px;
-                            width: 40px;
-                            margin-right: 15px;
-                            position: relative;
-
-                            img{
-                                height: 100%;
-                                width: 100%;
-                                object-fit: contain;
-                            }
-
-                            .nav_badge{
-                                position: absolute;
-                                top: 10px;
-                                right: 10px;
-                                width: 12px;
-                                height: 12px;
-                                background-color: var(--ColorSecondary);
-                                color: var(--ColorWhite);
-                            }
-                        }
-
-                        &:hover{
-                            background-color: var(--ColorLightGray);
-                        }
-                    }
-                }
-            }
-
-            .nav_profile_wrap {
-                width: 100%;
-                height: 100%;
-                border-top: 1px solid var(--ColorLightGray);
-                padding: 10px 20px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-
-                .nav_profile{
+                .nav_link{
                     display: flex;
+                    padding: 20px;
+                    color: var(--ColorBlack);
+                    text-decoration: none;
+                    border-bottom: 1px solid var(--ColorLightGray);
+                    height: 70px;
                     align-items: center;
-                    gap: 15px;
-                    height: 100%;
+                    justify-content: flex-start;
 
                     .nav_icon{
-                        height: 100%;
-                        aspect-ratio: 1;
-                        border-radius: 50%;
-                        overflow: hidden;
+                        height: 40px;
+                        width: 40px;
+                        margin-right: 15px;
                         position: relative;
 
                         img{
-                            width: 100%;
                             height: 100%;
-                            object-fit: cover;
+                            width: 100%;
+                            object-fit: contain;
+                        }
+
+                        .nav_badge{
+                            position: absolute;
+                            top: 10px;
+                            right: 10px;
+                            width: 12px;
+                            height: 12px;
+                            background-color: var(--ColorSecondary);
+                            color: var(--ColorWhite);
                         }
                     }
 
-                    .nav_subtitle{
-                        margin: 0;
-                        font-size: 10px;
-                        color: var(--ColorGrayDark);
+                    &:hover{
+                        background-color: var(--ColorLightGray);
                     }
                 }
-
-                .nav_logout{
-                    height: 30px;
-                    aspect-ratio: 1;
-
-                    img{
-                        width: 100%;
-                        height: 100%;
-                        object-fit: contain;
-                    }
-                }
-            }
-
-            &::after{
-                content: "";
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: calc(100% + 100px);
-                height: 100%;
-                background-color: rgba(0, 0, 0, 0.5);
-                backdrop-filter: blur(20px);
-                z-index: -1;
-                opacity: 0;
-                pointer-events: none;
             }
         }
 
         .secnav--open &{
-            bottom: 72px;
+            bottom: 50px;
 
             .nav_button{
                 right: -50px;
@@ -347,6 +297,93 @@ header {
             &::after{
                 opacity: 1;
             }
+        }
+    }
+
+    .profilenav {
+        position: fixed;
+        left: 15px;
+        bottom: -50vh;
+        width: auto;
+        max-width: 400px;
+        height: auto;
+        background-color: var(--ColorWhite);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        view-transition-name: profile-menu;
+        transition: bottom 0.3s ease-in-out;
+        padding: 20px 20px 40px 20px;
+        border-radius: var(--BorderRadiusMedium) var(--BorderRadiusMedium) 20px 20px;
+        box-shadow: var(--BoxShadowMenu);
+
+        .nav_profile_wrap {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .nav_profile{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--ColorBlack);
+                text-decoration: none;
+
+                .nav_icon{
+                    width: 120px;
+                    height: 120px;
+                    border-radius: 50%;
+                    overflow: hidden;
+                    margin-bottom: 20px;
+
+                    img{
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                }
+            }
+        }
+
+        .nav_logout {
+            width: 30px;
+            height: 30px;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+        }
+
+        .profilenav--open &{
+            bottom: 30px;
+            opacity: 1;
+            pointer-events: auto;
+        }
+    }
+
+    &::after{
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: calc(100% + 100px);
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(20px);
+        z-index: -1;
+        opacity: 0;
+        pointer-events: none;
+        transition: 0.3s ease-in-out;
+    }
+
+    .profilenav--open &, .secnav--open &{
+        &::after{
+            opacity: 1;
         }
     }
 }

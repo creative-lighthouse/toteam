@@ -6,17 +6,9 @@ After:
 ---
 SilverStripe\Control\Director:
   rules:
-    '': '->dashboard'
-    'dashboard': 'App\Controllers\DashboardController'
-    'calendar//$Action/$ID/$Name': 'App\Controllers\CalendarController'
+    'login//$Action/$ID': '->admin'
+    'register//$Action/$ID': 'App\Controllers\RegisterController'
     'ics//$Action/$ID/$Name': 'App\Controllers\ICSController'
-    'notices//$Action/$ID/$Name': 'App\Controllers\NoticesController'
-    'profile//$Action/$ID/$Name': 'App\Controllers\ProfileController'
-    'registration//$Action/$ID/$Name': 'App\Controllers\RegistrationController'
-    'suggestionbox//$Action/$ID/$Name': 'App\Controllers\SuggestionBoxController'
-    'food//$Action/$ID/$Name': 'App\Controllers\FoodController'
-    'links//$Action/$ID/$Name': 'App\Controllers\LinksController'
-    'maps//$Action/$ID/$Name': 'App\Controllers\MapController'
     'app//$Action/$ID/$OtherID': 'App\Controllers\VueAppController'
     'api/v1/auth//$Action': 'App\Controllers\Api\AuthApiController'
     'api/v1/dashboard//$Action': 'App\Controllers\Api\DashboardApiController'
