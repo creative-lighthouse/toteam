@@ -1,0 +1,49 @@
+.landingpage {
+    padding: 0;
+    gap: 40px;
+    max-width: 1000px;
+    margin: 0 auto;
+
+    .area_header {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .section_menu {
+            nav {
+                .main_menu {
+                    display: flex;
+                    gap: 20px;
+                    list-style: none;
+                    padding: 0;
+
+                    li {
+                        a {
+                            text-decoration: none;
+                            color: var(--TextColor);
+                            font-weight: 500;
+                            font-size: 16px;
+                            padding: 20px;
+                            display: block;
+
+                            &:hover {
+                                color: var(--PrimaryColor);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        .section_logo {
+            height: 100px;
+
+            img {
+                height: 100%;
+                width: 100%;
+                object-fit: contain;
+            }
+        }
+    }
+}
