@@ -52,8 +52,8 @@ class Department extends DataObject implements PermissionProvider
     ];
 
     private static $table_name = 'Department';
-    private static $singular_name = "Arbeits-Bereich";
-    private static $plural_name = "Arbeits-Bereiche";
+    private static $singular_name = "Team";
+    private static $plural_name = "Teams";
 
     #[Override]
     public function getCMSFields()

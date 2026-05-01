@@ -42,7 +42,7 @@ class Organization extends DataObject implements PermissionProvider
         "Title" => "Titel",
         "Description" => "Beschreibung",
         "AllowsSelfJoining" => "Erlaubt Selbstbeitritt",
-        "Departments.Count" => "Anzahl Arbeits-Bereiche",
+        "Departments.Count" => "Anzahl Teams",
         "Members.Count" => "Anzahl Mitglieder",
     ];
 
@@ -50,7 +50,7 @@ class Organization extends DataObject implements PermissionProvider
         "Title" => "Titel",
         "Description" => "Beschreibung",
         "AllowsSelfJoining" => "Erlaubt Selbstbeitritt",
-        "Departments" => "Arbeits-Bereiche",
+        "Departments" => "Teams",
         "Members" => "Mitglieder",
     ];
 

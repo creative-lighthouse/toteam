@@ -2,14 +2,14 @@
 
 namespace App\Notices;
 
+use App\Notifications\PushNotificationService;
 use App\Teams\Organization;
+use Override;
+use SilverStripe\Forms\SearchableMultiDropdownField;
 use SilverStripe\ORM\DataObject;
-use App\Notices\NoticeReadStatus;
 use SilverStripe\Security\Member;
-use SilverStripe\Security\Security;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
-use App\Notifications\PushNotificationService;
 
 /**
  * Class \App\Notices\Notice
@@ -19,13 +19,11 @@ use App\Notifications\PushNotificationService;
  * @property ?string $LongText
  * @property ?string $ReleaseDate
  * @property ?string $ExpiryDate
- * @property int $ParentID
  * @property int $AuthorID
  * @property int $CategoryID
- * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Security\Member Author()
  * @method \App\Notices\NoticeCategory Category()
- * @method \SilverStripe\ORM\DataList|\App\Notices\NoticeReadStatus[] ReadStatuses()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -34,6 +32,8 @@ use App\Notifications\PushNotificationService;
  */
 class Notice extends DataObject implements PermissionProvider
 {
+    private bool $notifyAfterWrite = false;
+
     private static $db = [
         "Title" => "Varchar(255)",
         "ShortText" => "Text",
@@ -43,13 +43,12 @@ class Notice extends DataObject implements PermissionProvider
     ];
 
     private static $has_one = [
-        "Parent" => Organization::class,
         "Author" => Member::class,
         "Category" => NoticeCategory::class,
     ];
 
-    private static $has_many = [
-        "ReadStatuses" => NoticeReadStatus::class,
+    private static $many_many = [
+        "Organisations" => Organization::class,
     ];
 
     private static $field_labels = [
@@ -60,8 +59,7 @@ class Notice extends DataObject implements PermissionProvider
         "ExpiryDate" => "Ablaufdatum",
         "Author" => "Autor",
         "Category" => "Kategorie",
-        "ReadStatuses" => "Gelesen-Stati",
-        "Parent" => "Organisation",
+        "Organisations" => "Organisationen",
     ];
 
     private static $summary_fields = [
@@ -74,41 +72,42 @@ class Notice extends DataObject implements PermissionProvider
     private static $singular_name = "Ankündigung";
     private static $plural_name = "Ankündigungen";
 
+     #[Override]
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
+
+        $fields->removeByName('Organisations');
+        $orgField = SearchableMultiDropdownField::create(
+            'Organisations',
+            'Organisationen',
+            Organization::get()
+        )->setIsLazyLoaded(true);
+        $fields->addFieldToTab('Root.Main', $orgField);
+
         return $fields;
     }
 
-    public function getLink()
+    public function onBeforeWrite()
     {
-        return '/notices/view/' . $this->ID;
-    }
-
-    public function IsNewForUser()
-    {
-        $currentUser = Security::getCurrentUser();
-        if (!$currentUser) {
-            return false;
-        }
-
-        $readStatus = $this->ReadStatuses()->filter('MemberID', $currentUser->ID);
-        return $readStatus->count() === 0;
+        parent::onBeforeWrite();
+        $this->notifyAfterWrite = !$this->isInDB();
     }
 
     /**
-     * Send push notification for new notices
+     * Send push notification for new notices to all members of linked organisations
      */
     public function onAfterWrite()
     {
         parent::onAfterWrite();
 
-        // Only send notification for newly created notices
-        $changedFields = $this->getChangedFields(false, 1);
-        $isNew = isset($changedFields['ID']) && empty($changedFields['ID']['before']);
-
-        if ($isNew) {
-            PushNotificationService::notifyNewNotice($this);
+        if ($this->notifyAfterWrite) {
+            $this->notifyAfterWrite = false;
+            try {
+                PushNotificationService::notifyNewNotice($this);
+            } catch (\Exception $e) {
+                error_log('Notice notification failed: ' . $e->getMessage());
+            }
         }
     }
 
