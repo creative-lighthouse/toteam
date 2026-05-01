@@ -94,10 +94,28 @@
                     }
                 }
             }
+            &.action_icon--notifications {
+                .AppHeader_badge {
+                    position: absolute;
+                    top: -5px;
+                    right: -5px;
+                    min-width: 14px;
+                    height: 14px;
+                    padding: 0 3px;
+                    border-radius: 7px;
+                    background-color: var(--ColorStatusBad);
+                    color: var(--ColorWhite);
+                    font-size: 0.6rem;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    line-height: 1;
+                    pointer-events: none;
+                }
+            }
         }
     }
-
-    .info-popup-enter-active,
     .info-popup-leave-active {
         transition: opacity 0.15s ease, transform 0.15s ease;
     }

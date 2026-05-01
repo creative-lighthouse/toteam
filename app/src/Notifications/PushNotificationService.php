@@ -130,7 +130,7 @@ class PushNotificationService
     {
         $title = 'Neue Nachricht';
         $body = $notice->Title;
-        $url = '/notices';
+        $url = '/app/notices';
 
         self::sendToUsers('notices', $title, $body, $url);
     }
@@ -139,7 +139,7 @@ class PushNotificationService
     {
         $title = 'Neuer Lageplan verfügbar';
         $body = $map->Title;
-        $url = '/maps';
+        $url = '/app/map';
 
         self::sendToUsers('maps', $title, $body, $url);
     }
@@ -151,7 +151,7 @@ class PushNotificationService
     {
         $title = 'Neuer Essensvorschlag';
         $body = $meal->Title;
-        $url = '/food/meal/' . $meal->ID;
+        $url = '/app/food';
 
         self::sendToUsers('meals', $title, $body, $url);
     }
