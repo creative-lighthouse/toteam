@@ -2,8 +2,8 @@
 
 namespace App\Controllers\Api;
 
-use App\Events\EventDay;
-use App\Events\EventDayParticipation;
+use App\Calendar\Appointment;
+use App\Calendar\AppointmentParticipation;
 use App\Food\Meal;
 use App\Food\MealEater;
 use App\Controllers\ApiController;
@@ -60,42 +60,39 @@ class CalendarApiController extends ApiController
             ]);
         }
 
-        // Get all event days for this month in user's organizations
+        // Get all appointments for this month in user's organizations
         $startDate = date('Y-m-01', strtotime($date));
         $endDate = date('Y-m-t', strtotime($date));
 
-        $eventDays = EventDay::get()
+        $appointments = Appointment::get()
             ->filter([
-                'Parent.ParentID' => $organizationIDs,
-                'Date:GreaterThanOrEqual' => $startDate,
-                'Date:LessThanOrEqual' => $endDate
+                'Organisations.ID' => $organizationIDs,
+                'DateStart:GreaterThanOrEqual' => $startDate,
+                'DateStart:LessThanOrEqual' => $endDate
             ])
-            ->sort('Date', 'ASC');
+            ->distinct(true)
+            ->sort('DateStart', 'ASC');
 
         $events = [];
-        foreach ($eventDays as $eventDay) {
-            $participation = $eventDay->Participations()->filter(['MemberID' => $member->ID])->first();
-
-            // Get event parent
-            $eventParent = $eventDay->Parent();
+        foreach ($appointments as $appointment) {
+            $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
 
             // Get meals
             $meals = [];
-            foreach ($eventDay->Meals() as $meal) {
+            foreach ($appointment->Meals() as $meal) {
                 $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
                 $meals[] = [
                     'ID' => $meal->ID,
                     'Title' => $meal->Title,
-                    'TimeStart' => $meal->TimeStart,
-                    'TimeEnd' => $meal->TimeEnd,
+                    'Time' => $meal->Time,
                     'RenderTime' => $meal->RenderTime(),
                     'UserResponse' => $mealEater ? $mealEater->Type : null
                 ];
             }
 
-            // Get all participations for this event
+            // Get all participations for this appointment
             $participations = [];
-            foreach ($eventDay->Participations() as $p) {
+            foreach ($appointment->Participations() as $p) {
                 $participations[] = [
                     'ID' => $p->ID,
                     'MemberID' => $p->MemberID,
@@ -108,17 +105,18 @@ class CalendarApiController extends ApiController
             }
 
             $events[] = [
-                'ID' => $eventDay->ID,
-                'Title' => $eventDay->Title,
-                'Date' => $eventDay->Date,
-                'TimeStart' => $eventDay->TimeStart,
-                'TimeEnd' => $eventDay->TimeEnd,
-                'Location' => $eventDay->Location,
-                'Description' => $eventDay->Description,
-                'Status' => $eventDay->Status,
-                'Type' => $eventDay->Type ? $eventDay->Type->Title : null,
-                'EventTitle' => $eventParent ? $eventParent->Title : null,
-                'ImageURL' => $eventDay->Image() && $eventDay->Image()->exists() ? $eventDay->Image()->getURL() : null,
+                'ID' => $appointment->ID,
+                'Title' => $appointment->Title,
+                'DateStart' => $appointment->DateStart,
+                'DateEnd' => $appointment->DateEnd ?: $appointment->DateStart,
+                'TimeStart' => $appointment->AllDay ? null : $appointment->TimeStart,
+                'TimeEnd' => $appointment->AllDay ? null : $appointment->TimeEnd,
+                'AllDay' => (bool)$appointment->AllDay,
+                'Location' => $appointment->Location,
+                'Description' => $appointment->Description,
+                'Status' => $appointment->Status,
+                'Type' => $appointment->Type()->exists() ? $appointment->Type()->Title : null,
+                'ImageURL' => $appointment->Image()->exists() ? $appointment->Image()->getURL() : null,
                 'UserParticipation' => $participation ? [
                     'ID' => $participation->ID,
                     'Type' => $participation->Type,
@@ -150,22 +148,17 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('Unauthorized', 401);
         }
 
-        $eventDayID = $request->param('ID');
-        $eventDay = EventDay::get()->byID($eventDayID);
+        $appointmentID = $request->param('ID');
+        $appointment = Appointment::get()->byID($appointmentID);
 
-        if (!$eventDay) {
+        if (!$appointment) {
             return $this->errorResponse('Event not found', 404);
         }
 
-        // Check if parent exists
-        $parent = $eventDay->Parent();
-        if (!$parent || !$parent->exists()) {
-            return $this->errorResponse('Event has no parent', 500);
-        }
-
-        // Security check: Verify user has access to this organization
+        // Security check: Verify user has access via organisations
         $organizationIDs = $member->getOrganizationIDs();
-        if (!in_array($parent->ParentID, $organizationIDs)) {
+        $sharedOrgs = $appointment->Organisations()->filter('ID', $organizationIDs);
+        if (!$sharedOrgs->exists()) {
             return $this->errorResponse('Access denied', 403);
         }
 
@@ -178,25 +171,25 @@ class CalendarApiController extends ApiController
         }
 
         // Find or create participation
-        $participation = $eventDay->Participations()->filter(['MemberID' => $member->ID])->first();
+        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
 
         if (!$participation) {
-            $participation = EventDayParticipation::create();
-            $participation->ParentID = $eventDay->ID;
+            $participation = AppointmentParticipation::create();
+            $participation->ParentID = $appointment->ID;
             $participation->MemberID = $member->ID;
             $participation->Type = $type;
 
             if ($type == 'Accept') {
-                $participation->TimeStart = $eventDay->TimeStart;
-                $participation->TimeEnd = $eventDay->TimeEnd;
+                $participation->TimeStart = $appointment->TimeStart;
+                $participation->TimeEnd = $appointment->TimeEnd;
             }
         } else {
             if ($type == 'Accept' || $type == 'Maybe') {
                 if (!$participation->TimeStart) {
-                    $participation->TimeStart = $eventDay->TimeStart;
+                    $participation->TimeStart = $appointment->TimeStart;
                 }
                 if (!$participation->TimeEnd) {
-                    $participation->TimeEnd = $eventDay->TimeEnd;
+                    $participation->TimeEnd = $appointment->TimeEnd;
                 }
             }
             $participation->Type = $type;
@@ -225,21 +218,17 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('Unauthorized', 401);
         }
 
-        $eventDayID = $request->param('ID');
-        $eventDay = EventDay::get()->byID($eventDayID);
+        $appointmentID = $request->param('ID');
+        $appointment = Appointment::get()->byID($appointmentID);
 
-        if (!$eventDay) {
+        if (!$appointment) {
             return $this->errorResponse('Event not found', 404);
         }
 
         // Security check
-        $parent = $eventDay->Parent();
-        if (!$parent || !$parent->exists()) {
-            return $this->errorResponse('Event has no parent', 500);
-        }
-
         $organizationIDs = $member->getOrganizationIDs();
-        if (!in_array($parent->ParentID, $organizationIDs)) {
+        $sharedOrgs = $appointment->Organisations()->filter('ID', $organizationIDs);
+        if (!$sharedOrgs->exists()) {
             return $this->errorResponse('Access denied', 403);
         }
 
@@ -251,7 +240,7 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('Invalid time input', 400);
         }
 
-        $participation = $eventDay->Participations()->filter(['MemberID' => $member->ID])->first();
+        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
 
         if (!$participation) {
             return $this->errorResponse('No participation found', 404);
@@ -288,18 +277,14 @@ class CalendarApiController extends ApiController
         }
 
         // Security check
-        $eventDay = $meal->Parent();
-        if (!$eventDay || !$eventDay->exists()) {
-            return $this->errorResponse('Meal has no parent event', 500);
-        }
-
-        $event = $eventDay->Parent();
-        if (!$event || !$event->exists()) {
-            return $this->errorResponse('Event has no parent', 500);
+        $appointment = $meal->Parent();
+        if (!$appointment || !$appointment->exists()) {
+            return $this->errorResponse('Meal has no parent appointment', 500);
         }
 
         $organizationIDs = $member->getOrganizationIDs();
-        if (!in_array($event->ParentID, $organizationIDs)) {
+        $sharedOrgs = $appointment->Organisations()->filter('ID', $organizationIDs);
+        if (!$sharedOrgs->exists()) {
             return $this->errorResponse('Access denied', 403);
         }
 

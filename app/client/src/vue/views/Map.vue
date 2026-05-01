@@ -1,7 +1,7 @@
 <template>
   <div class="section section--MapPage">
-    <IntroBar title="Karte" description="Finde Orte und POIs auf der Karte." />
-    
+    <AppHeader title="Karte" description="Finde Orte und POIs auf der Karte." />
+
     <div class="section_content">
       <div class="section_infobox">
         <p>Die Karten-Ansicht wird hier implementiert.</p>
@@ -12,6 +12,6 @@
 </template>
 
 <script setup>
-import IntroBar from '@components/IntroBar.vue'
+import AppHeader from '@components/AppHeader.vue'
 // Map logic will be implemented here
 </script>

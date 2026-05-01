@@ -1,6 +1,6 @@
 <template>
   <div class="section section--CalendarPage">
-    <IntroBar title="Kalender" description="Verwalte deine Termine und Events." />
+    <AppHeader title="Kalender" description="Verwalte deine Termine und Events. Du kannst hier Termine erstellen, einsehen und bei den Terminen Zu- oder absagen" />
 
     <div class="section_content section_content--calendar">
       <!-- Loading State -->
@@ -49,9 +49,14 @@
             @click="selectDay(day)"
           >
             <span class="day-number">{{ day }}</span>
-            <span v-if="getEventsCountForDay(day) > 0" class="event-count">
-              {{ getEventsCountForDay(day) }}
-            </span>
+            <div v-if="getEventsCountForDay(day) > 0" class="event-dots">
+              <span
+                v-for="dot in getEventDotsForDay(day)"
+                :key="dot.status"
+                class="event-dot"
+                :class="`event-dot--${dot.status}`"
+              ></span>
+            </div>
           </div>
         </div>
 
@@ -88,9 +93,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useEventsStore } from '@stores/events'
-import IntroBar from '@components/IntroBar.vue'
+import AppHeader from '@components/AppHeader.vue'
 import EventDialog from '@components/EventDialog.vue'
 import EventCard from '@components/EventCard.vue'
+import AppMenu from '@components/AppMenu.vue'
 
 const eventsStore = useEventsStore()
 
@@ -133,8 +139,10 @@ const selectedDayEvents = computed(() => {
   if (!selectedDate.value) return []
   const events = eventsByDate.value[selectedDate.value] || []
 
-  // Sort by TimeStart ascending (earliest first)
+  // All-day events first, then timed events sorted by TimeStart
   return [...events].sort((a, b) => {
+    if (a.AllDay && !b.AllDay) return -1
+    if (!a.AllDay && b.AllDay) return 1
     if (!a.TimeStart && !b.TimeStart) return 0
     if (!a.TimeStart) return 1
     if (!b.TimeStart) return -1
@@ -158,6 +166,21 @@ const selectedDateDisplay = computed(() => {
 const getEventsCountForDay = (day) => {
   const dateKey = `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   return eventsByDate.value[dateKey]?.length || 0
+}
+
+const getEventDotsForDay = (day) => {
+  const dateKey = `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  const events = eventsByDate.value[dateKey] || []
+
+  const counts = { accept: 0, maybe: 0, decline: 0, none: 0 }
+  events.forEach(e => {
+    const status = e.UserParticipation?.Type?.toLowerCase() || 'none'
+    counts[status] = (counts[status] || 0) + 1
+  })
+
+  return Object.entries(counts)
+    .filter(([, count]) => count > 0)
+    .map(([status, count]) => ({ status, count }))
 }
 
 const selectDay = (day) => {
@@ -238,7 +261,7 @@ function handleFoodChanged(mealId, type) {
 
 // Load events on mount
 onMounted(async () => {
-  // Load current month
-  await eventsStore.fetchEvents(currentYear.value, currentMonth.value)
+  // Always fetch fresh data for the current month on page load
+  await eventsStore.fetchEvents(currentYear.value, currentMonth.value, true)
 })
 </script>

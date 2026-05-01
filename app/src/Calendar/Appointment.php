@@ -1,10 +1,7 @@
 <?php
 
-namespace App\Events;
+namespace App\Calendar;
 
-use App\Events\Event;
-use App\Events\EventDayParticipation;
-use App\Events\EventDayType;
 use App\Food\Meal;
 use App\Notifications\PushNotificationService;
 use App\Teams\Organization;
@@ -13,44 +10,59 @@ use SilverStripe\Assets\Image;
 use SilverStripe\Model\List\ArrayList;
 use SilverStripe\Model\List\GroupedList;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 use SilverStripe\Security\Security;
 
+// Same-namespace classes (imported explicitly for IDE/static analysis)
+use App\Calendar\AppointmentAgendaPoint;
+use App\Calendar\AppointmentParticipation;
+use App\Calendar\AppointmentType;
+use SilverStripe\Forms\CheckboxField;
+use SilverStripe\Forms\DateField;
+use SilverStripe\Forms\FieldGroup;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Forms\SearchableMultiDropdownField;
+use SilverStripe\Forms\TimeField;
+
 /**
- * Class \App\Events\EventDay
+ * Class \App\Calendar\Appointment
  *
  * @property ?string $Title
- * @property ?string $Date
+ * @property ?string $DateStart
+ * @property ?string $DateEnd
  * @property ?string $TimeStart
  * @property ?string $TimeEnd
+ * @property bool $AllDay
  * @property ?string $Location
  * @property ?string $Description
  * @property int $ICSSequence
  * @property ?string $Status
  * @property int $ImageID
  * @property int $TypeID
- * @property int $OrganisationID
  * @method \SilverStripe\Assets\Image Image()
- * @method \App\Events\EventDayType Type()
- * @method \App\Teams\Organization Organisation()
- * @method \SilverStripe\ORM\DataList|\App\Events\EventDayParticipation[] Participations()
+ * @method \App\Calendar\AppointmentType Type()
+ * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentParticipation[] Participations()
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
- * @method \SilverStripe\ORM\DataList|\App\Events\EventDayAgendaPoint[] AgendaPoints()
+ * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class EventDay extends DataObject implements PermissionProvider
+class Appointment extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar",
-        "Date" => "Date",
+
+        "DateStart" => "Date",
+        "DateEnd" => "Date",
         "TimeStart" => "Time",
         "TimeEnd" => "Time",
+        "AllDay" => "Boolean",
+
         "Location" => "Varchar(511)",
         "Description" => "Text",
         "ICSSequence" => "Int",
@@ -59,14 +71,17 @@ class EventDay extends DataObject implements PermissionProvider
 
     private static $has_one = [
         "Image" => Image::class,
-        "Type" => EventDayType::class,
-        'Organisation' => Organization::class,
+        "Type" => AppointmentType::class,
+    ];
+
+    private static $many_many = [
+        'Organisations' => Organization::class,
     ];
 
     private static $has_many = [
-        'Participations' => EventDayParticipation::class,
+        'Participations' => AppointmentParticipation::class,
         'Meals' => Meal::class,
-        'AgendaPoints' => EventDayAgendaPoint::class,
+        'AgendaPoints' => AppointmentAgendaPoint::class,
     ];
 
     private static $owns = [
@@ -78,10 +93,12 @@ class EventDay extends DataObject implements PermissionProvider
 
     private static $field_labels = [
         "Title" => "Titel",
-        "Date" => "Datum",
-        "TimeStart" => "Beginn",
-        "TimeEnd" => "Ende",
-        "Type" => "Tages-Typ",
+        "DateStart" => "Von",
+        "DateEnd" => "Bis",
+        "TimeStart" => "Uhrzeit von",
+        "TimeEnd" => "Uhrzeit bis",
+        "AllDay" => "Ganztägig",
+        "Type" => "Termin-Typ",
         "Image" => "Bild",
         "Participations" => "Teilnahmen",
         "Meals" => "Mahlzeiten",
@@ -96,20 +113,69 @@ class EventDay extends DataObject implements PermissionProvider
         "Status" => "Status",
     ];
 
-    private static $table_name = 'EventDay';
-    private static $singular_name = "Termin (legacy)";
-    private static $plural_name = "Termine (legacy)";
-    private static $default_sort = ['Date' => 'ASC'];
+    private static $table_name = 'Appointment';
+    private static $singular_name = "Termin";
+    private static $plural_name = "Termine";
+    private static $default_sort = ['DateStart' => 'ASC'];
 
     #[Override]
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
-        $fields->removeByName("ICSSequence");
+        $fields->removeByName(["ICSSequence", "DateStart", "DateEnd", "TimeStart", "TimeEnd", "AllDay"]);
+
+        // Compact date row: [Von] [Bis] [☐ Ganztägig]
+        $fields->addFieldsToTab('Root.Main', [
+            FieldGroup::create('Datum', [
+                DateField::create('DateStart', 'Von'),
+                DateField::create('DateEnd', 'Bis'),
+            ]),
+            // Time row – only relevant when not AllDay
+            FieldGroup::create('Uhrzeit', [
+                TimeField::create('TimeStart', 'Von'),
+                TimeField::create('TimeEnd', 'Bis'),
+                CheckboxField::create('AllDay', 'Ganztägig'),
+            ]),
+        ]);
 
         // Make TypeID dropdown optional
         if ($typeField = $fields->dataFieldByName('TypeID')) {
             $typeField->setEmptyString('-- Kein Typ --');
+        }
+
+        $fields->removeByName('Organisations');
+        $orgField = SearchableMultiDropdownField::create(
+            'Organisations',
+            'Organisationen',
+            Organization::get(),
+            'ID',
+            'Title'
+        )->setIsLazyLoaded(true);
+        $fields->addFieldToTab('Root.Main', $orgField);
+
+        //Move image to bottom
+        $imageField = $fields->dataFieldByName('Image');
+        $fields->removeByName('Image');
+        $fields->addFieldToTab('Root.Main', $imageField);
+
+        //Change Meal and AgendaPoints Gridfields to use GridFieldConfig_RecordEditor
+        $mealField = $fields->dataFieldByName('Meals');
+        if ($mealField) {
+            $mealField->setConfig(GridFieldConfig_RecordEditor::create());
+        }
+
+        $participantsField = $fields->dataFieldByName('Participations');
+        $fields->removeByName('Participations');
+        if ($participantsField) {
+            $participantsField->setConfig(GridFieldConfig_RecordEditor::create());
+            $fields->addFieldToTab('Root.Teilnehmer', $participantsField);
+        }
+
+        $agendaField = $fields->dataFieldByName('AgendaPoints');
+        $fields->removeByName('AgendaPoints');
+        if ($agendaField) {
+            $agendaField->setConfig(GridFieldConfig_RecordEditor::create());
+            $fields->addFieldToTab('Root.Tagesordnung', $agendaField);
         }
 
         return $fields;
@@ -142,11 +208,11 @@ class EventDay extends DataObject implements PermissionProvider
             $event = $this;
             if ($this->Status === 'Suggested') {
                 register_shutdown_function(function() use ($event) {
-                    PushNotificationService::notifyEventSuggested($event);
+                    PushNotificationService::notifyAppointmentSuggested($event);
                 });
             } elseif ($this->Status === 'Scheduled') {
                 register_shutdown_function(function() use ($event) {
-                    PushNotificationService::notifyEventScheduled($event);
+                    PushNotificationService::notifyAppointmentScheduled($event);
                 });
             }
         } elseif ($statusChanged) {
@@ -157,11 +223,11 @@ class EventDay extends DataObject implements PermissionProvider
 
             if ($newStatus === 'Scheduled') {
                 register_shutdown_function(function() use ($event) {
-                    PushNotificationService::notifyEventScheduled($event);
+                    PushNotificationService::notifyAppointmentScheduled($event);
                 });
             } elseif ($newStatus === 'Cancelled') {
                 register_shutdown_function(function() use ($event) {
-                    PushNotificationService::notifyEventCancelled($event);
+                    PushNotificationService::notifyAppointmentCancelled($event);
                 });
             }
         }
@@ -170,8 +236,8 @@ class EventDay extends DataObject implements PermissionProvider
     public function RenderDate()
     {
         try {
-            $date = $this->dbObject('Date');
-            if ($date && !$date->isNull()) {
+            $date = $this->dbObject('DateStart');
+            if ($date && $date->getValue()) {
                 return $date->Format('dd.MM.yy');
             }
         } catch (\Exception $e) {
@@ -182,18 +248,20 @@ class EventDay extends DataObject implements PermissionProvider
 
     public function RenderDateWithTime()
     {
-        $date = $this->dbObject('Date');
-        if ($date) {
-            if ($this->TimeStart && $this->TimeEnd) {
-                return $this->dbObject('Date')->Format('dd.MM.yy') . ', ' . $this->dbObject('TimeStart')->Format('HH:mm') . ' - ' . $this->dbObject('TimeEnd')->Format('HH:mm');
+        $date = $this->dbObject('DateStart');
+        if ($date && $date->getValue()) {
+            $dateStr = $date->Format('dd.MM.yy');
+            if ($this->AllDay) {
+                return $dateStr . ' (Ganztägig)';
+            } elseif ($this->TimeStart && $this->TimeEnd) {
+                return $dateStr . ', ' . $this->dbObject('TimeStart')->Format('HH:mm') . ' – ' . $this->dbObject('TimeEnd')->Format('HH:mm');
             } elseif ($this->TimeStart) {
-                return $this->dbObject('Date')->Format('dd.MM.yy') . ', Ab' . $this->dbObject('TimeStart')->Format('HH:mm');
+                return $dateStr . ', ab ' . $this->dbObject('TimeStart')->Format('HH:mm');
             } else {
-                return $this->dbObject('Date')->Format('dd.MM.yy');
+                return $dateStr;
             }
-        } else {
-            return "Kein Datum";
         }
+        return "Kein Datum";
     }
 
     public function getEvent()
@@ -207,7 +275,7 @@ class EventDay extends DataObject implements PermissionProvider
         if (!$member) {
             return null;
         }
-        return EventDayParticipation::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
+        return AppointmentParticipation::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
     }
 
     public function getGroupedParticipations()
@@ -253,21 +321,17 @@ class EventDay extends DataObject implements PermissionProvider
 
     public function getLink()
     {
-        $event = $this->Parent();
-        if ($event) {
-            return "/calendar" . "?date=" . $this->Date . "&eventID=" . $this->ID;
-        }
-        return null;
+        return "/calendar?date=" . $this->DateStart . "&eventID=" . $this->ID;
     }
 
     public function getFullStartDate()
     {
-        return $this->Date . ' ' . $this->TimeStart;
+        return $this->DateStart . ' ' . $this->TimeStart;
     }
 
     public function getFullEndDate()
     {
-        return $this->Date . ' ' . $this->TimeEnd;
+        return ($this->DateEnd ?: $this->DateStart) . ' ' . $this->TimeEnd;
     }
 
     public function getAgenda()
@@ -326,7 +390,7 @@ class EventDay extends DataObject implements PermissionProvider
 
     public function getAllOfSameTitleSuggestedEvents()
     {
-        $alloptions = EventDay::get()->filter([
+        $alloptions = Appointment::get()->filter([
             'Title' => $this->Title,
             'Status' => 'Suggested',
         ]);
@@ -341,25 +405,25 @@ class EventDay extends DataObject implements PermissionProvider
     public function providePermissions()
     {
         return [
-            'CREATE_EVENTDAYS' => [
-                'name' => 'Veranstaltungstag erstellen',
-                'category' => 'Events',
-                'help' => 'Erlaubt das Erstellen, von Veranstaltungstagen'
+            'CREATE_APPOINTMENTS' => [
+                'name' => 'Termine erstellen',
+                'category' => 'Termine',
+                'help' => 'Erlaubt das Erstellen von Terminen'
             ],
-            'EDIT_EVENTDAYS' => [
-                'name' => 'Veranstaltungstage bearbeiten',
-                'category' => 'Events',
-                'help' => 'Erlaubt das Bearbeiten von Veranstaltungstagen'
+            'EDIT_APPOINTMENTS' => [
+                'name' => 'Termine bearbeiten',
+                'category' => 'Termine',
+                'help' => 'Erlaubt das Bearbeiten von Terminen'
             ],
-            'VIEW_EVENTDAYS' => [
-                'name' => 'Veranstaltungstage ansehen',
-                'category' => 'Events',
-                'help' => 'Erlaubt das Ansehen von Veranstaltungstagen'
+            'VIEW_APPOINTMENTS' => [
+                'name' => 'Termine ansehen',
+                'category' => 'Termine',
+                'help' => 'Erlaubt das Ansehen von Terminen'
             ],
-            'DELETE_EVENTDAYS' => [
-                'name' => 'Veranstaltungstage löschen',
-                'category' => 'Events',
-                'help' => 'Erlaubt das Löschen von Veranstaltungstagen'
+            'DELETE_APPOINTMENTS' => [
+                'name' => 'Termine löschen',
+                'category' => 'Termine',
+                'help' => 'Erlaubt das Löschen von Terminen'
             ],
         ];
     }
@@ -367,24 +431,21 @@ class EventDay extends DataObject implements PermissionProvider
     public function canCreate($member = null, $context = [])
     {
         //Check user for CREATE_EVENTDAYS permission
-        return Permission::check('CREATE_EVENTDAYS', 'any', $member);
+        return Permission::check('CREATE_APPOINTMENTS', 'any', $member);
     }
 
     public function canEdit($member = null, $context = [])
     {
-        //Check user for EDIT_EVENTDAYS permission
-        return Permission::check('EDIT_EVENTDAYS', 'any', $member);
+        return Permission::check('EDIT_APPOINTMENTS', 'any', $member);
     }
 
     public function canDelete($member = null, $context = [])
     {
-        //Check user for DELETE_EVENTDAYS permission
-        return Permission::check('DELETE_EVENTDAYS', 'any', $member);
+        return Permission::check('DELETE_APPOINTMENTS', 'any', $member);
     }
 
     public function canView($member = null, $context = [])
     {
-        //Check user for VIEW_EVENTDAYS permission
-        return Permission::check('VIEW_EVENTDAYS', 'any', $member);
+        return Permission::check('VIEW_APPOINTMENTS', 'any', $member);
     }
 }

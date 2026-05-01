@@ -6,6 +6,7 @@ use App\Maps\Map;
 use App\Food\Meal;
 use App\Notices\Notice;
 use App\Events\EventDay;
+use App\Calendar\Appointment;
 use SilverStripe\Security\Member;
 use SilverStripe\Core\Environment;
 
@@ -82,6 +83,42 @@ class PushNotificationService
         $title = '❌ Termin abgesagt';
         $body = $event->Title . ' am ' . $event->RenderDate() . ' wurde abgesagt.';
         $url = $event->getLink();
+
+        self::sendToUsers('events', $title, $body, $url);
+    }
+
+    /**
+     * Send notification for suggested appointment
+     */
+    public static function notifyAppointmentSuggested(Appointment $appointment)
+    {
+        $title = '💡 Terminvorschlag';
+        $body = $appointment->Title . ' am ' . $appointment->RenderDate();
+        $url = $appointment->getLink();
+
+        self::sendToUsers('events', $title, $body, $url);
+    }
+
+    /**
+     * Send notification for scheduled appointment
+     */
+    public static function notifyAppointmentScheduled(Appointment $appointment)
+    {
+        $title = '📅 Neuer Termin festgelegt';
+        $body = $appointment->Title . ' am ' . $appointment->RenderDate();
+        $url = $appointment->getLink();
+
+        self::sendToUsers('events', $title, $body, $url);
+    }
+
+    /**
+     * Send notification for cancelled appointment
+     */
+    public static function notifyAppointmentCancelled(Appointment $appointment)
+    {
+        $title = '❌ Termin abgesagt';
+        $body = $appointment->Title . ' am ' . $appointment->RenderDate() . ' wurde abgesagt.';
+        $url = $appointment->getLink();
 
         self::sendToUsers('events', $title, $body, $url);
     }

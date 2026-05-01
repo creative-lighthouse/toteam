@@ -174,7 +174,7 @@ onMounted(() => {
     height: calc(100dvh - 160px); /* Feste Höhe damit es scrollbar ist */
     background-color: var(--color-background, #fff);
     position: fixed;
-    top: 80px; /* Unter der IntroBar */
+    top: 80px; /* Unter der AppHeader */
     left: 0;
     right: 0;
     transform: translateX(0);

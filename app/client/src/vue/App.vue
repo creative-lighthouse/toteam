@@ -1,9 +1,9 @@
 <template>
   <div id="vue-app">
     <div class="area_header" v-if="authStore.isAuthenticated">
-      <AppHeader />
+      <AppMenu />
     </div>
-    
+
     <main class="area_content main">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
@@ -17,7 +17,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useAuthStore } from '@stores/auth'
-import AppHeader from '@components/AppHeader.vue'
+import AppMenu from './components/AppMenu.vue'
 
 const authStore = useAuthStore()
 

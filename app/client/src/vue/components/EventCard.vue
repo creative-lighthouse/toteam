@@ -1,11 +1,21 @@
 <template>
-  <div class="event-card" :class="`event-card--${event.EventType || 'default'}`" @click="openEventDetails">
+  <div
+    class="event-card"
+    :class="[
+      `event-card--${event.EventType || 'default'}`,
+      event.AllDay ? 'event-card--allday' : 'event-card--timed'
+    ]"
+    @click="openEventDetails"
+  >
     <div class="event-card_header">
       <h4 class="event-card_title">{{ event.Title }}</h4>
-      <span v-if="event.TimeStart" class="event-card_time">
+      <span v-if="event.AllDay" class="event-card_time event-card_time--allday">
+        Ganztägig
+      </span>
+      <span v-else-if="event.TimeStart" class="event-card_time">
         {{ formatTime(event.TimeStart) }}
         <template v-if="event.TimeEnd">
-          - {{ formatTime(event.TimeEnd) }}
+          – {{ formatTime(event.TimeEnd) }}
         </template>
       </span>
     </div>
@@ -24,7 +34,7 @@
             {{ getParticipationLabel(event.UserParticipation.Type) }}
         </span>
         <span v-else class="event-card_participation participation--none">
-            Noch keine Antwort
+            Keine Antwort
         </span>
     </div>
   </div>
