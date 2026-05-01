@@ -1,41 +1,41 @@
 <template>
   <div class="section section--LoginPage">
-    <IntroBar title="Login" description="Melde dich mit deinen Zugangsdaten an." />
-    
+    <AppHeader title="Login" description="Melde dich mit deinen Zugangsdaten an." />
+
     <div class="section_content">
       <div class="section_infobox">
         <form @submit.prevent="handleLogin" class="login-form">
           <div v-if="authStore.error" class="error-message">
             {{ authStore.error }}
           </div>
-          
+
           <div class="form-group">
             <label for="email">E-Mail</label>
-            <input 
+            <input
               id="email"
-              v-model="email" 
-              type="email" 
-              required 
+              v-model="email"
+              type="email"
+              required
               :disabled="authStore.loading"
               class="form-control"
             >
           </div>
-          
+
           <div class="form-group">
             <label for="password">Passwort</label>
-            <input 
+            <input
               id="password"
-              v-model="password" 
-              type="password" 
-              required 
+              v-model="password"
+              type="password"
+              required
               :disabled="authStore.loading"
               class="form-control"
             >
           </div>
-          
-          <button 
-            type="submit" 
-            class="button button--primary" 
+
+          <button
+            type="submit"
+            class="button button--primary"
             :disabled="authStore.loading"
           >
             {{ authStore.loading ? 'Anmelden...' : 'Anmelden' }}
@@ -50,7 +50,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
-import IntroBar from '@components/IntroBar.vue'
+import AppHeader from '@components/AppHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -60,7 +60,7 @@ const password = ref('')
 
 async function handleLogin() {
   const success = await authStore.login(email.value, password.value)
-  
+
   if (success) {
     router.push({ name: 'Dashboard' })
   }

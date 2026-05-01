@@ -13,10 +13,10 @@ export const useEventsStore = defineStore('events', () => {
   const eventsByDate = computed(() => {
     const grouped = {}
     events.value.forEach(event => {
-      if (!grouped[event.Date]) {
-        grouped[event.Date] = []
+      if (!grouped[event.DateStart]) {
+        grouped[event.DateStart] = []
       }
-      grouped[event.Date].push(event)
+      grouped[event.DateStart].push(event)
     })
     return grouped
   })
@@ -26,8 +26,8 @@ export const useEventsStore = defineStore('events', () => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     return events.value
-      .filter(e => new Date(e.Date) >= today)
-      .sort((a, b) => a.Date.localeCompare(b.Date))
+      .filter(e => new Date(e.DateStart) >= today)
+      .sort((a, b) => a.DateStart.localeCompare(b.DateStart))
   })
 
   // Actions
@@ -53,12 +53,12 @@ export const useEventsStore = defineStore('events', () => {
       // Konvertiere API-Daten zu Event-Instanzen
       const newEvents = (response.events || []).map(data => Event.fromAPI(data))
 
-      // Merge mit existierenden Events (keine Duplikate)
-      const existingIds = new Set(events.value.map(e => e.ID))
-      const uniqueNewEvents = newEvents.filter(e => !existingIds.has(e.ID))
+      // Ersetze alle Events des geladenen Monats, behalte andere Monate
+      const monthPrefix = `${year}-${String(month).padStart(2, '0')}`
+      const otherMonthEvents = events.value.filter(e => !e.DateStart.startsWith(monthPrefix))
 
-      events.value = [...events.value, ...uniqueNewEvents].sort((a, b) =>
-        a.Date.localeCompare(b.Date)
+      events.value = [...otherMonthEvents, ...newEvents].sort((a, b) =>
+        a.DateStart.localeCompare(b.DateStart)
       )
 
       return newEvents

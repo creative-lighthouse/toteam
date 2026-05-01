@@ -7,11 +7,12 @@ export class Event {
     this.ID = data.ID || null
     this.Title = data.Title || ''
     this.Description = data.Description || ''
-    this.Date = data.Date || '' // Format: YYYY-MM-DD
+    this.DateStart = data.DateStart || '' // Format: YYYY-MM-DD
+    this.DateEnd = data.DateEnd || data.DateStart || '' // Format: YYYY-MM-DD
     this.TimeStart = data.TimeStart || null
     this.TimeEnd = data.TimeEnd || null
-    this.Location = data.Location || ''
     this.AllDay = data.AllDay || false
+    this.Location = data.Location || ''
     this.Color = data.Color || null
     this.EventType = data.EventType || null
 
@@ -38,8 +39,8 @@ export class Event {
    * Formatiert das Datum im deutschen Format
    */
   getFormattedDate() {
-    if (!this.Date) return ''
-    const date = new Date(this.Date)
+    if (!this.DateStart) return ''
+    const date = new Date(this.DateStart)
     return new Intl.DateTimeFormat('de-DE', {
       weekday: 'long',
       year: 'numeric',
@@ -52,10 +53,10 @@ export class Event {
    * Gibt zurück ob der Event heute ist
    */
   isToday() {
-    if (!this.Date) return false
+    if (!this.DateStart) return false
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const eventDate = new Date(this.Date)
+    const eventDate = new Date(this.DateStart)
     eventDate.setHours(0, 0, 0, 0)
     return today.getTime() === eventDate.getTime()
   }
@@ -64,10 +65,10 @@ export class Event {
    * Gibt zurück ob der Event in der Zukunft liegt
    */
   isFuture() {
-    if (!this.Date) return false
+    if (!this.DateStart) return false
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const eventDate = new Date(this.Date)
+    const eventDate = new Date(this.DateStart)
     eventDate.setHours(0, 0, 0, 0)
     return eventDate > today
   }
@@ -76,10 +77,10 @@ export class Event {
    * Gibt zurück ob der Event in der Vergangenheit liegt
    */
   isPast() {
-    if (!this.Date) return false
+    if (!this.DateStart) return false
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const eventDate = new Date(this.Date)
+    const eventDate = new Date(this.DateStart)
     eventDate.setHours(0, 0, 0, 0)
     return eventDate < today
   }
@@ -137,11 +138,12 @@ export class Event {
       ID: this.ID,
       Title: this.Title,
       Description: this.Description,
-      Date: this.Date,
+      DateStart: this.DateStart,
+      DateEnd: this.DateEnd,
       TimeStart: this.TimeStart,
       TimeEnd: this.TimeEnd,
-      Location: this.Location,
       AllDay: this.AllDay,
+      Location: this.Location,
       Color: this.Color,
       EventType: this.EventType,
       UserParticipation: this.UserParticipation,

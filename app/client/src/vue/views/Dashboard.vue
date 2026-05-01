@@ -1,25 +1,25 @@
 <template>
   <div class="section section--DashboardPage">
-    <IntroBar 
-      title="Dashboard" 
+    <AppHeader
+      title="Dashboard"
       description="Willkommen auf deinem ToTeam Dashboard! Hier findest du eine Übersicht über deine anstehenden Termine und heutigen Mahlzeiten."
     />
-    
+
     <div class="section_content">
       <!-- Welcome Box -->
       <div class="section_infobox infobox--welcome">
         <p class="welcome_text">Willkommen zurück, <b>{{ authStore.user?.FirstName }}!</b></p>
         <div class="welcome_profileimage">
-          <img 
-            v-if="authStore.user?.ProfileImage" 
-            :src="authStore.user.ProfileImage.URL" 
-            :alt="`Profilbild von ${authStore.user.FirstName}`" 
+          <img
+            v-if="authStore.user?.ProfileImage"
+            :src="authStore.user.ProfileImage.URL"
+            :alt="`Profilbild von ${authStore.user.FirstName}`"
             class="profile_image"
           >
-          <img 
-            v-else 
-            :src="authStore.user?.Gravatar" 
-            alt="Standard Profilbild" 
+          <img
+            v-else
+            :src="authStore.user?.Gravatar"
+            alt="Standard Profilbild"
             class="profile_image"
           >
         </div>
@@ -56,8 +56,8 @@
       <div v-if="dashboardStore.hasUpcomingEvents" class="section_infobox">
         <h2 class="hl2">Deine anstehenden Termine:</h2>
         <ul class="infobox_list">
-          <li 
-            v-for="event in dashboardStore.upcomingEvents" 
+          <li
+            v-for="event in dashboardStore.upcomingEvents"
             :key="event.ID"
             :class="{ accepted: event.Type === 'Accept', maybe: event.Type === 'Maybe' }"
           >
@@ -94,7 +94,7 @@
 import { onMounted } from 'vue'
 import { useAuthStore } from '@stores/auth'
 import { useDashboardStore } from '@stores/dashboard'
-import IntroBar from '@components/IntroBar.vue'
+import AppHeader from '@components/AppHeader.vue'
 
 const authStore = useAuthStore()
 const dashboardStore = useDashboardStore()

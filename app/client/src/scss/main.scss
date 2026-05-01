@@ -7,10 +7,9 @@
 @use "typography.scss";
 @use "forms.scss";
 
-@use "layout/header.scss";
-@use "layout/introbar.scss";
+@use "layout/AppMenu.scss";
+@use "layout/AppHeader.scss";
 @use "layout/dialog.scss";
-@use "layout/calendar.scss";
 
 @use "pages/DashboardPage.scss";
 @use "pages/RegistrationPage.scss";

@@ -1,25 +1,25 @@
 <template>
   <div class="section section--NoticesPage">
-    <IntroBar title="Mitteilungen" description="Hier findest du alle wichtigen Mitteilungen deines Teams.">
+    <AppHeader title="Mitteilungen" description="Hier findest du alle wichtigen Mitteilungen deines Teams.">
       <span v-if="noticesStore.unreadCount > 0" class="badge">
         {{ noticesStore.unreadCount }} ungelesen
       </span>
-    </IntroBar>
-    
+    </AppHeader>
+
     <div class="section_content">
       <!-- Category Filter -->
       <div class="section_filter">
-        <button 
-          @click="noticesStore.setCategory(null)" 
+        <button
+          @click="noticesStore.setCategory(null)"
           class="button"
           :class="{ active: !noticesStore.selectedCategory }"
         >
           Alle
         </button>
-        <button 
-          v-for="category in noticesStore.categories" 
+        <button
+          v-for="category in noticesStore.categories"
           :key="category.ID"
-          @click="noticesStore.setCategory(category)" 
+          @click="noticesStore.setCategory(category)"
           class="button"
           :class="{ active: noticesStore.selectedCategory?.ID === category.ID }"
         >
@@ -40,8 +40,8 @@
 
       <!-- Notices List -->
       <div v-if="!noticesStore.loading && !noticesStore.error" class="notices-list">
-        <div 
-          v-for="notice in noticesStore.filteredNotices" 
+        <div
+          v-for="notice in noticesStore.filteredNotices"
           :key="notice.ID"
           class="notice-item"
           :class="{ 'notice--unread': !notice.IsRead }"
@@ -54,9 +54,9 @@
           <div class="notice-content" v-html="notice.LongText"></div>
           <div class="notice-footer">
             <span class="notice-category">{{ notice.Category?.Title }}</span>
-            <button 
-              v-if="!notice.IsRead" 
-              @click="markAsRead(notice.ID)" 
+            <button
+              v-if="!notice.IsRead"
+              @click="markAsRead(notice.ID)"
               class="button button--small"
             >
               Als gelesen markieren
@@ -82,7 +82,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useNoticesStore } from '@stores/notices'
-import IntroBar from '@components/IntroBar.vue'
+import AppHeader from '@components/AppHeader.vue'
 
 const noticesStore = useNoticesStore()
 
