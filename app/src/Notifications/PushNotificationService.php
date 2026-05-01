@@ -124,15 +124,30 @@ class PushNotificationService
     }
 
     /**
-     * Send notification for new notice
+     * Send notification for new notice – only to members of linked organisations
      */
     public static function notifyNewNotice(Notice $notice)
     {
         $title = 'Neue Nachricht';
         $body = $notice->Title;
-        $url = '/app/notices';
+        $url = $notice->getLink();
 
-        self::sendToUsers('notices', $title, $body, $url);
+        // Collect member IDs across all linked organisations
+        $memberIDs = [];
+        foreach ($notice->Organisations() as $organisation) {
+            foreach ($organisation->Members() as $member) {
+                $memberIDs[$member->ID] = $member->ID;
+            }
+        }
+
+        foreach ($memberIDs as $memberID) {
+            self::saveNotification($memberID, 'notices', $title, $body, $url);
+
+            $member = Member::get()->byID($memberID);
+            if ($member) {
+                self::sendToMember($member, $title, $body, $url);
+            }
+        }
     }
 
     public static function notifyNewMap(Map $map)

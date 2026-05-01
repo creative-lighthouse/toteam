@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Notices\Notice;
-use App\Notices\NoticeReadStatus;
 use App\Controllers\BaseController;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
@@ -51,23 +50,6 @@ class NoticesController extends BaseController
             return $this->httpError(404, 'Ankündigung nicht gefunden');
         }
 
-        //Mark notice as read for current user
-        $currentUser = Security::getCurrentUser();
-        if ($currentUser) {
-            $readStatus = NoticeReadStatus::get()
-                ->filter([
-                    'ParentID' => $notice->ID,
-                    'MemberID' => $currentUser->ID,
-                ])->first();
-            if (!$readStatus) {
-                $readStatus = NoticeReadStatus::create();
-                $readStatus->ParentID = $notice->ID;
-                $readStatus->MemberID = $currentUser->ID;
-            }
-            $readStatus->DateTime = date('Y-m-d H:i:s');
-            $readStatus->write();
-        }
-
         return [
             'Notice' => $notice,
         ];
@@ -77,39 +59,27 @@ class NoticesController extends BaseController
     {
         $member = \SilverStripe\Security\Member::get()->byID($memberID);
         if (!$member) {
-            return Notice::get()->filter('ID', 0); // Return empty list
+            return Notice::get()->filter('ID', 0);
         }
 
         $organizationIDs = $member->getOrganizationIDs();
-        $allNotices = Notice::get();
 
-        // Filter by user's organizations
-        if (!empty($organizationIDs)) {
-            $allNotices = $allNotices->filter('ParentID', $organizationIDs);
-        } else {
-            return Notice::get()->filter('ID', 0); // Return empty list
+        if (empty($organizationIDs)) {
+            return Notice::get()->filter('ID', 0);
         }
 
-        //Filter notices based on release and expiry date
         $currentDate = date('Y-m-d H:i:s');
-        $allNotices = $allNotices->filterAny([
-            'ReleaseDate:LessThanOrEqual' => $currentDate,
-            'ReleaseDate' => null,
-        ])->filterAny([
-            'ExpiryDate:GreaterThanOrEqual' => $currentDate,
-            'ExpiryDate' => null,
-        ]);
+        $notices = Notice::get()
+            ->filter(['Organisations.ID' => $organizationIDs])
+            ->distinct(true)
+            ->filterAny([
+                'ReleaseDate:LessThanOrEqual' => $currentDate,
+                'ReleaseDate' => null,
+            ])->filterAny([
+                'ExpiryDate:GreaterThanOrEqual' => $currentDate,
+                'ExpiryDate' => null,
+            ]);
 
-        $readNoticeIDs = NoticeReadStatus::get()
-            ->filter('MemberID', $memberID)
-            ->column('ParentID');
-
-        if (!empty($readNoticeIDs)) {
-            $unreadNotices = $allNotices->exclude('ID', $readNoticeIDs);
-        } else {
-            $unreadNotices = $allNotices;
-        }
-
-        return $unreadNotices;
+        return $notices;
     }
 }

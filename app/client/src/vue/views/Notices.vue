@@ -54,13 +54,6 @@
           <div class="notice-content" v-html="notice.LongText"></div>
           <div class="notice-footer">
             <span class="notice-category">{{ notice.Category?.Title }}</span>
-            <button
-              v-if="!notice.IsRead"
-              @click="markAsRead(notice.ID)"
-              class="button button--small"
-            >
-              Als gelesen markieren
-            </button>
           </div>
         </div>
 
@@ -87,16 +80,8 @@ import AppHeader from '@components/AppHeader.vue'
 const noticesStore = useNoticesStore()
 
 onMounted(() => {
-  noticesStore.fetchNotices()
+  noticesStore.fetchNotices(true)
 })
-
-async function markAsRead(noticeId) {
-  try {
-    await noticesStore.markAsRead(noticeId)
-  } catch (error) {
-    alert('Fehler beim Markieren als gelesen')
-  }
-}
 </script>
 
 <style scoped>
