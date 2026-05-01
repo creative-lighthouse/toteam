@@ -3,13 +3,8 @@
     <AppHeader title="Kalender" description="Verwalte deine Termine und Events. Du kannst hier Termine erstellen, einsehen und bei den Terminen Zu- oder absagen" />
 
     <div class="section_content section_content--calendar">
-      <!-- Loading State -->
-      <div v-if="loading" class="loading-state">
-        <p>Lade Termine...</p>
-      </div>
-
       <!-- Error State -->
-      <div v-else-if="error" class="error-state">
+      <div v-if="error" class="error-state">
         <p>Fehler beim Laden der Termine: {{ error }}</p>
       </div>
 
@@ -17,41 +12,42 @@
       <div v-else class="events-calendar">
         <!-- Month Navigation -->
         <div class="calendar-header">
-          <button @click="previousMonth" class="btn-nav">&lt;</button>
+          <button @click="previousMonth" class="btn-nav">
+            <img :src="actionBack" alt="Previous Month" />
+          </button>
           <h2>{{ monthYearDisplay }}</h2>
-          <button @click="nextMonth" class="btn-nav">&gt;</button>
+          <button @click="jumptotoday" class="btn-today" :class="{ 'btn-nav--current-month': isCurrentMonth }" title="Heute">
+            <span class="day-number">Heute</span>
+          </button>
+          <button @click="nextMonth" class="btn-nav">
+            <img :src="actionForward" alt="Next Month" />
+          </button>
         </div>
 
         <!-- Calendar Grid -->
-        <div class="calendar-grid">
+        <div class="calendar-grid" :class="{ 'calendar-grid--loading': monthLoading }">
           <!-- Weekday Headers -->
           <div v-for="day in weekDays" :key="day" class="calendar-weekday">
             {{ day }}
           </div>
 
-          <!-- Empty cells for days before month starts -->
+          <!-- Calendar Days (6 rows × 7 cols, includes prev/next month) -->
           <div
-            v-for="n in firstDayOfMonth"
-            :key="`empty-${n}`"
-            class="calendar-day calendar-day--empty"
-          ></div>
-
-          <!-- Calendar Days -->
-          <div
-            v-for="day in daysInMonth"
-            :key="day"
+            v-for="cell in calendarDays"
+            :key="`${cell.year}-${cell.month}-${cell.day}`"
             class="calendar-day"
             :class="{
-              'calendar-day--has-events': getEventsCountForDay(day) > 0,
-              'calendar-day--selected': isSelectedDay(day),
-              'calendar-day--today': isToday(day)
+              'calendar-day--outside': !cell.isCurrentMonth,
+              'calendar-day--has-events': getEventsCountForDay(cell.day, cell.month, cell.year) > 0,
+              'calendar-day--selected': isSelectedDay(cell.day, cell.month, cell.year),
+              'calendar-day--today': isToday(cell.day, cell.month, cell.year)
             }"
-            @click="selectDay(day)"
+            @click="selectDay(cell.day, cell.month, cell.year)"
           >
-            <span class="day-number">{{ day }}</span>
-            <div v-if="getEventsCountForDay(day) > 0" class="event-dots">
+            <span class="day-number">{{ cell.day }}</span>
+            <div v-if="getEventsCountForDay(cell.day, cell.month, cell.year) > 0" class="event-dots">
               <span
-                v-for="dot in getEventDotsForDay(day)"
+                v-for="dot in getEventDotsForDay(cell.day, cell.month, cell.year)"
                 :key="dot.status"
                 class="event-dot"
                 :class="`event-dot--${dot.status}`"
@@ -92,17 +88,22 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useEventsStore } from '@stores/events'
 import AppHeader from '@components/AppHeader.vue'
 import EventDialog from '@components/EventDialog.vue'
 import EventCard from '@components/EventCard.vue'
 import AppMenu from '@components/AppMenu.vue'
+import actionForward from '../../../icons/actions/action_forward.svg'
+import actionBack from '../../../icons/actions/action_back.svg'
 
 const eventsStore = useEventsStore()
+const route = useRoute()
 
 // Use store state
 const loading = computed(() => eventsStore.loading)
 const error = computed(() => eventsStore.error)
+const monthLoading = ref(false)
 
 // Calendar state
 const currentMonth = ref(new Date().getMonth() + 1) // 1-12
@@ -129,6 +130,37 @@ const firstDayOfMonth = computed(() => {
   const day = new Date(currentYear.value, currentMonth.value - 1, 1).getDay()
   // Convert Sunday (0) to 7, then subtract 1 to make Monday = 0
   return day === 0 ? 6 : day - 1
+})
+
+// Always 42 cells (6 rows × 7 cols), filling in prev/next month days
+const calendarDays = computed(() => {
+  const cells = []
+  const totalCells = 42
+  const offset = firstDayOfMonth.value
+  const dim = daysInMonth.value
+
+  // Days from previous month
+  const prevMonthDim = new Date(currentYear.value, currentMonth.value - 1, 0).getDate()
+  const prevMonth = currentMonth.value === 1 ? 12 : currentMonth.value - 1
+  const prevYear = currentMonth.value === 1 ? currentYear.value - 1 : currentYear.value
+  for (let i = offset - 1; i >= 0; i--) {
+    cells.push({ day: prevMonthDim - i, month: prevMonth, year: prevYear, isCurrentMonth: false })
+  }
+
+  // Days of current month
+  for (let d = 1; d <= dim; d++) {
+    cells.push({ day: d, month: currentMonth.value, year: currentYear.value, isCurrentMonth: true })
+  }
+
+  // Days from next month
+  const nextMonth = currentMonth.value === 12 ? 1 : currentMonth.value + 1
+  const nextYear = currentMonth.value === 12 ? currentYear.value + 1 : currentYear.value
+  let nextDay = 1
+  while (cells.length < totalCells) {
+    cells.push({ day: nextDay++, month: nextMonth, year: nextYear, isCurrentMonth: false })
+  }
+
+  return cells
 })
 
 // Group events by date (using eventsByDate from store)
@@ -163,14 +195,15 @@ const selectedDateDisplay = computed(() => {
 })
 
 // Calendar methods
-const getEventsCountForDay = (day) => {
-  const dateKey = `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  return eventsByDate.value[dateKey]?.length || 0
+const makeDateKey = (day, month, year) =>
+  `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+const getEventsCountForDay = (day, month = currentMonth.value, year = currentYear.value) => {
+  return eventsByDate.value[makeDateKey(day, month, year)]?.length || 0
 }
 
-const getEventDotsForDay = (day) => {
-  const dateKey = `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  const events = eventsByDate.value[dateKey] || []
+const getEventDotsForDay = (day, month = currentMonth.value, year = currentYear.value) => {
+  const events = eventsByDate.value[makeDateKey(day, month, year)] || []
 
   const counts = { accept: 0, maybe: 0, decline: 0, none: 0 }
   events.forEach(e => {
@@ -183,22 +216,40 @@ const getEventDotsForDay = (day) => {
     .map(([status, count]) => ({ status, count }))
 }
 
-const selectDay = (day) => {
-  const dateKey = `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  selectedDate.value = dateKey
+const selectDay = (day, month = currentMonth.value, year = currentYear.value) => {
+  selectedDate.value = makeDateKey(day, month, year)
 }
 
-const isSelectedDay = (day) => {
+const isSelectedDay = (day, month = currentMonth.value, year = currentYear.value) => {
   if (!selectedDate.value) return false
-  const dateKey = `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  return selectedDate.value === dateKey
+  return selectedDate.value === makeDateKey(day, month, year)
 }
 
-const isToday = (day) => {
-  const today = new Date()
-  return day === today.getDate() &&
-         currentMonth.value === today.getMonth() + 1 &&
-         currentYear.value === today.getFullYear()
+const isToday = (day, month = currentMonth.value, year = currentYear.value) => {
+  const now = new Date()
+  return day === now.getDate() && month === now.getMonth() + 1 && year === now.getFullYear()
+}
+
+const isCurrentMonth = computed(() => {
+  const now = new Date()
+  return currentMonth.value === now.getMonth() + 1 && currentYear.value === now.getFullYear()
+})
+
+const jumptotoday = async () => {
+  const now = new Date()
+  const newYear = now.getFullYear()
+  const newMonth = now.getMonth() + 1
+  const todayKey = `${newYear}-${String(newMonth).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+  if (!isCurrentMonth.value) {
+    currentYear.value = newYear
+    currentMonth.value = newMonth
+    monthLoading.value = true
+    await eventsStore.fetchEvents(newYear, newMonth)
+    monthLoading.value = false
+  }
+
+  selectedDate.value = todayKey
 }
 
 const previousMonth = async () => {
@@ -209,9 +260,9 @@ const previousMonth = async () => {
     currentMonth.value--
   }
   selectedDate.value = null
-
-  // Load events for the new month
+  monthLoading.value = true
   await eventsStore.fetchEvents(currentYear.value, currentMonth.value)
+  monthLoading.value = false
 }
 
 const nextMonth = async () => {
@@ -222,9 +273,9 @@ const nextMonth = async () => {
     currentMonth.value++
   }
   selectedDate.value = null
-
-  // Load events for the new month
+  monthLoading.value = true
   await eventsStore.fetchEvents(currentYear.value, currentMonth.value)
+  monthLoading.value = false
 }
 
 // Event dialog
@@ -261,7 +312,27 @@ function handleFoodChanged(mealId, type) {
 
 // Load events on mount
 onMounted(async () => {
+  // Check for deep-link query params from notification
+  const linkDate = route.query.date
+  const linkEventID = linkDate ? Number(route.query.eventID) : null
+
+  // If a specific date was linked, navigate to that month
+  if (linkDate) {
+    const [year, month] = linkDate.split('-').map(Number)
+    currentYear.value = year
+    currentMonth.value = month
+    selectedDate.value = linkDate
+  }
+
   // Always fetch fresh data for the current month on page load
   await eventsStore.fetchEvents(currentYear.value, currentMonth.value, true)
+
+  // If a specific event was linked, open its dialog
+  if (linkEventID) {
+    const event = eventsStore.getEventById(linkEventID)
+    if (event) {
+      selectedEvent.value = event
+    }
+  }
 })
 </script>

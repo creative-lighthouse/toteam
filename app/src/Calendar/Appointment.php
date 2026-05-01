@@ -321,7 +321,7 @@ class Appointment extends DataObject implements PermissionProvider
 
     public function getLink()
     {
-        return "/calendar?date=" . $this->DateStart . "&eventID=" . $this->ID;
+        return "/app/calendar?date=" . $this->DateStart . "&eventID=" . $this->ID;
     }
 
     public function getFullStartDate()

@@ -146,9 +146,16 @@ class NotificationApiController extends Controller
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
         }
 
-        $notifications = SavedNotification::get()
-            ->filter('MemberID', $member->ID)
-            ->limit(50);
+        $limit = max(1, min(50, (int)($request->getVar('limit') ?? 20)));
+        $offset = max(0, (int)($request->getVar('offset') ?? 0));
+
+        $base = SavedNotification::get()->filter('MemberID', $member->ID);
+        $total = $base->count();
+
+        // Unread first, then by Created DESC
+        $notifications = $base
+            ->sort('IsRead ASC, Created DESC')
+            ->limit($limit, $offset);
 
         $data = [];
         foreach ($notifications as $notification) {
@@ -164,7 +171,13 @@ class NotificationApiController extends Controller
             ];
         }
 
-        return $this->jsonResponse(['notifications' => $data]);
+        return $this->jsonResponse([
+            'notifications' => $data,
+            'total' => $total,
+            'offset' => $offset,
+            'limit' => $limit,
+            'hasMore' => ($offset + $limit) < $total
+        ]);
     }
 
     /**
