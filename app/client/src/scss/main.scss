@@ -25,6 +25,7 @@
 @use "landingpage/landingpage.scss";
 
 @use "components/map-renderer.scss";
+@use "components/eventcard.scss";
 
 @view-transition {
     navigation: auto;
@@ -125,6 +126,7 @@ body {
     position: fixed;
     top: 30px;
     left: 50%;
+    height: auto;
     transform: translateX(-50%);
     background-color: var(--ColorStatusGood);
     color: #000;

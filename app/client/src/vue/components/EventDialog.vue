@@ -389,6 +389,7 @@ onUnmounted(() => {
 
 .status-message {
   position: fixed;
+  top: auto;
   bottom: 20px;
   right: 20px;
   padding: 15px 25px;

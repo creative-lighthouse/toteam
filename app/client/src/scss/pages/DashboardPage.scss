@@ -58,23 +58,6 @@
                         font-weight: 200;
                     }
 
-                    .list--foods{
-                        list-style: none;
-                        padding: 0;
-                        margin: 5px 0 0 0;
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 5px;
-
-                        li{
-                            background-color: var(--ColorGrayLight);
-                            color: var(--ColorBlack);
-                            padding: 3px 8px;
-                            border-radius: var(--BorderRadiusSmall);
-                            font-size: 0.9em;
-                        }
-                    }
-
                     &.accepted {
                         border-left: 4px solid green;
                     }
@@ -83,71 +66,122 @@
                         border-left: 4px solid orange;
                         opacity: 0.5;
                     }
+                }
 
-                    .item_label {
-                        font-weight: bold;
-                    }
+                // Clickable notice item
+                .notice-link {
+                    cursor: pointer;
 
-                    .item_value {
-                        font-size: 1.2em;
+                    &:hover .item-title {
+                        color: var(--ColorPrimary);
                     }
                 }
 
-                &.agenda{
-                    .agenda--item{
-                        box-shadow: none;
+                // Notice / feedback list items (no individual card shadow)
+                &.infobox_list--flat {
+                    gap: 0;
+                    border: 1px solid var(--ColorLightGray);
+                    border-radius: var(--BorderRadiusSmall);
+                    overflow: hidden;
+
+                    li {
                         border: none;
+                        border-radius: 0;
+                        box-shadow: none;
+                        padding: 10px 12px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
 
-                        .hl4{
-                            margin: 10px 0 5px 0;
-                        }
-                        .list--agenda-points, .list--meals{
-                            list-style: none;
-                            padding: 0;
-                            margin: 0;
-
-                            li{
-                                border: 1px solid var(--ColorLightGray);
-                                padding: 10px;
-                                border-radius: var(--BorderRadiusSmall);
-                                margin-bottom: 10px;
-                            }
+                        & + li {
+                            border-top: 1px solid var(--ColorLightGray);
                         }
                     }
                 }
 
-                &.mealswithoutfood{
-                    .mealswithoutfood--item{
-                        border: 1px solid var(--ColorLightGray);
-                        padding: 10px;
-                        border-radius: var(--BorderRadiusSmall);
-                        margin-bottom: 10px;
+                // Event card list — no extra borders, lets EventCard handle its own style
+                &.infobox_list--events {
+                    gap: 8px;
 
-                        .list--mealswithoutfood-title{
-                            padding-left: 10px;
-                        }
+                    li {
+                        border: none;
+                        border-radius: 0;
+                        box-shadow: none;
+                        background: transparent;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 3px;
+                        padding: 0;
+                    }
+                }
+            }
 
-                        .list--mealswithoutfood-meals{
-                            list-style: none;
-                            padding: 0;
-                            margin: 0;
+            // Notice / feedback row layout
+            .item-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 8px;
+            }
 
-                            li{
-                                margin-bottom: 5px;
+            .item-category,
+            .item-from {
+                font-size: 12px;
+                color: var(--ColorGray);
+            }
 
-                                &:first-of-type{
-                                    margin-top: 5px;
-                                }
+            .item-right {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 1px;
+                flex-shrink: 0;
+            }
 
-                                &:last-of-type{
-                                    margin-bottom: 0;
-                                }
-                            }
-                        }
+            .item-date {
+                font-size: 11px;
+                color: var(--ColorGray);
+                white-space: nowrap;
+            }
 
-                        &:last-of-type{
-                            margin-bottom: 1px;
-                        }
+            .item-author {
+                font-size: 11px;
+                color: var(--ColorGray);
+            }
+
+            .item-title {
+                font-weight: 700;
+                font-size: 14px;
+                margin: 0;
+            }
+
+            .truncate {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            // Date label above an EventCard in the upcoming/pending sections
+            .event-date-label {
+                font-size: 11px;
+                color: var(--ColorGray);
+                padding-left: 2px;
+            }
+
+            // Footer link at the bottom of a card
+            .card-footer {
+                width: 100%;
+                border-top: 1px solid var(--ColorLightGray);
+                padding-top: 8px;
+                text-align: center;
+
+                a {
+                    font-size: 13px;
+                    color: var(--ColorGray);
+                    text-decoration: none;
+
+                    &:hover {
+                        color: var(--ColorPrimary);
                     }
                 }
             }
@@ -223,6 +257,52 @@
                 font-size: 14px;
                 margin-bottom: 20px;
             }
+        }
+
+        // Refresh button row
+        .dashboard-refresh {
+            display: flex;
+            justify-content: center;
+            grid-column: span 2;
+        }
+
+        .refresh-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--ColorLightGray);
+            background: var(--ColorWhite);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--ColorGray);
+            box-shadow: var(--BoxShadowLight);
+            transition: color 0.15s, border-color 0.15s;
+
+            svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            &:hover:not(.is-loading) {
+                color: var(--ColorPrimary);
+                border-color: var(--ColorPrimary);
+            }
+
+            &.is-loading {
+                cursor: default;
+                pointer-events: none;
+
+                svg {
+                    animation: spin 0.6s linear infinite;
+                }
+            }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
         }
     }
 

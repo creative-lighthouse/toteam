@@ -289,20 +289,12 @@ function closeEventDialog() {
   selectedEvent.value = null
 }
 
-function handleParticipationChanged(eventId, updatedParticipation) {
-  // Update event in store
-  const event = eventsStore.getEventById(eventId)
-  if (event) {
-    Object.assign(event, updatedParticipation)
-  }
+function handleParticipationChanged(_eventId, _updatedParticipation) {
+  // Store already updates state in changeParticipation()
 }
 
-function handleTimeChanged(eventId, updatedData) {
-  // Update event in store
-  const event = eventsStore.getEventById(eventId)
-  if (event) {
-    Object.assign(event, updatedData)
-  }
+function handleTimeChanged(_eventId, _updatedData) {
+  // Store already updates state in changeParticipationTime()
 }
 
 function handleFoodChanged(mealId, type) {

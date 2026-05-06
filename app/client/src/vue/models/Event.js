@@ -15,6 +15,7 @@ export class Event {
     this.Location = data.Location || ''
     this.Color = data.Color || null
     this.EventType = data.EventType || null
+    this.OrganizationLogoURL = data.OrganizationLogoURL || null
 
     // Teilnahme des aktuellen Users
     this.UserParticipation = data.UserParticipation ? {

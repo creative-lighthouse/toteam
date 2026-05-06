@@ -93,16 +93,26 @@ class CalendarApiController extends ApiController
             // Get all participations for this appointment
             $participations = [];
             foreach ($appointment->Participations() as $p) {
+                $pMember = $p->Member();
                 $participations[] = [
                     'ID' => $p->ID,
                     'MemberID' => $p->MemberID,
-                    'MemberName' => $p->Member() ? $p->Member()->getName() : 'Unknown',
+                    'MemberName' => $pMember ? $pMember->getName() : 'Unknown',
+                    'ProfileImageURL' => $pMember && $pMember->hasMethod('RenderProfileImage')
+                        ? $pMember->RenderProfileImage()
+                        : null,
                     'Type' => $p->Type,
                     'TimeStart' => $p->TimeStart,
                     'TimeEnd' => $p->TimeEnd,
                     'IsCurrentUser' => $p->MemberID == $member->ID
                 ];
             }
+
+            // Organisation logo (first organisation)
+            $org = $appointment->Organisations()->first();
+            $orgLogoURL = $org && $org->Logo()->exists()
+                ? $org->Logo()->ScaleWidth(40)->getURL()
+                : null;
 
             $events[] = [
                 'ID' => $appointment->ID,
@@ -115,8 +125,9 @@ class CalendarApiController extends ApiController
                 'Location' => $appointment->Location,
                 'Description' => $appointment->Description,
                 'Status' => $appointment->Status,
-                'Type' => $appointment->Type()->exists() ? $appointment->Type()->Title : null,
+                'EventType' => $appointment->Type()->exists() ? $appointment->Type()->Title : null,
                 'ImageURL' => $appointment->Image()->exists() ? $appointment->Image()->getURL() : null,
+                'OrganizationLogoURL' => $orgLogoURL,
                 'UserParticipation' => $participation ? [
                     'ID' => $participation->ID,
                     'Type' => $participation->Type,
