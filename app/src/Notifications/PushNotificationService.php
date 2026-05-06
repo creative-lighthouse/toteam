@@ -128,26 +128,53 @@ class PushNotificationService
      */
     public static function notifyNewNotice(Notice $notice)
     {
-        $title = 'Neue Nachricht';
-        $body = $notice->Title;
-        $url = $notice->getLink();
+        // Defer notification until after many_many relations are written
+        // This is necessary because Organisations() is empty during onAfterWrite
+        register_shutdown_function(function() use ($notice) {
+            try {
+                // Reload the notice to get fresh relations
+                $freshNotice = Notice::get()->byID($notice->ID);
+                if (!$freshNotice) {
+                    error_log('Notice ' . $notice->ID . ' not found for notification');
+                    return;
+                }
 
-        // Collect member IDs across all linked organisations
-        $memberIDs = [];
-        foreach ($notice->Organisations() as $organisation) {
-            foreach ($organisation->Members() as $member) {
-                $memberIDs[$member->ID] = $member->ID;
+                $organisations = $freshNotice->Organisations();
+                $orgCount = $organisations->count();
+                
+                error_log('Notice ' . $notice->ID . ' has ' . $orgCount . ' organisations');
+
+                if ($orgCount === 0) {
+                    error_log('Notice ' . $notice->ID . ' has no organisations linked - skipping notification');
+                    return;
+                }
+
+                $title = '📢 Neue Ankündigung';
+                $body = $freshNotice->Title;
+                $url = $freshNotice->getLink();
+
+                // Collect member IDs across all linked organisations (deduplicated)
+                $memberIDs = [];
+                foreach ($organisations as $organisation) {
+                    foreach ($organisation->Members() as $member) {
+                        $memberIDs[$member->ID] = $member->ID;
+                    }
+                }
+
+                error_log('Sending notice notification to ' . count($memberIDs) . ' members');
+
+                foreach ($memberIDs as $memberID) {
+                    self::saveNotification($memberID, 'notices', $title, $body, $url);
+
+                    $member = Member::get()->byID($memberID);
+                    if ($member) {
+                        self::sendToMember($member, $title, $body, $url);
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log('Error in notifyNewNotice shutdown: ' . $e->getMessage());
             }
-        }
-
-        foreach ($memberIDs as $memberID) {
-            self::saveNotification($memberID, 'notices', $title, $body, $url);
-
-            $member = Member::get()->byID($memberID);
-            if ($member) {
-                self::sendToMember($member, $title, $body, $url);
-            }
-        }
+        });
     }
 
     public static function notifyNewMap(Map $map)
