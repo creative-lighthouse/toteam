@@ -3,7 +3,7 @@
 namespace App\Calendar;
 
 use App\Food\Meal;
-use App\Notifications\PushNotificationService;
+use App\Notifications\PendingNotificationJob;
 use App\Teams\Organization;
 use Override;
 use SilverStripe\Assets\Image;
@@ -192,44 +192,34 @@ class Appointment extends DataObject implements PermissionProvider
         $this->ICSSequence = ($this->ICSSequence ?? 0) + 1;
     }
 
-    /**
-     * Send push notification for new events and status changes
-     */
     public function onAfterWrite()
     {
         parent::onAfterWrite();
 
         $changedFields = $this->getChangedFields(false, 1);
         $isNew = isset($changedFields['ID']) && empty($changedFields['ID']['before']);
-        $statusChanged = isset($changedFields['Status']);
+        $eventType = null;
 
         if ($isNew) {
-            // New event created - send notification after request completes
-            $event = $this;
-            if ($this->Status === 'Suggested') {
-                register_shutdown_function(function() use ($event) {
-                    PushNotificationService::notifyAppointmentSuggested($event);
-                });
-            } elseif ($this->Status === 'Scheduled') {
-                register_shutdown_function(function() use ($event) {
-                    PushNotificationService::notifyAppointmentScheduled($event);
-                });
-            }
-        } elseif ($statusChanged) {
-            // Status changed on existing event
-            $oldStatus = $changedFields['Status']['before'];
-            $newStatus = $changedFields['Status']['after'];
-            $event = $this;
+            $eventType = match ($this->Status) {
+                'Suggested' => 'appointment_suggested',
+                'Scheduled' => 'appointment_scheduled',
+                default     => null,
+            };
+        } elseif (isset($changedFields['Status'])) {
+            $eventType = match ($changedFields['Status']['after']) {
+                'Scheduled' => 'appointment_scheduled',
+                'Cancelled' => 'appointment_cancelled',
+                default     => null,
+            };
+        }
 
-            if ($newStatus === 'Scheduled') {
-                register_shutdown_function(function() use ($event) {
-                    PushNotificationService::notifyAppointmentScheduled($event);
-                });
-            } elseif ($newStatus === 'Cancelled') {
-                register_shutdown_function(function() use ($event) {
-                    PushNotificationService::notifyAppointmentCancelled($event);
-                });
-            }
+        if ($eventType) {
+            PendingNotificationJob::create([
+                'SourceClass' => self::class,
+                'SourceID'    => $this->ID,
+                'EventType'   => $eventType,
+            ])->write();
         }
     }
 

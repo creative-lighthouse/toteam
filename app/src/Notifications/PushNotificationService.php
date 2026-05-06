@@ -15,6 +15,7 @@ use SilverStripe\Core\Environment;
  */
 class PushNotificationService
 {
+    private static ?string $cachedAccessToken = null;
     /**
      * Send notification to all users with specific preference enabled
      */
@@ -128,53 +129,31 @@ class PushNotificationService
      */
     public static function notifyNewNotice(Notice $notice)
     {
-        // Defer notification until after many_many relations are written
-        // This is necessary because Organisations() is empty during onAfterWrite
-        register_shutdown_function(function() use ($notice) {
-            try {
-                // Reload the notice to get fresh relations
-                $freshNotice = Notice::get()->byID($notice->ID);
-                if (!$freshNotice) {
-                    error_log('Notice ' . $notice->ID . ' not found for notification');
-                    return;
-                }
+        $organisations = $notice->Organisations();
 
-                $organisations = $freshNotice->Organisations();
-                $orgCount = $organisations->count();
-                
-                error_log('Notice ' . $notice->ID . ' has ' . $orgCount . ' organisations');
+        if (!$organisations->exists()) {
+            return;
+        }
 
-                if ($orgCount === 0) {
-                    error_log('Notice ' . $notice->ID . ' has no organisations linked - skipping notification');
-                    return;
-                }
+        $title = '📢 Neue Ankündigung';
+        $body = $notice->Title;
+        $url = $notice->getLink();
 
-                $title = '📢 Neue Ankündigung';
-                $body = $freshNotice->Title;
-                $url = $freshNotice->getLink();
-
-                // Collect member IDs across all linked organisations (deduplicated)
-                $memberIDs = [];
-                foreach ($organisations as $organisation) {
-                    foreach ($organisation->Members() as $member) {
-                        $memberIDs[$member->ID] = $member->ID;
-                    }
-                }
-
-                error_log('Sending notice notification to ' . count($memberIDs) . ' members');
-
-                foreach ($memberIDs as $memberID) {
-                    self::saveNotification($memberID, 'notices', $title, $body, $url);
-
-                    $member = Member::get()->byID($memberID);
-                    if ($member) {
-                        self::sendToMember($member, $title, $body, $url);
-                    }
-                }
-            } catch (\Exception $e) {
-                error_log('Error in notifyNewNotice shutdown: ' . $e->getMessage());
+        $memberIDs = [];
+        foreach ($organisations as $organisation) {
+            foreach ($organisation->Members() as $member) {
+                $memberIDs[$member->ID] = $member->ID;
             }
-        });
+        }
+
+        foreach ($memberIDs as $memberID) {
+            self::saveNotification($memberID, 'notices', $title, $body, $url);
+
+            $member = Member::get()->byID($memberID);
+            if ($member && $member->NotifyNotices) {
+                self::sendToMember($member, $title, $body, $url);
+            }
+        }
     }
 
     public static function notifyNewMap(Map $map)
@@ -205,24 +184,18 @@ class PushNotificationService
     {
         $field = 'Notify' . ucfirst($type);
 
-        // Get all members with tokens
         $membersWithTokens = NotificationToken::get()->column('MemberID');
 
         if (empty($membersWithTokens)) {
             return [];
         }
 
-        // Get preferences that have this notification type DISABLED
-        $disabledPrefs = NotificationPreference::get()->filter($field, false);
-        $disabledMemberIDs = $disabledPrefs->column('MemberID');
-
-        // Filter out disabled members
-        $memberIDs = array_diff($membersWithTokens, $disabledMemberIDs);
+        $memberIDs = Member::get()
+            ->filter(['ID' => $membersWithTokens, $field => true])
+            ->column('ID');
 
         if (!empty($excludeMembers)) {
-            $excludeIDs = array_map(function ($m) {
-                return is_object($m) ? $m->ID : $m;
-            }, $excludeMembers);
+            $excludeIDs = array_map(fn($m) => is_object($m) ? $m->ID : $m, $excludeMembers);
             $memberIDs = array_diff($memberIDs, $excludeIDs);
         }
 
@@ -234,7 +207,11 @@ class PushNotificationService
      */
     private static function sendNotification($token, $title, $body, $url = null)
     {
-        $accessToken = self::getAccessToken();
+        if (!self::$cachedAccessToken) {
+            self::$cachedAccessToken = self::getAccessToken();
+        }
+
+        $accessToken = self::$cachedAccessToken;
 
         if (!$accessToken) {
             error_log('Failed to get FCM access token');

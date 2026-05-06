@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Notifications\NotificationToken;
-use App\Notifications\NotificationPreference;
 use App\Notifications\SavedNotification;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
@@ -77,12 +76,13 @@ class NotificationApiController extends Controller
 
         $data = json_decode($request->getBody(), true);
 
-        try {
-            NotificationPreference::updatePreferences($member, $data);
-            return $this->jsonResponse(['success' => true]);
-        } catch (\Exception $e) {
-            return $this->jsonResponse(['error' => $e->getMessage()], 500);
-        }
+        if (isset($data['events']))  $member->NotifyEvents  = (bool)$data['events'];
+        if (isset($data['notices'])) $member->NotifyNotices = (bool)$data['notices'];
+        if (isset($data['meals']))   $member->NotifyMeals   = (bool)$data['meals'];
+        if (isset($data['maps']))    $member->NotifyMaps    = (bool)$data['maps'];
+
+        $member->write();
+        return $this->jsonResponse(['success' => true]);
     }
 
     /**
@@ -96,12 +96,11 @@ class NotificationApiController extends Controller
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
         }
 
-        $prefs = NotificationPreference::getForMember($member);
-
         return $this->jsonResponse([
-            'events' => $prefs->NotifyEvents,
-            'notices' => $prefs->NotifyNotices,
-            'meals' => $prefs->NotifyMeals
+            'events'  => (bool)$member->NotifyEvents,
+            'notices' => (bool)$member->NotifyNotices,
+            'meals'   => (bool)$member->NotifyMeals,
+            'maps'    => (bool)$member->NotifyMaps,
         ]);
     }
 

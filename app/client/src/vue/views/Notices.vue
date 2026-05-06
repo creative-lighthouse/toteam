@@ -1,8 +1,8 @@
 <template>
   <div class="section section--NoticesPage">
     <AppHeader title="Mitteilungen" description="Hier findest du alle wichtigen Mitteilungen deines Teams.">
-      <span v-if="noticesStore.unreadCount > 0" class="badge">
-        {{ noticesStore.unreadCount }} ungelesen
+      <span v-if="notificationsStore.unreadCount > 0" class="badge">
+        {{ notificationsStore.unreadCount }} ungelesen
       </span>
     </AppHeader>
 
@@ -75,9 +75,11 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useNoticesStore } from '@stores/notices'
+import { useNotificationsStore } from '@stores/notifications'
 import AppHeader from '@components/AppHeader.vue'
 
 const noticesStore = useNoticesStore()
+const notificationsStore = useNotificationsStore()
 
 onMounted(() => {
   noticesStore.fetchNotices(true)

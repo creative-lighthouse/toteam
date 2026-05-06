@@ -1,0 +1,6 @@
+#!/bin/bash
+
+## Description: Process pending notification jobs (simulates the production cronjob)
+## Usage: notify
+
+vendor/bin/sake dev/tasks/App-Tasks-ProcessPendingNotificationsTask

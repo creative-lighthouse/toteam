@@ -2,7 +2,7 @@
 
 namespace App\Notices;
 
-use App\Notifications\PushNotificationService;
+use App\Notifications\PendingNotificationJob;
 use App\Teams\Organization;
 use Override;
 use SilverStripe\Forms\SearchableMultiDropdownField;
@@ -88,26 +88,28 @@ class Notice extends DataObject implements PermissionProvider
         return $fields;
     }
 
+    public function getLink(): string
+    {
+        return '/app/notices';
+    }
+
     public function onBeforeWrite()
     {
         parent::onBeforeWrite();
         $this->notifyAfterWrite = !$this->isInDB();
     }
 
-    /**
-     * Send push notification for new notices to all members of linked organisations
-     */
     public function onAfterWrite()
     {
         parent::onAfterWrite();
 
         if ($this->notifyAfterWrite) {
             $this->notifyAfterWrite = false;
-            try {
-                PushNotificationService::notifyNewNotice($this);
-            } catch (\Exception $e) {
-                error_log('Notice notification failed: ' . $e->getMessage());
-            }
+            PendingNotificationJob::create([
+                'SourceClass' => self::class,
+                'SourceID'    => $this->ID,
+                'EventType'   => 'new_notice',
+            ])->write();
         }
     }
 
