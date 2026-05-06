@@ -24,6 +24,10 @@ use App\Teams\Team;
  * @property ?string $FoodPreference
  * @property ?string $DateOfBirth
  * @property ?string $Hash
+ * @property bool $NotifyEvents
+ * @property bool $NotifyNotices
+ * @property bool $NotifyMeals
+ * @property bool $NotifyMaps
  * @property int $ProfileImageID
  * @method \SilverStripe\Assets\Image ProfileImage()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
@@ -34,10 +38,21 @@ use App\Teams\Team;
 class MemberExtension extends Extension
 {
     private static $db = [
-        "Joindate" => "Date",
+        "Joindate"       => "Date",
         "FoodPreference" => "Varchar(255)",
-        "DateOfBirth" => "Date",
-        "Hash" => "Varchar(255)",
+        "DateOfBirth"    => "Date",
+        "Hash"           => "Varchar(255)",
+        "NotifyEvents"   => "Boolean(1)",
+        "NotifyNotices"  => "Boolean(1)",
+        "NotifyMeals"    => "Boolean(1)",
+        "NotifyMaps"     => "Boolean(1)",
+    ];
+
+    private static $defaults = [
+        "NotifyEvents"  => true,
+        "NotifyNotices" => true,
+        "NotifyMeals"   => true,
+        "NotifyMaps"    => true,
     ];
 
     private static $has_one = [
