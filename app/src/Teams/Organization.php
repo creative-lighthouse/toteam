@@ -3,6 +3,7 @@
 namespace App\Teams;
 
 use App\Teams\Department;
+use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
@@ -14,6 +15,8 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $Title
  * @property ?string $Description
  * @property bool $AllowsSelfJoining
+ * @property int $LogoID
+ * @method \SilverStripe\Assets\Image Logo()
  * @method \SilverStripe\ORM\DataList|\App\Teams\Department[] Departments()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
@@ -28,6 +31,14 @@ class Organization extends DataObject implements PermissionProvider
         "Title" => "Varchar(255)",
         "Description" => "Text",
         "AllowsSelfJoining" => "Boolean",
+    ];
+
+    private static $has_one = [
+        "Logo" => Image::class,
+    ];
+
+    private static $owns = [
+        "Logo",
     ];
 
     private static $has_many = [

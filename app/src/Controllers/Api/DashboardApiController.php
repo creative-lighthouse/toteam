@@ -3,78 +3,78 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
+use App\Notices\Notice;
+use App\SuggestionBox\Suggestion;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 
 /**
- * Dashboard API Controller
+ * Class \App\Controllers\Api\DashboardApiController
  *
  */
 class DashboardApiController extends ApiController
 {
     private static $url_segment = 'api/v1/dashboard';
-    
+
     private static $allowed_actions = [
         'index'
     ];
-    
-    /**
-     * Get dashboard data
-     */
+
     public function index(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
-        
+
         if (!$member) {
             return $this->errorResponse('Unauthorized', 401);
         }
-        
-        // Get today's participations
-        $todaysParticipations = [];
-        if ($member->hasMethod('TodaysParticipations')) {
-            foreach ($member->TodaysParticipations() as $participation) {
-                $todaysParticipations[] = [
-                    'ID' => $participation->ID,
-                    'Parent' => [
-                        'ID' => $participation->Parent()->ID,
-                        'Title' => $participation->Parent()->Title,
-                        'RenderTime' => $participation->Parent()->RenderTime(),
-                        'Location' => $participation->Parent()->Location,
-                        'Description' => $participation->Parent()->Description,
-                    ]
+
+        $organizationIDs = $member->getOrganizationIDs();
+
+        // Latest notices for the user's organisations (max 2)
+        $latestNotices = [];
+        if (!empty($organizationIDs)) {
+            $notices = Notice::get()
+                ->filter(['Organisations.ID' => $organizationIDs])
+                ->distinct(true)
+                ->sort('Created DESC')
+                ->limit(2);
+            foreach ($notices as $notice) {
+                $latestNotices[] = [
+                    'ID' => $notice->ID,
+                    'Title' => $notice->Title,
+                    'ShortText' => $notice->ShortText,
+                    'Created' => $notice->Created,
+                    'Category' => $notice->Category()->exists() ? $notice->Category()->Title : null,
+                    'AuthorName' => $notice->Author()->exists() ? $notice->Author()->FirstName : null,
                 ];
             }
         }
-        
-        // Get upcoming events
-        $upcomingEvents = [];
-        if ($member->hasMethod('UpcomingEventDays')) {
-            foreach ($member->UpcomingEventDays() as $eventDay) {
-                $upcomingEvents[] = [
-                    'ID' => $eventDay->ID,
-                    'Title' => $eventDay->Title,
-                    'RenderDateWithTime' => $eventDay->RenderDateWithTime(),
-                    'Type' => $eventDay->Type
-                ];
-            }
+
+        // Unseen feedback addressed to the current user
+        $newFeedback = [];
+        $suggestions = Suggestion::get()
+            ->filter([
+                'RecipientID' => $member->ID,
+                'SeenByRecipient' => false,
+            ])
+            ->sort('Created DESC')
+            ->limit(5);
+        foreach ($suggestions as $suggestion) {
+            $newFeedback[] = [
+                'ID' => $suggestion->ID,
+                'Title' => $suggestion->Title,
+                'Description' => $suggestion->Description,
+                'Created' => $suggestion->Created,
+                'IsAnonymous' => (bool) $suggestion->IsAnonymous,
+                'SenderName' => !$suggestion->IsAnonymous && $suggestion->Sender()->exists()
+                    ? $suggestion->Sender()->FirstName
+                    : null,
+            ];
         }
-        
-        // Get events without feedback
-        $eventsWithoutFeedback = [];
-        if ($member->hasMethod('EventDaysWithoutFeedback')) {
-            foreach ($member->EventDaysWithoutFeedback() as $eventDay) {
-                $eventsWithoutFeedback[] = [
-                    'ID' => $eventDay->ID,
-                    'RenderTitle' => $eventDay->RenderTitle(),
-                    'RenderDateWithTime' => $eventDay->RenderDateWithTime()
-                ];
-            }
-        }
-        
+
         return $this->jsonResponse([
-            'todaysParticipations' => $todaysParticipations,
-            'upcomingEvents' => $upcomingEvents,
-            'eventsWithoutFeedback' => $eventsWithoutFeedback
+            'latestNotices' => $latestNotices,
+            'newFeedback' => $newFeedback,
         ]);
     }
 }

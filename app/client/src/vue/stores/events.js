@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiGet, apiPost, clearCacheForEndpoint } from '@utils/api'
 import { Event } from '@models/Event'
+import { useAuthStore } from '@stores/auth'
 
 export const useEventsStore = defineStore('events', () => {
   // State
@@ -124,11 +125,25 @@ export const useEventsStore = defineStore('events', () => {
 
         // Update in participations list
         if (event.Participations) {
-          const userParticipation = event.Participations.find(p => p.IsCurrentUser)
-          if (userParticipation) {
-            userParticipation.Type = response.data.Type
-            userParticipation.TimeStart = response.data.TimeStart
-            userParticipation.TimeEnd = response.data.TimeEnd
+          const existing = event.Participations.find(p => p.IsCurrentUser)
+          if (existing) {
+            existing.Type = response.data.Type
+            existing.TimeStart = response.data.TimeStart
+            existing.TimeEnd = response.data.TimeEnd
+          } else {
+            // First RSVP — add a new entry so avatars + counts update immediately
+            const authStore = useAuthStore()
+            const u = authStore.user
+            event.Participations.push({
+              ID: response.data.ID,
+              MemberID: u?.ID ?? null,
+              MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
+              ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
+              Type: response.data.Type,
+              TimeStart: response.data.TimeStart,
+              TimeEnd: response.data.TimeEnd,
+              IsCurrentUser: true,
+            })
           }
         }
       }

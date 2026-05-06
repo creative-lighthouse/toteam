@@ -43,8 +43,9 @@
         <div
           v-for="notice in noticesStore.filteredNotices"
           :key="notice.ID"
+          :id="`notice-${notice.ID}`"
           class="notice-item"
-          :class="{ 'notice--unread': !notice.IsRead }"
+          :class="{ 'notice--unread': !notice.IsRead, 'notice--highlighted': highlightedNoticeId === notice.ID }"
         >
           <div class="notice-header">
             <h3 class="hl3">{{ notice.Title }}</h3>
@@ -73,16 +74,27 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { useNoticesStore } from '@stores/notices'
 import { useNotificationsStore } from '@stores/notifications'
 import AppHeader from '@components/AppHeader.vue'
 
+const route = useRoute()
 const noticesStore = useNoticesStore()
 const notificationsStore = useNotificationsStore()
 
-onMounted(() => {
-  noticesStore.fetchNotices(true)
+const highlightedNoticeId = ref(null)
+
+onMounted(async () => {
+  await noticesStore.fetchNotices(true)
+
+  const noticeID = Number(route.query.noticeID)
+  if (noticeID) {
+    highlightedNoticeId.value = noticeID
+    await nextTick()
+    document.getElementById(`notice-${noticeID}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 })
 </script>
 
@@ -120,6 +132,11 @@ onMounted(() => {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.notice--highlighted {
+  outline: 2px solid var(--ColorPrimary);
+  outline-offset: 2px;
 }
 
 .notice--unread {

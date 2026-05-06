@@ -729,6 +729,7 @@
 
     .selected-day-events {
         margin: 20px auto 10px auto;
+        text-align: center;
 
         .events-list {
             border-top: 1px solid var(--ColorGray);
@@ -737,90 +738,6 @@
             flex-direction: column;
             padding-top: 10px;
             gap: 10px;
-
-            .event-card {
-                background-color: var(--ColorWhite);
-                border: 1px solid var(--ColorLightGray);
-                border-radius: var(--BorderRadiusSmall);
-                padding: 10px;
-                box-shadow: var(--BoxShadowLight);
-                transition: 0.2s ease-in-out;
-
-                &:hover {
-                    box-shadow: var(--BoxShadowMedium);
-                    cursor: pointer;
-                }
-
-                // Timed appointment: left accent bar in primary color
-                &.event-card--timed {
-                    border-left: 4px solid var(--ColorPrimaryDark);
-                }
-
-                // All-day appointment: subtle background tint, no time accent
-                &.event-card--allday {
-                    border-left: 4px solid transparent;
-                    background-color: var(--ColorPrimaryDark);
-                    color: var(--ColorWhite);
-
-                    .event-card_time--allday {
-                        text-transform: uppercase;
-                        letter-spacing: 0.05em;
-                    }
-                }
-
-                .event-card_header {
-                    display: flex;
-                    gap: 10px;
-                    justify-content: space-between;
-                    padding-bottom: 10px;
-                }
-
-                .event-card_footer {
-                    border-top: 1px solid var(--ColorLightGray);
-                    margin: 0 auto;
-                    padding-top: 10px;
-                    display: flex;
-                    justify-content: space-between;
-
-                    .event-card_participation {
-                        background-color: var(--ColorLightGray);
-                        padding: 4px 6px;
-                        border-radius: var(--BorderRadiusSmall);
-                        font-size: 12px;
-
-                        &.participation--none {
-                            background-color: var(--ColorLightGray);
-                            color: var(--ColorBlack);
-                        }
-
-                        &.participation--accept {
-                            background-color: var(--ColorStatusGoodAccent);
-                            color: var(--ColorStatusGood);
-                        }
-
-                        &.participation--maybe {
-                            background-color: var(--ColorStatusWarningAccent);
-                            color: var(--ColorStatusWarning);
-                        }
-
-                        &.participation--decline {
-                            background-color: var(--ColorStatusBadAccent);
-                            color: var(--ColorStatusBad);
-                        }
-                    }
-                }
-
-                .event-title {
-                    font-size: 14px;
-                    font-weight: bold;
-                    margin-bottom: 5px;
-                }
-
-                .event-time {
-                    font-size: 12px;
-                    color: var(--ColorGray);
-                }
-            }
         }
     }
 }
