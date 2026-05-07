@@ -14,8 +14,8 @@
 
 @use "pages/DashboardPage.scss";
 @use "pages/RegistrationPage.scss";
-@use "pages/NoticesPage.scss";
-@use "pages/NoticeDetailPage.scss";
+@use "pages/AnnouncementsPage.scss";
+@use "pages/AnnouncementDetailPage.scss";
 @use "pages/ProfilePage.scss";
 @use "pages/CalendarPage.scss";
 @use "pages/SuggestionPage.scss";
@@ -27,11 +27,8 @@
 
 @use "components/map-renderer.scss";
 @use "components/eventcard.scss";
-@use "components/noticecard.scss";
+@use "components/announcementcard.scss";
 
-@view-transition {
-    navigation: auto;
-}
 
 html{
     overflow-y: scroll;
@@ -173,6 +170,40 @@ body {
         font-size: 1.5em;
         cursor: pointer;
     }
+}
+
+/* View transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease-out;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Ensure Vue app uses existing layout styles */
+#vue-app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header"
+    "content"
+    "footer";
+  width: 100%;
+  overflow-x: hidden;
+  background-color: var(--ColorLightGray, #f5f5f5);
+}
+
+#vue-app .area_header {
+  grid-area: header;
+}
+
+#vue-app .area_content {
+  grid-area: content;
 }
 
 @keyframes fadeIn {

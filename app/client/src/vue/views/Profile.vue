@@ -1,7 +1,5 @@
 <template>
   <div class="section section--ProfilePage">
-    <AppHeader title="Profil" description="Verwalte dein Profil und deine Einstellungen." />
-
     <div class="section_content">
       <div class="section_infobox" v-if="authStore.user">
         <h2 class="hl2">{{ authStore.userName }}</h2>
@@ -30,9 +28,10 @@
 
 <script setup>
 import { useAuthStore } from '@stores/auth'
-import AppHeader from '@components/AppHeader.vue'
+import { usePageHeaderStore } from '@stores/pageHeader'
 
 const authStore = useAuthStore()
+usePageHeaderStore().setHeader('Profil', 'Verwalte dein Profil und deine Einstellungen.')
 </script>
 
 <style scoped>

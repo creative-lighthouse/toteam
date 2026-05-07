@@ -3,7 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
-use App\Notices\Notice;
+use App\Announcements\Announcement;
 use App\SuggestionBox\Suggestion;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
@@ -31,16 +31,16 @@ class DashboardApiController extends ApiController
         $organizationIDs = $member->getOrganizationIDs();
 
         // Latest notices for the user's organisations (max 2)
-        $latestNotices = [];
+        $latestAnnouncements = [];
         if (!empty($organizationIDs)) {
-            $notices = Notice::get()
+            $announcements = Announcement::get()
                 ->filter(['Organisations.ID' => $organizationIDs])
                 ->distinct(true)
                 ->sort('Created DESC')
                 ->limit(2);
-            foreach ($notices as $notice) {
+            foreach ($announcements as $announcement) {
                 $orgs = [];
-                foreach ($notice->Organisations() as $org) {
+                foreach ($announcement->Organisations() as $org) {
                     $orgs[] = [
                         'ID' => $org->ID,
                         'Title' => $org->Title,
@@ -48,13 +48,13 @@ class DashboardApiController extends ApiController
                     ];
                 }
 
-                $latestNotices[] = [
-                    'ID' => $notice->ID,
-                    'Title' => $notice->Title,
-                    'ShortText' => $notice->ShortText,
-                    'Created' => $notice->dbObject('Created')->Nice(),
-                    'Category' => $notice->Category()->exists() ? $notice->Category()->Title : null,
-                    'AuthorName' => $notice->Author()->exists() ? $notice->Author()->FirstName : null,
+                $latestAnnouncements[] = [
+                    'ID' => $announcement->ID,
+                    'Title' => $announcement->Title,
+                    'ShortText' => $announcement->ShortText,
+                    'Created' => $announcement->dbObject('Created')->Nice(),
+                    'Category' => $announcement->Category()->exists() ? $announcement->Category()->Title : null,
+                    'AuthorName' => $announcement->Author()->exists() ? $announcement->Author()->FirstName : null,
                     'Organisations' => $orgs,
                 ];
             }
@@ -83,7 +83,7 @@ class DashboardApiController extends ApiController
         }
 
         return $this->jsonResponse([
-            'latestNotices' => $latestNotices,
+            'latestAnnouncements' => $latestAnnouncements,
             'newFeedback' => $newFeedback,
         ]);
     }

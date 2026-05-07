@@ -11,7 +11,7 @@ use App\SuggestionBox\Suggestion;
 use SilverStripe\Forms\FieldList;
 use App\Events\EventDayParticipation;
 use SilverStripe\Forms\DropdownField;
-use App\Controllers\NoticesController;
+use App\Controllers\AnnouncementsController;
 use App\Teams\Organization;
 use App\Teams\Project;
 use App\Teams\Team;
@@ -25,7 +25,7 @@ use App\Teams\Team;
  * @property ?string $DateOfBirth
  * @property ?string $Hash
  * @property bool $NotifyEvents
- * @property bool $NotifyNotices
+ * @property bool $NotifyAnnouncements
  * @property bool $NotifyMeals
  * @property bool $NotifyMaps
  * @property int $ProfileImageID
@@ -43,14 +43,14 @@ class MemberExtension extends Extension
         "DateOfBirth"    => "Date",
         "Hash"           => "Varchar(255)",
         "NotifyEvents"   => "Boolean(1)",
-        "NotifyNotices"  => "Boolean(1)",
+        "NotifyAnnouncements" => "Boolean(1)",
         "NotifyMeals"    => "Boolean(1)",
         "NotifyMaps"     => "Boolean(1)",
     ];
 
     private static $defaults = [
         "NotifyEvents"  => true,
-        "NotifyNotices" => true,
+        "NotifyAnnouncements" => true,
         "NotifyMeals"   => true,
         "NotifyMaps"    => true,
     ];
@@ -182,9 +182,9 @@ class MemberExtension extends Extension
         return $this->getParticipations()->filter('Parent.Date', $today)->filterAny('Type', ['Accept', 'Maybe']);
     }
 
-    public function getUnreadNotices()
+    public function getUnreadAnnouncements()
     {
-        return NoticesController::getUnreadNotices($this->owner->ID);
+        return AnnouncementsController::getUnreadAnnouncements($this->owner->ID);
     }
 
     /**

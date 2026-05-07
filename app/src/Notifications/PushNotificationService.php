@@ -4,7 +4,7 @@ namespace App\Notifications;
 
 use App\Maps\Map;
 use App\Food\Meal;
-use App\Notices\Notice;
+use App\Announcements\Announcement;
 use App\Events\EventDay;
 use App\Calendar\Appointment;
 use SilverStripe\Security\Member;
@@ -127,17 +127,17 @@ class PushNotificationService
     /**
      * Send notification for new notice – only to members of linked organisations
      */
-    public static function notifyNewNotice(Notice $notice)
+    public static function notifyNewAnnouncement(Announcement $announcement)
     {
-        $organisations = $notice->Organisations();
+        $organisations = $announcement->Organisations();
 
         if (!$organisations->exists()) {
             return;
         }
 
         $title = '📢 Neue Ankündigung';
-        $body = $notice->Title;
-        $url = $notice->getLink();
+        $body = $announcement->Title;
+        $url = $announcement->getLink();
 
         $memberIDs = [];
         foreach ($organisations as $organisation) {
@@ -147,10 +147,10 @@ class PushNotificationService
         }
 
         foreach ($memberIDs as $memberID) {
-            self::saveNotification($memberID, 'notices', $title, $body, $url);
+            self::saveNotification($memberID, 'announcements', $title, $body, $url);
 
             $member = Member::get()->byID($memberID);
-            if ($member && $member->NotifyNotices) {
+            if ($member && $member->NotifyAnnouncements) {
                 self::sendToMember($member, $title, $body, $url);
             }
         }

@@ -1,10 +1,5 @@
 <template>
   <div class="section section--DashboardPage">
-    <AppHeader
-      title="Dashboard"
-      description="Willkommen auf deinem ToTeam Dashboard! Hier findest du eine Übersicht über deine anstehenden Termine und neuesten Aktivitäten."
-    />
-
     <div class="section_content">
       <!-- Welcome Box -->
       <div class="section_infobox infobox--welcome">
@@ -32,17 +27,17 @@
       </div>
 
       <!-- Aktuelle Ankündigungen -->
-      <div v-if="dashboardStore.hasLatestNotices" class="section_infobox">
-        <h2 class="hl2 dashboard-notices_title">Aktuelle Ankündigungen</h2>
-        <div class="notices-list">
-          <NoticeCard
-            v-for="notice in dashboardStore.latestNotices"
-            :key="notice.ID"
-            :notice="notice"
-            @click="openNotice"
+      <div v-if="dashboardStore.hasLatestAnnouncements" class="section_infobox">
+        <h2 class="hl2 dashboard-announcements_title">Aktuelle Ankündigungen</h2>
+        <div class="announcements-list">
+          <AnnouncementCard
+            v-for="announcement in dashboardStore.latestAnnouncements"
+            :key="announcement.ID"
+            :announcement="announcement"
+            @click="openAnnouncement"
           />
         </div>
-        <router-link to="/notices" class="section_infobox_footer dashboard-notices_footer">Alle Ankündigungen →</router-link>
+        <router-link to="/announcements" class="section_infobox_footer dashboard-announcements_footer">Alle Ankündigungen →</router-link>
       </div>
 
       <!-- Das steht heute an -->
@@ -131,21 +126,22 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useDashboardStore } from '@stores/dashboard'
 import { useEventsStore } from '@stores/events'
-import AppHeader from '@components/AppHeader.vue'
+import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/EventCard.vue'
-import NoticeCard from '@components/NoticeCard.vue'
+import AnnouncementCard from '@components/AnnouncementCard.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const dashboardStore = useDashboardStore()
 const eventsStore = useEventsStore()
+usePageHeaderStore().setHeader('Dashboard', 'Willkommen auf deinem ToTeam Dashboard! Hier findest du eine Übersicht über deine anstehenden Termine und neuesten Aktivitäten.')
 
 function openEvent(event) {
   router.push({ name: 'Calendar', query: { date: event.DateStart, eventID: event.ID } })
 }
 
-function openNotice(notice) {
-  router.push({ name: 'NoticeDetail', params: { id: notice.ID } })
+function openAnnouncement(announcement) {
+  router.push({ name: 'AnnouncementDetail', params: { id: announcement.ID } })
 }
 
 const todaysEvents = computed(() =>

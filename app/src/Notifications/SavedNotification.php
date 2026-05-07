@@ -28,7 +28,7 @@ class SavedNotification extends DataObject
     private static $db = [
         'Title' => 'Varchar(255)',
         'Body' => 'Text',
-        'Type' => 'Enum("events,notices,meals","events")',
+        'Type' => 'Enum("events,notices,announcements,meals","events")',
         'URL' => 'Varchar(255)',
         'IsRead' => 'Boolean'
     ];
@@ -116,6 +116,7 @@ class SavedNotification extends DataObject
             case 'events':
                 return '📅';
             case 'notices':
+            case 'announcements':
                 return '📢';
             case 'meals':
                 return '🍽️';
