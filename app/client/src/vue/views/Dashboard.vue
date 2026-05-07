@@ -33,27 +33,16 @@
 
       <!-- Aktuelle Ankündigungen -->
       <div v-if="dashboardStore.hasLatestNotices" class="section_infobox">
-        <h2 class="hl2">Aktuelle Ankündigungen</h2>
-        <ul class="infobox_list infobox_list--flat">
-          <li
+        <h2 class="hl2 dashboard-notices_title">Aktuelle Ankündigungen</h2>
+        <div class="notices-list">
+          <NoticeCard
             v-for="notice in dashboardStore.latestNotices"
             :key="notice.ID"
-            class="notice-link"
-            @click="openNotice(notice)"
-          >
-            <div class="item-meta">
-              <span class="item-category">{{ notice.Category ?? 'Allgemein' }}</span>
-              <div class="item-right">
-                <span class="item-date">{{ formatDate(notice.Created) }}</span>
-                <span v-if="notice.AuthorName" class="item-author">{{ notice.AuthorName }}</span>
-              </div>
-            </div>
-            <p class="item-title truncate">{{ notice.Title }}</p>
-          </li>
-        </ul>
-        <div class="card-footer">
-          <router-link to="/notices">Alle Ankündigungen →</router-link>
+            :notice="notice"
+            @click="openNotice"
+          />
         </div>
+        <router-link to="/notices" class="section_infobox_footer dashboard-notices_footer">Alle Ankündigungen →</router-link>
       </div>
 
       <!-- Das steht heute an -->
@@ -64,7 +53,7 @@
             <EventCard :event="event" :date-display="formatDate(event.DateStart)" @click="openEvent" />
           </li>
         </ul>
-        <div class="card-footer">
+        <div class="section_infobox_footer">
           <router-link to="/calendar">Zum Kalender →</router-link>
         </div>
       </div>
@@ -77,7 +66,7 @@
             <EventCard :event="event" :date-display="formatDate(event.DateStart)" @click="openEvent" />
           </li>
         </ul>
-        <div class="card-footer">
+        <div class="section_infobox_footer">
           <router-link to="/calendar">Zum Kalender →</router-link>
         </div>
       </div>
@@ -90,7 +79,7 @@
             <EventCard :event="event" :date-display="formatDate(event.DateStart)" @click="openEvent" />
           </li>
         </ul>
-        <div class="card-footer">
+        <div class="section_infobox_footer">
           <router-link to="/calendar">Zum Kalender →</router-link>
         </div>
       </div>
@@ -112,7 +101,7 @@
             <p class="item-title truncate">{{ feedback.Title }}</p>
           </li>
         </ul>
-        <div class="card-footer">
+        <div class="section_infobox_footer">
           <a href="/app/suggestionbox">Zum Kummerkasten →</a>
         </div>
       </div>
@@ -144,6 +133,7 @@ import { useDashboardStore } from '@stores/dashboard'
 import { useEventsStore } from '@stores/events'
 import AppHeader from '@components/AppHeader.vue'
 import EventCard from '@components/EventCard.vue'
+import NoticeCard from '@components/NoticeCard.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -155,7 +145,7 @@ function openEvent(event) {
 }
 
 function openNotice(notice) {
-  router.push({ name: 'Notices', query: { noticeID: notice.ID } })
+  router.push({ name: 'NoticeDetail', params: { id: notice.ID } })
 }
 
 const todaysEvents = computed(() =>

@@ -59,6 +59,15 @@ class NoticesApiController extends ApiController
             $noticesData = [];
             foreach ($notices as $notice) {
                 try {
+                    $orgs = [];
+                    foreach ($notice->Organisations() as $org) {
+                        $orgs[] = [
+                            'ID' => $org->ID,
+                            'Title' => $org->Title,
+                            'LogoURL' => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(40)->getURL() : null,
+                        ];
+                    }
+
                     $noticesData[] = [
                         'ID' => $notice->ID,
                         'Title' => $notice->Title,
@@ -72,6 +81,10 @@ class NoticesApiController extends ApiController
                             'ID' => $notice->Category()->ID,
                             'Title' => $notice->Category()->Title
                         ] : null,
+                        'AuthorName' => $notice->Author()->exists()
+                            ? trim($notice->Author()->FirstName . ' ' . $notice->Author()->Surname)
+                            : null,
+                        'Organisations' => $orgs,
                     ];
                 } catch (\Exception $e) {
                     error_log('Error processing notice ' . $notice->ID . ': ' . $e->getMessage());

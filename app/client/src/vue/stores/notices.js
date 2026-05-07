@@ -38,6 +38,10 @@ export const useNoticesStore = defineStore('notices', () => {
     }
   }
 
+  function getNoticeById(id) {
+    return notices.value.find(n => n.ID === id) ?? null
+  }
+
   function setCategory(category) {
     selectedCategory.value = category
   }
@@ -54,6 +58,7 @@ export const useNoticesStore = defineStore('notices', () => {
     error,
     filteredNotices,
     fetchNotices,
+    getNoticeById,
     setCategory,
     refresh
   }

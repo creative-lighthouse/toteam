@@ -6,6 +6,7 @@ import Dashboard from '@views/Dashboard.vue'
 import Calendar from '@views/Calendar.vue'
 import Food from '@views/Food.vue'
 import Notices from '@views/Notices.vue'
+import NoticeDetail from '@views/NoticeDetail.vue'
 import Profile from '@views/Profile.vue'
 import Map from '@views/Map.vue'
 import Links from '@views/Links.vue'
@@ -34,6 +35,12 @@ const routes = [
     path: '/notices',
     name: 'Notices',
     component: Notices,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/notices/:id',
+    name: 'NoticeDetail',
+    component: NoticeDetail,
     meta: { requiresAuth: true }
   },
   {

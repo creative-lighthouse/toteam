@@ -624,14 +624,14 @@
     .calendar-grid {
         max-width: 400px;
         margin: 0 auto;
-        background-color: var(--ColorPrimaryLight);
         border: 1px solid var(--ColorLightGray);
         border-radius: var(--BorderRadiusMedium);
         overflow: hidden;
         gap: 0px;
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        outline: 1px solid var(--ColorGray);
+        outline: 1px solid var(--ColorLightGray);
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 
         &.calendar-grid--loading {
             .calendar-day {
@@ -643,7 +643,8 @@
         .calendar-weekday {
             text-align: center;
             padding: 5px 10px;
-            outline: 1px solid var(--ColorGray);
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
         }
 
         .calendar-day {
@@ -656,11 +657,12 @@
             align-items: center;
             transition: opacity 0.2s ease, transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
             width: 100%;
-            outline: 1px solid var(--ColorGray);
+            outline: 1px solid var(--ColorLightGray);
 
             &.calendar-day--outside {
-                background-color: var(--ColorLightGray);
-                outline: 1px solid var(--ColorGray);
+                background-color: var(--ColorWhite);
+                filter: brightness(0.9);
+                outline: 1px solid var(--ColorLightGray);
 
                 .day-number {
                     opacity: 0.35;

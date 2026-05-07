@@ -15,6 +15,7 @@
 @use "pages/DashboardPage.scss";
 @use "pages/RegistrationPage.scss";
 @use "pages/NoticesPage.scss";
+@use "pages/NoticeDetailPage.scss";
 @use "pages/ProfilePage.scss";
 @use "pages/CalendarPage.scss";
 @use "pages/SuggestionPage.scss";
@@ -26,6 +27,7 @@
 
 @use "components/map-renderer.scss";
 @use "components/eventcard.scss";
+@use "components/noticecard.scss";
 
 @view-transition {
     navigation: auto;
