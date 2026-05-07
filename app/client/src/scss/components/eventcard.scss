@@ -63,9 +63,9 @@
     }
 
     .event-card_org-logo {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        border-radius: var(--BorderRadiusSmall);
         object-fit: cover;
         flex-shrink: 0;
     }

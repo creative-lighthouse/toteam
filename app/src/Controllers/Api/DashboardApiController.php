@@ -39,13 +39,23 @@ class DashboardApiController extends ApiController
                 ->sort('Created DESC')
                 ->limit(2);
             foreach ($notices as $notice) {
+                $orgs = [];
+                foreach ($notice->Organisations() as $org) {
+                    $orgs[] = [
+                        'ID' => $org->ID,
+                        'Title' => $org->Title,
+                        'LogoURL' => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(40)->getURL() : null,
+                    ];
+                }
+
                 $latestNotices[] = [
                     'ID' => $notice->ID,
                     'Title' => $notice->Title,
                     'ShortText' => $notice->ShortText,
-                    'Created' => $notice->Created,
+                    'Created' => $notice->dbObject('Created')->Nice(),
                     'Category' => $notice->Category()->exists() ? $notice->Category()->Title : null,
                     'AuthorName' => $notice->Author()->exists() ? $notice->Author()->FirstName : null,
+                    'Organisations' => $orgs,
                 ];
             }
         }

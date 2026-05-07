@@ -1,11 +1,11 @@
 <template>
     <div class="AppHeader">
         <div class="AppHeader_backbutton">
-            <router-link v-if="$route.name !== 'Dashboard'" to="/dashboard" class="back_link">
+            <button v-if="$route.name !== 'Dashboard'" class="back_link" @click="goBack">
                 <div class="nav_icon nav_icon--back">
                     <img :src="actionBack" alt="Zurück Icon" class="back_image">
                 </div>
-            </router-link>
+            </button>
         </div>
         <div class="AppHeader_content">
             <h1 class="AppHeader_title">{{ title }}</h1>
@@ -37,6 +37,7 @@
 
 <script setup>
     import { ref, onMounted, onUnmounted } from 'vue'
+    import { useRouter } from 'vue-router'
     import { useNotificationsStore } from '../stores/notifications'
     import AppNotifications from './AppNotifications.vue'
     import actionBack from '../../../icons/actions/action_back.svg'
@@ -54,7 +55,16 @@
         }
     })
 
+    const router = useRouter()
     const notificationsStore = useNotificationsStore()
+
+    function goBack() {
+        if (window.history.length > 1) {
+            router.back()
+        } else {
+            router.push({ name: 'Dashboard' })
+        }
+    }
     notificationsStore.fetchNotifications()
 
     const infoVisible = ref(false)

@@ -16,11 +16,26 @@
             }
         }
 
-        .notices-list{
-            list-style: none;
-            padding: 0;
+        .section_filter {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
 
-            .notice_item_wrapper{
+            .button {
+                background-color: transparent;
+                border: 1px solid var(--ColorPrimary);
+                color: var(--ColorPrimary);
+
+                &.active {
+                    background-color: var(--ColorPrimary);
+                    color: var(--ColorWhite);
+                }
+            }
+        }
+
+        .notice_item_wrapper{
                 margin-bottom: 20px;
                 background-color: var(--ColorWhite);
                 border-radius: var(--BorderRadiusMedium);
@@ -57,6 +72,5 @@
                     box-shadow: var(--BoxShadowLight);
                 }
             }
-        }
     }
 }
