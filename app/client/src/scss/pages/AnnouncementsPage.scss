@@ -1,0 +1,24 @@
+@use "../variables" as *;
+
+.section.section--AnnouncementsPage {
+    .section_content{
+        .section_filter {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+
+            .button {
+                background-color: transparent;
+                border: 1px solid var(--ColorPrimary);
+                color: var(--ColorPrimary);
+
+                &.active {
+                    background-color: var(--ColorPrimary);
+                    color: var(--ColorWhite);
+                }
+            }
+        }
+    }
+}

@@ -7,7 +7,7 @@ use App\Maps\MapLayer;
 use App\Controllers\BaseController;
 
 /**
- * Class \App\Controllers\NoticesController
+ * Class \App\Controllers\MapController
  *
  */
 class MapController extends BaseController

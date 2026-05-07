@@ -117,7 +117,7 @@ class ApiController extends Controller
             'endpoints' => [
                 'auth' => '/api/v1/auth',
                 'dashboard' => '/api/v1/dashboard',
-                'notices' => '/api/v1/notices',
+                'announcements' => '/api/v1/announcements',
                 'calendar' => '/api/v1/calendar',
                 'food' => '/api/v1/food'
             ]

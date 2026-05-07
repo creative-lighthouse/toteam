@@ -2,18 +2,16 @@
 
 namespace App\Controllers;
 
-use App\Notices\Notice;
+use App\Announcements\Announcement;
 use App\Controllers\BaseController;
-use SilverStripe\Security\Member;
-use SilverStripe\Security\Security;
 
 /**
- * Class \App\Controllers\NoticesController
+ * Class \App\Controllers\AnnouncementsController
  *
  */
-class NoticesController extends BaseController
+class AnnouncementsController extends BaseController
 {
-    private static $url_segment = 'notices';
+    private static $url_segment = 'announcements';
 
     private static $allowed_actions = [
         "view",
@@ -21,15 +19,11 @@ class NoticesController extends BaseController
 
     public function index()
     {
-        //Check if there is a date param. Else use current date and redirect
-        $notices = Notice::get()->sort('Created', 'DESC');
+        $announcements = Announcement::get()->sort('Created', 'DESC');
+        $announcements = $this->filterByUserOrganizations($announcements);
 
-        // Filter by user's organizations
-        $notices = $this->filterByUserOrganizations($notices);
-
-        //Filter notices based on release and expiry date
         $currentDate = date('Y-m-d H:i:s');
-        $notices = $notices->filterAny([
+        $announcements = $announcements->filterAny([
             'ReleaseDate:LessThanOrEqual' => $currentDate,
             'ReleaseDate' => null,
         ])->filterAny([
@@ -38,38 +32,38 @@ class NoticesController extends BaseController
         ]);
 
         return $this->render([
-            'Notices' => $notices,
+            'Announcements' => $announcements,
         ]);
     }
 
     public function view($request)
     {
-        $noticeID = $request->param('ID');
-        $notice = Notice::get_by_id($noticeID);
-        if (!$notice) {
+        $announcementID = $request->param('ID');
+        $announcement = Announcement::get_by_id($announcementID);
+        if (!$announcement) {
             return $this->httpError(404, 'Ankündigung nicht gefunden');
         }
 
         return [
-            'Notice' => $notice,
+            'Announcement' => $announcement,
         ];
     }
 
-    public static function getUnreadNotices($memberID)
+    public static function getUnreadAnnouncements($memberID)
     {
         $member = \SilverStripe\Security\Member::get()->byID($memberID);
         if (!$member) {
-            return Notice::get()->filter('ID', 0);
+            return Announcement::get()->filter('ID', 0);
         }
 
         $organizationIDs = $member->getOrganizationIDs();
 
         if (empty($organizationIDs)) {
-            return Notice::get()->filter('ID', 0);
+            return Announcement::get()->filter('ID', 0);
         }
 
         $currentDate = date('Y-m-d H:i:s');
-        $notices = Notice::get()
+        return Announcement::get()
             ->filter(['Organisations.ID' => $organizationIDs])
             ->distinct(true)
             ->filterAny([
@@ -79,7 +73,5 @@ class NoticesController extends BaseController
                 'ExpiryDate:GreaterThanOrEqual' => $currentDate,
                 'ExpiryDate' => null,
             ]);
-
-        return $notices;
     }
 }

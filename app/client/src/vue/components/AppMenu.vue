@@ -22,14 +22,14 @@
             </li>
 
             <li>
-                <router-link to="/notices" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Notices' }" @click="closeAllMenus">
+                <router-link to="/announcements" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Announcements' }" @click="closeAllMenus">
                     <div class="nav_icon">
                         <img
-                        :src="$route.name === 'Notices' ? nachrichtenTotem : nachrichtenTotemInactive"
+                        :src="$route.name === 'Announcements' ? nachrichtenTotem : nachrichtenTotemInactive"
                         alt="Nachrichten Icon"
                         class="nav_image"
                         >
-                        <p v-if="noticesStore.unreadCount > 0" class="nav_badge">{{ noticesStore.unreadCount }}</p>
+                        <p v-if="announcementsStore.unreadCount > 0" class="nav_badge">{{ announcementsStore.unreadCount }}</p>
                     </div>
                 </router-link>
             </li>
@@ -140,7 +140,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
-import { useNoticesStore } from '@stores/notices'
+import { useAnnouncementsStore } from '@stores/announcements'
 
 // Import totem icons
 import dashboardTotem from '../../../icons/totems/dashboard_totem.png'
@@ -156,7 +156,7 @@ import actionLogout from '../../../icons/actions/action_logout.svg'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const noticesStore = useNoticesStore()
+const announcementsStore = useAnnouncementsStore()
 const isSecondaryMenuOpen = ref(false)
 const isProfileMenuOpen = ref(false)
 
@@ -199,8 +199,8 @@ async function handleLogout() {
 onMounted(() => {
     if (authStore.isAuthenticated) {
         // Load unread count for badge - but don't fail if it errors
-        noticesStore.fetchNotices().catch(err => {
-        console.warn('Could not fetch notices for badge:', err)
+        announcementsStore.fetchAnnouncements().catch(err => {
+        console.warn('Could not fetch announcements for badge:', err)
         })
     }
 })

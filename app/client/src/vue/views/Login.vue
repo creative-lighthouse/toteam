@@ -1,7 +1,5 @@
 <template>
   <div class="section section--LoginPage">
-    <AppHeader title="Login" description="Melde dich mit deinen Zugangsdaten an." />
-
     <div class="section_content">
       <div class="section_infobox">
         <form @submit.prevent="handleLogin" class="login-form">
@@ -50,10 +48,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
-import AppHeader from '@components/AppHeader.vue'
+import { usePageHeaderStore } from '@stores/pageHeader'
 
 const router = useRouter()
 const authStore = useAuthStore()
+usePageHeaderStore().setHeader('Login', 'Melde dich mit deinen Zugangsdaten an.')
 
 const email = ref('')
 const password = ref('')

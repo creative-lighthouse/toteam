@@ -1,7 +1,5 @@
 <template>
   <div class="section section--CalendarPage">
-    <AppHeader title="Kalender" description="Verwalte deine Termine und Events. Du kannst hier Termine erstellen, einsehen und bei den Terminen Zu- oder absagen" />
-
     <div class="section_content section_content--calendar">
       <!-- Error State -->
       <div v-if="error" class="error-state">
@@ -90,7 +88,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEventsStore } from '@stores/events'
-import AppHeader from '@components/AppHeader.vue'
+import { usePageHeaderStore } from '@stores/pageHeader'
 import EventDialog from '@components/EventDialog.vue'
 import EventCard from '@components/EventCard.vue'
 import AppMenu from '@components/AppMenu.vue'
@@ -99,6 +97,7 @@ import actionBack from '../../../icons/actions/action_back.svg'
 
 const eventsStore = useEventsStore()
 const route = useRoute()
+usePageHeaderStore().setHeader('Kalender', 'Verwalte deine Termine und Events. Du kannst hier Termine erstellen, einsehen und bei den Terminen Zu- oder absagen')
 
 // Use store state
 const loading = computed(() => eventsStore.loading)

@@ -3,12 +3,12 @@ import { ref, computed } from 'vue'
 import { apiGet, clearCacheForEndpoint } from '@utils/api'
 
 export const useDashboardStore = defineStore('dashboard', () => {
-  const latestNotices = ref([])
+  const latestAnnouncements = ref([])
   const newFeedback = ref([])
   const loading = ref(false)
   const error = ref(null)
 
-  const hasLatestNotices = computed(() => latestNotices.value.length > 0)
+  const hasLatestAnnouncements = computed(() => latestAnnouncements.value.length > 0)
   const hasNewFeedback = computed(() => newFeedback.value.length > 0)
 
   async function fetchDashboardData(forceRefresh = false) {
@@ -22,7 +22,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
       const response = await apiGet('/dashboard', !forceRefresh, 3 * 60 * 1000)
 
-      latestNotices.value = response.latestNotices || []
+      latestAnnouncements.value = response.latestAnnouncements || []
       newFeedback.value = response.newFeedback || []
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err)
@@ -37,11 +37,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   return {
-    latestNotices,
+    latestAnnouncements,
     newFeedback,
     loading,
     error,
-    hasLatestNotices,
+    hasLatestAnnouncements,
     hasNewFeedback,
     fetchDashboardData,
     refresh,

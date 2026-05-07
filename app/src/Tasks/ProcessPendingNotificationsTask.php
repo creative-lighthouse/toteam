@@ -3,7 +3,7 @@
 namespace App\Tasks;
 
 use App\Calendar\Appointment;
-use App\Notices\Notice;
+use App\Announcements\Announcement;
 use App\Notifications\PendingNotificationJob;
 use App\Notifications\PushNotificationService;
 use SilverStripe\Dev\BuildTask;
@@ -41,10 +41,10 @@ class ProcessPendingNotificationsTask extends BuildTask
     private function processJob(PendingNotificationJob $job): void
     {
         switch ($job->EventType) {
-            case 'new_notice':
-                $notice = Notice::get()->byID($job->SourceID);
-                if ($notice) {
-                    PushNotificationService::notifyNewNotice($notice);
+            case 'new_announcement':
+                $announcement = Announcement::get()->byID($job->SourceID);
+                if ($announcement) {
+                    PushNotificationService::notifyNewAnnouncement($announcement);
                 }
                 break;
 

@@ -77,7 +77,7 @@ class NotificationApiController extends Controller
         $data = json_decode($request->getBody(), true);
 
         if (isset($data['events']))  $member->NotifyEvents  = (bool)$data['events'];
-        if (isset($data['notices'])) $member->NotifyNotices = (bool)$data['notices'];
+        if (isset($data['announcements'])) $member->NotifyAnnouncements = (bool)$data['announcements'];
         if (isset($data['meals']))   $member->NotifyMeals   = (bool)$data['meals'];
         if (isset($data['maps']))    $member->NotifyMaps    = (bool)$data['maps'];
 
@@ -98,7 +98,7 @@ class NotificationApiController extends Controller
 
         return $this->jsonResponse([
             'events'  => (bool)$member->NotifyEvents,
-            'notices' => (bool)$member->NotifyNotices,
+            'announcements' => (bool)$member->NotifyAnnouncements,
             'meals'   => (bool)$member->NotifyMeals,
             'maps'    => (bool)$member->NotifyMaps,
         ]);

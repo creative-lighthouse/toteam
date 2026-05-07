@@ -1,24 +1,25 @@
 @use "../variables" as *;
 
-// Shared list container — used on both the Notices page and the Dashboard
-.notices-list {
+// Shared list container — used on both the Announcements page and the Dashboard
+.announcements-list {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    width: 100%;
 }
 
-// Dashboard notices section (title + list + footer, no white infobox wrapper)
-.dashboard-notices {
+// Dashboard announcements section (title + list + footer, no white infobox wrapper)
+.dashboard-announcements {
     grid-column: span 2;
     display: flex;
     flex-direction: column;
     gap: 12px;
 
-    .dashboard-notices_title {
+    .dashboard-announcements_title {
         margin: 0;
     }
 
-    .dashboard-notices_footer {
+    .dashboard-announcements_footer {
         font-size: 13px;
         color: var(--ColorGray);
         text-decoration: none;
@@ -34,8 +35,8 @@
     }
 }
 
-.notice-card {
-    padding: 1.5rem;
+.announcement-card {
+    padding: 14px;
     background-color: var(--ColorWhite);
     border-radius: var(--BorderRadiusMedium);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -43,17 +44,15 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 100%;
+    align-items: stretch;
+    margin: 0;
 
-    &:hover .notice-card_title-text {
+    &:hover .announcement-card_title-text {
         color: var(--ColorPrimary);
     }
 
-    &.notice--highlighted {
-        outline: 2px solid var(--ColorPrimary);
-        outline-offset: 2px;
-    }
-
-    .notice-card_header {
+    .announcement-card_header {
         display: grid;
         grid-template-columns: 1fr auto auto;
         gap: 10px;
@@ -64,7 +63,7 @@
             margin: 0;
         }
 
-        .notice-card_date {
+        .announcement-card_date {
             color: var(--ColorGray);
             font-size: 12px;
             white-space: nowrap;
@@ -72,13 +71,13 @@
             justify-self: flex-end;
         }
 
-        .notice-card_orgs {
+        .announcement-card_orgs {
             display: flex;
             gap: 6px;
             align-items: center;
             flex-wrap: wrap;
 
-            .notice-card_org-logo {
+            .announcement-card_org-logo {
                 width: 25px;
                 height: 25px;
                 object-fit: contain;
@@ -87,19 +86,19 @@
         }
     }
 
-    .notice-card_short-text {
+    .announcement-card_short-text {
         margin: 0;
         color: var(--ColorGray);
         font-size: 14px;
     }
 
-    .notice-card_footer {
+    .announcement-card_footer {
         display: flex;
         justify-content: flex-start;
         align-items: center;
     }
 
-    .notice-card_category-badge {
+    .announcement-card_category-badge {
         padding: 0.25rem 0.75rem;
         background-color: var(--ColorLightGray);
         border-radius: var(--BorderRadiusSmall);

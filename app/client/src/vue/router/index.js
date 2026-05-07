@@ -5,8 +5,8 @@ import { useAuthStore } from '@stores/auth'
 import Dashboard from '@views/Dashboard.vue'
 import Calendar from '@views/Calendar.vue'
 import Food from '@views/Food.vue'
-import Notices from '@views/Notices.vue'
-import NoticeDetail from '@views/NoticeDetail.vue'
+import Announcements from '@views/Announcements.vue'
+import AnnouncementDetail from '@views/AnnouncementDetail.vue'
 import Profile from '@views/Profile.vue'
 import Map from '@views/Map.vue'
 import Links from '@views/Links.vue'
@@ -32,15 +32,15 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/notices',
-    name: 'Notices',
-    component: Notices,
+    path: '/announcements',
+    name: 'Announcements',
+    component: Announcements,
     meta: { requiresAuth: true }
   },
   {
-    path: '/notices/:id',
-    name: 'NoticeDetail',
-    component: NoticeDetail,
+    path: '/announcements/:id',
+    name: 'AnnouncementDetail',
+    component: AnnouncementDetail,
     meta: { requiresAuth: true }
   },
   {

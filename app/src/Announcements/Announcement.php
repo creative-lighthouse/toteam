@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Notices;
+namespace App\Announcements;
 
 use App\Notifications\PendingNotificationJob;
 use App\Teams\Organization;
@@ -12,7 +12,7 @@ use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 
 /**
- * Class \App\Notices\Notice
+ * Class \App\Announcements\Announcement
  *
  * @property ?string $Title
  * @property ?string $ShortText
@@ -22,7 +22,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $AuthorID
  * @property int $CategoryID
  * @method \SilverStripe\Security\Member Author()
- * @method \App\Notices\NoticeCategory Category()
+ * @method \App\Announcements\AnnouncementCategory Category()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
@@ -30,7 +30,7 @@ use SilverStripe\Security\PermissionProvider;
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
  */
-class Notice extends DataObject implements PermissionProvider
+class Announcement extends DataObject implements PermissionProvider
 {
     private bool $notifyAfterWrite = false;
 
@@ -44,7 +44,7 @@ class Notice extends DataObject implements PermissionProvider
 
     private static $has_one = [
         "Author" => Member::class,
-        "Category" => NoticeCategory::class,
+        "Category" => AnnouncementCategory::class,
     ];
 
     private static $many_many = [
@@ -68,11 +68,12 @@ class Notice extends DataObject implements PermissionProvider
         "Category.Title" => "Kategorie",
     ];
 
-    private static $table_name = 'Notice';
+    // Keep existing table names to avoid DB migration
+    private static $table_name = 'Announcement';
     private static $singular_name = "Ankündigung";
     private static $plural_name = "Ankündigungen";
 
-     #[Override]
+    #[Override]
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
@@ -90,7 +91,7 @@ class Notice extends DataObject implements PermissionProvider
 
     public function getLink(): string
     {
-        return '/app/notices';
+        return '/app/announcements';
     }
 
     public function onBeforeWrite()
@@ -108,7 +109,7 @@ class Notice extends DataObject implements PermissionProvider
             PendingNotificationJob::create([
                 'SourceClass' => self::class,
                 'SourceID'    => $this->ID,
-                'EventType'   => 'new_notice',
+                'EventType'   => 'new_announcement',
             ])->write();
         }
     }
@@ -116,22 +117,22 @@ class Notice extends DataObject implements PermissionProvider
     public function providePermissions()
     {
         return [
-            'CREATE_NOTICES' => [
+            'CREATE_ANNOUNCEMENTS' => [
                 'name' => 'Ankündigungen erstellen',
                 'category' => 'Ankündigungen',
-                'help' => 'Erlaubt das Erstellen, von Ankündigungen'
+                'help' => 'Erlaubt das Erstellen von Ankündigungen'
             ],
-            'EDIT_NOTICES' => [
+            'EDIT_ANNOUNCEMENTS' => [
                 'name' => 'Ankündigungen bearbeiten',
                 'category' => 'Ankündigungen',
                 'help' => 'Erlaubt das Bearbeiten von Ankündigungen'
             ],
-            'VIEW_NOTICES' => [
+            'VIEW_ANNOUNCEMENTS' => [
                 'name' => 'Ankündigungen ansehen',
                 'category' => 'Ankündigungen',
                 'help' => 'Erlaubt das Ansehen von Ankündigungen'
             ],
-            'DELETE_NOTICES' => [
+            'DELETE_ANNOUNCEMENTS' => [
                 'name' => 'Ankündigungen löschen',
                 'category' => 'Ankündigungen',
                 'help' => 'Erlaubt das Löschen von Ankündigungen'
@@ -141,21 +142,21 @@ class Notice extends DataObject implements PermissionProvider
 
     public function canCreate($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'CREATE_NOTICES');
+        return Permission::checkMember($member, 'CREATE_ANNOUNCEMENTS');
     }
 
     public function canEdit($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'EDIT_NOTICES');
+        return Permission::checkMember($member, 'EDIT_ANNOUNCEMENTS');
     }
 
     public function canView($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'VIEW_NOTICES');
+        return Permission::checkMember($member, 'VIEW_ANNOUNCEMENTS');
     }
 
     public function canDelete($member = null, $context = [])
     {
-        return Permission::checkMember($member, 'DELETE_NOTICES');
+        return Permission::checkMember($member, 'DELETE_ANNOUNCEMENTS');
     }
 }
