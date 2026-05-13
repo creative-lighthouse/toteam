@@ -13,5 +13,6 @@ SilverStripe\Control\Director:
     'api/v1/auth//$Action': 'App\Controllers\Api\AuthApiController'
     'api/v1/dashboard//$Action': 'App\Controllers\Api\DashboardApiController'
     'api/v1/announcements': 'App\Controllers\Api\AnnouncementsApiController'
+    'api/v1/organizations//$Action/$ID': 'App\Controllers\Api\OrganizationsApiController'
     'api/v1/calendar//$Action/$ID': 'App\Controllers\Api\CalendarApiController'
     'api/notifications//$Action': 'App\Controllers\NotificationApiController'

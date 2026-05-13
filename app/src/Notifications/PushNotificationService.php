@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Maps\Map;
 use App\Food\Meal;
 use App\Announcements\Announcement;
+use App\Teams\OrganizationMembership;
 use App\Events\EventDay;
 use App\Calendar\Appointment;
 use SilverStripe\Security\Member;
@@ -141,8 +142,12 @@ class PushNotificationService
 
         $memberIDs = [];
         foreach ($organisations as $organisation) {
-            foreach ($organisation->Members() as $member) {
-                $memberIDs[$member->ID] = $member->ID;
+            $activeMembers = OrganizationMembership::get()->filter([
+                'OrganizationID' => $organisation->ID,
+                'Role'           => ['member', 'moderator', 'admin'],
+            ]);
+            foreach ($activeMembers as $membership) {
+                $memberIDs[$membership->MemberID] = $membership->MemberID;
             }
         }
 
