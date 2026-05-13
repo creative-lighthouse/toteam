@@ -2,10 +2,9 @@
 
 namespace App\Teams;
 
-use App\Teams\Department;
+use App\Teams\OrganizationMembership;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 
@@ -14,11 +13,12 @@ use SilverStripe\Security\PermissionProvider;
  *
  * @property ?string $Title
  * @property ?string $Description
- * @property bool $AllowsSelfJoining
+ * @property ?string $JoinMode
  * @property int $LogoID
+ * @property int $CoverImageID
  * @method \SilverStripe\Assets\Image Logo()
- * @method \SilverStripe\ORM\DataList|\App\Teams\Department[] Departments()
- * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
+ * @method \SilverStripe\Assets\Image CoverImage()
+ * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] Memberships()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -28,41 +28,38 @@ use SilverStripe\Security\PermissionProvider;
 class Organization extends DataObject implements PermissionProvider
 {
     private static $db = [
-        "Title" => "Varchar(255)",
+        "Title"       => "Varchar(255)",
         "Description" => "Text",
-        "AllowsSelfJoining" => "Boolean",
+        "JoinMode"    => "Enum('open,application,invite_only,hidden','invite_only')",
     ];
 
     private static $has_one = [
-        "Logo" => Image::class,
+        "Logo"       => Image::class,
+        "CoverImage" => Image::class,
     ];
 
     private static $owns = [
         "Logo",
+        "CoverImage",
     ];
 
     private static $has_many = [
-        "Departments" => Department::class,
-    ];
-
-    private static $many_many = [
-        "Members" => Member::class,
+        "Memberships" => OrganizationMembership::class,
     ];
 
     private static $summary_fields = [
-        "Title" => "Titel",
-        "Description" => "Beschreibung",
-        "AllowsSelfJoining" => "Erlaubt Selbstbeitritt",
-        "Departments.Count" => "Anzahl Teams",
-        "Members.Count" => "Anzahl Mitglieder",
+        "Title"            => "Titel",
+        "Description"      => "Beschreibung",
+        "JoinMode"         => "Beitrittsmodus",
+        "Memberships.Count" => "Anzahl Mitglieder",
     ];
 
     private static $field_labels = [
-        "Title" => "Titel",
+        "Title"       => "Titel",
         "Description" => "Beschreibung",
-        "AllowsSelfJoining" => "Erlaubt Selbstbeitritt",
-        "Departments" => "Teams",
-        "Members" => "Mitglieder",
+        "JoinMode"    => "Beitrittsmodus",
+        "CoverImage"  => "Coverbild",
+        "Memberships" => "Mitgliedschaften",
     ];
 
     private static $table_name = 'Organization';

@@ -10,6 +10,7 @@ import AnnouncementDetail from '@views/AnnouncementDetail.vue'
 import Profile from '@views/Profile.vue'
 import Map from '@views/Map.vue'
 import Links from '@views/Links.vue'
+import Organizations from '@views/Organizations.vue'
 import Login from '@views/Login.vue'
 
 const routes = [
@@ -59,6 +60,12 @@ const routes = [
     path: '/links',
     name: 'Links',
     component: Links,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/organizations',
+    name: 'Organizations',
+    component: Organizations,
     meta: { requiresAuth: true }
   },
   {

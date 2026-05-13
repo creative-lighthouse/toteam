@@ -21,6 +21,7 @@
 @use "pages/SuggestionPage.scss";
 @use "pages/FoodPage.scss";
 @use "pages/MapPage.scss";
+@use "pages/OrganizationsPage.scss";
 
 
 @use "landingpage/landingpage.scss";
@@ -28,6 +29,7 @@
 @use "components/map-renderer.scss";
 @use "components/eventcard.scss";
 @use "components/announcementcard.scss";
+@use "components/organizationcard.scss";
 
 
 html{

@@ -1,0 +1,15 @@
+@use "../variables" as *;
+
+.section.section--OrganizationsPage {
+    .organizations-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        width: 100%;
+        margin-top: 20px;
+
+        @include media(max-smartphone) {
+            grid-template-columns: 1fr;
+        }
+    }
+}

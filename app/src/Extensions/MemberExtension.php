@@ -13,8 +13,7 @@ use App\Events\EventDayParticipation;
 use SilverStripe\Forms\DropdownField;
 use App\Controllers\AnnouncementsController;
 use App\Teams\Organization;
-use App\Teams\Project;
-use App\Teams\Team;
+use App\Teams\OrganizationMembership;
 
 /**
  * Class \App\Extensions\MemberExtension
@@ -30,10 +29,8 @@ use App\Teams\Team;
  * @property bool $NotifyMaps
  * @property int $ProfileImageID
  * @method \SilverStripe\Assets\Image ProfileImage()
+ * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] OrganizationMemberships()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Department[] Departments()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Project[] Projects()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organizations()
  */
 class MemberExtension extends Extension
 {
@@ -63,15 +60,13 @@ class MemberExtension extends Extension
         "Allergies" => Allergy::class,
     ];
 
-    private static $belongs_many = [
-        "Tasks" => Task::class,
-        "Suggestions" => Suggestion::class,
+    private static $has_many = [
+        "OrganizationMemberships" => OrganizationMembership::class . '.Member',
     ];
 
-    private static $belongs_many_many = [
-        "Departments" => Department::class,
-        "Projects" => Project::class,
-        "Organizations" => Organization::class,
+    private static $belongs_many = [
+        "Tasks"       => Task::class,
+        "Suggestions" => Suggestion::class,
     ];
 
     private static $owns = [
@@ -187,39 +182,41 @@ class MemberExtension extends Extension
         return AnnouncementsController::getUnreadAnnouncements($this->owner->ID);
     }
 
-    /**
-     * Get all Organization IDs that this member belongs to
-     * @return array
-     */
-    public function getOrganizationIDs()
+    public function getMembershipInOrg(Organization $org): ?OrganizationMembership
     {
-        $organizationIDs = [];
+        return OrganizationMembership::get()->filter([
+            'MemberID'       => $this->owner->ID,
+            'OrganizationID' => $org->ID,
+        ])->first();
+    }
 
-        // Direct organization memberships
-        if ($this->owner->Organizations()->exists()) {
-            foreach ($this->owner->Organizations() as $org) {
-                $organizationIDs[] = $org->ID;
-            }
-        }
+    public function getRoleInOrg(Organization $org): ?string
+    {
+        return $this->getMembershipInOrg($org)?->Role;
+    }
 
-        // Organizations through departments
-        if ($this->owner->Departments()->exists()) {
-            foreach ($this->owner->Departments() as $dept) {
-                if ($dept->ParentID) {
-                    $organizationIDs[] = $dept->ParentID;
-                }
-            }
-        }
+    public function isAdminOfOrg(Organization $org): bool
+    {
+        return $this->getMembershipInOrg($org)?->isAdmin() ?? false;
+    }
 
-        // Organizations through projects
-        if ($this->owner->Projects()->exists()) {
-            foreach ($this->owner->Projects() as $project) {
-                if ($project->Parent()->exists() && $project->Parent()->ParentID) {
-                    $organizationIDs[] = $project->Parent()->ParentID;
-                }
-            }
-        }
+    public function canManageOrg(Organization $org): bool
+    {
+        return $this->getMembershipInOrg($org)?->canManageContent() ?? false;
+    }
 
-        return array_unique($organizationIDs);
+    public function isActiveMemberOfOrg(Organization $org): bool
+    {
+        return $this->getMembershipInOrg($org)?->isActiveMember() ?? false;
+    }
+
+    public function getOrganizationIDs(): array
+    {
+        return OrganizationMembership::get()
+            ->filter([
+                'MemberID' => $this->owner->ID,
+                'Role'     => ['member', 'moderator', 'admin'],
+            ])
+            ->column('OrganizationID');
     }
 }
