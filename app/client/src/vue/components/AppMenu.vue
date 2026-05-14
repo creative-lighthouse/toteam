@@ -113,7 +113,6 @@
 
         <!-- Profile Menu -->
         <div class="profilenav">
-            <p class="version_note"><i>ToTeam Vue</i> <kbd>BETA</kbd></p>
             <div class="nav_profile_wrap">
                 <router-link to="/profile" class="nav_profile" @click="closeAllMenus">
                     <div class="nav_icon nav_icon--profile">
@@ -132,7 +131,7 @@
                     </div>
                     <div class="nav_text">
                         <p class="nav_title">{{ authStore.user?.FirstName }}</p>
-                        <p class="nav_subtitle">Profil ansehen</p>
+                        <p class="nav_subtitle">Profil ansehen →</p>
                     </div>
                 </router-link>
                 <button @click="handleLogout" class="nav_logout" title="Abmelden">
@@ -140,9 +139,17 @@
                         <img :src="actionLogout" alt="Abmelden Icon" class="logout_image">
                     </div>
                 </button>
+                <button @click="openSettings" class="nav_settings" title="Einstellungen">
+                    <div class="nav_icon nav_icon--settings">
+                        <img :src="actionSettings" alt="Einstellungen Icon" class="settings_image">
+                    </div>
+                </button>
             </div>
+            <p class="version_note"><i>ToTeam Vue</i> <kbd>BETA</kbd></p>
         </div>
     </header>
+
+    <SettingsModal ref="settingsModal" />
 </template>
 
 <script setup>
@@ -150,6 +157,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useAnnouncementsStore } from '@stores/announcements'
+import SettingsModal from '@components/SettingsModal.vue'
 
 // Import totem icons
 import dashboardTotem from '../../../icons/totems/dashboard_totem.png'
@@ -163,12 +171,13 @@ import downloadsTotem from '../../../icons/totems/downloads_totem.png'
 import kartenTotem from '../../../icons/totems/karten_totem.png'
 import organizationsTotem from '../../../icons/totems/organizations_totem.png'
 import actionLogout from '../../../icons/actions/action_logout.svg'
-
+import actionSettings from '../../../icons/actions/action_settings.svg'
 const router = useRouter()
 const authStore = useAuthStore()
 const announcementsStore = useAnnouncementsStore()
 const isSecondaryMenuOpen = ref(false)
 const isProfileMenuOpen = ref(false)
+const settingsModal = ref(null)
 
 function toggleSecondaryMenu() {
     // Toggle body class like the original JavaScript does
@@ -199,6 +208,11 @@ function closeAllMenus() {
     closeProfileMenu();
 }
 
+function openSettings() {
+    closeAllMenus()
+    settingsModal.value?.open()
+}
+
 async function handleLogout() {
     await authStore.logout()
     closeSecondaryMenu()
@@ -207,10 +221,14 @@ async function handleLogout() {
 }
 
 onMounted(() => {
+    // Restore saved theme
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('theme--dark')
+    }
+
     if (authStore.isAuthenticated) {
-        // Load unread count for badge - but don't fail if it errors
         announcementsStore.fetchAnnouncements().catch(err => {
-        console.warn('Could not fetch announcements for badge:', err)
+            console.warn('Could not fetch announcements for badge:', err)
         })
     }
 })

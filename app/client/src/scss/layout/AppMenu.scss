@@ -304,8 +304,8 @@
         position: fixed;
         left: 15px;
         bottom: -50vh;
-        width: auto;
-        max-width: 400px;
+        width: 400px;
+        max-width: 90vw;
         height: auto;
         background-color: var(--ColorWhite);
         display: flex;
@@ -322,22 +322,24 @@
             width: 100%;
             height: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
 
             .nav_profile{
                 display: flex;
+                flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 color: var(--ColorBlack);
                 text-decoration: none;
 
                 .nav_icon{
-                    width: 120px;
-                    height: 120px;
+                    width: 80px;
+                    height: 80px;
                     border-radius: 50%;
                     overflow: hidden;
-                    margin-bottom: 20px;
+                    margin-bottom: 15px;
 
                     img{
                         width: 100%;
@@ -345,18 +347,61 @@
                         object-fit: cover;
                     }
                 }
+
+                .nav_text {
+                    text-align: center;
+
+                    .nav_subtitle {
+                        font-size: 12px;
+                        color: var(--ColorGray);
+                        padding: 10px 0;
+                    }
+                }
             }
         }
 
         .nav_logout {
+            position: absolute;
+            top: 20px;
+            left: 20px;
             width: 30px;
             height: 30px;
+            background-color: transparent;
+            border: none;
+            padding: 0;
 
             img {
                 width: 100%;
                 height: 100%;
                 object-fit: contain;
             }
+        }
+
+        .nav_settings {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 30px;
+            height: 30px;
+            background-color: transparent;
+            border: none;
+            padding: 0;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+        }
+
+        .version_note {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            font-size: 10px;
+            color: var(--ColorGray);
+            transform: rotate(90deg);
+            transform-origin: left center;
         }
 
         .profilenav--open &{

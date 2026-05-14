@@ -107,3 +107,256 @@ dialog{
         z-index: -1;
     }
 }
+
+// Applicants modal
+.applicants-modal {
+    text-align: left;
+    max-width: 520px;
+
+    .applicants-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .applicants-modal_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+
+        .applicants-modal_title {
+            margin: 0;
+            color: var(--ColorWhite);
+        }
+
+        .button--close {
+            background: none;
+            border: none;
+            color: var(--ColorWhite);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+    }
+
+    .applicants-modal_body {
+        padding: 8px 0;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .applicants-modal_state {
+        padding: 24px 20px;
+        color: var(--ColorGray);
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .applicants-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .applicant-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background-color: var(--ColorWhite);
+        margin: 1px 0;
+
+        &:hover {
+            background-color: var(--ColorLightGray);
+        }
+    }
+
+    .applicant-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--ColorPrimaryLight, #e8f0fe);
+            color: var(--ColorPrimary);
+            font-weight: 700;
+            font-size: 16px;
+        }
+    }
+
+    .applicant-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .applicant-name {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .applicant-email {
+            font-size: 12px;
+            color: var(--ColorGray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    .applicant-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+
+        .applicant-btn {
+            padding: 6px 12px;
+            font-size: 13px;
+
+            &--reject {
+                background-color: transparent;
+                border: 1px solid var(--ColorGray, #ccc);
+                color: var(--ColorDark);
+
+                &:hover {
+                    background-color: #fee;
+                    border-color: #c33;
+                    color: #c33;
+                }
+            }
+        }
+    }
+}
+
+// Settings modal
+.settings-modal {
+    text-align: left;
+    max-width: 420px;
+
+    .settings-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .settings-modal_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+
+        .settings-modal_title {
+            margin: 0;
+            color: var(--ColorWhite);
+        }
+
+        .button--close {
+            background: none;
+            border: none;
+            color: var(--ColorWhite);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+    }
+
+    .settings-modal_body {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px 0;
+    }
+
+    .settings-section {
+        padding: 4px 0;
+
+        .settings-section_title {
+            margin: 0 0 4px;
+            padding: 8px 20px 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ColorGray);
+        }
+
+        .settings-section_loading {
+            padding: 8px 20px;
+            font-size: 14px;
+            color: var(--ColorGray);
+        }
+    }
+
+    .settings-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        cursor: pointer;
+        background-color: var(--ColorWhite);
+        margin: 1px 0;
+        gap: 12px;
+
+        &:hover {
+            background-color: var(--ColorLightGray);
+        }
+
+        .settings-toggle_label {
+            font-size: 15px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .settings-toggle_input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .settings-toggle_track {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            background-color: var(--ColorGray, #aaa);
+            flex-shrink: 0;
+            transition: background-color 0.2s ease;
+
+            &::after {
+                content: '';
+                position: absolute;
+                top: 3px;
+                left: 3px;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background-color: var(--ColorWhite);
+                transition: transform 0.2s ease;
+            }
+        }
+
+        .settings-toggle_input:checked + .settings-toggle_track {
+            background-color: var(--ColorPrimary);
+
+            &::after {
+                transform: translateX(20px);
+            }
+        }
+    }
+}

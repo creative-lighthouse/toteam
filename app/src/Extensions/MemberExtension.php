@@ -27,6 +27,7 @@ use App\Teams\OrganizationMembership;
  * @property bool $NotifyAnnouncements
  * @property bool $NotifyMeals
  * @property bool $NotifyMaps
+ * @property bool $NotifyApplications
  * @property int $ProfileImageID
  * @method \SilverStripe\Assets\Image ProfileImage()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] OrganizationMemberships()
@@ -42,14 +43,16 @@ class MemberExtension extends Extension
         "NotifyEvents"   => "Boolean(1)",
         "NotifyAnnouncements" => "Boolean(1)",
         "NotifyMeals"    => "Boolean(1)",
-        "NotifyMaps"     => "Boolean(1)",
+        "NotifyMaps"         => "Boolean(1)",
+        "NotifyApplications" => "Boolean(1)",
     ];
 
     private static $defaults = [
-        "NotifyEvents"  => true,
+        "NotifyEvents"       => true,
         "NotifyAnnouncements" => true,
-        "NotifyMeals"   => true,
-        "NotifyMaps"    => true,
+        "NotifyMeals"        => true,
+        "NotifyMaps"         => true,
+        "NotifyApplications" => true,
     ];
 
     private static $has_one = [
