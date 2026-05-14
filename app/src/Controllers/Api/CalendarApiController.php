@@ -9,7 +9,6 @@ use App\Food\MealEater;
 use App\Controllers\ApiController;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
-use SilverStripe\Security\Security;
 
 /**
  * Calendar API Controller
@@ -95,16 +94,17 @@ class CalendarApiController extends ApiController
             foreach ($appointment->Participations() as $p) {
                 $pMember = $p->Member();
                 $participations[] = [
-                    'ID' => $p->ID,
-                    'MemberID' => $p->MemberID,
-                    'MemberName' => $pMember ? $pMember->getName() : 'Unknown',
+                    'ID'              => $p->ID,
+                    'MemberID'        => $p->MemberID,
+                    'MemberName'      => $pMember ? $pMember->getName() : 'Unknown',
                     'ProfileImageURL' => $pMember && $pMember->hasMethod('RenderProfileImage')
                         ? $pMember->RenderProfileImage()
                         : null,
-                    'Type' => $p->Type,
-                    'TimeStart' => $p->TimeStart,
-                    'TimeEnd' => $p->TimeEnd,
-                    'IsCurrentUser' => $p->MemberID == $member->ID
+                    'Type'            => $p->Type,
+                    'TimeStart'       => $p->TimeStart,
+                    'TimeEnd'         => $p->TimeEnd,
+                    'CustomTimeframe' => (bool) $p->CustomTimeframe,
+                    'IsCurrentUser'   => $p->MemberID == $member->ID,
                 ];
             }
 
@@ -129,10 +129,11 @@ class CalendarApiController extends ApiController
                 'ImageURL' => $appointment->Image()->exists() ? $appointment->Image()->getURL() : null,
                 'OrganizationLogoURL' => $orgLogoURL,
                 'UserParticipation' => $participation ? [
-                    'ID' => $participation->ID,
-                    'Type' => $participation->Type,
-                    'TimeStart' => $participation->TimeStart,
-                    'TimeEnd' => $participation->TimeEnd
+                    'ID'              => $participation->ID,
+                    'Type'            => $participation->Type,
+                    'TimeStart'       => $participation->TimeStart,
+                    'TimeEnd'         => $participation->TimeEnd,
+                    'CustomTimeframe' => (bool) $participation->CustomTimeframe,
                 ] : null,
                 'Meals' => $meals,
                 'Participations' => $participations
@@ -186,33 +187,20 @@ class CalendarApiController extends ApiController
 
         if (!$participation) {
             $participation = AppointmentParticipation::create();
-            $participation->ParentID = $appointment->ID;
-            $participation->MemberID = $member->ID;
-            $participation->Type = $type;
-
-            if ($type == 'Accept') {
-                $participation->TimeStart = $appointment->TimeStart;
-                $participation->TimeEnd = $appointment->TimeEnd;
-            }
-        } else {
-            if ($type == 'Accept' || $type == 'Maybe') {
-                if (!$participation->TimeStart) {
-                    $participation->TimeStart = $appointment->TimeStart;
-                }
-                if (!$participation->TimeEnd) {
-                    $participation->TimeEnd = $appointment->TimeEnd;
-                }
-            }
-            $participation->Type = $type;
+            $participation->ParentID        = $appointment->ID;
+            $participation->MemberID        = $member->ID;
+            $participation->CustomTimeframe = false;
         }
 
+        $participation->Type = $type;
         $participation->write();
 
         return $this->successResponse([
-            'ID' => $participation->ID,
-            'Type' => $participation->Type,
-            'TimeStart' => $participation->TimeStart,
-            'TimeEnd' => $participation->TimeEnd
+            'ID'              => $participation->ID,
+            'Type'            => $participation->Type,
+            'TimeStart'       => $participation->TimeStart,
+            'TimeEnd'         => $participation->TimeEnd,
+            'CustomTimeframe' => (bool) $participation->CustomTimeframe,
         ], 'Participation updated');
     }
 
@@ -245,11 +233,7 @@ class CalendarApiController extends ApiController
 
         $body = json_decode($request->getBody(), true);
         $timestart = $body['timestart'] ?? null;
-        $timeend = $body['timeend'] ?? null;
-
-        if (!$timestart || !$timeend) {
-            return $this->errorResponse('Invalid time input', 400);
-        }
+        $timeend   = $body['timeend'] ?? null;
 
         $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
 
@@ -257,13 +241,26 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('No participation found', 404);
         }
 
-        $participation->TimeStart = $timestart;
-        $participation->TimeEnd = $timeend;
+        if (!$timestart && !$timeend) {
+            // Clear custom time
+            $participation->TimeStart       = null;
+            $participation->TimeEnd         = null;
+            $participation->CustomTimeframe = false;
+        } else {
+            if (!$timestart || !$timeend) {
+                return $this->errorResponse('Both time fields are required', 400);
+            }
+            $participation->TimeStart       = $timestart;
+            $participation->TimeEnd         = $timeend;
+            $participation->CustomTimeframe = true;
+        }
+
         $participation->write();
 
         return $this->successResponse([
-            'TimeStart' => $participation->TimeStart,
-            'TimeEnd' => $participation->TimeEnd
+            'TimeStart'       => $participation->TimeStart,
+            'TimeEnd'         => $participation->TimeEnd,
+            'CustomTimeframe' => (bool) $participation->CustomTimeframe,
         ], 'Time updated');
     }
 

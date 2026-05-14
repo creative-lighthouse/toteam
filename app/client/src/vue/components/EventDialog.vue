@@ -19,9 +19,12 @@
           <div class="event-info">
             <p v-if="event.EventTitle"><strong>Event:</strong> {{ event.EventTitle }}</p>
             <p v-if="event.Type"><strong>Typ:</strong> {{ event.Type }}</p>
-            <p><strong>Datum:</strong> {{ formatDate(event.Date) }}</p>
+            <p><strong>Datum:</strong> {{ formatDate(event.DateStart) }}</p>
             <p v-if="event.TimeStart && event.TimeEnd">
               <strong>Zeit:</strong> {{ formatTime(event.TimeStart) }} - {{ formatTime(event.TimeEnd) }}
+            </p>
+            <p v-else>
+                <strong>Ganztägig</strong>
             </p>
             <p v-if="event.Location"><strong>Ort:</strong> {{ event.Location }}</p>
             <p v-if="event.Description"><strong>Beschreibung:</strong> {{ event.Description }}</p>
@@ -77,32 +80,53 @@
                 </button>
               </fieldset>
 
-              <!-- Time Input (only if Accept or Maybe) -->
+              <!-- Zeit hinzufügen -->
+              <div
+                v-if="(userParticipationType === 'Accept' || userParticipationType === 'Maybe') && !showTimeInput"
+                class="add-time-row"
+              >
+                <button type="button" class="btn-add-time" @click="startAddTime" :disabled="submitting">
+                    <img :src="actionTime" alt="Zeit Icon" class="time_image">
+                    <p>Zeit hinzufügen</p>
+                </button>
+              </div>
+
+              <!-- Zeit-Eingabe -->
               <fieldset
-                v-if="userParticipationType === 'Accept' || userParticipationType === 'Maybe'"
+                v-if="(userParticipationType === 'Accept' || userParticipationType === 'Maybe') && showTimeInput"
                 class="fieldset-update-time"
               >
-                <p>Von:</p>
-                <input
-                  type="time"
-                  v-model="timeStart"
-                  @blur="updateTime"
-                  :disabled="submitting"
-                >
-                <p>Bis:</p>
-                <input
-                  type="time"
-                  v-model="timeEnd"
-                  @blur="updateTime"
-                  :disabled="submitting"
-                >
+                <div class="time-input-row">
+                  <label for="time-start">Von</label>
+                  <input id="time-start" type="time" v-model="timeStart" :disabled="submitting" aria-label="Startzeit">
+                  <label for="time-end">Bis</label>
+                  <input id="time-end" type="time" v-model="timeEnd" :disabled="submitting" aria-label="Endzeit">
+                </div>
+                <div class="time-button-row">
+                  <button
+                    type="button"
+                    class="button button--primary button--small"
+                    @click="saveTime"
+                    :disabled="submitting || !timeStart || !timeEnd"
+                  >
+                    Speichern
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-remove-time"
+                    @click="clearTime"
+                    :disabled="submitting"
+                  >
+                    Entfernen
+                  </button>
+                </div>
               </fieldset>
             </form>
           </div>
 
           <!-- Meals -->
           <div v-if="event.Meals && event.Meals.length > 0" class="meals-section">
-            <h3 class="event-participation_title">Mahlzeiten</h3>
+            <h3 class="event-meals_title">Mahlzeiten</h3>
             <div class="meals-list">
               <div v-for="meal in event.Meals" :key="meal.ID" class="meal">
                 <div class="meal-info">
@@ -156,7 +180,7 @@
                   <span class="participant-name" :data-me="p.IsCurrentUser ? 'true' : null">
                     {{ p.MemberName }}
                   </span>
-                  <span class="participant-status" v-if="p.TimeStart && p.TimeEnd">
+                  <span class="participant-status" v-if="p.CustomTimeframe && p.TimeStart && p.TimeEnd">
                     ({{ formatTime(p.TimeStart) }} - {{ formatTime(p.TimeEnd) }})
                   </span>
                 </div>
@@ -173,7 +197,7 @@
                   <span class="participant-name" :data-me="p.IsCurrentUser ? 'true' : null">
                     {{ p.MemberName }}
                   </span>
-                  <span class="participant-status" v-if="p.TimeStart && p.TimeEnd">
+                  <span class="participant-status" v-if="p.CustomTimeframe && p.TimeStart && p.TimeEnd">
                     ({{ formatTime(p.TimeStart) }} - {{ formatTime(p.TimeEnd) }})
                   </span>
                 </div>
@@ -210,6 +234,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useEventsStore } from '@stores/events'
+import actionTime from '../../../icons/actions/action_time.svg'
 
 const eventsStore = useEventsStore()
 
@@ -227,6 +252,7 @@ const submitting = ref(false)
 const statusMessage = ref(null)
 const timeStart = ref('')
 const timeEnd = ref('')
+const showTimeInput = ref(false)
 
 const userParticipationType = computed(() => {
   return props.event.UserParticipation?.Type || null
@@ -293,24 +319,46 @@ async function changeParticipation(type) {
   }
 }
 
-async function updateTime() {
+function startAddTime() {
+  timeStart.value = props.event.TimeStart ? formatTime(props.event.TimeStart) : ''
+  timeEnd.value = props.event.TimeEnd ? formatTime(props.event.TimeEnd) : ''
+  showTimeInput.value = true
+}
+
+async function saveTime() {
   if (!timeStart.value || !timeEnd.value || submitting.value) return
 
   submitting.value = true
-
   try {
     const response = await eventsStore.changeParticipationTime(
       props.event.ID,
       timeStart.value + ':00',
       timeEnd.value + ':00'
     )
-
     emit('time-changed', props.event.ID, response)
-
     showStatusMessage('Zeiten gespeichert', 'success')
   } catch (err) {
-    console.error('Error updating time:', err)
+    console.error('Error saving time:', err)
     showStatusMessage('Fehler beim Speichern', 'error')
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function clearTime() {
+  if (submitting.value) return
+
+  submitting.value = true
+  try {
+    const response = await eventsStore.changeParticipationTime(props.event.ID, null, null)
+    showTimeInput.value = false
+    timeStart.value = ''
+    timeEnd.value = ''
+    emit('time-changed', props.event.ID, response)
+    showStatusMessage('Zeit entfernt', 'success')
+  } catch (err) {
+    console.error('Error clearing time:', err)
+    showStatusMessage('Fehler beim Entfernen', 'error')
   } finally {
     submitting.value = false
   }
@@ -357,14 +405,16 @@ function handleEscape(e) {
   }
 }
 
-// Initialize time inputs from user participation
+// Initialize time input visibility and values from user participation
 watch(() => props.event.UserParticipation, (newVal) => {
-  if (newVal) {
+  if (newVal?.CustomTimeframe) {
+    showTimeInput.value = true
     timeStart.value = newVal.TimeStart ? formatTime(newVal.TimeStart) : ''
     timeEnd.value = newVal.TimeEnd ? formatTime(newVal.TimeEnd) : ''
   } else {
-    timeStart.value = props.event.TimeStart ? formatTime(props.event.TimeStart) : ''
-    timeEnd.value = props.event.TimeEnd ? formatTime(props.event.TimeEnd) : ''
+    showTimeInput.value = false
+    timeStart.value = ''
+    timeEnd.value = ''
   }
 }, { immediate: true })
 
@@ -378,82 +428,3 @@ onUnmounted(() => {
   dialogEl.value?.close()
 })
 </script>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
-
-.status-message {
-  position: fixed;
-  top: auto;
-  bottom: 20px;
-  right: 20px;
-  padding: 15px 25px;
-  border-radius: var(--BorderRadiusMedium);
-  background-color: var(--ColorStatusGood);
-  color: white;
-  font-weight: bold;
-  box-shadow: var(--BoxShadowMedium);
-  z-index: 10000;
-}
-
-.status-message--error {
-  background-color: var(--ColorStatusBad);
-}
-
-.dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.button--close {
-  background: transparent;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 5px 10px;
-  color: var(--ColorGray);
-}
-
-.button--close:hover {
-  color: var(--ColorPrimary);
-}
-
-.event-info {
-  margin-bottom: 20px;
-}
-
-.event-info p {
-  margin: 8px 0;
-}
-
-.event-image {
-  margin: 20px 0;
-}
-
-.event-image img {
-  max-width: 100%;
-  border-radius: var(--BorderRadiusMedium);
-}
-
-.status--Scheduled {
-  color: var(--ColorStatusGood);
-  font-weight: bold;
-}
-
-.status--Suggested {
-  color: var(--ColorStatusWarning);
-  font-weight: bold;
-}
-
-.status--Cancelled {
-  color: var(--ColorStatusBad);
-  font-weight: bold;
-}
-</style>

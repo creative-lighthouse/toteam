@@ -13,6 +13,7 @@ use SilverStripe\Security\PermissionProvider;
  *
  * @property ?string $TimeStart
  * @property ?string $TimeEnd
+ * @property bool $CustomTimeframe
  * @property ?string $Type
  * @property ?string $Notes
  * @property int $ParentID
@@ -28,10 +29,11 @@ use SilverStripe\Security\PermissionProvider;
 class AppointmentParticipation extends DataObject implements PermissionProvider
 {
     private static $db = [
-        "TimeStart" => "Time",
-        "TimeEnd" => "Time",
-        "Type" => "Enum('Accept, Maybe, Decline')",
-        "Notes" => "Varchar(512)"
+        "TimeStart"      => "Time",
+        "TimeEnd"        => "Time",
+        "CustomTimeframe" => "Boolean(0)",
+        "Type"           => "Enum('Accept, Maybe, Decline')",
+        "Notes"          => "Varchar(512)",
     ];
 
     private static $has_one = [
@@ -40,11 +42,12 @@ class AppointmentParticipation extends DataObject implements PermissionProvider
     ];
 
     private static $field_labels = [
-        "Member" => "Benutzer",
-        "TimeStart" => "Von",
-        "TimeEnd" => "Bis",
-        "Type" => "Teilnahme",
-        "Notes" => "Notizen",
+        "Member"          => "Benutzer",
+        "TimeStart"       => "Von",
+        "TimeEnd"         => "Bis",
+        "CustomTimeframe" => "Eigene Uhrzeit",
+        "Type"            => "Teilnahme",
+        "Notes"           => "Notizen",
     ];
 
     private static $summary_fields = [
@@ -105,15 +108,17 @@ class AppointmentParticipation extends DataObject implements PermissionProvider
 
     public function RenderTime()
     {
+        if (!$this->CustomTimeframe) {
+            return 'Ganztägig';
+        }
         if ($this->TimeStart && $this->TimeEnd) {
             return $this->FormatTimeStart() . " - " . $this->FormatTimeEnd();
         } elseif ($this->TimeStart) {
             return "ab " . $this->FormatTimeStart();
         } elseif ($this->TimeEnd) {
             return "bis " . $this->FormatTimeEnd();
-        } else {
-            return "Kein Datum";
         }
+        return 'Ganztägig';
     }
 
     public function providePermissions()
