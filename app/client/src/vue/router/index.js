@@ -12,6 +12,7 @@ import Map from '@views/Map.vue'
 import Links from '@views/Links.vue'
 import Organizations from '@views/Organizations.vue'
 import Login from '@views/Login.vue'
+import Register from '@views/Register.vue'
 
 const routes = [
   {
@@ -73,6 +74,12 @@ const routes = [
     name: 'Login',
     component: Login,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: Register,
+    meta: { requiresAuth: false }
   }
 ]
 
@@ -92,7 +99,7 @@ router.beforeEach(async (to, from, next) => {
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else if (to.name === 'Login' && authStore.isAuthenticated) {
+  } else if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
     next({ name: 'Dashboard' })
   } else {
     next()

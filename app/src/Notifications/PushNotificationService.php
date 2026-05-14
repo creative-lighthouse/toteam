@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Maps\Map;
 use App\Food\Meal;
 use App\Announcements\Announcement;
+use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Events\EventDay;
 use App\Calendar\Appointment;
@@ -157,6 +158,38 @@ class PushNotificationService
             $member = Member::get()->byID($memberID);
             if ($member && $member->NotifyAnnouncements) {
                 self::sendToMember($member, $title, $body, $url);
+            }
+        }
+    }
+
+    public static function notifyNewApplication(OrganizationMembership $membership): void
+    {
+        $org      = $membership->Organization();
+        $applicant = $membership->Member();
+
+        if (!$org || !$applicant) {
+            return;
+        }
+
+        $title = '📋 Neue Bewerbung';
+        $body  = $applicant->FirstName . ' ' . $applicant->Surname . ' möchte "' . $org->Title . '" beitreten.';
+        $url   = '/app/organizations?applicants=' . $org->ID;
+
+        $adminMemberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'Role'           => 'admin',
+        ]);
+
+        foreach ($adminMemberships as $adminMembership) {
+            $admin = $adminMembership->Member();
+            if (!$admin) {
+                continue;
+            }
+
+            self::saveNotification($admin->ID, 'applications', $title, $body, $url);
+
+            if ($admin->NotifyApplications) {
+                self::sendToMember($admin, $title, $body, $url);
             }
         }
     }

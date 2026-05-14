@@ -31,7 +31,11 @@
       <p v-if="org.Description" class="organization-card_description">{{ org.Description }}</p>
 
       <div class="organization-card_footer">
-        <span class="organization-card_badge" :class="`organization-card_badge--${org.JoinMode}`">
+        <span
+          v-if="!org.MembershipStatus || org.JoinMode === 'open'"
+          class="organization-card_badge"
+          :class="`organization-card_badge--${org.JoinMode}`"
+        >
           {{ joinModeLabel }}
         </span>
 
@@ -43,6 +47,15 @@
           @click.stop="handleJoin"
         >
           {{ joining ? '...' : actionLabel }}
+        </button>
+
+        <button
+          v-if="org.MembershipStatus === 'admin' || org.MembershipStatus === 'moderator'"
+          class="button button--secondary organization-card_manage"
+          @click.stop="$emit('manage-applicants', org)"
+        >
+          Bewerber
+          <span v-if="org.ApplicantCount" class="organization-card_badge-count">{{ org.ApplicantCount }}</span>
         </button>
       </div>
     </div>
@@ -59,7 +72,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['joined'])
+const emit = defineEmits(['joined', 'manage-applicants'])
 const joining = ref(false)
 
 const joinModeLabel = computed(() => {
