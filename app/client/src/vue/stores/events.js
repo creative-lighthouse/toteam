@@ -130,6 +130,7 @@ export const useEventsStore = defineStore('events', () => {
             existing.Type = response.data.Type
             existing.TimeStart = response.data.TimeStart
             existing.TimeEnd = response.data.TimeEnd
+            existing.CustomTimeframe = response.data.CustomTimeframe ?? false
           } else {
             // First RSVP — add a new entry so avatars + counts update immediately
             const authStore = useAuthStore()
@@ -142,6 +143,7 @@ export const useEventsStore = defineStore('events', () => {
               Type: response.data.Type,
               TimeStart: response.data.TimeStart,
               TimeEnd: response.data.TimeEnd,
+              CustomTimeframe: response.data.CustomTimeframe ?? false,
               IsCurrentUser: true,
             })
           }
@@ -166,8 +168,8 @@ export const useEventsStore = defineStore('events', () => {
   async function changeParticipationTime(eventId, timeStart, timeEnd) {
     try {
       const response = await apiPost(`/calendar/participationTime/${eventId}`, {
-        timestart: timeStart,
-        timeend: timeEnd
+        timestart: timeStart ?? null,
+        timeend: timeEnd ?? null,
       })
 
       // Update local state
@@ -175,6 +177,7 @@ export const useEventsStore = defineStore('events', () => {
       if (event && event.UserParticipation) {
         event.UserParticipation.TimeStart = response.data.TimeStart
         event.UserParticipation.TimeEnd = response.data.TimeEnd
+        event.UserParticipation.CustomTimeframe = response.data.CustomTimeframe ?? false
 
         // Update in participations list
         if (event.Participations) {
@@ -182,6 +185,7 @@ export const useEventsStore = defineStore('events', () => {
           if (userParticipation) {
             userParticipation.TimeStart = response.data.TimeStart
             userParticipation.TimeEnd = response.data.TimeEnd
+            userParticipation.CustomTimeframe = response.data.CustomTimeframe ?? false
           }
         }
       }

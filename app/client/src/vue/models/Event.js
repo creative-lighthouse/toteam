@@ -14,6 +14,8 @@ export class Event {
     this.AllDay = data.AllDay || false
     this.Location = data.Location || ''
     this.Color = data.Color || null
+    this.Status = data.Status || null
+    this.ImageURL = data.ImageURL || null
     this.EventType = data.EventType || null
     this.OrganizationLogoURL = data.OrganizationLogoURL || null
 
@@ -22,7 +24,8 @@ export class Event {
       ID: data.UserParticipation.ID,
       Type: data.UserParticipation.Type, // 'Accept', 'Maybe', 'Decline'
       TimeStart: data.UserParticipation.TimeStart,
-      TimeEnd: data.UserParticipation.TimeEnd
+      TimeEnd: data.UserParticipation.TimeEnd,
+      CustomTimeframe: data.UserParticipation.CustomTimeframe ?? false,
     } : null
 
     // Alle Teilnahmen
