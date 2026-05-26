@@ -7,7 +7,7 @@
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    padding: 30px;
+    padding: 0;
     border-radius: var(--BorderRadiusMedium);
     border: none;
     box-shadow: var(--BoxShadowHeavy);
@@ -21,21 +21,32 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-    }
+        margin-bottom: 0;
+        padding: 30px 20px;
+        position: relative;
+        flex-direction: row;
 
-    .button--close {
-        background: transparent;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        padding: 5px 10px;
-        color: var(--ColorGray);
+        .event-dialog_org-logo {
+            border-radius: 5px;
+            top: 50%;
+        }
 
-        &:hover {
-            color: var(--ColorPrimary);
+        .button--close {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px 10px;
+            color: var(--ColorWhite);
+            margin: 0;
+
+            &:hover {
+                color: var(--ColorGray);
+            }
         }
     }
+
+
 
     .status-message {
         position: fixed;
@@ -56,6 +67,9 @@
     }
 
     .dialog-content {
+        padding: 0;
+        gap: 0;
+
         .dialog-infobox {
             .event-participation {
                 border-top: 1px solid var(--ColorLightGray);
@@ -66,29 +80,37 @@
                     margin-top: 0;
                     margin-bottom: 10px;
                     font-size: 18px;
-                    color: var(--ColorGray);
+                    color: var(--ColorFont);
                 }
 
                 .event-response-actions {
-                    .add-time-row {
+                    .add-actions-row {
                         display: flex;
                         align-items: center;
                         justify-content: center;
+                        gap: 20px;
                         margin-top: 10px;
 
-                        .btn-add-time {
+                        .btn-add-time,
+                        .btn-add-note {
                             display: flex;
                             align-items: center;
                             background: none;
                             border: none;
                             color: var(--ColorPrimary);
                             font-size: 13px;
+                            cursor: pointer;
+                            background-color: var(--ColorLightGray);
+                            padding: 5px 10px;
+                            border-radius: var(--BorderRadiusSmall);
 
-                            img {
+                            .action-icon {
                                 width: 20px;
                                 height: 20px;
-                                margin-right: 10px;
+                                margin-right: 6px;
                             }
+
+                            p { margin: 0; }
                         }
                     }
 
@@ -123,7 +145,7 @@
                     margin-top: 0;
                     margin-bottom: 10px;
                     font-size: 18px;
-                    color: var(--ColorGray);
+                    color: var(--ColorFont);
                 }
             }
 
@@ -148,7 +170,7 @@
 
             .participants-section,
             .meals-section {
-                margin-bottom: 20px;
+                padding: 15px 0;
             }
 
             form {
@@ -244,10 +266,14 @@
                         }
                     }
 
-                    .add-time-row {
+                    .add-actions-row {
                         margin-top: 10px;
+                        display: flex;
+                        justify-content: center;
+                        gap: 20px;
 
-                        .btn-add-time {
+                        .btn-add-time,
+                        .btn-add-note {
                             background: none;
                             border: none;
                             color: var(--ColorPrimary);
@@ -255,11 +281,23 @@
                             font-weight: 500;
                             cursor: pointer;
                             padding: 4px 0;
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+
+                            .action-icon {
+                                width: 16px;
+                                height: 16px;
+                            }
+
+                            p { margin: 0; }
 
                             &:hover { text-decoration: underline; }
                             &:disabled { opacity: 0.5; cursor: default; }
                         }
                     }
+
+
 
                     &.fieldset-update-time {
                         border: none;
@@ -309,6 +347,50 @@
                                 &:hover { color: #c33; text-decoration: underline; }
                                 &:disabled { opacity: 0.5; cursor: default; }
                             }
+                        }
+                    }
+                }
+
+                .fieldset-update-note {
+                    border: none;
+                    padding: 0;
+                    display: block;
+                    padding-top: 20px;
+
+                    .note-textarea {
+                        width: 100%;
+                        border: 1px solid var(--ColorLightGray);
+                        border-radius: var(--BorderRadiusSmall);
+                        padding: 8px;
+                        font-size: 14px;
+                        resize: vertical;
+                        box-sizing: border-box;
+                        font-family: inherit;
+                    }
+
+                    .note-button-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 12px;
+                        margin-top: 6px;
+
+                        .button--small {
+                            padding: 6px 14px;
+                            font-size: 13px;
+                            margin: 0;
+                        }
+
+                        .btn-remove-note {
+                            background: none;
+                            border: none;
+                            color: var(--ColorGray);
+                            font-size: 13px;
+                            cursor: pointer;
+                            padding: 4px 0;
+
+                            &:hover { color: #c33; text-decoration: underline; }
+                            &:disabled { opacity: 0.5; cursor: default; }
                         }
                     }
                 }
@@ -411,25 +493,7 @@
                     border-bottom: 1px solid var(--ColorGray);
                 }
 
-                .participant {
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 8px 12px;
-                    border-radius: var(--BorderRadiusSmall);
-                    background-color: var(--ColorLightGray);
 
-                    &.participant--status-Accept {
-                        border-left: 4px solid var(--ColorStatusGood);
-                    }
-
-                    &.participant--status-Maybe {
-                        border-left: 4px solid var(--ColorStatusWarning);
-                    }
-
-                    &.participant--status-Decline {
-                        border-left: 4px solid var(--ColorStatusBad);
-                    }
-                }
             }
 
             .suggestion_table {
@@ -456,32 +520,6 @@
                     padding: 8px;
                     text-align: center;
                     width: 20%;
-                }
-            }
-        }
-    }
-}
-
-// ── Responsive ────────────────────────────────────────────────────────────────
-
-@media (max-width: 768px) {
-    .event-modal {
-        width: 95%;
-        max-height: 95vh;
-        padding: 20px;
-
-        .dialog-content {
-            .dialog-infobox {
-                .meals-list {
-                    .meal {
-                        flex-direction: column;
-                        align-items: flex-start;
-                        gap: 10px;
-
-                        .event-response-actions {
-                            width: 100%;
-                        }
-                    }
                 }
             }
         }

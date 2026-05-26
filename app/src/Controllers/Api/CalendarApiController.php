@@ -22,7 +22,8 @@ class CalendarApiController extends ApiController
         'index',
         'participation',
         'participationTime',
-        'participationFood'
+        'participationFood',
+        'participationNotes'
     ];
 
     /**
@@ -105,6 +106,7 @@ class CalendarApiController extends ApiController
                     'TimeEnd'         => $p->TimeEnd,
                     'CustomTimeframe' => (bool) $p->CustomTimeframe,
                     'IsCurrentUser'   => $p->MemberID == $member->ID,
+                    'Notes'           => $p->Notes ?: null,
                 ];
             }
 
@@ -134,6 +136,7 @@ class CalendarApiController extends ApiController
                     'TimeStart'       => $participation->TimeStart,
                     'TimeEnd'         => $participation->TimeEnd,
                     'CustomTimeframe' => (bool) $participation->CustomTimeframe,
+                    'Notes'           => $participation->Notes ?: null,
                 ] : null,
                 'Meals' => $meals,
                 'Participations' => $participations
@@ -201,6 +204,7 @@ class CalendarApiController extends ApiController
             'TimeStart'       => $participation->TimeStart,
             'TimeEnd'         => $participation->TimeEnd,
             'CustomTimeframe' => (bool) $participation->CustomTimeframe,
+            'Notes'           => $participation->Notes ?: null,
         ], 'Participation updated');
     }
 
@@ -318,5 +322,49 @@ class CalendarApiController extends ApiController
             'ID' => $mealEater->ID,
             'Type' => $mealEater->Type
         ], 'Food participation updated');
+    }
+
+    /**
+     * Change participation notes
+     * POST /api/v1/calendar/participationNotes/:id
+     * Body: { notes: "..." }
+     */
+    public function participationNotes(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $appointmentID = $request->param('ID');
+        $appointment = Appointment::get()->byID($appointmentID);
+
+        if (!$appointment) {
+            return $this->errorResponse('Event not found', 404);
+        }
+
+        // Security check
+        $organizationIDs = $member->getOrganizationIDs();
+        $sharedOrgs = $appointment->Organisations()->filter('ID', $organizationIDs);
+        if (!$sharedOrgs->exists()) {
+            return $this->errorResponse('Access denied', 403);
+        }
+
+        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
+
+        if (!$participation) {
+            return $this->errorResponse('No participation found', 404);
+        }
+
+        $body = json_decode($request->getBody(), true);
+        $notes = isset($body['notes']) ? trim((string) $body['notes']) : null;
+
+        $participation->Notes = $notes ?: null;
+        $participation->write();
+
+        return $this->successResponse([
+            'Notes' => $participation->Notes ?: null,
+        ], 'Notes updated');
     }
 }

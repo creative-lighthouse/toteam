@@ -8,10 +8,16 @@
       <div class="dialog-content" @click.stop>
         <!-- Header -->
         <div class="dialog-header">
-          <h2 class="hl2">{{ event.Title }}</h2>
-          <button @click="$emit('close')" class="button button--close" aria-label="Schließen">
-            ✕
-          </button>
+            <img
+                v-if="event.OrganizationLogoURL"
+                :src="event.OrganizationLogoURL"
+                class="event-dialog_org-logo"
+                alt=""
+            >
+            <h2 class="hl2">{{ event.Title }}</h2>
+            <button @click="$emit('close')" class="button button--close" aria-label="Schließen">
+                ✕
+            </button>
         </div>
 
         <!-- Event Info -->
@@ -80,14 +86,30 @@
                 </button>
               </fieldset>
 
-              <!-- Zeit hinzufügen -->
+              <!-- Zeit & Notiz hinzufügen -->
               <div
-                v-if="(userParticipationType === 'Accept' || userParticipationType === 'Maybe') && !showTimeInput"
-                class="add-time-row"
+                v-if="(userParticipationType === 'Accept' || userParticipationType === 'Maybe') && (!showTimeInput || !showNoteInput)"
+                class="add-actions-row"
               >
-                <button type="button" class="btn-add-time" @click="startAddTime" :disabled="submitting">
-                    <img :src="actionTime" alt="Zeit Icon" class="time_image">
-                    <p>Zeit hinzufügen</p>
+                <button
+                  v-if="!showTimeInput"
+                  type="button"
+                  class="btn-add-time"
+                  @click="startAddTime"
+                  :disabled="submitting"
+                >
+                  <img :src="actionTime" alt="Zeit Icon" class="action-icon">
+                  <p>{{ event.UserParticipation?.CustomTimeframe ? 'Zeit bearbeiten' : 'Zeit hinzufügen' }}</p>
+                </button>
+                <button
+                  v-if="!showNoteInput"
+                  type="button"
+                  class="btn-add-note"
+                  @click="startAddNote"
+                  :disabled="submitting"
+                >
+                  <img :src="actionEdit" alt="Notiz Icon" class="action-icon">
+                  <p>{{ event.UserParticipation?.Notes ? 'Notiz bearbeiten' : 'Notiz hinzufügen' }}</p>
                 </button>
               </div>
 
@@ -121,6 +143,39 @@
                   </button>
                 </div>
               </fieldset>
+
+              <!-- Notiz-Eingabe -->
+              <div
+                v-if="(userParticipationType === 'Accept' || userParticipationType === 'Maybe') && showNoteInput"
+                class="fieldset-update-note"
+              >
+                <textarea
+                  v-model="noteText"
+                  :disabled="submitting"
+                  placeholder="Deine Notiz..."
+                  maxlength="512"
+                  rows="3"
+                  class="note-textarea"
+                ></textarea>
+                <div class="note-button-row">
+                  <button
+                    type="button"
+                    class="button button--primary button--small"
+                    @click="saveNote"
+                    :disabled="submitting"
+                  >
+                    Speichern
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-remove-note"
+                    @click="clearNote"
+                    :disabled="submitting"
+                  >
+                    Entfernen
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
 
@@ -172,49 +227,37 @@
               <!-- Accepted -->
               <template v-if="groupedParticipations.Accept.length > 0">
                 <h5 class="participant-group_title">Zugesagt</h5>
-                <div
+                <ParticipantCard
                   v-for="p in groupedParticipations.Accept"
                   :key="p.ID"
-                  class="participant participant--status-Accept"
-                >
-                  <span class="participant-name" :data-me="p.IsCurrentUser ? 'true' : null">
-                    {{ p.MemberName }}
-                  </span>
-                  <span class="participant-status" v-if="p.CustomTimeframe && p.TimeStart && p.TimeEnd">
-                    ({{ formatTime(p.TimeStart) }} - {{ formatTime(p.TimeEnd) }})
-                  </span>
-                </div>
+                  :participation="p"
+                  :note-expanded="expandedNoteIds.has(p.ID)"
+                  @toggle-note="toggleNoteExpanded(p.ID)"
+                />
               </template>
 
               <!-- Maybe -->
               <template v-if="groupedParticipations.Maybe.length > 0">
                 <h5 class="participant-group_title">Vielleicht</h5>
-                <div
+                <ParticipantCard
                   v-for="p in groupedParticipations.Maybe"
                   :key="p.ID"
-                  class="participant participant--status-Maybe"
-                >
-                  <span class="participant-name" :data-me="p.IsCurrentUser ? 'true' : null">
-                    {{ p.MemberName }}
-                  </span>
-                  <span class="participant-status" v-if="p.CustomTimeframe && p.TimeStart && p.TimeEnd">
-                    ({{ formatTime(p.TimeStart) }} - {{ formatTime(p.TimeEnd) }})
-                  </span>
-                </div>
+                  :participation="p"
+                  :note-expanded="expandedNoteIds.has(p.ID)"
+                  @toggle-note="toggleNoteExpanded(p.ID)"
+                />
               </template>
 
               <!-- Declined -->
               <template v-if="groupedParticipations.Decline.length > 0">
                 <h5 class="participant-group_title">Abgesagt</h5>
-                <div
+                <ParticipantCard
                   v-for="p in groupedParticipations.Decline"
                   :key="p.ID"
-                  class="participant participant--status-Decline"
-                >
-                  <span class="participant-name" :data-me="p.IsCurrentUser ? 'true' : null">
-                    {{ p.MemberName }}
-                  </span>
-                </div>
+                  :participation="p"
+                  :note-expanded="expandedNoteIds.has(p.ID)"
+                  @toggle-note="toggleNoteExpanded(p.ID)"
+                />
               </template>
             </div>
           </div>
@@ -235,6 +278,8 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useEventsStore } from '@stores/events'
 import actionTime from '../../../icons/actions/action_time.svg'
+import actionEdit from '../../../icons/actions/action_edit.svg'
+import ParticipantCard from './ParticipantCard.vue'
 
 const eventsStore = useEventsStore()
 
@@ -245,7 +290,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'participation-changed', 'time-changed', 'food-changed'])
+const emit = defineEmits(['close', 'participation-changed', 'time-changed', 'notes-changed', 'food-changed'])
 
 const dialogEl = ref(null)
 const submitting = ref(false)
@@ -253,6 +298,9 @@ const statusMessage = ref(null)
 const timeStart = ref('')
 const timeEnd = ref('')
 const showTimeInput = ref(false)
+const showNoteInput = ref(false)
+const noteText = ref('')
+const expandedNoteIds = ref(new Set())
 
 const userParticipationType = computed(() => {
   return props.event.UserParticipation?.Type || null
@@ -320,8 +368,14 @@ async function changeParticipation(type) {
 }
 
 function startAddTime() {
-  timeStart.value = props.event.TimeStart ? formatTime(props.event.TimeStart) : ''
-  timeEnd.value = props.event.TimeEnd ? formatTime(props.event.TimeEnd) : ''
+  const up = props.event.UserParticipation
+  if (up?.CustomTimeframe) {
+    timeStart.value = up.TimeStart ? formatTime(up.TimeStart) : ''
+    timeEnd.value = up.TimeEnd ? formatTime(up.TimeEnd) : ''
+  } else {
+    timeStart.value = props.event.TimeStart ? formatTime(props.event.TimeStart) : ''
+    timeEnd.value = props.event.TimeEnd ? formatTime(props.event.TimeEnd) : ''
+  }
   showTimeInput.value = true
 }
 
@@ -335,6 +389,7 @@ async function saveTime() {
       timeStart.value + ':00',
       timeEnd.value + ':00'
     )
+    showTimeInput.value = false
     emit('time-changed', props.event.ID, response)
     showStatusMessage('Zeiten gespeichert', 'success')
   } catch (err) {
@@ -362,6 +417,56 @@ async function clearTime() {
   } finally {
     submitting.value = false
   }
+}
+
+function startAddNote() {
+  noteText.value = props.event.UserParticipation?.Notes || ''
+  showNoteInput.value = true
+}
+
+async function saveNote() {
+  if (submitting.value) return
+
+  submitting.value = true
+  try {
+    const response = await eventsStore.changeParticipationNotes(props.event.ID, noteText.value || null)
+    showNoteInput.value = false
+    emit('notes-changed', props.event.ID, response)
+    showStatusMessage('Notiz gespeichert', 'success')
+  } catch (err) {
+    console.error('Error saving note:', err)
+    showStatusMessage('Fehler beim Speichern', 'error')
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function clearNote() {
+  if (submitting.value) return
+
+  submitting.value = true
+  try {
+    const response = await eventsStore.changeParticipationNotes(props.event.ID, null)
+    showNoteInput.value = false
+    noteText.value = ''
+    emit('notes-changed', props.event.ID, response)
+    showStatusMessage('Notiz entfernt', 'success')
+  } catch (err) {
+    console.error('Error clearing note:', err)
+    showStatusMessage('Fehler beim Entfernen', 'error')
+  } finally {
+    submitting.value = false
+  }
+}
+
+function toggleNoteExpanded(participationId) {
+  const next = new Set(expandedNoteIds.value)
+  if (next.has(participationId)) {
+    next.delete(participationId)
+  } else {
+    next.add(participationId)
+  }
+  expandedNoteIds.value = next
 }
 
 async function changeFoodParticipation(mealId, type) {
@@ -405,17 +510,19 @@ function handleEscape(e) {
   }
 }
 
-// Initialize time input visibility and values from user participation
+// Initialize time/note input from user participation
 watch(() => props.event.UserParticipation, (newVal) => {
   if (newVal?.CustomTimeframe) {
-    showTimeInput.value = true
     timeStart.value = newVal.TimeStart ? formatTime(newVal.TimeStart) : ''
     timeEnd.value = newVal.TimeEnd ? formatTime(newVal.TimeEnd) : ''
   } else {
-    showTimeInput.value = false
     timeStart.value = ''
     timeEnd.value = ''
   }
+  showTimeInput.value = false
+
+  noteText.value = newVal?.Notes || ''
+  showNoteInput.value = false
 }, { immediate: true })
 
 onMounted(() => {

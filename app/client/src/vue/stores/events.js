@@ -200,6 +200,39 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   /**
+   * Ändert die Notiz der Teilnahme
+   * @param {number} eventId
+   * @param {string|null} notes
+   */
+  async function changeParticipationNotes(eventId, notes) {
+    try {
+      const response = await apiPost(`/calendar/participationNotes/${eventId}`, {
+        notes: notes ?? null,
+      })
+
+      // Update local state
+      const event = getEventById(eventId)
+      if (event && event.UserParticipation) {
+        event.UserParticipation.Notes = response.data.Notes
+
+        if (event.Participations) {
+          const userParticipation = event.Participations.find(p => p.IsCurrentUser)
+          if (userParticipation) {
+            userParticipation.Notes = response.data.Notes
+          }
+        }
+      }
+
+      await clearCacheForEndpoint('/calendar')
+
+      return response.data
+    } catch (err) {
+      console.error('Failed to change participation notes:', err)
+      throw err
+    }
+  }
+
+  /**
    * Ändert die Essens-Teilnahme
    * @param {number} mealId
    * @param {string} type - Teilnahme-Typ
@@ -252,6 +285,7 @@ export const useEventsStore = defineStore('events', () => {
     getEventById,
     changeParticipation,
     changeParticipationTime,
+    changeParticipationNotes,
     changeFoodParticipation,
     clearEvents
   }

@@ -3,7 +3,8 @@
     class="event-card"
     :class="[
       `event-card--${event.EventType || 'default'}`,
-      event.AllDay ? 'event-card--allday' : 'event-card--timed'
+      event.AllDay ? 'event-card--allday' : 'event-card--timed',
+      event.Status ? `event-card--${event.Status.toLowerCase()}` : '',
     ]"
     @click="openEventDetails"
   >
@@ -17,6 +18,8 @@
           alt=""
         >
         <h4 class="event-card_title">{{ event.Title }}</h4>
+        <p v-if="event.Status=='Suggested'" class="event-card_status">(Vorschlag)</p>
+        <p v-else-if="event.Status=='Cancelled'" class="event-card_status">(Abgesagt)</p>
       </div>
       <span v-if="dateDisplay" class="event-card_time">{{ dateDisplay }}</span>
       <span v-else-if="event.AllDay" class="event-card_time event-card_time--allday">Ganztägig</span>
