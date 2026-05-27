@@ -14,20 +14,20 @@
   "shortcuts": [
     {
       "name": "Profil",
-      "url": "/profile",
+      "url": "/app/profile",
       "description": "Deine Daten und Einstellungen"
     },
     {
       "name": "Kalender",
-      "url": "/calendar",
+      "url": "/app/calendar",
       "description": "Verfügbarkeiten eintragen und ansehen"
     }
   ],
   "orientation": "portrait",
   "dir": "ltr",
   "lang": "de",
-  "scope": "/",
-  "start_url": "/dashboard",
+  "scope": "/app/",
+  "start_url": "/app/dashboard",
   "icons": [
     {
       "src": "./_resources/app/client/icons/pwa/icons/manifest-icon-192.maskable.png",

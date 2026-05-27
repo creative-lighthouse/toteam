@@ -17,6 +17,14 @@ import Register from '@views/Register.vue'
 const routes = [
   {
     path: '/',
+    redirect: to => {
+      // Root route redirects to dashboard or login based on auth
+      // This will be handled by the beforeEach guard
+      return '/dashboard'
+    }
+  },
+  {
+    path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
     meta: { requiresAuth: true }
