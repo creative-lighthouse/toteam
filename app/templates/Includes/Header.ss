@@ -9,9 +9,9 @@
                     <li><a href="$Link" class="<% if $LinkingMode == 'current' %>current<% end_if %>">$Title</a></li>
                 <% end_loop %>
                 <% if $CurrentUser %>
-                    <li><a href="/app">App starten</a></li>
+                    <li><a href="/app/dashboard">App starten</a></li>
                 <% else %>
-                    <li><a href="Security/login?BackURL=/app">Login</a></li>
+                    <li><a href="/app/login">Login</a></li>
                 <% end_if %>
             </ul>
         </nav>
