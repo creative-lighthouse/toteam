@@ -26,7 +26,5 @@ import AppHeader from './components/AppHeader.vue'
 const authStore = useAuthStore()
 const pageHeaderStore = usePageHeaderStore()
 
-onMounted(() => {
-  authStore.checkAuth()
-})
+// Auth check is handled by router guard, no need to call it here
 </script>

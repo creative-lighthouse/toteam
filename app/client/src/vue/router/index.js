@@ -92,18 +92,24 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   
-  // Only check auth if we don't have user data yet
-  if (!authStore.user && to.meta.requiresAuth !== false) {
+  // Check auth only once if we don't have user data yet
+  if (!authStore.user) {
     await authStore.checkAuth()
   }
   
+  // Redirect to login if authentication is required but user is not authenticated
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
-    next({ name: 'Dashboard' })
-  } else {
-    next()
+    return
   }
+  
+  // Redirect authenticated users away from login/register pages
+  if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
+    next({ name: 'Dashboard' })
+    return
+  }
+  
+  next()
 })
 
 export default router
