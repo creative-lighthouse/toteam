@@ -26,7 +26,7 @@
   "orientation": "portrait",
   "dir": "ltr",
   "lang": "de",
-  "scope": "/app/",
+  "scope": "/",
   "start_url": "/app/dashboard",
   "icons": [
     {
