@@ -21,11 +21,14 @@
               <div class="map-entry_thumbnail">
                 <img v-if="map.thumbnailUrl" :src="map.thumbnailUrl" :alt="map.title" />
                 <div v-else class="map-entry_thumbnail--placeholder"></div>
+                <div v-if="map.organizationLogoUrl" class="map-entry_org-logo">
+                  <img :src="map.organizationLogoUrl" :alt="map.organizationTitle" />
+                </div>
               </div>
               <div class="map-entry_info">
                 <h3 class="map-entry_title">{{ map.title }}</h3>
                 <p v-if="map.shortText" class="map-entry_description">{{ map.shortText }}</p>
-                <small v-if="map.organizationTitle" class="map-entry_org">{{ map.organizationTitle }}</small>
+                <small v-if="map.organizationTitle && !map.organizationLogoUrl" class="map-entry_org">{{ map.organizationTitle }}</small>
               </div>
             </router-link>
           </li>

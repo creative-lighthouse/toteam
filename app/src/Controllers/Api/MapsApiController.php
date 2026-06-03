@@ -60,14 +60,18 @@ class MapsApiController extends ApiController
 
             $mapsData = [];
             foreach ($maps as $map) {
+                $org = $map->Parent();
                 $mapsData[] = [
-                    'id'                => $map->ID,
-                    'title'             => $map->Title,
-                    'shortText'         => $map->ShortText,
-                    'thumbnailUrl'      => $map->BackgroundImage()->exists()
-                        ? $map->BackgroundImage()->FillMax(150, 150)->getURL()
+                    'id'                  => $map->ID,
+                    'title'               => $map->Title,
+                    'shortText'           => $map->ShortText,
+                    'thumbnailUrl'        => $map->BackgroundImage()->exists()
+                        ? $map->BackgroundImage()->FillMax(400, 300)->getURL()
                         : null,
-                    'organizationTitle' => $map->Parent()->exists() ? $map->Parent()->Title : null,
+                    'organizationTitle'   => $org->exists() ? $org->Title : null,
+                    'organizationLogoUrl' => $org->exists() && $org->Logo()->exists()
+                        ? $org->Logo()->ScaleWidth(80)->getURL()
+                        : null,
                 ];
             }
 
