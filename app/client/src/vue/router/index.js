@@ -8,6 +8,7 @@ import Food from '@views/Food.vue'
 import Announcements from '@views/Announcements.vue'
 import AnnouncementDetail from '@views/AnnouncementDetail.vue'
 import Profile from '@views/Profile.vue'
+import MealDetail from '@views/MealDetail.vue'
 import Map from '@views/Map.vue'
 import MapDetail from '@views/MapDetail.vue'
 import MapCreate from '@views/MapCreate.vue'
@@ -36,6 +37,12 @@ const routes = [
     path: '/calendar',
     name: 'Calendar',
     component: Calendar,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/food/meal/:id',
+    name: 'MealDetail',
+    component: MealDetail,
     meta: { requiresAuth: true }
   },
   {

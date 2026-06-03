@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
 use App\Announcements\Announcement;
+use App\Food\Food;
 use App\SuggestionBox\Suggestion;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
@@ -82,9 +83,57 @@ class DashboardApiController extends ApiController
             ];
         }
 
+        // Accepted food contributions in the next 3 days
+        $myUpcomingContributions = [];
+        if (!empty($organizationIDs)) {
+            $today     = date('Y-m-d');
+            $threeDays = date('Y-m-d', strtotime('+3 days'));
+
+            foreach (Food::get()->filter(['SupplierID' => $member->ID, 'Status' => 'Accepted']) as $food) {
+                foreach ($food->Meals() as $meal) {
+                    $appointment = $meal->Parent();
+                    if (!$appointment || !$appointment->exists()) {
+                        continue;
+                    }
+
+                    $date = $appointment->DateStart;
+                    if ($date < $today || $date > $threeDays) {
+                        continue;
+                    }
+
+                    $mealOrgIDs = $appointment->Organisations()->column('ID');
+                    if (empty(array_intersect($mealOrgIDs, $organizationIDs))) {
+                        continue;
+                    }
+
+                    $org = $appointment->Organisations()->first();
+                    $myUpcomingContributions[] = [
+                        'foodId'              => $food->ID,
+                        'foodTitle'           => $food->Title,
+                        'foodPreference'      => $food->FoodPreference ?: 'None',
+                        'mealId'              => $meal->ID,
+                        'mealTitle'           => $meal->Title,
+                        'mealTime'            => $meal->RenderTime(),
+                        'date'                => $date,
+                        'appointmentTitle'    => $appointment->Title,
+                        'organizationTitle'   => $org?->Title,
+                        'organizationLogoUrl' => ($org && $org->Logo()->exists())
+                            ? $org->Logo()->ScaleWidth(40)->getURL()
+                            : null,
+                    ];
+                }
+            }
+
+            usort(
+                $myUpcomingContributions,
+                fn ($a, $b) => strcmp($a['date'] . $a['mealTime'], $b['date'] . $b['mealTime'])
+            );
+        }
+
         return $this->jsonResponse([
-            'latestAnnouncements' => $latestAnnouncements,
-            'newFeedback' => $newFeedback,
+            'latestAnnouncements'       => $latestAnnouncements,
+            'newFeedback'               => $newFeedback,
+            'myUpcomingContributions'   => $myUpcomingContributions,
         ]);
     }
 }

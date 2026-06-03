@@ -85,6 +85,13 @@
                         }
                     }
                 }
+
+                &.nav_link--dashboard {
+                    background-color: var(--ColorWhite);
+                    padding: 8px;
+                    transform: scale(2);
+                    border-radius: 50%;
+                }
             }
         }
 
@@ -239,6 +246,28 @@
                     height: 70px;
                     align-items: center;
                     justify-content: flex-start;
+
+                    .nav_title{
+                        display: flex;
+                        align-items: center;
+
+                        .nav_alpha {
+                            font-size: 8px;
+                            margin: 0;
+                            padding: 0;
+                            line-height: 1;
+                            height: 14px;
+                            text-transform: uppercase;
+                            color: var(--ColorWhite);
+                            background-color: var(--ColorPrimaryDark);
+                            transform: rotate(5deg);
+                            display: block;
+                            padding: 2px 2px;
+                            opacity: 0.3;
+                            margin-left: 10px;
+                            border-radius: var(--BorderRadiusSmall);
+                        }
+                    }
 
                     .nav_icon{
                         height: 40px;

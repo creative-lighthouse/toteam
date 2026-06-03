@@ -1,5 +1,553 @@
 @use "../variables" as *;
 
+// ── Food tab nav ──────────────────────────────────────────────────────────────
+
+.section.section--FoodPage.has-food-nav {
+    .section_content {
+        padding-bottom: 56px;
+    }
+}
+
+.food-tab-nav {
+    position: fixed;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--ColorWhite);
+    border-top: 1px solid var(--ColorLightGray);
+    display: flex;
+    z-index: 50;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+
+    &_item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--ColorTextSecondary);
+        padding: 6px 0;
+        transition: color 0.2s;
+
+        svg { opacity: 0.5; transition: opacity 0.2s; }
+
+        &.is-active {
+            color: var(--ColorPrimary);
+            svg { opacity: 1; }
+        }
+    }
+}
+
+// ── Meal sections & cards ─────────────────────────────────────────────────────
+
+.meal-section {
+    margin-bottom: 24px;
+
+    &_title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--ColorTextPrimary);
+        margin: 0 0 12px 0;
+    }
+
+    &_toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--ColorWhite);
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusMedium);
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--ColorTextPrimary);
+        cursor: pointer;
+        margin-bottom: 12px;
+
+        svg {
+            transition: transform 0.25s ease;
+            &.is-open { transform: rotate(180deg); }
+        }
+
+        &:hover { background: var(--ColorVeryLightGray); }
+    }
+
+    &--other .meal-section_title {
+        color: var(--ColorTextSecondary);
+    }
+}
+
+.meal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    &--muted .meal-card_meta .meal-card_date,
+    &--muted .meal-card_meta .meal-card_name {
+        color: var(--ColorTextSecondary);
+    }
+}
+
+.meal-card {
+    background: var(--ColorWhite);
+    border-radius: var(--BorderRadiusMedium);
+    box-shadow: var(--BoxShadowLight);
+    overflow: hidden;
+
+    &_header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+
+        &:hover { background: var(--ColorVeryLightGray); }
+    }
+
+    &_org-logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: var(--ColorLightGray);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img { width: 100%; height: 100%; object-fit: contain; }
+    }
+
+    &_org-initial {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--ColorTextSecondary);
+    }
+
+    &_meta {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    &_date {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ColorPrimary);
+    }
+
+    &_name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--ColorTextPrimary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &_sub {
+        font-size: 0.75rem;
+        color: var(--ColorTextSecondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &_counts {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        flex-shrink: 0;
+
+        span {
+            font-size: 0.7rem;
+            color: var(--ColorTextSecondary);
+            white-space: nowrap;
+        }
+    }
+
+    &_chevron {
+        color: var(--ColorTextSecondary);
+        flex-shrink: 0;
+        transition: transform 0.25s ease;
+    }
+
+    &.is-expanded .meal-card_chevron {
+        transform: rotate(180deg);
+    }
+
+    &_details {
+        border-top: 1px solid var(--ColorLightGray);
+    }
+
+    &_details-inner {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    &_empty {
+        color: var(--ColorTextSecondary);
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    &--muted {
+        box-shadow: none;
+        border: 1px solid var(--ColorLightGray);
+    }
+}
+
+.meal-detail-block {
+    h4 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ColorTextSecondary);
+        margin: 0 0 8px 0;
+    }
+}
+
+.meal-attendee-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.meal-attendee {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+
+    &_avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+
+        &--placeholder {
+            background: var(--ColorPrimary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+    }
+}
+
+.meal-food-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.meal-food {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+
+    &_title { font-weight: 500; }
+    &_pref { font-size: 0.75rem; }
+    &_supplier { font-size: 0.75rem; color: var(--ColorTextSecondary); font-style: italic; }
+}
+
+// ── Food status dot ───────────────────────────────────────────────────────────
+
+.food-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+
+    &--new      { background: #f59e0b; }
+    &--accepted { background: #10b981; }
+    &--rejected { background: #ef4444; }
+}
+
+// ── My suggestions section ────────────────────────────────────────────────────
+
+.my-food-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+
+    &--rejected { opacity: 0.75; }
+}
+
+.my-food-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ColorWhite);
+    border-radius: var(--BorderRadiusSmall);
+    padding: 10px 12px;
+    box-shadow: var(--BoxShadowLight);
+
+    &--muted { box-shadow: none; border: 1px solid var(--ColorLightGray); }
+}
+
+.my-food-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.my-food-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ColorTextPrimary);
+}
+
+.my-food-context {
+    font-size: 0.72rem;
+    color: var(--ColorTextSecondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.my-food-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &--new      { background: #fef3c7; color: #92400e; }
+    &--accepted { background: #d1fae5; color: #065f46; }
+    &--rejected { background: #fee2e2; color: #991b1b; }
+}
+
+.meal-section_toggle--compact {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: var(--BorderRadiusSmall);
+}
+
+.meal-section--past .meal-section_toggle {
+    opacity: 0.7;
+}
+
+.meal-detail-block_heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+
+    h4 { margin: 0; }
+}
+
+.meal-suggest-btn {
+    background: transparent;
+    border: 1px solid var(--ColorPrimary);
+    border-radius: 20px;
+    color: var(--ColorPrimary);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 10px;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+
+    &:hover {
+        background: var(--ColorPrimary);
+        color: white;
+    }
+}
+
+// ── Food suggestion modal ─────────────────────────────────────────────────────
+
+.food-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    padding: 20px;
+}
+
+.food-modal {
+    background: var(--ColorWhite);
+    border-radius: var(--BorderRadiusMedium);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 420px;
+
+    &_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--ColorLightGray);
+
+        h3 { margin: 0; font-size: 1.1rem; }
+    }
+
+    &_close {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--ColorTextSecondary);
+        display: flex;
+        padding: 4px;
+        border-radius: 4px;
+
+        &:hover { background: var(--ColorLightGray); }
+    }
+
+    &_body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    &_actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        padding: 12px 20px 16px;
+        border-top: 1px solid var(--ColorLightGray);
+
+        .button { margin: 0; }
+    }
+}
+
+// Modal transition
+.food-modal-enter-active,
+.food-modal-leave-active {
+    transition: opacity 0.2s ease;
+    .food-modal { transition: transform 0.2s ease, opacity 0.2s ease; }
+}
+
+.food-modal-enter-from,
+.food-modal-leave-to {
+    opacity: 0;
+    .food-modal { transform: scale(0.95); opacity: 0; }
+}
+
+// ── MealDetail page ───────────────────────────────────────────────────────────
+
+.section--MealDetail {
+    .section_content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+.meal-detail-hero {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--ColorWhite);
+    border-radius: var(--BorderRadiusMedium);
+    box-shadow: var(--BoxShadowLight);
+
+    &_logo {
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: var(--ColorLightGray);
+
+        img { width: 100%; height: 100%; object-fit: contain; }
+    }
+
+    &_info { flex: 1; min-width: 0; }
+
+    &_date {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ColorPrimary);
+        margin: 0 0 4px 0;
+    }
+
+    &_title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+        color: var(--ColorTextPrimary);
+    }
+
+    &_sub {
+        font-size: 0.8rem;
+        color: var(--ColorTextSecondary);
+        margin: 0;
+    }
+}
+
+.meal-rsvp {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px 20px !important;
+
+    &_status {
+        font-size: 0.9rem;
+        color: var(--ColorTextSecondary);
+
+        strong { margin-left: 4px; }
+        .text-accept  { color: #10b981; }
+        .text-decline { color: #ef4444; }
+        .text-pending { color: var(--ColorTextSecondary); }
+    }
+
+    &_actions {
+        display: flex;
+        gap: 8px;
+
+        .button { margin: 0; }
+    }
+}
+
+// ── Legacy styles below (kept for backwards compatibility) ────────────────────
+
 .section.section--FoodPage{
     .section_content{
         display: flex;

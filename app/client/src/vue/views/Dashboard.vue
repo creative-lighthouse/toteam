@@ -46,10 +46,50 @@
         <ul class="infobox_list infobox_list--events">
           <li v-for="event in todaysEvents" :key="event.ID">
             <EventCard :event="event" :date-display="formatDate(event.DateStart)" @click="openEvent" />
+            <ul v-if="event.Meals?.length" class="event-meals-list">
+              <li v-for="meal in event.Meals" :key="meal.ID">
+                <router-link :to="`/food/meal/${meal.ID}`" class="event-meal-link">
+                  <span class="event-meal-time">{{ meal.RenderTime }} Uhr</span>
+                  <span class="event-meal-name">{{ meal.Title }}</span>
+                  <span class="event-meal-response" :class="mealResponseClass(meal.UserResponse)">
+                    {{ mealResponseLabel(meal.UserResponse) }}
+                  </span>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:.4;flex-shrink:0">
+                    <path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/>
+                  </svg>
+                </router-link>
+              </li>
+            </ul>
           </li>
         </ul>
         <div class="section_infobox_footer">
           <router-link to="/calendar">Zum Kalender →</router-link>
+        </div>
+      </div>
+
+      <!-- Meine zugesagten Beiträge -->
+      <div v-if="dashboardStore.hasUpcomingContributions" class="section_infobox">
+        <h2 class="hl2">Meine zugesagten Beiträge</h2>
+        <ul class="infobox_list infobox_list--flat">
+          <li v-for="item in dashboardStore.myUpcomingContributions" :key="`${item.foodId}-${item.mealId}`">
+            <router-link :to="`/food/meal/${item.mealId}`" class="contribution-item">
+              <div v-if="item.organizationLogoUrl" class="contribution-item_logo">
+                <img :src="item.organizationLogoUrl" :alt="item.organizationTitle" />
+              </div>
+              <div class="contribution-item_info">
+                <span class="contribution-item_food">{{ item.foodTitle }}</span>
+                <span class="contribution-item_context">
+                  {{ item.mealTitle }} · {{ formatDate(item.date) }}, {{ item.mealTime }} Uhr
+                </span>
+              </div>
+              <span v-if="item.foodPreference !== 'None'" class="contribution-item_pref">
+                {{ item.foodPreference === 'Vegetarian' ? '🥗' : '🌱' }}
+              </span>
+            </router-link>
+          </li>
+        </ul>
+        <div class="section_infobox_footer">
+          <router-link to="/food">Zum Essensplan →</router-link>
         </div>
       </div>
 
@@ -163,6 +203,18 @@ const pendingFeedback = computed(() =>
 const spinning = ref(false)
 const isLoading = computed(() => dashboardStore.loading || eventsStore.loading)
 const hasError = computed(() => !!(dashboardStore.error || eventsStore.error))
+
+function mealResponseClass(response) {
+  if (response === 'Accept')  return 'response--accept'
+  if (response === 'Decline') return 'response--decline'
+  return 'response--pending'
+}
+
+function mealResponseLabel(response) {
+  if (response === 'Accept')  return '✓ Zugesagt'
+  if (response === 'Decline') return '✗ Abgesagt'
+  return '?'
+}
 
 function formatDate(dateString) {
   if (!dateString) return ''

@@ -35,7 +35,7 @@
             </li>
 
             <li>
-                <router-link to="/" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Dashboard' }" @click="closeAllMenus">
+                <router-link to="/" class="nav_link nav_link--dashboard" :class="{ 'nav_link--active': $route.name === 'Dashboard' }" @click="closeAllMenus">
                     <div class="nav_icon">
                         <img
                         class="nav_image"
@@ -78,7 +78,7 @@
                         <div class="nav_icon">
                             <img :src="essenTotem" alt="Essen Icon" class="nav_image">
                         </div>
-                        <p class="nav_title">Essen</p>
+                        <p class="nav_title">Essen <span class="nav_alpha">Alpha</span></p>
                     </router-link>
                 </li>
 
@@ -87,7 +87,7 @@
                         <div class="nav_icon">
                             <img :src="downloadsTotem" alt="Links Icon" class="nav_image">
                         </div>
-                        <p class="nav_title">Links & Downloads</p>
+                        <p class="nav_title">Links & Downloads <span class="nav_alpha">Alpha</span></p>
                     </router-link>
                 </li>
 
@@ -96,7 +96,7 @@
                         <div class="nav_icon">
                             <img :src="kartenTotem" alt="Karte Icon" class="nav_image">
                         </div>
-                        <p class="nav_title">Lagepläne</p>
+                        <p class="nav_title">Lagepläne <span class="nav_alpha">Alpha</span></p>
                     </router-link>
                 </li>
 
