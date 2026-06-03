@@ -9,6 +9,9 @@ import Announcements from '@views/Announcements.vue'
 import AnnouncementDetail from '@views/AnnouncementDetail.vue'
 import Profile from '@views/Profile.vue'
 import Map from '@views/Map.vue'
+import MapDetail from '@views/MapDetail.vue'
+import MapCreate from '@views/MapCreate.vue'
+import MapLayerEdit from '@views/MapLayerEdit.vue'
 import Links from '@views/Links.vue'
 import Organizations from '@views/Organizations.vue'
 import Login from '@views/Login.vue'
@@ -63,6 +66,24 @@ const routes = [
     path: '/map',
     name: 'Map',
     component: Map,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/map/new',
+    name: 'MapCreate',
+    component: MapCreate,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/map/:mapId/layer/:layerId/edit',
+    name: 'MapLayerEdit',
+    component: MapLayerEdit,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/map/:id',
+    name: 'MapDetail',
+    component: MapDetail,
     meta: { requiresAuth: true }
   },
   {

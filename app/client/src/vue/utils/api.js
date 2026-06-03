@@ -109,6 +109,22 @@ export function apiPut(endpoint, data) {
 }
 
 /**
+ * POST request with FormData (file uploads) — does not set Content-Type so the browser adds the multipart boundary
+ */
+export async function apiPostForm(endpoint, formData) {
+  const url = `${API_BASE}${endpoint}`
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    credentials: 'same-origin',
+  })
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+  }
+  return response.json()
+}
+
+/**
  * DELETE request
  */
 export function apiDelete(endpoint) {
