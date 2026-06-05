@@ -69,6 +69,14 @@
             <p>Keine Termine an diesem Tag.</p>
           </div>
         </div>
+
+        <!-- ICS Link -->
+        <!-- <div class="copy-container">
+          <button type="button" class="button copy-btn" @click="copyICSLink">
+            Link für externe Kalender kopieren
+          </button>
+          <span v-if="icsCopied" class="copy-feedback" style="color:green;">✓ Link kopiert</span>
+        </div> -->
       </div>
 
       <!-- Event Dialog -->
@@ -89,6 +97,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
+import { useAuthStore } from '@stores/auth'
 import EventDialog from '@components/EventDialog.vue'
 import EventCard from '@components/EventCard.vue'
 import AppMenu from '@components/AppMenu.vue'
@@ -96,6 +105,7 @@ import actionForward from '../../../icons/actions/action_forward.svg'
 import actionBack from '../../../icons/actions/action_back.svg'
 
 const eventsStore = useEventsStore()
+const authStore = useAuthStore()
 const route = useRoute()
 usePageHeaderStore().setHeader('Kalender', 'Verwalte deine Termine und Events. Du kannst hier Termine erstellen, einsehen und bei den Terminen Zu- oder absagen')
 
@@ -299,6 +309,21 @@ function handleTimeChanged(_eventId, _updatedData) {
 function handleFoodChanged(mealId, type) {
   // Handled by store directly
   console.log('Food participation changed:', mealId, type)
+}
+
+// ICS link copy
+const icsCopied = ref(false)
+const icsLink = computed(() => {
+  const hash = authStore.user?.Hash
+  if (!hash) return null
+  return `${window.location.origin}/ics?user=${hash}`
+})
+
+async function copyICSLink() {
+  if (!icsLink.value) return
+  await navigator.clipboard.writeText(icsLink.value)
+  icsCopied.value = true
+  setTimeout(() => { icsCopied.value = false }, 3000)
 }
 
 // Load events on mount

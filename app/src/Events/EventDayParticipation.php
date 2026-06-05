@@ -175,4 +175,22 @@ class EventDayParticipation extends DataObject implements PermissionProvider
         //Check user for VIEW_EVENTDAYPARTICIPATIONS permission
         return Permission::check('VIEW_EVENTDAYPARTICIPATIONS', 'any', $member);
     }
+
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+        $parent = $this->Parent();
+        if ($parent && $parent->exists()) {
+            $parent->write();
+        }
+    }
+
+    public function onAfterDelete()
+    {
+        parent::onAfterDelete();
+        $parent = $this->Parent();
+        if ($parent && $parent->exists()) {
+            $parent->write();
+        }
+    }
 }

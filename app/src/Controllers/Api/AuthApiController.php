@@ -107,7 +107,8 @@ class AuthApiController extends ApiController
             'Email' => $member->Email,
             'FirstName' => $member->FirstName,
             'Surname' => $member->Surname,
-            'Gravatar' => $member->getGravatar()
+            'Gravatar' => $member->getGravatar(),
+            'Hash' => $member->Hash
         ];
         
         // Add profile image if exists

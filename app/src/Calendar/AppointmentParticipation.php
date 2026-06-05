@@ -166,4 +166,22 @@ class AppointmentParticipation extends DataObject implements PermissionProvider
     {
         return Permission::check('VIEW_APPOINTMENTPARTICIPATIONS', 'any', $member);
     }
+
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+        $parent = $this->Parent();
+        if ($parent && $parent->exists()) {
+            $parent->write();
+        }
+    }
+
+    public function onAfterDelete()
+    {
+        parent::onAfterDelete();
+        $parent = $this->Parent();
+        if ($parent && $parent->exists()) {
+            $parent->write();
+        }
+    }
 }
