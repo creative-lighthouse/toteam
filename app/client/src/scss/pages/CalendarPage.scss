@@ -548,6 +548,7 @@
     .multiselect-group {
         display: flex;
         flex-wrap: wrap;
+        justify-content: center;
         gap: 6px;
 
         .checkbox-label {

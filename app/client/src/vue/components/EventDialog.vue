@@ -293,9 +293,12 @@ import ParticipantCard from './ParticipantCard.vue'
 const eventsStore = useEventsStore()
 const orgsStore = useOrganizationsStore()
 
-const canManageContent = computed(() =>
-  orgsStore.organizations.some(o => ['moderator', 'admin'].includes(o.MembershipStatus))
-)
+const canManageContent = computed(() => {
+  const eventOrgIds = props.event.OrganizationIDs ?? []
+  return orgsStore.organizations.some(o =>
+    eventOrgIds.includes(o.ID) && ['moderator', 'admin'].includes(o.MembershipStatus)
+  )
+})
 
 const props = defineProps({
   event: {

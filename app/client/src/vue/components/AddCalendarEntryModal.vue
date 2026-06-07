@@ -390,6 +390,9 @@ async function open(preselectedDate = null) {
   appt.value = resetAppt(date)
 
   await loadOrgsAndTypes()
+  if (managedOrgs.value.length === 1) {
+    appt.value.organizationIds = [managedOrgs.value[0].ID]
+  }
   dialogEl.value?.showModal()
 }
 
