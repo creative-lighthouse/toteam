@@ -1,7 +1,7 @@
 .participant {
     display: flex;
     flex-direction: column;
-    padding: 8px 12px;
+    padding: 8px;
     border-radius: var(--BorderRadiusSmall);
     background-color: var(--ColorLightGray);
     position: relative;
@@ -19,20 +19,32 @@
     }
 
     .participant-main {
-        display: flex;
+        display: grid;
+        grid-template-columns: auto 1fr;
         justify-content: space-between;
         align-items: center;
+        gap: 10px;
 
-        .participant-avatar_img {
-            height: calc(100% - 6px);
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 10px;
-            position: absolute;
-            left: 2px;
-            top: 50%;
-            aspect-ratio: 1;
-            transform: translateY(-50%);
+        .participant-avatar {
+            display: block;
+            width: 28px;
+            height: 28px;
+
+            .participant-avatar_img {
+                height: 100%;
+                width: 100%;
+                border-radius: 50%;
+                object-fit: cover;
+                margin-right: 10px;
+                left: 2px;
+                aspect-ratio: 1;
+            }
+        }
+
+        .participant-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
     }
 

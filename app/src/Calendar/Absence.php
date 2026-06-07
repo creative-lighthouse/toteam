@@ -16,8 +16,8 @@ use SilverStripe\Security\Member;
  * @property int $MemberID
  * @method \SilverStripe\Security\Member Member()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

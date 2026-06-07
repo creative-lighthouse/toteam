@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <dialog ref="dialogEl" class="event-modal" @click="handleBackdropClick">
+    <dialog ref="dialogEl" class="event-modal addappointmentmodal" @click="handleBackdropClick">
       <div class="dialog-content" @click.stop>
 
         <!-- Header -->
@@ -18,7 +18,6 @@
             @click="activeTab = 'absence'"
           >Abwesenheit eintragen</button>
           <button
-            v-if="canManageContent"
             type="button"
             class="tab-btn"
             :class="{ 'tab-btn--active': activeTab === 'appointment' }"
@@ -27,167 +26,166 @@
         </div>
 
         <!-- Tab: Abwesenheit -->
-         
+
         <div class="dialog-infobox" v-if="activeTab === 'absence'">
-          <form class="modal-form" @submit.prevent="submitAbsence">
-            <div class="form-row">
-              <label>
-                Startdatum
-                <input type="date" v-model="absence.dateStart" @change="onAbsenceStartChange" required />
-              </label>
-              <label>
-                Enddatum
-                <input type="date" v-model="absence.dateEnd" :min="absence.dateStart" />
-              </label>
-            </div>
-            
-            <label>
-              Wiederholung
-              <select v-model="absence.recurrence">
-                <option value="Never">Nie</option>
-                <option value="Daily">Täglich</option>
-                <option value="Weekly">Wöchentlich</option>
-                <option value="Monthly">Monatlich</option>
-                <option value="Yearly">Jährlich</option>
-              </select>
-            </label>
-
-            <label>
-              Notiz
-              <textarea v-model="absence.note" rows="2" placeholder="Optionale Notiz"></textarea>
-            </label>
-
-            <label>
-              Kalender
-              <div class="multiselect-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="absence.allOrgs" @change="onAllOrgsChange" />
-                  Alle
+            <form class="modal-form form--absence" @submit.prevent="submitAbsence">
+                <label class="field field--organizations">
+                    Kalender
+                    <div class="multiselect-group">
+                        <label class="checkbox-label">
+                        <input type="checkbox" v-model="absence.allOrgs" @change="onAllOrgsChange" />
+                        Alle
+                        </label>
+                        <label
+                        v-for="org in memberOrgs"
+                        :key="org.ID"
+                        class="checkbox-label"
+                        >
+                        <input
+                            type="checkbox"
+                            :value="org.ID"
+                            v-model="absence.organizationIds"
+                            :disabled="absence.allOrgs"
+                        />
+                        {{ org.Title }}
+                        </label>
+                    </div>
                 </label>
-                <label
-                  v-for="org in memberOrgs"
-                  :key="org.ID"
-                  class="checkbox-label"
-                >
-                  <input
-                    type="checkbox"
-                    :value="org.ID"
-                    v-model="absence.organizationIds"
-                    :disabled="absence.allOrgs"
-                  />
-                  {{ org.Title }}
+
+                <label class="field field--startdate">
+                    Startdatum
+                    <input type="date" v-model="absence.dateStart" @change="onAbsenceStartChange" required />
                 </label>
-              </div>
-            </label>
+                <label class="field field--enddate">
+                    Enddatum
+                    <input type="date" v-model="absence.dateEnd" :min="absence.dateStart" />
+                </label>
 
-            <div v-if="absenceError" class="form-error">{{ absenceError }}</div>
+                <label class="field field--recurrence">
+                    Wiederholung
+                    <select v-model="absence.recurrence">
+                        <option value="Never">Nie</option>
+                        <option value="Daily">Täglich</option>
+                        <option value="Weekly">Wöchentlich</option>
+                        <option value="Monthly">Monatlich</option>
+                        <option value="Yearly">Jährlich</option>
+                    </select>
+                </label>
 
-            <div class="form-actions">
-              <button type="submit" class="button" :disabled="absenceSubmitting">
-                {{ absenceSubmitting ? 'Wird gespeichert…' : (editMode === 'absence' ? 'Speichern' : 'Abwesenheit eintragen') }}
-              </button>
-              <button
-                v-if="editMode === 'absence'"
-                type="button"
-                class="button button--danger"
-                :disabled="absenceSubmitting"
-                @click="deleteAbsence"
-              >Löschen</button>
-            </div>
-          </form>
+                <label class="field field--note">
+                    Notiz
+                    <textarea v-model="absence.note" rows="2" placeholder="Optionale Notiz"></textarea>
+                </label>
+
+                <div v-if="absenceError" class="form-error">{{ absenceError }}</div>
+
+                <div class="form-actions">
+                    <button type="submit" class="button" :disabled="absenceSubmitting">
+                        {{ absenceSubmitting ? 'Wird gespeichert…' : (editMode === 'absence' ? 'Speichern' : 'Abwesenheit eintragen') }}
+                    </button>
+                    <button
+                        v-if="editMode === 'absence'"
+                        type="button"
+                        class="button button--danger"
+                        :disabled="absenceSubmitting"
+                        @click="deleteAbsence"
+                    >Löschen</button>
+                </div>
+            </form>
         </div>
 
-        <!-- Tab: Termin hinzufügen -->        
+        <!-- Tab: Termin hinzufügen -->
         <div class="dialog-infobox" v-if="activeTab === 'appointment' && canManageContent">
-          <form class="modal-form" @submit.prevent="submitAppointment">
-            <label>
-              Titel *
-              <input type="text" v-model="appt.title" required />
-            </label>
-
-            <div class="form-row">
-              <label>
-                Startdatum *
-                <input type="date" v-model="appt.dateStart" required />
-              </label>
-              <label>
-                Enddatum
-                <input type="date" v-model="appt.dateEnd" :min="appt.dateStart" />
-              </label>
-            </div>
-
-            <label class="checkbox-label checkbox-label--inline">
-              <input type="checkbox" v-model="appt.allDay" />
-              Ganztägig
-            </label>
-
-            <div v-if="!appt.allDay" class="form-row">
-              <label>
-                Startzeit
-                <input type="time" v-model="appt.timeStart" />
-              </label>
-              <label>
-                Endzeit
-                <input type="time" v-model="appt.timeEnd" />
-              </label>
-            </div>
-
-            <label>
-              Ort
-              <input type="text" v-model="appt.location" />
-            </label>
-
-            <label>
-              Typ
-              <select v-model="appt.typeId">
-                <option value="">– kein Typ –</option>
-                <option v-for="t in appointmentTypes" :key="t.ID" :value="t.ID">{{ t.Title }}</option>
-              </select>
-            </label>
-
-            <label>
-              Beschreibung
-              <textarea v-model="appt.description" rows="3"></textarea>
-            </label>
-
-            <label>
-              Status
-              <select v-model="appt.status">
-                <option value="Scheduled">Geplant</option>
-                <option value="Suggested">Vorgeschlagen</option>
-                <option value="Cancelled">Abgesagt</option>
-              </select>
-            </label>
-
-            <label>
-              Organisationen *
-              <div class="multiselect-group">
-                <label
-                  v-for="org in managedOrgs"
-                  :key="org.ID"
-                  class="checkbox-label"
-                >
-                  <input type="checkbox" :value="org.ID" v-model="appt.organizationIds" />
-                  {{ org.Title }}
+            <form class="modal-form form--appointment" @submit.prevent="submitAppointment">
+                <label class="field field--organizations">
+                    Organisation(en) *
+                    <div class="multiselect-group">
+                        <label
+                        v-for="org in managedOrgs"
+                        :key="org.ID"
+                        class="checkbox-label"
+                        >
+                            <input type="checkbox" :value="org.ID" v-model="appt.organizationIds" />
+                            {{ org.Title }}
+                        </label>
+                    </div>
                 </label>
-              </div>
-            </label>
 
-            <div v-if="apptError" class="form-error">{{ apptError }}</div>
+                <label class="field field--title">
+                    Titel *
+                    <input type="text" v-model="appt.title" required />
+                </label>
 
-            <div class="form-actions">
-              <button type="submit" class="button" :disabled="apptSubmitting">
-                {{ apptSubmitting ? 'Wird gespeichert…' : (editMode === 'appointment' ? 'Speichern' : 'Termin erstellen') }}
-              </button>
-              <button
-                v-if="editMode === 'appointment'"
-                type="button"
-                class="button button--danger"
-                :disabled="apptSubmitting"
-                @click="deleteAppointment"
-              >Löschen</button>
-            </div>
-          </form>
+                <label class="field field--status">
+                    Status *
+                    <select v-model="appt.status">
+                        <option value="Scheduled">Geplant</option>
+                        <option value="Suggested">Vorgeschlagen</option>
+                        <option value="Cancelled">Abgesagt</option>
+                    </select>
+                </label>
+
+                <label class="field field--allday">
+                    <input type="checkbox" v-model="appt.allDay" checked />
+                    Ganztägig
+                </label>
+
+                <label v-if="appt.allDay" class="field field--startdate">
+                    Startdatum *
+                    <input type="date" v-model="appt.dateStart" required />
+                </label>
+
+                <label v-else class="field field--startdatetime">
+                    Start *
+                    <input type="datetime-local" v-model="apptDateTimeStart" required aria-label="Startdatum und Startzeit" />
+                </label>
+
+                <label v-if="appt.allDay" class="field field--enddate">
+                    Enddatum *
+                    <input type="date" v-model="appt.dateEnd" :min="appt.dateStart" aria-label="Enddatum" />
+                </label>
+
+                <label v-else class="field field--enddatetime">
+                    Ende *
+                    <input type="datetime-local" v-model="apptDateTimeEnd" aria-label="Enddatum und Endzeit" />
+                </label>
+
+                <label class="field field--location">
+                    Ort
+                    <input type="text" v-model="appt.location" />
+                </label>
+
+                <label class="field field--type">
+                    Typ
+                    <select v-model="appt.typeId">
+                        <option value="">– kein Typ –</option>
+                        <option v-for="t in appointmentTypes" :key="t.ID" :value="t.ID">{{ t.Title }}</option>
+                    </select>
+                </label>
+
+                <label class="field field--description">
+                    Beschreibung
+                    <textarea v-model="appt.description" rows="3"></textarea>
+                </label>
+
+                <div v-if="apptError" class="form-error">{{ apptError }}</div>
+
+                <div class="form-actions">
+                    <button type="submit" class="button" :disabled="apptSubmitting">
+                        {{ apptSubmitting ? 'Wird gespeichert…' : (editMode === 'appointment' ? 'Speichern' : 'Termin erstellen') }}
+                    </button>
+                    <button
+                        v-if="editMode === 'appointment'"
+                        type="button"
+                        class="button button--danger"
+                        :disabled="apptSubmitting"
+                        @click="deleteAppointment"
+                    >Löschen</button>
+                </div>
+            </form>
+        </div>
+        <div v-else-if="activeTab === 'appointment' && !canManageContent" class="dialog-infobox">
+            <p>Nur Admins und Moderatoren können Termine erstellen.</p>
         </div>
 
       </div>
@@ -196,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import { apiGet } from '@utils/api'
@@ -296,6 +294,46 @@ const appt = ref(resetAppt())
 const apptSubmitting = ref(false)
 const apptError = ref('')
 
+const apptDateTimeEnd = computed({
+  get() {
+    const date = appt.value.dateEnd
+    const time = appt.value.timeEnd
+    if (date && time) return `${date}T${time}`
+    if (date) return `${date}T00:00`
+    return ''
+  },
+  set(val) {
+    if (val) {
+      const [date, time] = val.split('T')
+      appt.value.dateEnd = date ?? ''
+      appt.value.timeEnd = time ?? ''
+    } else {
+      appt.value.dateEnd = ''
+      appt.value.timeEnd = ''
+    }
+  }
+})
+
+const apptDateTimeStart = computed({
+  get() {
+    const date = appt.value.dateStart
+    const time = appt.value.timeStart
+    if (date && time) return `${date}T${time}`
+    if (date) return `${date}T00:00`
+    return ''
+  },
+  set(val) {
+    if (val) {
+      const [date, time] = val.split('T')
+      appt.value.dateStart = date ?? ''
+      appt.value.timeStart = time ?? ''
+    } else {
+      appt.value.dateStart = ''
+      appt.value.timeStart = ''
+    }
+  }
+})
+
 function resetAppt(date = '') {
   return {
     title: '',
@@ -303,7 +341,7 @@ function resetAppt(date = '') {
     dateEnd: date,
     timeStart: '',
     timeEnd: '',
-    allDay: false,
+    allDay: true,
     location: '',
     typeId: '',
     description: '',

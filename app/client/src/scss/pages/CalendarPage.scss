@@ -8,7 +8,7 @@
     align-items: center;
     margin: 0 auto 20px auto;
     gap: 15px;
-    max-width: 400px;
+    max-width: 600px;
     background-color: var(--ColorWhite);
     border-radius: var(--BorderRadiusMedium);
     padding: 10px;
@@ -271,7 +271,7 @@
 
 .events-calendar {
     .calendar-grid {
-        max-width: 400px;
+        max-width: 600px;
         margin: 0 auto;
         border: 1px solid var(--ColorLightGray);
         border-radius: var(--BorderRadiusMedium);
@@ -325,10 +325,11 @@
 
             .event-dots {
                 display: grid;
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
                 gap: 1px;
                 align-items: center;
                 width: 100%;
+                height: 16px;
             }
 
             .event-dot {
@@ -373,12 +374,24 @@
                 background-color: var(--ColorPrimary);
                 color: var(--ColorWhite);
             }
+
+            @include media(medium) {
+                aspect-ratio: 1.2;
+            }
+        }
+
+        @include media(medium) {
+            max-width: 400;
         }
     }
 
     .selected-day-events {
         margin: 20px auto 10px auto;
         text-align: center;
+
+        h3 {
+            margin-bottom: 10px;
+        }
 
         .events-list {
             border-top: 1px solid var(--ColorGray);
@@ -390,6 +403,36 @@
         }
     }
 
+    .add-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+
+        .button {
+            border: 1px solid var(--ColorGray);
+            background-color: transparent;
+            color: var(--ColorGray);
+            border-radius: 50%;
+            aspect-ratio: 1;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            line-height: 1;
+            font-weight: 400;
+
+            &:hover {
+                background-color: var(--ColorPrimary);
+                color: var(--ColorWhite);
+                border-color: var(--ColorPrimary);
+            }
+        }
+    }
+
     .copy-container {
         display: flex;
         justify-content: center;
@@ -397,9 +440,17 @@
         gap: 10px;
         margin-top: 20px;
 
+        .button {
+            background-color: transparent;
+            border: none;
+            color: var(--ColorGray);
+            font-weight: 400;
+        }
+
         .copy-btn--copied {
             background-color: var(--ColorStatusGood);
             border-color: var(--ColorStatusGood);
+            color: var(--ColorWhite);
             transition: background-color 0.2s ease, border-color 0.2s ease;
         }
     }
@@ -408,7 +459,7 @@
 // ── Absence badge on calendar day ────────────────────────────────────────────
 
 .absence-badge {
-    grid-column: 3;
+    grid-column: -2 / -1;
     justify-self: end;
     color: var(--ColorStatusBad);
     font-size: 0.6rem;
@@ -464,142 +515,5 @@
         &:hover {
             background-color: var(--ColorPrimaryLight);
         }
-    }
-}
-
-// ── AddCalendarEntryModal ─────────────────────────────────────────────────────
-
-.modal-tabs {
-    display: flex;
-    gap: 4px;
-    border-bottom: 2px solid var(--ColorGray, #ddd);
-    padding-bottom: 0;
-    justify-content: center;
-}
-
-.tab-btn {
-    background: none;
-    border: none;
-    padding: 8px 14px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--ColorDarkGray, #555);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-
-    &--active {
-        color: var(--ColorPrimary);
-        border-bottom-color: var(--ColorPrimary);
-        font-weight: 600;
-    }
-
-    &:hover:not(.tab-btn--active) {
-        color: var(--ColorPrimary);
-    }
-}
-
-.modal-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    label:not(.checkbox-label) {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    input[type="text"],
-    input[type="date"],
-    input[type="time"],
-    select,
-    textarea {
-        padding: 7px 10px;
-        border: 1px solid var(--ColorGray, #ddd);
-        border-radius: var(--BorderRadiusSmall, 6px);
-        font-size: 0.9rem;
-        width: 100%;
-        box-sizing: border-box;
-
-        &:focus {
-            outline: 2px solid var(--ColorPrimary);
-            border-color: transparent;
-        }
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-
-    .form-actions {
-        display: flex;
-        gap: 10px;
-
-        .button {
-            flex: 1;
-            margin-top: 0;
-        }
-    }
-
-    .multiselect-group {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 6px;
-
-        .checkbox-label {
-            input[type="checkbox"] {
-                display: none;
-            }
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 6px 14px;
-            border: 2px solid var(--ColorGray, #ddd);
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-            user-select: none;
-
-            &:has(input:checked) {
-                background-color: var(--ColorPrimary);
-                border-color: var(--ColorPrimary);
-                color: var(--ColorWhite);
-            }
-
-            &:has(input:disabled) {
-                opacity: 0.4;
-                cursor: default;
-            }
-
-            &:not(:has(input:disabled)):hover {
-                border-color: var(--ColorPrimary);
-            }
-        }
-    }
-
-    .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.85rem;
-        font-weight: normal;
-        cursor: pointer;
-
-        &--inline {
-            flex-direction: row;
-        }
-    }
-
-    .form-error {
-        color: #c0392b;
-        font-size: 0.85rem;
     }
 }

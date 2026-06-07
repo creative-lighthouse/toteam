@@ -2,7 +2,9 @@
   <Teleport to="body">
     <dialog
       ref="dialogEl"
-      :class="['event-modal', `event-modal--${event.Status}`]"
+      :class="[
+        'event-modal',
+        `event-modal--${event.Status}`]"
       @click="handleBackdropClick"
     >
       <div class="dialog-content" @click.stop>
@@ -14,7 +16,11 @@
                 class="event-dialog_org-logo"
                 alt=""
             >
+            <div class="event_title">
             <h2 class="hl2">{{ event.Title }}</h2>
+                <p v-if="event.Status=='Suggested'" class="event-card_status">(Vorschlag)</p>
+                <p v-else-if="event.Status=='Cancelled'" class="event-card_status">(Abgesagt)</p>
+            </div>
             <button @click="$emit('close')" class="button button--close" aria-label="Schließen">
                 ✕
             </button>
@@ -34,7 +40,6 @@
             </p>
             <p v-if="event.Location"><strong>Ort:</strong> {{ event.Location }}</p>
             <p v-if="event.Description"><strong>Beschreibung:</strong> {{ event.Description }}</p>
-            <p><strong>Status:</strong> <span :class="`status--${event.Status}`">{{ getStatusLabel(event.Status) }}</span></p>
           </div>
 
           <!-- Event Image -->
@@ -261,11 +266,11 @@
               </template>
             </div>
           </div>
-          
+
           <!-- Edit / Delete actions for mods/admins -->
           <div v-if="canManageContent" class="event-manage-actions">
-            <button type="button" class="button" @click="$emit('edit-appointment', event)">
-              Termin bearbeiten
+            <button type="button" class="button event-manage-button" @click="$emit('edit-appointment', event)">
+              <img :src="EditIcon" alt="Edit" />
             </button>
           </div>
 
@@ -289,6 +294,7 @@ import { useOrganizationsStore } from '@stores/organizations'
 import actionTime from '../../../icons/actions/action_time.svg'
 import actionEdit from '../../../icons/actions/action_edit.svg'
 import ParticipantCard from './ParticipantCard.vue'
+import EditIcon from '../../../icons/actions/action_edit.svg'
 
 const eventsStore = useEventsStore()
 const orgsStore = useOrganizationsStore()

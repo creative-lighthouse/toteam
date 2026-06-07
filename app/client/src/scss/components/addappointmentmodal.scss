@@ -1,0 +1,262 @@
+@use "../variables" as *;
+
+.addappointmentmodal {
+    .modal-tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 2px solid var(--ColorGray, #ddd);
+        padding-bottom: 0;
+        justify-content: center;
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--ColorDarkGray, #555);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+
+            &--active {
+                color: var(--ColorPrimary);
+                border-bottom-color: var(--ColorPrimary);
+                font-weight: 600;
+            }
+
+            &:hover:not(.tab-btn--active) {
+                color: var(--ColorPrimary);
+            }
+        }
+    }
+
+    .dialog-infobox {
+
+        .modal-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+            flex-direction: column;
+            gap: 12px;
+
+            label:not(.checkbox-label) {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+
+            input[type="text"],
+            input[type="date"],
+            input[type="time"],
+            select,
+            textarea {
+                padding: 7px 10px;
+                border: 1px solid var(--ColorGray, #ddd);
+                border-radius: var(--BorderRadiusSmall, 6px);
+                font-size: 0.9rem;
+                width: 100%;
+                box-sizing: border-box;
+
+                &:focus {
+                    outline: 2px solid var(--ColorPrimary);
+                    border-color: transparent;
+                }
+            }
+
+            .field {
+                margin: 0;
+                grid-column: span 6;
+
+                input, select, textarea {
+                    border: 1px solid var(--ColorLightGray);
+                    border-radius: var(--BorderRadiusSmall);
+                }
+            }
+
+            &.form--appointment {
+                .field {
+                    margin: 0;
+                    grid-column: span 6;
+
+                    input, select, textarea {
+                        border: 1px solid var(--ColorLightGray);
+                        border-radius: var(--BorderRadiusSmall);
+                    }
+
+                    &.field--organizations {
+                        grid-column: span 6;
+                    }
+
+                    &.field--allday {
+                        grid-column: span 6;
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        gap: 6px;
+                        justify-content: flex-start;
+
+                        input[type="checkbox"] {
+                            width: 20px;
+                            margin: 0;
+                        }
+                    }
+
+                    &.field--description {
+                        grid-column: span 6;
+                        textarea {
+                            height: auto;
+                        }
+                    }
+
+                    &.field--startdatetime, &.field--startdate {
+                        grid-column: span 3;
+                    }
+
+                    &.field--enddatetime, &.field--enddate {
+                        grid-column: span 3;
+                    }
+
+                    @include media(medium) {
+                        &.field--title {
+                            grid-column: span 4;
+                        }
+
+                        &.field--status {
+                            grid-column: span 2;
+                        }
+
+                        &.field--allday {
+                            grid-column: span 2;
+                        }
+
+                        &.field--startdatetime, &.field--startdate {
+                            grid-column: span 2;
+                        }
+
+                        &.field--enddatetime, &.field--enddate {
+                            grid-column: span 2;
+                        }
+
+                        &.field--location {
+                            grid-column: span 4;
+                        }
+
+                        &.field--type {
+                            grid-column: span 2;
+                        }
+                    }
+                }
+
+                .form-actions {
+                    display: flex;
+                    gap: 10px;
+                    grid-column: span 6;
+
+                    .button {
+                        flex: 1;
+                        margin-top: 0;
+                    }
+                }
+            }
+
+            &.form--absence {
+                .field {
+                    &.field--organizations {
+                        grid-column: span 6;
+                    }
+
+                    &.field--startdate, &.field--enddate, &.field--recurrence {
+                        grid-column: span 3;
+                    }
+
+                    &.field--note {
+                        grid-column: span 6;
+                        textarea {
+                            height: auto;
+                        }
+                    }
+
+                    @include media(medium) {
+                        &.field--startdate, &.field--enddate {
+                            grid-column: span 2;
+                        }
+
+                        &.field--recurrence {
+                            grid-column: span 2;
+                        }
+                    }
+                }
+
+                .form-actions {
+                    display: flex;
+                    gap: 10px;
+                    grid-column: span 6;
+
+                    .button {
+                        flex: 1;
+                        margin-top: 0;
+                    }
+                }
+            }
+
+            .multiselect-group {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px;
+
+                .checkbox-label {
+                    input[type="checkbox"] {
+                        display: none;
+                    }
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 6px 14px;
+                    border: 2px solid var(--ColorGray, #ddd);
+                    border-radius: 50px;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+                    user-select: none;
+
+                    &:has(input:checked) {
+                        background-color: var(--ColorPrimary);
+                        border-color: var(--ColorPrimary);
+                        color: var(--ColorWhite);
+                    }
+
+                    &:has(input:disabled) {
+                        opacity: 0.4;
+                        cursor: default;
+                    }
+
+                    &:not(:has(input:disabled)):hover {
+                        border-color: var(--ColorPrimary);
+                    }
+                }
+            }
+
+            .checkbox-label {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.85rem;
+                font-weight: normal;
+                cursor: pointer;
+
+                &--inline {
+                    flex-direction: row;
+                }
+            }
+
+            .form-error {
+                color: #c0392b;
+                font-size: 0.85rem;
+            }
+        }
+    }
+}

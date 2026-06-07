@@ -1,141 +1,144 @@
 <template>
-  <div class="section section--CalendarPage">
-    <div class="section_content section_content--calendar">
-      <!-- Error State -->
-      <div v-if="error" class="error-state">
-        <p>Fehler beim Laden der Termine: {{ error }}</p>
-      </div>
-
-      <!-- Calendar View -->
-      <div v-else class="events-calendar">
-        <!-- Month Navigation -->
-        <div class="calendar-header">
-          <button @click="previousMonth" class="btn-nav">
-            <img :src="actionBack" alt="Previous Month" />
-          </button>
-          <h2>{{ monthYearDisplay }}</h2>
-          <button @click="jumptotoday" class="btn-today" :class="{ 'btn-nav--current-month': isCurrentMonth }" title="Heute">
-            <span class="day-number">Heute</span>
-          </button>
-          <button @click="nextMonth" class="btn-nav">
-            <img :src="actionForward" alt="Next Month" />
-          </button>
-        </div>
-
-        <!-- Calendar Grid -->
-        <div class="calendar-grid" :class="{ 'calendar-grid--loading': monthLoading }">
-          <!-- Weekday Headers -->
-          <div v-for="day in weekDays" :key="day" class="calendar-weekday">
-            {{ day }}
-          </div>
-
-          <!-- Calendar Days (6 rows × 7 cols, includes prev/next month) -->
-          <div
-            v-for="cell in calendarDays"
-            :key="`${cell.year}-${cell.month}-${cell.day}`"
-            class="calendar-day"
-            :class="{
-              'calendar-day--outside': !cell.isCurrentMonth,
-              'calendar-day--has-events': getEventsCountForDay(cell.day, cell.month, cell.year) > 0,
-              'calendar-day--selected': isSelectedDay(cell.day, cell.month, cell.year),
-              'calendar-day--today': isToday(cell.day, cell.month, cell.year)
-            }"
-            @click="selectDayAndFetchAbsences(cell.day, cell.month, cell.year)"
-          >
-            <span class="day-number">{{ cell.day }}</span>
-            <div
-              v-if="getEventsCountForDay(cell.day, cell.month, cell.year) > 0 || getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
-              class="event-dots"
-            >
-              <span
-                v-for="dot in getEventDotsForDay(cell.day, cell.month, cell.year)"
-                :key="dot.status"
-                class="event-dot"
-                :class="`event-dot--${dot.status}`"
-              ></span>
-              <span
-                v-if="getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
-                class="absence-badge"
-              >{{ getAbsenceCountForDay(cell.day, cell.month, cell.year) }}</span>
+    <div class="section section--CalendarPage">
+        <div class="section_content section_content--calendar">
+            <!-- Error State -->
+            <div v-if="error" class="error-state">
+                <p>Fehler beim Laden der Termine: {{ error }}</p>
             </div>
-          </div>
-        </div>
 
-        <!-- Selected Day Events -->
-        <div v-if="selectedDate" class="selected-day-events">
-          <h3>{{ selectedDateDisplay }}</h3>
+            <!-- Calendar View -->
+            <div v-else class="events-calendar">
+                <!-- Month Navigation -->
+                <div class="calendar-header">
+                    <button @click="previousMonth" class="btn-nav">
+                        <img :src="actionBack" alt="Previous Month" />
+                    </button>
+                    <h2>{{ monthYearDisplay }}</h2>
+                    <button @click="jumptotoday" class="btn-today" :class="{ 'btn-nav--current-month': isCurrentMonth }" title="Heute">
+                        <span class="day-number">Heute</span>
+                    </button>
+                    <button @click="nextMonth" class="btn-nav">
+                        <img :src="actionForward" alt="Next Month" />
+                    </button>
+                </div>
 
-          <!-- Absences -->
-          <div v-if="selectedDateAbsences.length > 0" class="absences-list">
-            <h4 class="absences-list__title">Abwesend</h4>
-            <div
-              v-for="a in selectedDateAbsences"
-              :key="a.MemberID"
-              class="absence-item"
-              :class="{ 'absence-item--own': a.MemberID === authStore.user?.ID }"
-              @click="a.MemberID === authStore.user?.ID && entryModalRef.openEditAbsence(a)"
-            >
-              <img
-                v-if="a.ProfileImageURL"
-                :src="a.ProfileImageURL"
-                class="absence-item__avatar"
-                alt=""
-              />
-              <span class="absence-item__name">{{ a.MemberName }}</span>
-              <span v-if="a.Note" class="absence-item__note">{{ a.Note }}</span>
+                <!-- Calendar Grid -->
+                <div class="calendar-grid" :class="{ 'calendar-grid--loading': monthLoading }">
+                    <!-- Weekday Headers -->
+                    <div v-for="day in weekDays" :key="day" class="calendar-weekday">
+                        {{ day }}
+                    </div>
+
+                    <!-- Calendar Days (6 rows × 7 cols, includes prev/next month) -->
+                    <div
+                        v-for="cell in calendarDays"
+                        :key="`${cell.year}-${cell.month}-${cell.day}`"
+                        class="calendar-day"
+                        :class="{
+                        'calendar-day--outside': !cell.isCurrentMonth,
+                        'calendar-day--has-events': getEventsCountForDay(cell.day, cell.month, cell.year) > 0,
+                        'calendar-day--selected': isSelectedDay(cell.day, cell.month, cell.year),
+                        'calendar-day--today': isToday(cell.day, cell.month, cell.year)
+                        }"
+                        @click="selectDayAndFetchAbsences(cell.day, cell.month, cell.year)"
+                    >
+                        <span class="day-number">{{ cell.day }}</span>
+                        <div
+                        v-if="getEventsCountForDay(cell.day, cell.month, cell.year) > 0 || getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
+                        class="event-dots"
+                        >
+                        <span
+                            v-for="dot in getEventDotsForDay(cell.day, cell.month, cell.year)"
+                            :key="dot.status"
+                            class="event-dot"
+                            :class="`event-dot--${dot.status}`"
+                        ></span>
+                        <span
+                            v-if="getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
+                            class="absence-badge"
+                        >{{ getAbsenceCountForDay(cell.day, cell.month, cell.year) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Day Events -->
+                <div v-if="selectedDate" class="selected-day-events">
+                    <h3>{{ selectedDateDisplay }}</h3>
+
+                    <div v-if="selectedDayEvents.length > 0" class="events-list">
+                        <EventCard
+                        v-for="event in selectedDayEvents"
+                        :key="event.ID"
+                        :event="event"
+                        @click="openEventDialog(event)"
+                        />
+                    </div>
+                    <div v-else-if="selectedDateAbsences.length === 0" class="no-events-message">
+                        <p>Keine Termine an diesem Tag.</p>
+                    </div>
+                </div>
+
+                <!-- Absences -->
+                <div v-if="selectedDateAbsences.length > 0" class="absences-list">
+                    <h4 class="absences-list__title">Abwesend</h4>
+                    <div
+                    v-for="a in selectedDateAbsences"
+                    :key="a.MemberID"
+                    class="absence-item"
+                    :class="{ 'absence-item--own': a.MemberID === authStore.user?.ID }"
+                    @click="a.MemberID === authStore.user?.ID && entryModalRef.openEditAbsence(a)"
+                    >
+                    <img
+                        v-if="a.ProfileImageURL"
+                        :src="a.ProfileImageURL"
+                        class="absence-item__avatar"
+                        alt=""
+                    />
+                    <span class="absence-item__name">{{ a.MemberName }}</span>
+                    <span v-if="a.Note" class="absence-item__note">{{ a.Note }}</span>
+                    </div>
+                </div>
+
+                <!-- ICS Link + Termin eintragen -->
+                <div class="add-container">
+                    <button type="button" class="button" @click="entryModalRef.open(selectedDate)">
+                        +
+                    </button>
+                </div>
+                <div class="copy-container">
+                    <button
+                    type="button"
+                    class="button copy-btn"
+                    :class="{ 'copy-btn--copied': icsCopied }"
+                    @click="copyICSLink"
+                    >{{ icsCopied ? '✓ Link kopiert' : 'ICS-Link für externe Kalender kopieren →' }}</button>
+                </div>
             </div>
-          </div>
 
-          <div v-if="selectedDayEvents.length > 0" class="events-list">
-            <EventCard
-              v-for="event in selectedDayEvents"
-              :key="event.ID"
-              :event="event"
-              @click="openEventDialog(event)"
+
+            <!-- Event Dialog -->
+            <EventDialog
+                v-if="selectedEvent"
+                :event="selectedEvent"
+                @close="closeEventDialog"
+                @participation-changed="handleParticipationChanged"
+                @time-changed="handleTimeChanged"
+                @food-changed="handleFoodChanged"
+                @edit-appointment="onEditAppointment"
             />
-          </div>
-          <div v-else-if="selectedDateAbsences.length === 0" class="no-events-message">
-            <p>Keine Termine an diesem Tag.</p>
-          </div>
+
+            <!-- Add Appointment Modal -->
+            <AddAppointmentModal
+                ref="entryModalRef"
+                @appointment-created="refreshEvents"
+                @appointment-updated="refreshEvents"
+                @appointment-deleted="onAppointmentDeleted"
+                @absence-created="refreshAbsences"
+                @absence-updated="refreshAbsences"
+                @absence-deleted="refreshAbsences"
+            />
         </div>
-
-        <!-- ICS Link + Termin eintragen -->
-        <div class="copy-container">
-          <button type="button" class="button" @click="entryModalRef.open(selectedDate)">
-            {{ canManageContent ? 'Termin hinzufügen' : 'Abwesenheit eintragen' }}
-          </button>
-          <button
-            type="button"
-            class="button copy-btn"
-            :class="{ 'copy-btn--copied': icsCopied }"
-            @click="copyICSLink"
-          >{{ icsCopied ? '✓ Link kopiert' : 'Link für externe Kalender kopieren' }}</button>
-        </div>
-      </div>
-
-      <!-- Event Dialog -->
-      <EventDialog
-        v-if="selectedEvent"
-        :event="selectedEvent"
-        @close="closeEventDialog"
-        @participation-changed="handleParticipationChanged"
-        @time-changed="handleTimeChanged"
-        @food-changed="handleFoodChanged"
-        @edit-appointment="onEditAppointment"
-      />
-
-      <!-- Add Calendar Entry Modal -->
-      <AddCalendarEntryModal
-        ref="entryModalRef"
-        @appointment-created="refreshEvents"
-        @appointment-updated="refreshEvents"
-        @appointment-deleted="onAppointmentDeleted"
-        @absence-created="refreshAbsences"
-        @absence-updated="refreshAbsences"
-        @absence-deleted="refreshAbsences"
-      />
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -148,7 +151,7 @@ import { useOrganizationsStore } from '@stores/organizations'
 import EventDialog from '@components/EventDialog.vue'
 import EventCard from '@components/EventCard.vue'
 import AppMenu from '@components/AppMenu.vue'
-import AddCalendarEntryModal from '@components/AddCalendarEntryModal.vue'
+import AddAppointmentModal from '@components/AddAppointmentModal.vue'
 import actionForward from '../../../icons/actions/action_forward.svg'
 import actionBack from '../../../icons/actions/action_back.svg'
 
