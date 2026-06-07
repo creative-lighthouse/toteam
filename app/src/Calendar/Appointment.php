@@ -46,8 +46,8 @@ use SilverStripe\Forms\TimeField;
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

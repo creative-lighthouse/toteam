@@ -19,8 +19,8 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Assets\Image Logo()
  * @method \SilverStripe\Assets\Image CoverImage()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] Memberships()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
