@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiGet, apiPost, clearCacheForEndpoint } from '@utils/api'
+import { apiGet, apiPost, apiPut, apiDelete, clearCacheForEndpoint } from '@utils/api'
 import { Event } from '@models/Event'
 import { useAuthStore } from '@stores/auth'
 
@@ -271,6 +271,43 @@ export const useEventsStore = defineStore('events', () => {
     error.value = null
   }
 
+  async function createAbsence(data) {
+    const response = await apiPost('/calendar/absence', data)
+    return response
+  }
+
+  async function createAppointment(data) {
+    const response = await apiPost('/calendar/appointment', data)
+    return response
+  }
+
+  async function updateAbsence(id, data) {
+    return apiPut('/calendar/absence', { id, ...data })
+  }
+
+  async function deleteAbsence(id) {
+    return apiDelete('/calendar/absence?id=' + id)
+  }
+
+  async function updateAppointment(id, data) {
+    return apiPut('/calendar/appointment', { id, ...data })
+  }
+
+  async function deleteAppointment(id) {
+    return apiDelete('/calendar/appointment?id=' + id)
+  }
+
+  async function fetchAbsencesForDate(date) {
+    const response = await apiGet(`/calendar/absences?date=${date}`, false)
+    return response.absences ?? []
+  }
+
+  async function fetchAbsenceCountsForMonth(year, month) {
+    const monthParam = `${year}-${String(month).padStart(2, '0')}`
+    const response = await apiGet(`/calendar/absences?month=${monthParam}`, false)
+    return response.absenceCounts ?? {}
+  }
+
   return {
     // State
     events,
@@ -287,6 +324,14 @@ export const useEventsStore = defineStore('events', () => {
     changeParticipationTime,
     changeParticipationNotes,
     changeFoodParticipation,
-    clearEvents
+    clearEvents,
+    createAbsence,
+    updateAbsence,
+    deleteAbsence,
+    createAppointment,
+    updateAppointment,
+    deleteAppointment,
+    fetchAbsencesForDate,
+    fetchAbsenceCountsForMonth,
   }
 })

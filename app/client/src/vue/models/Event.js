@@ -17,6 +17,8 @@ export class Event {
     this.Status = data.Status || null
     this.ImageURL = data.ImageURL || null
     this.EventType = data.EventType || null
+    this.TypeID = data.TypeID || null
+    this.OrganizationIDs = data.OrganizationIDs || []
     this.OrganizationLogoURL = data.OrganizationLogoURL || null
 
     // Teilnahme des aktuellen Users
@@ -150,6 +152,8 @@ export class Event {
       Location: this.Location,
       Color: this.Color,
       EventType: this.EventType,
+      TypeID: this.TypeID,
+      OrganizationIDs: this.OrganizationIDs,
       UserParticipation: this.UserParticipation,
       Participations: this.Participations,
       Meals: this.Meals

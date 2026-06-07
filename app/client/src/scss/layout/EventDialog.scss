@@ -525,3 +525,11 @@
         }
     }
 }
+
+.event-manage-actions {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 0 0;
+    border-top: 1px solid var(--ColorLightGray);
+    margin-top: 10px;
+}

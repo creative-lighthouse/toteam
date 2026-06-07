@@ -2,10 +2,14 @@
 
 namespace App\Controllers\Api;
 
+use App\Calendar\Absence;
 use App\Calendar\Appointment;
 use App\Calendar\AppointmentParticipation;
+use App\Calendar\AppointmentType;
 use App\Food\Meal;
 use App\Food\MealEater;
+use App\Teams\Organization;
+use App\Teams\OrganizationMembership;
 use App\Controllers\ApiController;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
@@ -23,7 +27,11 @@ class CalendarApiController extends ApiController
         'participation',
         'participationTime',
         'participationFood',
-        'participationNotes'
+        'participationNotes',
+        'absence',
+        'absences',
+        'appointment',
+        'appointmentTypes',
     ];
 
     /**
@@ -128,6 +136,8 @@ class CalendarApiController extends ApiController
                 'Description' => $appointment->Description,
                 'Status' => $appointment->Status,
                 'EventType' => $appointment->Type()->exists() ? $appointment->Type()->Title : null,
+                'TypeID' => $appointment->TypeID ?: null,
+                'OrganizationIDs' => array_map('intval', $appointment->Organisations()->column('ID')),
                 'ImageURL' => $appointment->Image()->exists() ? $appointment->Image()->getURL() : null,
                 'OrganizationLogoURL' => $orgLogoURL,
                 'UserParticipation' => $participation ? [
@@ -366,5 +376,377 @@ class CalendarApiController extends ApiController
         return $this->successResponse([
             'Notes' => $participation->Notes ?: null,
         ], 'Notes updated');
+    }
+
+    /**
+     * Create an absence for the current user.
+     * POST /api/v1/calendar/absence
+     * Body: { dateStart, dateEnd, recurrence, organizationIds[] }
+     */
+    public function absence(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $body = json_decode($request->getBody(), true) ?? [];
+
+        // DELETE
+        if ($request->httpMethod() === 'DELETE') {
+            $id = (int) ($request->getVar('id') ?? 0);
+            $absence = Absence::get()->byID($id);
+            if (!$absence || $absence->MemberID !== $member->ID) {
+                return $this->errorResponse('Nicht gefunden oder keine Berechtigung', 404);
+            }
+            $absence->Organisations()->removeAll();
+            $absence->delete();
+            return $this->successResponse([], 'Abwesenheit gelöscht');
+        }
+
+        // PUT (update)
+        if ($request->httpMethod() === 'PUT') {
+            $id = (int) ($body['id'] ?? 0);
+            $absence = Absence::get()->byID($id);
+            if (!$absence || $absence->MemberID !== $member->ID) {
+                return $this->errorResponse('Nicht gefunden oder keine Berechtigung', 404);
+            }
+            $absence->DateStart  = $body['dateStart'] ?? $absence->DateStart;
+            $absence->DateEnd    = $body['dateEnd'] ?? $absence->DateStart;
+            $absence->Recurrence = in_array($body['recurrence'] ?? '', ['Never', 'Daily', 'Weekly', 'Monthly', 'Yearly'])
+                ? $body['recurrence'] : $absence->Recurrence;
+            $absence->Note = $body['note'] ?? null;
+            $absence->write();
+
+            $absence->Organisations()->removeAll();
+            $orgIDs = $body['organizationIds'] ?? [];
+            if (!empty($orgIDs)) {
+                $validIDs = $member->getOrganizationIDs();
+                $filtered = array_values(array_intersect(array_map('intval', $orgIDs), $validIDs));
+                if (!empty($filtered)) {
+                    $absence->Organisations()->addMany($filtered);
+                }
+            }
+            return $this->successResponse(['ID' => $absence->ID], 'Abwesenheit aktualisiert');
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $dateStart = $body['dateStart'] ?? null;
+        $dateEnd   = $body['dateEnd'] ?? $dateStart;
+
+        if (!$dateStart) {
+            return $this->errorResponse('dateStart is required', 400);
+        }
+
+        $recurrence = $body['recurrence'] ?? 'Never';
+        if (!in_array($recurrence, ['Never', 'Daily', 'Weekly', 'Monthly', 'Yearly'])) {
+            $recurrence = 'Never';
+        }
+
+        $absence = Absence::create();
+        $absence->DateStart  = $dateStart;
+        $absence->DateEnd    = $dateEnd;
+        $absence->Recurrence = $recurrence;
+        $absence->Note       = $body['note'] ?? null;
+        $absence->MemberID   = $member->ID;
+        $absence->write();
+
+        $orgIDs = $body['organizationIds'] ?? [];
+        if (!empty($orgIDs)) {
+            $validIDs = $member->getOrganizationIDs();
+            $filtered = array_values(array_intersect(array_map('intval', $orgIDs), $validIDs));
+            if (!empty($filtered)) {
+                $absence->Organisations()->addMany($filtered);
+            }
+        }
+
+        return $this->successResponse(['ID' => $absence->ID], 'Abwesenheit eingetragen');
+    }
+
+    /**
+     * Return absent members for a date, or per-day counts for a month.
+     * GET /api/v1/calendar/absences?date=YYYY-MM-DD
+     * GET /api/v1/calendar/absences?month=YYYY-MM  → { absenceCounts: { "YYYY-MM-DD": n } }
+     */
+    public function absences(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $organizationIDs = $member->getOrganizationIDs();
+
+        $monthParam = $request->getVar('month');
+        if ($monthParam) {
+            if (empty($organizationIDs)) {
+                return $this->jsonResponse(['absenceCounts' => (object)[]]);
+            }
+            $allAbsences = $this->getRelevantAbsences($organizationIDs);
+            $year  = (int) date('Y', strtotime($monthParam . '-01'));
+            $month = (int) date('m', strtotime($monthParam . '-01'));
+            $days  = (int) date('t', strtotime($monthParam . '-01'));
+            $counts = [];
+            for ($d = 1; $d <= $days; $d++) {
+                $date = sprintf('%04d-%02d-%02d', $year, $month, $d);
+                $count = 0;
+                $seen  = [];
+                foreach ($allAbsences as $absence) {
+                    if (isset($seen[$absence->MemberID])) {
+                        continue;
+                    }
+                    if ($absence->appliesToDate($date)) {
+                        $seen[$absence->MemberID] = true;
+                        $count++;
+                    }
+                }
+                if ($count > 0) {
+                    $counts[$date] = $count;
+                }
+            }
+            return $this->jsonResponse(['absenceCounts' => $counts ?: (object)[]]);
+        }
+
+        $date = $request->getVar('date') ?: date('Y-m-d');
+
+        if (empty($organizationIDs)) {
+            return $this->jsonResponse(['absences' => []]);
+        }
+
+        $allAbsences = $this->getRelevantAbsences($organizationIDs);
+        $result = [];
+        $seen   = [];
+
+        foreach ($allAbsences as $absence) {
+            if (!$absence->appliesToDate($date)) {
+                continue;
+            }
+
+            $absentMemberID = $absence->MemberID;
+            if (isset($seen[$absentMemberID])) {
+                continue;
+            }
+            $seen[$absentMemberID] = true;
+
+            $absentMember = $absence->Member();
+            $imageURL = null;
+            if ($absentMember && $absentMember->hasMethod('RenderProfileImage')) {
+                $imageURL = $absentMember->RenderProfileImage();
+            }
+
+            $result[] = [
+                'AbsenceID'       => $absence->ID,
+                'MemberID'        => $absentMemberID,
+                'MemberName'      => $absentMember ? $absentMember->getName() : 'Unbekannt',
+                'ProfileImageURL' => $imageURL,
+                'Note'            => $absence->Note ?: null,
+                'DateStart'       => $absence->DateStart,
+                'DateEnd'         => $absence->DateEnd,
+                'Recurrence'      => $absence->Recurrence,
+                'OrganizationIds' => array_map('intval', $absence->Organisations()->column('ID')),
+            ];
+        }
+
+        return $this->jsonResponse(['absences' => $result]);
+    }
+
+    /**
+     * Create a new appointment (moderator/admin only).
+     * POST /api/v1/calendar/appointment
+     * Body: { title, dateStart, dateEnd, timeStart, timeEnd, allDay, location, description, status, typeId, organizationIds[] }
+     */
+    public function appointment(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $body  = json_decode($request->getBody(), true) ?? [];
+
+        // DELETE
+        if ($request->httpMethod() === 'DELETE') {
+            $id = (int) ($request->getVar('id') ?? 0);
+            $appt = Appointment::get()->byID($id);
+            if (!$appt) {
+                return $this->errorResponse('Nicht gefunden', 404);
+            }
+            $apptOrgIDs = $appt->Organisations()->column('ID');
+            $hasPermission = OrganizationMembership::get()->filter([
+                'MemberID'       => $member->ID,
+                'OrganizationID' => $apptOrgIDs,
+                'Role'           => ['moderator', 'admin'],
+            ])->exists();
+            if (!$hasPermission) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+            $appt->Organisations()->removeAll();
+            $appt->Participations()->removeAll();
+            $appt->delete();
+            return $this->successResponse([], 'Termin gelöscht');
+        }
+
+        // PUT (update)
+        if ($request->httpMethod() === 'PUT') {
+            $id = (int) ($body['id'] ?? 0);
+            $appt = Appointment::get()->byID($id);
+            if (!$appt) {
+                return $this->errorResponse('Nicht gefunden', 404);
+            }
+            $apptOrgIDs = $appt->Organisations()->column('ID');
+            $hasPermission = OrganizationMembership::get()->filter([
+                'MemberID'       => $member->ID,
+                'OrganizationID' => $apptOrgIDs,
+                'Role'           => ['moderator', 'admin'],
+            ])->exists();
+            if (!$hasPermission) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+            $allDay = !empty($body['allDay']);
+            $appt->Title       = trim($body['title'] ?? '') ?: $appt->Title;
+            $appt->DateStart   = $body['dateStart'] ?? $appt->DateStart;
+            $appt->DateEnd     = $body['dateEnd'] ?: ($body['dateStart'] ?? $appt->DateEnd);
+            $appt->TimeStart   = $allDay ? null : ($body['timeStart'] ?: null);
+            $appt->TimeEnd     = $allDay ? null : ($body['timeEnd'] ?: null);
+            $appt->AllDay      = $allDay;
+            $appt->Location    = $body['location'] ?? '';
+            $appt->Description = $body['description'] ?? '';
+            $appt->Status      = in_array($body['status'] ?? '', ['Suggested', 'Scheduled', 'Cancelled'])
+                ? $body['status'] : $appt->Status;
+            $appt->TypeID = !empty($body['typeId']) ? (int) $body['typeId'] : 0;
+            $appt->write();
+            $newOrgIDs = array_map('intval', $body['organizationIds'] ?? []);
+            if (!empty($newOrgIDs)) {
+                $appt->Organisations()->setByIDList($newOrgIDs);
+            }
+            return $this->successResponse(['ID' => $appt->ID], 'Termin aktualisiert');
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $orgIDs = array_map('intval', $body['organizationIds'] ?? []);
+
+        if (empty($orgIDs)) {
+            return $this->errorResponse('Mindestens eine Organisation muss gewählt werden', 400);
+        }
+
+        // Verify the user is moderator/admin in at least one of the chosen organisations
+        $hasPermission = OrganizationMembership::get()->filter([
+            'MemberID'       => $member->ID,
+            'OrganizationID' => $orgIDs,
+            'Role'           => ['moderator', 'admin'],
+        ])->exists();
+
+        if (!$hasPermission) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $title = trim($body['title'] ?? '');
+        if (!$title) {
+            return $this->errorResponse('Titel ist erforderlich', 400);
+        }
+
+        $dateStart = $body['dateStart'] ?? null;
+        if (!$dateStart) {
+            return $this->errorResponse('Startdatum ist erforderlich', 400);
+        }
+
+        $allDay = !empty($body['allDay']);
+
+        $appt = Appointment::create();
+        $appt->Title       = $title;
+        $appt->DateStart   = $dateStart;
+        $appt->DateEnd     = $body['dateEnd'] ?: $dateStart;
+        $appt->TimeStart   = $allDay ? null : ($body['timeStart'] ?: null);
+        $appt->TimeEnd     = $allDay ? null : ($body['timeEnd'] ?: null);
+        $appt->AllDay      = $allDay;
+        $appt->Location    = $body['location'] ?? '';
+        $appt->Description = $body['description'] ?? '';
+        $appt->Status      = in_array($body['status'] ?? '', ['Suggested', 'Scheduled', 'Cancelled'])
+            ? $body['status']
+            : 'Scheduled';
+
+        if (!empty($body['typeId'])) {
+            $appt->TypeID = (int) $body['typeId'];
+        }
+
+        $appt->write();
+        $appt->Organisations()->addMany($orgIDs);
+
+        // Auto-decline members who are absent on the appointment's start date
+        $absentEntries = $this->getRelevantAbsences($orgIDs);
+        foreach ($absentEntries as $absence) {
+            if (!$absence->appliesToDate($appt->DateStart)) {
+                continue;
+            }
+            $alreadyExists = $appt->Participations()
+                ->filter(['MemberID' => $absence->MemberID])
+                ->exists();
+            if (!$alreadyExists) {
+                $p = AppointmentParticipation::create();
+                $p->ParentID = $appt->ID;
+                $p->MemberID = $absence->MemberID;
+                $p->Type     = 'Decline';
+                $p->write();
+            }
+        }
+
+        return $this->successResponse(['ID' => $appt->ID], 'Termin erstellt');
+    }
+
+    /**
+     * Fetch all Absence records visible to the given organisation IDs,
+     * with their Organisations relation pre-filtered for the org-scope check.
+     *
+     * @param int[] $organizationIDs
+     * @return \SilverStripe\ORM\DataList
+     */
+    private function getRelevantAbsences(array $organizationIDs)
+    {
+        $memberIDsInOrgs = OrganizationMembership::get()
+            ->filter(['OrganizationID' => $organizationIDs, 'Role' => ['member', 'moderator', 'admin']])
+            ->column('MemberID');
+
+        $absences = Absence::get()->filter(['MemberID' => $memberIDsInOrgs]);
+
+        // Filter out absences scoped to orgs the current user doesn't share
+        $filtered = [];
+        foreach ($absences as $absence) {
+            $absenceOrgIDs = $absence->Organisations()->column('ID');
+            if (!empty($absenceOrgIDs) && empty(array_intersect($absenceOrgIDs, $organizationIDs))) {
+                continue;
+            }
+            $filtered[] = $absence;
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * List all appointment types.
+     * GET /api/v1/calendar/appointmentTypes
+     */
+    public function appointmentTypes(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $types = AppointmentType::get()->sort('Title ASC');
+        $data  = [];
+        foreach ($types as $type) {
+            $data[] = [
+                'ID'    => $type->ID,
+                'Title' => $type->Title,
+            ];
+        }
+
+        return $this->jsonResponse(['types' => $data]);
     }
 }

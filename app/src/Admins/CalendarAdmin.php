@@ -2,6 +2,7 @@
 
 namespace App\Admins;
 
+use App\Calendar\Absence;
 use App\Calendar\Appointment;
 use App\Calendar\AppointmentType;
 use SilverStripe\Admin\ModelAdmin;
@@ -20,5 +21,6 @@ class CalendarAdmin extends ModelAdmin
     private static $managed_models = [
         Appointment::class,
         AppointmentType::class,
+        Absence::class,
     ];
 }

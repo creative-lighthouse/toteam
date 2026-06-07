@@ -261,6 +261,14 @@
               </template>
             </div>
           </div>
+          
+          <!-- Edit / Delete actions for mods/admins -->
+          <div v-if="canManageContent" class="event-manage-actions">
+            <button type="button" class="button" @click="$emit('edit-appointment', event)">
+              Termin bearbeiten
+            </button>
+          </div>
+
         </div>
 
         <!-- Status Message -->
@@ -277,11 +285,17 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useEventsStore } from '@stores/events'
+import { useOrganizationsStore } from '@stores/organizations'
 import actionTime from '../../../icons/actions/action_time.svg'
 import actionEdit from '../../../icons/actions/action_edit.svg'
 import ParticipantCard from './ParticipantCard.vue'
 
 const eventsStore = useEventsStore()
+const orgsStore = useOrganizationsStore()
+
+const canManageContent = computed(() =>
+  orgsStore.organizations.some(o => ['moderator', 'admin'].includes(o.MembershipStatus))
+)
 
 const props = defineProps({
   event: {
@@ -290,7 +304,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'participation-changed', 'time-changed', 'notes-changed', 'food-changed'])
+const emit = defineEmits(['close', 'participation-changed', 'time-changed', 'notes-changed', 'food-changed', 'edit-appointment'])
 
 const dialogEl = ref(null)
 const submitting = ref(false)

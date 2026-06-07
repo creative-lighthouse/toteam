@@ -40,16 +40,23 @@
               'calendar-day--selected': isSelectedDay(cell.day, cell.month, cell.year),
               'calendar-day--today': isToday(cell.day, cell.month, cell.year)
             }"
-            @click="selectDay(cell.day, cell.month, cell.year)"
+            @click="selectDayAndFetchAbsences(cell.day, cell.month, cell.year)"
           >
             <span class="day-number">{{ cell.day }}</span>
-            <div v-if="getEventsCountForDay(cell.day, cell.month, cell.year) > 0" class="event-dots">
+            <div
+              v-if="getEventsCountForDay(cell.day, cell.month, cell.year) > 0 || getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
+              class="event-dots"
+            >
               <span
                 v-for="dot in getEventDotsForDay(cell.day, cell.month, cell.year)"
                 :key="dot.status"
                 class="event-dot"
                 :class="`event-dot--${dot.status}`"
               ></span>
+              <span
+                v-if="getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
+                class="absence-badge"
+              >{{ getAbsenceCountForDay(cell.day, cell.month, cell.year) }}</span>
             </div>
           </div>
         </div>
@@ -57,6 +64,28 @@
         <!-- Selected Day Events -->
         <div v-if="selectedDate" class="selected-day-events">
           <h3>{{ selectedDateDisplay }}</h3>
+
+          <!-- Absences -->
+          <div v-if="selectedDateAbsences.length > 0" class="absences-list">
+            <h4 class="absences-list__title">Abwesend</h4>
+            <div
+              v-for="a in selectedDateAbsences"
+              :key="a.MemberID"
+              class="absence-item"
+              :class="{ 'absence-item--own': a.MemberID === authStore.user?.ID }"
+              @click="a.MemberID === authStore.user?.ID && entryModalRef.openEditAbsence(a)"
+            >
+              <img
+                v-if="a.ProfileImageURL"
+                :src="a.ProfileImageURL"
+                class="absence-item__avatar"
+                alt=""
+              />
+              <span class="absence-item__name">{{ a.MemberName }}</span>
+              <span v-if="a.Note" class="absence-item__note">{{ a.Note }}</span>
+            </div>
+          </div>
+
           <div v-if="selectedDayEvents.length > 0" class="events-list">
             <EventCard
               v-for="event in selectedDayEvents"
@@ -65,18 +94,23 @@
               @click="openEventDialog(event)"
             />
           </div>
-          <div v-else class="no-events-message">
+          <div v-else-if="selectedDateAbsences.length === 0" class="no-events-message">
             <p>Keine Termine an diesem Tag.</p>
           </div>
         </div>
 
-        <!-- ICS Link -->
-        <!-- <div class="copy-container">
-          <button type="button" class="button copy-btn" @click="copyICSLink">
-            Link für externe Kalender kopieren
+        <!-- ICS Link + Termin eintragen -->
+        <div class="copy-container">
+          <button type="button" class="button" @click="entryModalRef.open(selectedDate)">
+            {{ canManageContent ? 'Termin hinzufügen' : 'Abwesenheit eintragen' }}
           </button>
-          <span v-if="icsCopied" class="copy-feedback" style="color:green;">✓ Link kopiert</span>
-        </div> -->
+          <button
+            type="button"
+            class="button copy-btn"
+            :class="{ 'copy-btn--copied': icsCopied }"
+            @click="copyICSLink"
+          >{{ icsCopied ? '✓ Link kopiert' : 'Link für externe Kalender kopieren' }}</button>
+        </div>
       </div>
 
       <!-- Event Dialog -->
@@ -87,6 +121,18 @@
         @participation-changed="handleParticipationChanged"
         @time-changed="handleTimeChanged"
         @food-changed="handleFoodChanged"
+        @edit-appointment="onEditAppointment"
+      />
+
+      <!-- Add Calendar Entry Modal -->
+      <AddCalendarEntryModal
+        ref="entryModalRef"
+        @appointment-created="refreshEvents"
+        @appointment-updated="refreshEvents"
+        @appointment-deleted="onAppointmentDeleted"
+        @absence-created="refreshAbsences"
+        @absence-updated="refreshAbsences"
+        @absence-deleted="refreshAbsences"
       />
     </div>
   </div>
@@ -98,14 +144,20 @@ import { useRoute } from 'vue-router'
 import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useAuthStore } from '@stores/auth'
+import { useOrganizationsStore } from '@stores/organizations'
 import EventDialog from '@components/EventDialog.vue'
 import EventCard from '@components/EventCard.vue'
 import AppMenu from '@components/AppMenu.vue'
+import AddCalendarEntryModal from '@components/AddCalendarEntryModal.vue'
 import actionForward from '../../../icons/actions/action_forward.svg'
 import actionBack from '../../../icons/actions/action_back.svg'
 
 const eventsStore = useEventsStore()
 const authStore = useAuthStore()
+const orgsStore = useOrganizationsStore()
+const canManageContent = computed(() =>
+  orgsStore.organizations.some(o => ['moderator', 'admin'].includes(o.MembershipStatus))
+)
 const route = useRoute()
 usePageHeaderStore().setHeader('Kalender', 'Verwalte deine Termine und Events. Du kannst hier Termine erstellen, einsehen und bei den Terminen Zu- oder absagen')
 
@@ -269,8 +321,12 @@ const previousMonth = async () => {
     currentMonth.value--
   }
   selectedDate.value = null
+  selectedDateAbsences.value = []
   monthLoading.value = true
-  await eventsStore.fetchEvents(currentYear.value, currentMonth.value)
+  await Promise.all([
+    eventsStore.fetchEvents(currentYear.value, currentMonth.value),
+    loadAbsenceCountsForCurrentMonth(),
+  ])
   monthLoading.value = false
 }
 
@@ -282,9 +338,66 @@ const nextMonth = async () => {
     currentMonth.value++
   }
   selectedDate.value = null
+  selectedDateAbsences.value = []
   monthLoading.value = true
-  await eventsStore.fetchEvents(currentYear.value, currentMonth.value)
+  await Promise.all([
+    eventsStore.fetchEvents(currentYear.value, currentMonth.value),
+    loadAbsenceCountsForCurrentMonth(),
+  ])
   monthLoading.value = false
+}
+
+// AddCalendarEntryModal
+const entryModalRef = ref(null)
+const selectedDateAbsences = ref([])
+const absenceCountsByDate = ref({})
+
+function getAbsenceCountForDay(day, month, year) {
+  return absenceCountsByDate.value[makeDateKey(day, month, year)] ?? 0
+}
+
+async function loadAbsenceCountsForCurrentMonth() {
+  try {
+    absenceCountsByDate.value = await eventsStore.fetchAbsenceCountsForMonth(
+      currentYear.value,
+      currentMonth.value
+    )
+  } catch {
+    absenceCountsByDate.value = {}
+  }
+}
+
+async function selectDayAndFetchAbsences(day, month, year) {
+  selectDay(day, month, year)
+  const date = makeDateKey(day, month, year)
+  try {
+    selectedDateAbsences.value = await eventsStore.fetchAbsencesForDate(date)
+  } catch {
+    selectedDateAbsences.value = []
+  }
+}
+
+async function refreshAbsences() {
+  await loadAbsenceCountsForCurrentMonth()
+  if (selectedDate.value) {
+    try {
+      selectedDateAbsences.value = await eventsStore.fetchAbsencesForDate(selectedDate.value)
+    } catch {
+      selectedDateAbsences.value = []
+    }
+  }
+}
+
+async function refreshEvents() {
+  await eventsStore.fetchEvents(currentYear.value, currentMonth.value, true)
+  await loadAbsenceCountsForCurrentMonth()
+  if (selectedDate.value) {
+    try {
+      selectedDateAbsences.value = await eventsStore.fetchAbsencesForDate(selectedDate.value)
+    } catch {
+      selectedDateAbsences.value = []
+    }
+  }
 }
 
 // Event dialog
@@ -309,6 +422,16 @@ function handleTimeChanged(_eventId, _updatedData) {
 function handleFoodChanged(mealId, type) {
   // Handled by store directly
   console.log('Food participation changed:', mealId, type)
+}
+
+function onEditAppointment(event) {
+  closeEventDialog()
+  entryModalRef.value.openEditAppointment(event)
+}
+
+async function onAppointmentDeleted() {
+  closeEventDialog()
+  await refreshEvents()
 }
 
 // ICS link copy
@@ -341,7 +464,20 @@ onMounted(async () => {
   }
 
   // Always fetch fresh data for the current month on page load
-  await eventsStore.fetchEvents(currentYear.value, currentMonth.value, true)
+  await Promise.all([
+    eventsStore.fetchEvents(currentYear.value, currentMonth.value, true),
+    loadAbsenceCountsForCurrentMonth(),
+    orgsStore.fetchOrganizations(),
+  ])
+
+  // Load absences for the initially selected day
+  if (selectedDate.value) {
+    try {
+      selectedDateAbsences.value = await eventsStore.fetchAbsencesForDate(selectedDate.value)
+    } catch {
+      selectedDateAbsences.value = []
+    }
+  }
 
   // If a specific event was linked, open its dialog
   if (linkEventID) {

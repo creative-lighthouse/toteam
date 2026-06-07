@@ -1,13 +1,5 @@
 @use "../variables" as *;
 
-.section.section--CalendarPage {
-    .section_content{
-        .copy-btn {
-            margin: 20px 0 0 0;
-        }
-    }
-}
-
 // ── Calendar header ──────────────────────────────────────────────────────────
 
 .calendar-header{
@@ -334,9 +326,7 @@
             .event-dots {
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr;
-                flex-wrap: wrap;
                 gap: 1px;
-                justify-content: center;
                 align-items: center;
                 width: 100%;
             }
@@ -398,5 +388,217 @@
             padding-top: 10px;
             gap: 10px;
         }
+    }
+
+    .copy-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+
+        .copy-btn--copied {
+            background-color: var(--ColorStatusGood);
+            border-color: var(--ColorStatusGood);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+    }
+}
+
+// ── Absence badge on calendar day ────────────────────────────────────────────
+
+.absence-badge {
+    grid-column: 3;
+    justify-self: end;
+    color: var(--ColorStatusBad);
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+// ── Absences list ─────────────────────────────────────────────────────────────
+
+.absences-list {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: var(--BorderRadiusSmall, 6px);
+    text-align: left;
+
+    &__title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        color: var(--ColorDarkGray, #555);
+    }
+}
+
+.absence-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+
+    &__avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    &__name {
+        font-size: 0.9rem;
+    }
+
+    &__note {
+        font-size: 0.8rem;
+        color: var(--ColorDarkGray, #555);
+        font-style: italic;
+        margin-left: auto;
+    }
+
+    &--own {
+        cursor: pointer;
+        border-radius: var(--BorderRadiusSmall, 6px);
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: var(--ColorPrimaryLight);
+        }
+    }
+}
+
+// ── AddCalendarEntryModal ─────────────────────────────────────────────────────
+
+.modal-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid var(--ColorGray, #ddd);
+    padding-bottom: 0;
+    justify-content: center;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--ColorDarkGray, #555);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+
+    &--active {
+        color: var(--ColorPrimary);
+        border-bottom-color: var(--ColorPrimary);
+        font-weight: 600;
+    }
+
+    &:hover:not(.tab-btn--active) {
+        color: var(--ColorPrimary);
+    }
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    label:not(.checkbox-label) {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+        padding: 7px 10px;
+        border: 1px solid var(--ColorGray, #ddd);
+        border-radius: var(--BorderRadiusSmall, 6px);
+        font-size: 0.9rem;
+        width: 100%;
+        box-sizing: border-box;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            border-color: transparent;
+        }
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+
+        .button {
+            flex: 1;
+            margin-top: 0;
+        }
+    }
+
+    .multiselect-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .checkbox-label {
+            input[type="checkbox"] {
+                display: none;
+            }
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 14px;
+            border: 2px solid var(--ColorGray, #ddd);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            user-select: none;
+
+            &:has(input:checked) {
+                background-color: var(--ColorPrimary);
+                border-color: var(--ColorPrimary);
+                color: var(--ColorWhite);
+            }
+
+            &:has(input:disabled) {
+                opacity: 0.4;
+                cursor: default;
+            }
+
+            &:not(:has(input:disabled)):hover {
+                border-color: var(--ColorPrimary);
+            }
+        }
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        font-weight: normal;
+        cursor: pointer;
+
+        &--inline {
+            flex-direction: row;
+        }
+    }
+
+    .form-error {
+        color: #c0392b;
+        font-size: 0.85rem;
     }
 }

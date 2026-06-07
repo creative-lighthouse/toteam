@@ -102,6 +102,16 @@ a {
         color: var(--ColorPrimary);
     }
 
+    &.button--danger {
+        background-color: var(--ColorStatusBad);
+
+        &:hover {
+            background-color: transparent;
+            border-color: var(--ColorStatusBad);
+            color: var(--ColorStatusBad);
+        }
+    }
+
     @include media(max-desktop) {
         overflow-wrap: break-word;
         white-space: normal;
