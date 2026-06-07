@@ -118,11 +118,17 @@ class CalendarApiController extends ApiController
                 ];
             }
 
-            // Organisation logo (first organisation)
-            $org = $appointment->Organisations()->first();
-            $orgLogoURL = $org && $org->Logo()->exists()
-                ? $org->Logo()->ScaleWidth(40)->getURL()
-                : null;
+            // Organisation logos (all organisations)
+            $orgLogos = [];
+            foreach ($appointment->Organisations() as $orgItem) {
+                if ($orgItem->Logo()->exists()) {
+                    $orgLogos[] = [
+                        'ID'     => $orgItem->ID,
+                        'LogoURL' => $orgItem->Logo()->ScaleWidth(40)->getURL(),
+                    ];
+                }
+            }
+            $orgLogoURL = !empty($orgLogos) ? $orgLogos[0]['LogoURL'] : null;
 
             $events[] = [
                 'ID' => $appointment->ID,
@@ -140,6 +146,7 @@ class CalendarApiController extends ApiController
                 'OrganizationIDs' => array_map('intval', $appointment->Organisations()->column('ID')),
                 'ImageURL' => $appointment->Image()->exists() ? $appointment->Image()->getURL() : null,
                 'OrganizationLogoURL' => $orgLogoURL,
+                'OrganizationLogos' => $orgLogos,
                 'UserParticipation' => $participation ? [
                     'ID'              => $participation->ID,
                     'Type'            => $participation->Type,

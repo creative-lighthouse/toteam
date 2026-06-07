@@ -20,6 +20,7 @@ export class Event {
     this.TypeID = data.TypeID || null
     this.OrganizationIDs = data.OrganizationIDs || []
     this.OrganizationLogoURL = data.OrganizationLogoURL || null
+    this.OrganizationLogos = data.OrganizationLogos || []
 
     // Teilnahme des aktuellen Users
     this.UserParticipation = data.UserParticipation ? {

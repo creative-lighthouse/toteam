@@ -11,8 +11,17 @@
     <!-- Header: Org logo + Title + Time -->
     <div class="event-card_header">
       <div class="event-card_header-left">
+        <template v-if="event.OrganizationLogos?.length">
+          <img
+            v-for="logo in event.OrganizationLogos"
+            :key="logo.ID"
+            :src="logo.LogoURL"
+            class="event-card_org-logo"
+            alt=""
+          >
+        </template>
         <img
-          v-if="event.OrganizationLogoURL"
+          v-else-if="event.OrganizationLogoURL"
           :src="event.OrganizationLogoURL"
           class="event-card_org-logo"
           alt=""
