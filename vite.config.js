@@ -1,6 +1,7 @@
 
 import 'dotenv/config';
 import {defineConfig} from 'vite'
+import vue from '@vitejs/plugin-vue'
 
 console.log('DDEV_PRIMARY_URL:', process.env.DDEV_PRIMARY_URL);
 
@@ -30,9 +31,19 @@ export default defineConfig(({ command }) => {
         alias: {
             alias: [{find: '@', replacement: './app/client/src'}],
         },
+        resolve: {
+            alias: {
+                '@': '/app/client/src',
+                '@components': '/app/client/src/vue/components',
+                '@views': '/app/client/src/vue/views',
+                '@stores': '/app/client/src/vue/stores',
+                '@utils': '/app/client/src/vue/utils',
+                '@models': '/app/client/src/vue/models',
+            }
+        },
         // base: (command === 'build') ? '/_resources/app/client/dist/' : '/', // TODO: .env variable, only on build
         base: './',
-        publicDir: 'app/client/public',
+        publicDir: false,
         build: {
             // cssCodeSplit: false,
             outDir: './app/client/dist',
@@ -41,6 +52,7 @@ export default defineConfig(({ command }) => {
             rollupOptions: {
                 input: {
                 'main.js': './app/client/src/js/main.js',
+                'app.js': './app/client/src/vue/app.js',
                 'main.scss': './app/client/src/scss/main.scss',
                 'editor.scss': './app/client/src/scss/editor.scss',
                 },
@@ -49,6 +61,6 @@ export default defineConfig(({ command }) => {
         css: {
             devSourcemap: true,
         },
-        plugins: []
+        plugins: [vue()]
     }
 })

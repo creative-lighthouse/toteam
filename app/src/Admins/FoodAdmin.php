@@ -13,7 +13,7 @@ use SilverStripe\Admin\ModelAdmin;
  */
 class FoodAdmin extends ModelAdmin
 {
-    private static $menu_title = 'Food';
+    private static $menu_title = 'Essen';
 
     private static $url_segment = 'food-directory';
     private static $menu_icon = 'app/client/icons/totems/essen_totem_admin.png';

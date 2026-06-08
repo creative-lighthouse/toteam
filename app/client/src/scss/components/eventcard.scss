@@ -1,0 +1,175 @@
+.event-card {
+    background-color: var(--ColorWhite);
+    border: 1px solid var(--ColorLightGray);
+    border-radius: var(--BorderRadiusMedium);
+    overflow: hidden;
+    box-shadow: var(--BoxShadowLight);
+    transition: box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+
+    &:hover {
+        box-shadow: var(--BoxShadowMenu);
+    }
+
+    &.event-card--timed {
+        border-left: 4px solid var(--ColorPrimaryDark);
+    }
+
+    &.event-card--allday {
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+        border-color: transparent;
+
+        .event-card_footer {
+            border-top-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .event-card_location,
+        .event-card_count {
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .event-card_time--allday {
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .event-card_participation {
+            &.participation--none {
+                background: rgba(255, 255, 255, 0.15);
+                color: rgba(255, 255, 255, 0.85);
+            }
+        }
+
+        .event-card_avatar {
+            border-color: var(--ColorPrimary);
+        }
+    }
+
+    // Header row: [logo + title] ........... [time]
+    .event-card_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px 10px;
+    }
+
+    .event-card_header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0; // allow title to truncate
+    }
+
+    .event-card_org-logo {
+        width: 25px;
+        height: 25px;
+        border-radius: var(--BorderRadiusSmall);
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .event-card_title {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .event-card_time {
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    // Footer row: [avatars + info] ......... [rsvp button]
+    .event-card_footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border-top: 1px solid var(--ColorLightGray);
+        padding: 10px;
+    }
+
+    .event-card_footer-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    // Overlapping avatar stack
+    .event-card_avatars {
+        display: flex;
+        flex-shrink: 0;
+    }
+
+    .event-card_avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid var(--ColorWhite);
+        object-fit: cover;
+
+        & + .event-card_avatar {
+            margin-left: -10px;
+        }
+    }
+
+    .event-card_footer-info {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+    }
+
+    .event-card_location {
+        font-size: 12px;
+        color: var(--ColorGray);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .event-card_count {
+        font-size: 11px;
+        color: var(--ColorGray);
+        white-space: nowrap;
+        text-align: left;
+    }
+
+    // RSVP status badge
+    .event-card_participation {
+        padding: 5px 10px;
+        border-radius: var(--BorderRadiusLarge);
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        flex-shrink: 0;
+
+        &.participation--none {
+            background-color: var(--ColorLightGray);
+            color: var(--ColorBlack);
+        }
+
+        &.participation--accept {
+            background-color: var(--ColorStatusGood);
+            color: var(--ColorWhite);
+        }
+
+        &.participation--maybe {
+            background-color: var(--ColorStatusWarning);
+            color: var(--ColorWhite);
+        }
+
+        &.participation--decline {
+            background-color: var(--ColorStatusBad);
+            color: var(--ColorWhite);
+        }
+    }
+}

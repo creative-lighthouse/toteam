@@ -11,10 +11,9 @@ use App\SuggestionBox\Suggestion;
 use SilverStripe\Forms\FieldList;
 use App\Events\EventDayParticipation;
 use SilverStripe\Forms\DropdownField;
-use App\Controllers\NoticesController;
+use App\Controllers\AnnouncementsController;
 use App\Teams\Organization;
-use App\Teams\Project;
-use App\Teams\Team;
+use App\Teams\OrganizationMembership;
 
 /**
  * Class \App\Extensions\MemberExtension
@@ -24,20 +23,36 @@ use App\Teams\Team;
  * @property ?string $FoodPreference
  * @property ?string $DateOfBirth
  * @property ?string $Hash
+ * @property bool $NotifyEvents
+ * @property bool $NotifyAnnouncements
+ * @property bool $NotifyMeals
+ * @property bool $NotifyMaps
+ * @property bool $NotifyApplications
  * @property int $ProfileImageID
  * @method \SilverStripe\Assets\Image ProfileImage()
+ * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] OrganizationMemberships()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Department[] Departments()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Project[] Projects()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organizations()
  */
 class MemberExtension extends Extension
 {
     private static $db = [
-        "Joindate" => "Date",
+        "Joindate"       => "Date",
         "FoodPreference" => "Varchar(255)",
-        "DateOfBirth" => "Date",
-        "Hash" => "Varchar(255)",
+        "DateOfBirth"    => "Date",
+        "Hash"           => "Varchar(255)",
+        "NotifyEvents"   => "Boolean(1)",
+        "NotifyAnnouncements" => "Boolean(1)",
+        "NotifyMeals"    => "Boolean(1)",
+        "NotifyMaps"         => "Boolean(1)",
+        "NotifyApplications" => "Boolean(1)",
+    ];
+
+    private static $defaults = [
+        "NotifyEvents"       => true,
+        "NotifyAnnouncements" => true,
+        "NotifyMeals"        => true,
+        "NotifyMaps"         => true,
+        "NotifyApplications" => true,
     ];
 
     private static $has_one = [
@@ -48,15 +63,13 @@ class MemberExtension extends Extension
         "Allergies" => Allergy::class,
     ];
 
-    private static $belongs_many = [
-        "Tasks" => Task::class,
-        "Suggestions" => Suggestion::class,
+    private static $has_many = [
+        "OrganizationMemberships" => OrganizationMembership::class . '.Member',
     ];
 
-    private static $belongs_many_many = [
-        "Departments" => Department::class,
-        "Projects" => Project::class,
-        "Organizations" => Organization::class,
+    private static $belongs_many = [
+        "Tasks"       => Task::class,
+        "Suggestions" => Suggestion::class,
     ];
 
     private static $owns = [
@@ -167,44 +180,46 @@ class MemberExtension extends Extension
         return $this->getParticipations()->filter('Parent.Date', $today)->filterAny('Type', ['Accept', 'Maybe']);
     }
 
-    public function getUnreadNotices()
+    public function getUnreadAnnouncements()
     {
-        return NoticesController::getUnreadNotices($this->owner->ID);
+        return AnnouncementsController::getUnreadAnnouncements($this->owner->ID);
     }
 
-    /**
-     * Get all Organization IDs that this member belongs to
-     * @return array
-     */
-    public function getOrganizationIDs()
+    public function getMembershipInOrg(Organization $org): ?OrganizationMembership
     {
-        $organizationIDs = [];
+        return OrganizationMembership::get()->filter([
+            'MemberID'       => $this->owner->ID,
+            'OrganizationID' => $org->ID,
+        ])->first();
+    }
 
-        // Direct organization memberships
-        if ($this->owner->Organizations()->exists()) {
-            foreach ($this->owner->Organizations() as $org) {
-                $organizationIDs[] = $org->ID;
-            }
-        }
+    public function getRoleInOrg(Organization $org): ?string
+    {
+        return $this->getMembershipInOrg($org)?->Role;
+    }
 
-        // Organizations through departments
-        if ($this->owner->Departments()->exists()) {
-            foreach ($this->owner->Departments() as $dept) {
-                if ($dept->ParentID) {
-                    $organizationIDs[] = $dept->ParentID;
-                }
-            }
-        }
+    public function isAdminOfOrg(Organization $org): bool
+    {
+        return $this->getMembershipInOrg($org)?->isAdmin() ?? false;
+    }
 
-        // Organizations through projects
-        if ($this->owner->Projects()->exists()) {
-            foreach ($this->owner->Projects() as $project) {
-                if ($project->Parent()->exists() && $project->Parent()->ParentID) {
-                    $organizationIDs[] = $project->Parent()->ParentID;
-                }
-            }
-        }
+    public function canManageOrg(Organization $org): bool
+    {
+        return $this->getMembershipInOrg($org)?->canManageContent() ?? false;
+    }
 
-        return array_unique($organizationIDs);
+    public function isActiveMemberOfOrg(Organization $org): bool
+    {
+        return $this->getMembershipInOrg($org)?->isActiveMember() ?? false;
+    }
+
+    public function getOrganizationIDs(): array
+    {
+        return OrganizationMembership::get()
+            ->filter([
+                'MemberID' => $this->owner->ID,
+                'Role'     => ['member', 'moderator', 'admin'],
+            ])
+            ->column('OrganizationID');
     }
 }

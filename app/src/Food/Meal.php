@@ -2,23 +2,24 @@
 
 namespace App\Food;
 
+use App\Calendar\Appointment;
 use App\Food\Food;
 use App\Food\MealEater;
-use App\Events\EventDay;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\Security\Security;
-use SilverStripe\Security\Permission;
-use SilverStripe\Security\PermissionProvider;
 use App\Notifications\PushNotificationService;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Food\Meal
  *
  * @property ?string $Title
  * @property ?string $Time
+ * @property bool $AcceptsContributions
  * @property int $ParentID
- * @method \App\Events\EventDay Parent()
+ * @method \App\Calendar\Appointment Parent()
  * @method \SilverStripe\ORM\DataList|\App\Food\MealEater[] Eaters()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Food[] Foods()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
@@ -31,11 +32,16 @@ class Meal extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
-        "Time" => "Time"
+        "Time" => "Time",
+        "AcceptsContributions" => "Boolean",
+    ];
+
+    private static $defaults = [
+        "AcceptsContributions" => false,
     ];
 
     private static $has_one = [
-        "Parent" => EventDay::class,
+        "Parent" => Appointment::class,
     ];
 
     private static $has_many = [
@@ -57,14 +63,14 @@ class Meal extends DataObject implements PermissionProvider
         "Title" => "Titel",
         "Time" => "Uhrzeit",
         "Parent.Title" => "Tag",
-        "Parent.Date.Nice" => "Datum",
+        "Parent.DateStart.Nice" => "Datum",
     ];
 
     private static $searchable_fields = [
         "Title",
         "Time",
         "Parent.Title",
-        "Parent.Date",
+        "Parent.DateStart",
     ];
 
     private static $table_name = 'Meal';

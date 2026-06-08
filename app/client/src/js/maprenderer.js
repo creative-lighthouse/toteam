@@ -80,7 +80,7 @@ class MapRenderer {
      * Parse coordinate string "lat,lng" to object
      */
     parseCoordinates(coordStr) {
-        if (!coordStr || coordStr === "0,0") {
+        if (!coordStr) {
             return null;
         }
         const parts = coordStr.split(',').map(s => parseFloat(s.trim()));
@@ -172,26 +172,43 @@ class MapRenderer {
     /**
      * Initialize the renderer
      */
+    /**
+     * Generate synthetic corner coordinates from the background image aspect ratio.
+     * Used when no real geo-coordinates are set so POI positioning works correctly.
+     */
+    generateSyntheticCoordinates() {
+        const ar = this.mapImage.width / this.mapImage.height;
+        const halfW = 0.5;
+        const halfH = halfW / ar;
+
+        this.config.coordinatesUpperLeft  = `${halfH},${-halfW}`;
+        this.config.coordinatesUpperRight = `${halfH},${halfW}`;
+        this.config.coordinatesLowerLeft  = `${-halfH},${-halfW}`;
+        this.config.coordinatesLowerRight = `${-halfH},${halfW}`;
+    }
+
     async init() {
-        // Calculate north rotation from corner coordinates
-        this.calculateNorthRotation();
-
-        // Load map image
+        // Load images first so we can derive synthetic coordinates if needed
         await this.loadMapImage();
-
-        // Load layer images
         await this.loadLayerImages();
 
-        // Set canvas size
+        // If no corner coordinates are set, generate them from the image aspect ratio
+        const hasCoordinates = this.config.coordinatesUpperLeft
+            && this.config.coordinatesUpperRight
+            && this.config.coordinatesLowerLeft
+            && this.config.coordinatesLowerRight;
+
+        if (!hasCoordinates && this.mapImage) {
+            this.generateSyntheticCoordinates();
+        }
+
+        this.calculateNorthRotation();
+
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
         this.resizeCanvas();
-
-        // Create UI elements
         this.createUIElements();
-
-        // Set up event listeners
         this.setupEventListeners();
-
-        // Initial render
         this.render();
     }
 
@@ -218,7 +235,7 @@ class MapRenderer {
             };
             img.onerror = () => {
                 console.error('Failed to load map image:', this.config.backgroundImage);
-                reject();
+                resolve(); // Continue init even if image fails (like loadLayerImages does)
             };
             img.src = this.config.backgroundImage;
         });
@@ -325,6 +342,38 @@ class MapRenderer {
         const y = (v - 0.5) * this.renderHeight;
 
         return { x, y };
+    }
+
+    /**
+     * Add a new POI to a specific layer by index (edit mode)
+     */
+    addNewPOIToLayer(title, color, layerIndex = 0) {
+        if (!this.layers[layerIndex]) return null
+
+        const ul = this.parseCoordinates(this.config.coordinatesUpperLeft)
+        const lr = this.parseCoordinates(this.config.coordinatesLowerRight)
+        const centerLat = ul && lr ? (ul.lat + lr.lat) / 2 : 0
+        const centerLng = ul && lr ? (ul.lng + lr.lng) / 2 : 0
+
+        const poi = {
+            id: Date.now(),
+            title: title,
+            description: '',
+            active: true,
+            position: `${centerLat},${centerLng}`,
+            markerColor: color || this.layers[layerIndex].layerColor || '#e74c3c',
+            markerText: title.charAt(0).toUpperCase(),
+            isNew: true,
+        }
+
+        if (!this.layers[layerIndex].pois) this.layers[layerIndex].pois = []
+        this.layers[layerIndex].pois.push(poi)
+        this.render()
+        return poi
+    }
+
+    addNewPOI(title, color) {
+        return this.addNewPOIToLayer(title, color, 0)
     }
 
     /**
@@ -1419,7 +1468,10 @@ class MapRenderer {
     }
 }
 
-// Initialize when DOM is ready
+export default MapRenderer
+
+// Legacy init for non-module usage
+if (typeof document !== 'undefined' && !import.meta?.url) {
 document.addEventListener('DOMContentLoaded', () => {
     const mapRenderer = document.querySelector('.map-renderer');
 
@@ -2032,4 +2084,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Make layer state accessible globally for future POI editing
         window.layerState = layerState;
-    }});
+    }})
+}

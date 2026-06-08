@@ -2,20 +2,21 @@
 
 namespace App\Events;
 
-use Override;
-use App\Food\Meal;
 use App\Events\Event;
-use App\Events\EventDayType;
-use SilverStripe\Assets\Image;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\Security\Security;
 use App\Events\EventDayParticipation;
-use SilverStripe\Security\Permission;
-use SilverStripe\Model\List\ArrayList;
-use SilverStripe\ORM\FieldType\DBField;
-use SilverStripe\Model\List\GroupedList;
-use SilverStripe\Security\PermissionProvider;
+use App\Events\EventDayType;
+use App\Food\Meal;
 use App\Notifications\PushNotificationService;
+use App\Teams\Organization;
+use Override;
+use SilverStripe\Assets\Image;
+use SilverStripe\Model\List\ArrayList;
+use SilverStripe\Model\List\GroupedList;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\FieldType\DBField;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\PermissionProvider;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Events\EventDay
@@ -28,12 +29,12 @@ use App\Notifications\PushNotificationService;
  * @property ?string $Description
  * @property int $ICSSequence
  * @property ?string $Status
- * @property int $ParentID
  * @property int $ImageID
  * @property int $TypeID
- * @method \App\Events\Event Parent()
+ * @property int $OrganisationID
  * @method \SilverStripe\Assets\Image Image()
  * @method \App\Events\EventDayType Type()
+ * @method \App\Teams\Organization Organisation()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayParticipation[] Participations()
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Events\EventDayAgendaPoint[] AgendaPoints()
@@ -57,9 +58,9 @@ class EventDay extends DataObject implements PermissionProvider
     ];
 
     private static $has_one = [
-        'Parent' => Event::class,
         "Image" => Image::class,
         "Type" => EventDayType::class,
+        'Organisation' => Organization::class,
     ];
 
     private static $has_many = [
@@ -91,21 +92,25 @@ class EventDay extends DataObject implements PermissionProvider
 
     private static $summary_fields = [
         "RenderTitle" => "Titel",
-        "RenderDate" => "Tag",
+        "RenderDateWithTime" => "Datum & Zeit",
         "Status" => "Status",
     ];
 
     private static $table_name = 'EventDay';
-    private static $singular_name = "Veranstaltungs-Tag";
-    private static $plural_name = "Veranstaltungs-Tage";
+    private static $singular_name = "Termin (legacy)";
+    private static $plural_name = "Termine (legacy)";
     private static $default_sort = ['Date' => 'ASC'];
 
     #[Override]
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
-        $fields->removeByName("ParentID");
         $fields->removeByName("ICSSequence");
+
+        // Make TypeID dropdown optional
+        if ($typeField = $fields->dataFieldByName('TypeID')) {
+            $typeField->setEmptyString('-- Kein Typ --');
+        }
 
         return $fields;
     }
@@ -164,18 +169,21 @@ class EventDay extends DataObject implements PermissionProvider
 
     public function RenderDate()
     {
-        $date = $this->dbObject('Date');
-        if ($date instanceof DBField) {
-            return $this->dbObject('Date')->Format('dd.MM.yy');
-        } else {
-            return "Kein Datum";
+        try {
+            $date = $this->dbObject('Date');
+            if ($date && !$date->isNull()) {
+                return $date->Format('dd.MM.yy');
+            }
+        } catch (\Exception $e) {
+            // Silently handle errors for new records
         }
+        return "Kein Datum";
     }
 
     public function RenderDateWithTime()
     {
         $date = $this->dbObject('Date');
-        if ($date instanceof DBField) {
+        if ($date) {
             if ($this->TimeStart && $this->TimeEnd) {
                 return $this->dbObject('Date')->Format('dd.MM.yy') . ', ' . $this->dbObject('TimeStart')->Format('HH:mm') . ' - ' . $this->dbObject('TimeEnd')->Format('HH:mm');
             } elseif ($this->TimeStart) {
@@ -288,12 +296,16 @@ class EventDay extends DataObject implements PermissionProvider
 
     public function RenderTitle()
     {
-        if ($this->Status == 'Cancelled') {
-            return $this->getField('Title');
-        } elseif ($this->Status == 'Suggested') {
-            return $this->getField('Title') . ' (Vorschlag)';
+        // Safely get title even if object doesn't exist yet
+        $title = $this->getField('Title') ?: '';
+        $status = $this->getField('Status') ?: 'Scheduled';
+
+        if ($status == 'Cancelled') {
+            return $title;
+        } elseif ($status == 'Suggested') {
+            return $title . ' (Vorschlag)';
         } else {
-            return $this->getField('Title');
+            return $title;
         }
     }
 

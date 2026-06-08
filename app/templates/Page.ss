@@ -58,54 +58,20 @@
         <link rel="apple-touch-icon" sizes="180x180" href="_resources/app/client/icons/apple-touch-icon_180.png" />
         <link rel="icon" sizes="192x192" href="_resources/app/client/icons/icon_192.png" />
         <link rel="icon" sizes="512x512" href="_resources/app/client/icons/icon_512.png" />
-        <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(function(registration) {
-                        console.log('Willkommen bei ToTeam!');
-                    })
-                    .catch(function(error) {
-                        console.log('ServiceWorker registration failed:', error);
-                    });
-            });
-        }
-        </script>
     </head>
-    <body>
-        <div class="area_header">
-            <% include Header %>
-        </div>
+    <body class="landingpage">
+        <% include Header %>
         <main class="area_content main">
-                $Layout
+            $Content
+
+            <% if $Form %>
+                <div class="area_form">
+                    $Form
+                </div>
+            <% end_if %>
         </main>
-        <script>
-            function showOfflineBanner() {
-                if (!navigator.onLine) {
-                    // Banner einfügen
-                    if (!document.querySelector('.offline-banner')) {
-                        var banner = document.createElement('div');
-                        banner.className = 'offline-banner';
-                        banner.innerHTML = '<strong>Offline-Modus:</strong> Du bist aktuell nicht mit dem Internet verbunden.';
-                        document.body.prepend(banner);
-                    }
-                    // Navigation ausblenden (passe Selektoren ggf. an)
-                    var nav = document.querySelector('nav');
-                    if (nav) nav.style.display = 'none';
-                    var header = document.querySelector('.area_header');
-                    if (header) header.style.display = 'none';
-                }
-            }
-            window.addEventListener('load', showOfflineBanner);
-            window.addEventListener('online', function() {
-                var banner = document.querySelector('.offline-banner');
-                if (banner) banner.remove();
-                var nav = document.querySelector('nav');
-                if (nav) nav.style.display = '';
-                var header = document.querySelector('.area_header');
-                if (header) header.style.display = '';
-            });
-            window.addEventListener('offline', showOfflineBanner);
-        </script>
+        <footer class="area_footer">
+            <p>&copy; ToTeam 2026. Alle Rechte vorbehalten.</p>
+        </footer>
     </body>
 </html>

@@ -1,7 +1,7 @@
 // Simple Service Worker for caching DashboardPage and static assets
-const CACHE_NAME = 'dashboard-pwa-v1';
+const CACHE_NAME = 'dashboard-pwa-v2';
 const OFFLINE_URL = '/dashboard-offline.html';
-const DASHBOARD_URL = '/dashboard'; // Passe ggf. die URL an
+const DASHBOARD_URL = '/app/dashboard'; // Updated to match new routing
 
 const urlsToCache = [
   DASHBOARD_URL,

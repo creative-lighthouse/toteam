@@ -4,8 +4,11 @@ namespace App\Notifications;
 
 use App\Maps\Map;
 use App\Food\Meal;
-use App\Notices\Notice;
+use App\Announcements\Announcement;
+use App\Teams\Organization;
+use App\Teams\OrganizationMembership;
 use App\Events\EventDay;
+use App\Calendar\Appointment;
 use SilverStripe\Security\Member;
 use SilverStripe\Core\Environment;
 
@@ -14,6 +17,7 @@ use SilverStripe\Core\Environment;
  */
 class PushNotificationService
 {
+    private static ?string $cachedAccessToken = null;
     /**
      * Send notification to all users with specific preference enabled
      */
@@ -87,22 +91,114 @@ class PushNotificationService
     }
 
     /**
-     * Send notification for new notice
+     * Send notification for suggested appointment
      */
-    public static function notifyNewNotice(Notice $notice)
+    public static function notifyAppointmentSuggested(Appointment $appointment)
     {
-        $title = 'Neue Nachricht';
-        $body = $notice->Title;
-        $url = '/notices';
+        $title = '💡 Terminvorschlag';
+        $body = $appointment->Title . ' am ' . $appointment->RenderDate();
+        $url = $appointment->getLink();
 
-        self::sendToUsers('notices', $title, $body, $url);
+        self::sendToUsers('events', $title, $body, $url);
+    }
+
+    /**
+     * Send notification for scheduled appointment
+     */
+    public static function notifyAppointmentScheduled(Appointment $appointment)
+    {
+        $title = '📅 Neuer Termin festgelegt';
+        $body = $appointment->Title . ' am ' . $appointment->RenderDate();
+        $url = $appointment->getLink();
+
+        self::sendToUsers('events', $title, $body, $url);
+    }
+
+    /**
+     * Send notification for cancelled appointment
+     */
+    public static function notifyAppointmentCancelled(Appointment $appointment)
+    {
+        $title = '❌ Termin abgesagt';
+        $body = $appointment->Title . ' am ' . $appointment->RenderDate() . ' wurde abgesagt.';
+        $url = $appointment->getLink();
+
+        self::sendToUsers('events', $title, $body, $url);
+    }
+
+    /**
+     * Send notification for new notice – only to members of linked organisations
+     */
+    public static function notifyNewAnnouncement(Announcement $announcement)
+    {
+        $organisations = $announcement->Organisations();
+
+        if (!$organisations->exists()) {
+            return;
+        }
+
+        $title = '📢 Neue Ankündigung';
+        $body = $announcement->Title;
+        $url = $announcement->getLink();
+
+        $memberIDs = [];
+        foreach ($organisations as $organisation) {
+            $activeMembers = OrganizationMembership::get()->filter([
+                'OrganizationID' => $organisation->ID,
+                'Role'           => ['member', 'moderator', 'admin'],
+            ]);
+            foreach ($activeMembers as $membership) {
+                $memberIDs[$membership->MemberID] = $membership->MemberID;
+            }
+        }
+
+        foreach ($memberIDs as $memberID) {
+            self::saveNotification($memberID, 'announcements', $title, $body, $url);
+
+            $member = Member::get()->byID($memberID);
+            if ($member && $member->NotifyAnnouncements) {
+                self::sendToMember($member, $title, $body, $url);
+            }
+        }
+    }
+
+    public static function notifyNewApplication(OrganizationMembership $membership): void
+    {
+        $org      = $membership->Organization();
+        $applicant = $membership->Member();
+
+        if (!$org || !$applicant) {
+            return;
+        }
+
+        $title = '📋 Neue Bewerbung';
+        $body  = $applicant->FirstName . ' ' . $applicant->Surname . ' möchte "' . $org->Title . '" beitreten.';
+        $url   = '/app/organizations?applicants=' . $org->ID;
+
+        $adminMemberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'Role'           => 'admin',
+        ]);
+
+        foreach ($adminMemberships as $adminMembership) {
+            $admin = $adminMembership->Member();
+            if (!$admin) {
+                continue;
+            }
+
+            self::saveNotification($admin->ID, 'applications', $title, $body, $url);
+
+            if ($admin->NotifyApplications) {
+                self::sendToMember($admin, $title, $body, $url);
+            }
+        }
     }
 
     public static function notifyNewMap(Map $map)
     {
         $title = 'Neuer Lageplan verfügbar';
         $body = $map->Title;
-        $url = '/maps';
+        $url = '/app/map';
 
         self::sendToUsers('maps', $title, $body, $url);
     }
@@ -114,7 +210,7 @@ class PushNotificationService
     {
         $title = 'Neuer Essensvorschlag';
         $body = $meal->Title;
-        $url = '/food/meal/' . $meal->ID;
+        $url = '/app/food';
 
         self::sendToUsers('meals', $title, $body, $url);
     }
@@ -126,24 +222,18 @@ class PushNotificationService
     {
         $field = 'Notify' . ucfirst($type);
 
-        // Get all members with tokens
         $membersWithTokens = NotificationToken::get()->column('MemberID');
 
         if (empty($membersWithTokens)) {
             return [];
         }
 
-        // Get preferences that have this notification type DISABLED
-        $disabledPrefs = NotificationPreference::get()->filter($field, false);
-        $disabledMemberIDs = $disabledPrefs->column('MemberID');
-
-        // Filter out disabled members
-        $memberIDs = array_diff($membersWithTokens, $disabledMemberIDs);
+        $memberIDs = Member::get()
+            ->filter(['ID' => $membersWithTokens, $field => true])
+            ->column('ID');
 
         if (!empty($excludeMembers)) {
-            $excludeIDs = array_map(function ($m) {
-                return is_object($m) ? $m->ID : $m;
-            }, $excludeMembers);
+            $excludeIDs = array_map(fn($m) => is_object($m) ? $m->ID : $m, $excludeMembers);
             $memberIDs = array_diff($memberIDs, $excludeIDs);
         }
 
@@ -155,7 +245,11 @@ class PushNotificationService
      */
     private static function sendNotification($token, $title, $body, $url = null)
     {
-        $accessToken = self::getAccessToken();
+        if (!self::$cachedAccessToken) {
+            self::$cachedAccessToken = self::getAccessToken();
+        }
+
+        $accessToken = self::$cachedAccessToken;
 
         if (!$accessToken) {
             error_log('Failed to get FCM access token');

@@ -3,7 +3,6 @@
 namespace App\Links;
 
 use Override;
-use App\Teams\Department;
 use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Permission;

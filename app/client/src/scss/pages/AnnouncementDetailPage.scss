@@ -1,0 +1,81 @@
+@use "../variables" as *;
+
+.section.section--AnnouncementDetailPage {
+    .section_content {
+        max-width: var(--MaxWidth);
+        margin: 0 auto;
+        padding: 0 20px;
+
+        .announcement-detail_card {
+            background-color: var(--ColorWhite);
+            border-radius: var(--BorderRadiusMedium);
+            box-shadow: var(--BoxShadowLight);
+            overflow: hidden;
+        }
+
+        .announcement-detail_orgs {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 24px 0;
+            flex-wrap: wrap;
+        }
+
+        .announcement-detail_org {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .announcement-detail_org-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: var(--BorderRadiusSmall);
+        }
+
+        .announcement-detail_org-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ColorBlack);
+        }
+
+        .announcement-detail_header {
+            padding: 16px 24px 0;
+        }
+
+        .announcement-detail_title {
+            margin: 0 0 8px;
+        }
+
+        .announcement-detail_meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            font-size: 13px;
+            color: var(--ColorGray);
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--ColorLightGray);
+        }
+
+        .announcement-detail_category {
+            padding: 2px 8px;
+            background-color: var(--ColorLightGray);
+            border-radius: var(--BorderRadiusSmall);
+            font-size: 12px;
+            color: var(--ColorBlack);
+        }
+
+        .announcement-detail_content {
+            padding: 20px 24px 24px;
+            line-height: 1.7;
+
+            h1, h2, h3, h4 { margin-top: 1.2em; }
+            p { margin: 0.75em 0; }
+            ul, ol { padding-left: 1.5em; margin: 0.75em 0; }
+            img { max-width: 100%; border-radius: var(--BorderRadiusSmall); }
+            a { color: var(--ColorPrimary); }
+        }
+    }
+}
