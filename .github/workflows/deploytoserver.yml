@@ -46,6 +46,7 @@ jobs:
             --exclude='node_modules' \
             --exclude='.env' \
             --exclude='.ddev' \
+            --exclude='public/assets/' \
             ./ speuni@www553.your-server.de:public_html/toteam/
 
       - name: Run post-deploy tasks on server
