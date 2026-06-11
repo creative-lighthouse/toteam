@@ -79,6 +79,7 @@ class ICSController extends BaseController
 
             $ics .= $this->foldLine("SUMMARY:" . $this->escapeICS($appointment->Title)) . "\r\n";
             $ics .= $this->foldLine("LOCATION:" . $this->escapeICS($appointment->Location)) . "\r\n";
+            $ics .= $this->getAttendeesICS($appointment);
 
             $description = $appointment->Description ? $this->escapeICS($appointment->Description) . "\\n\\n" : "";
             $description .= $this->getParticipantsDescription($appointment);
@@ -104,6 +105,25 @@ class ICSController extends BaseController
             $line = substr($line, 75);
         }
         return $result . $line;
+    }
+
+    private function getAttendeesICS(Appointment $appointment): string
+    {
+        $participations = $appointment->Participations();
+        if (!$participations || $participations->count() === 0) {
+            return "";
+        }
+
+        $result = "";
+        foreach ($participations as $p) {
+            $member = $p->Member();
+            if (!$member || !$member->exists()) {
+                continue;
+            }
+            $line = 'ATTENDEE;CN="' . $member->getName() . '";PARTSTAT=' . $p->renderICSType() . ';ROLE=REQ-PARTICIPANT:mailto:' . $member->Email;
+            $result .= $this->foldLine($line) . "\r\n";
+        }
+        return $result;
     }
 
     private function getParticipantsDescription(Appointment $appointment): string
