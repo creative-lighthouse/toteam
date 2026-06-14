@@ -264,6 +264,76 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   /**
+   * Fügt eine Mahlzeit zu einem Termin hinzu (nur Moderatoren/Admins)
+   * @param {number} appointmentId
+   * @param {string} title
+   * @param {string} time - Format: HH:mm
+   */
+  async function updateMeal(mealId, title, time) {
+    try {
+      const response = await apiPut(`/calendar/meal/${mealId}`, { title, time })
+
+      for (const event of events.value) {
+        if (event.Meals) {
+          const meal = event.Meals.find(m => m.ID === mealId)
+          if (meal) {
+            meal.Title = response.data.Title
+            meal.Time = response.data.Time
+            meal.RenderTime = response.data.RenderTime
+            break
+          }
+        }
+      }
+
+      await clearCacheForEndpoint('/calendar')
+      return response.data
+    } catch (err) {
+      console.error('Failed to update meal:', err)
+      throw err
+    }
+  }
+
+  async function deleteMeal(mealId) {
+    try {
+      await apiDelete(`/calendar/meal/${mealId}`)
+
+      for (const event of events.value) {
+        if (event.Meals) {
+          const idx = event.Meals.findIndex(m => m.ID === mealId)
+          if (idx !== -1) {
+            event.Meals.splice(idx, 1)
+            break
+          }
+        }
+      }
+
+      await clearCacheForEndpoint('/calendar')
+    } catch (err) {
+      console.error('Failed to delete meal:', err)
+      throw err
+    }
+  }
+
+  async function addMeal(appointmentId, title, time) {
+    try {
+      const response = await apiPost(`/calendar/meal/${appointmentId}`, { title, time })
+
+      const event = getEventById(appointmentId)
+      if (event) {
+        if (!event.Meals) event.Meals = []
+        event.Meals.push(response.data)
+      }
+
+      await clearCacheForEndpoint('/calendar')
+
+      return response.data
+    } catch (err) {
+      console.error('Failed to add meal:', err)
+      throw err
+    }
+  }
+
+  /**
    * Leert alle Events (z.B. für Logout)
    */
   function clearEvents() {
@@ -324,6 +394,9 @@ export const useEventsStore = defineStore('events', () => {
     changeParticipationTime,
     changeParticipationNotes,
     changeFoodParticipation,
+    addMeal,
+    updateMeal,
+    deleteMeal,
     clearEvents,
     createAbsence,
     updateAbsence,

@@ -32,6 +32,7 @@ class CalendarApiController extends ApiController
         'absences',
         'appointment',
         'appointmentTypes',
+        'meal',
     ];
 
     /**
@@ -704,6 +705,141 @@ class CalendarApiController extends ApiController
         }
 
         return $this->successResponse(['ID' => $appt->ID], 'Termin erstellt');
+    }
+
+    /**
+     * Create a meal for an appointment (moderator/admin only).
+     * POST /api/v1/calendar/meal/:appointmentId
+     * Body: { title, time } (time as HH:mm)
+     */
+    public function meal(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $method = $request->httpMethod();
+        $id     = $request->param('ID');
+
+        // PUT /api/v1/calendar/meal/:mealId — update existing meal
+        if ($method === 'PUT') {
+            $meal = Meal::get()->byID($id);
+            if (!$meal || !$meal->exists()) {
+                return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+            }
+
+            $apptOrgIDs = $meal->Parent()->Organisations()->column('ID');
+            $hasPermission = OrganizationMembership::get()->filter([
+                'MemberID'       => $member->ID,
+                'OrganizationID' => $apptOrgIDs,
+                'Role'           => ['moderator', 'admin'],
+            ])->exists();
+
+            if (!$hasPermission) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+
+            $body  = $this->getJsonBody();
+            $title = trim($body['title'] ?? '');
+            $time  = trim($body['time'] ?? '');
+
+            if (!$title) {
+                return $this->errorResponse('Titel ist erforderlich', 400);
+            }
+            if (!$time) {
+                return $this->errorResponse('Uhrzeit ist erforderlich', 400);
+            }
+            if (preg_match('/^\d{2}:\d{2}$/', $time)) {
+                $time .= ':00';
+            }
+
+            $meal->Title = $title;
+            $meal->Time  = $time;
+            $meal->write();
+
+            return $this->successResponse([
+                'ID'         => $meal->ID,
+                'Title'      => $meal->Title,
+                'Time'       => $meal->Time,
+                'RenderTime' => $meal->RenderTime(),
+            ], 'Mahlzeit aktualisiert');
+        }
+
+        // DELETE /api/v1/calendar/meal/:mealId — delete meal
+        if ($method === 'DELETE') {
+            $meal = Meal::get()->byID($id);
+            if (!$meal || !$meal->exists()) {
+                return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+            }
+
+            $apptOrgIDs = $meal->Parent()->Organisations()->column('ID');
+            $hasPermission = OrganizationMembership::get()->filter([
+                'MemberID'       => $member->ID,
+                'OrganizationID' => $apptOrgIDs,
+                'Role'           => ['moderator', 'admin'],
+            ])->exists();
+
+            if (!$hasPermission) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+
+            $meal->Eaters()->removeAll();
+            $meal->delete();
+
+            return $this->successResponse([], 'Mahlzeit gelöscht');
+        }
+
+        // POST /api/v1/calendar/meal/:appointmentId — create meal
+        if ($method !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $appointment = Appointment::get()->byID($id);
+        if (!$appointment) {
+            return $this->errorResponse('Termin nicht gefunden', 404);
+        }
+
+        $apptOrgIDs = $appointment->Organisations()->column('ID');
+        $hasPermission = OrganizationMembership::get()->filter([
+            'MemberID'       => $member->ID,
+            'OrganizationID' => $apptOrgIDs,
+            'Role'           => ['moderator', 'admin'],
+        ])->exists();
+
+        if (!$hasPermission) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $body = $this->getJsonBody();
+
+        $title = trim($body['title'] ?? '');
+        if (!$title) {
+            return $this->errorResponse('Titel ist erforderlich', 400);
+        }
+
+        $time = trim($body['time'] ?? '');
+        if (!$time) {
+            return $this->errorResponse('Uhrzeit ist erforderlich', 400);
+        }
+
+        if (preg_match('/^\d{2}:\d{2}$/', $time)) {
+            $time .= ':00';
+        }
+
+        $meal = Meal::create();
+        $meal->Title    = $title;
+        $meal->Time     = $time;
+        $meal->ParentID = $appointment->ID;
+        $meal->write();
+
+        return $this->successResponse([
+            'ID'           => $meal->ID,
+            'Title'        => $meal->Title,
+            'Time'         => $meal->Time,
+            'RenderTime'   => $meal->RenderTime(),
+            'UserResponse' => null,
+        ], 'Mahlzeit hinzugefügt');
     }
 
     /**
