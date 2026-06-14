@@ -212,7 +212,7 @@
 
     .secondarynav {
         position: fixed;
-        bottom: -100vh;
+        bottom: -100dvh;
         right: 15px;
         width: auto;
         max-width: 600px;
@@ -472,6 +472,27 @@
     .profilenav--open &, .secnav--open &{
         &::after{
             opacity: 1;
+        }
+    }
+
+    &.AppMenu--iphone {
+        .primary_menu {
+            bottom: 17px;
+            width: calc(100% - 30px);
+        }
+
+        .secondarynav {
+            .secnav--open & {
+                bottom: 40px;
+                padding-bottom: 30px;
+            }
+        }
+
+        .profilenav {
+            .profilenav--open &{
+                bottom: 40px;
+                padding-bottom: 50px;
+            }
         }
     }
 }

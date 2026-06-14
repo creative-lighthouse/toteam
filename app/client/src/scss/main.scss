@@ -43,7 +43,7 @@ html{
 
 //Styles to make the footer stick to the bottom of the page
 body {
-    min-height: 100vh;
+    min-height: 100dvh;
     display: grid;
     grid-template-columns: 100%;
     grid-template-rows: auto 1fr auto;
@@ -191,7 +191,7 @@ body {
 
 /* Ensure Vue app uses existing layout styles */
 #vue-app {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 100%;
   grid-template-rows: auto 1fr auto;

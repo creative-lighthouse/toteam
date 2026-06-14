@@ -359,4 +359,40 @@ dialog{
             }
         }
     }
+
+    .settings-select {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        background-color: var(--ColorWhite);
+        margin: 1px 0;
+        gap: 12px;
+
+        &:hover {
+            background-color: var(--ColorLightGray);
+        }
+
+        .settings-select_label {
+            font-size: 15px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .settings-select_input {
+            font-size: 14px;
+            font-weight: 500;
+            padding: 4px 8px;
+            border: 1px solid var(--ColorGray, #aaa);
+            border-radius: var(--BorderRadiusSmall, 6px);
+            background-color: var(--ColorWhite);
+            color: var(--ColorDark);
+            cursor: pointer;
+
+            &:focus {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: 1px;
+            }
+        }
+    }
 }

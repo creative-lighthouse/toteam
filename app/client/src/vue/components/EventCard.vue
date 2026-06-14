@@ -54,16 +54,14 @@
           <span v-if="participationCount" class="event-card_count">{{ participationCount }}</span>
         </div>
       </div>
-      <span
-        class="event-card_participation"
-        :class="`participation--${participationType}`"
-      >{{ participationLabel }}</span>
+      <ParticipationIcon :participationType="participationType" :title="participationLabel" />
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import ParticipationIcon from './ParticipationIcon.vue'
 
 const props = defineProps({
   event: {
