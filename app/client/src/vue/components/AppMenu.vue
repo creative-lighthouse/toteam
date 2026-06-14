@@ -1,5 +1,5 @@
 <template>
-    <header class="AppMenu">
+    <header class="AppMenu" :class="uiStore.navStyle">
         <!-- Primary Menu -->
         <ul class="primary_menu">
             <li>
@@ -157,6 +157,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useAnnouncementsStore } from '@stores/announcements'
+import { useUiStore } from '@stores/ui'
 import SettingsModal from '@components/SettingsModal.vue'
 
 // Import totem icons
@@ -175,6 +176,7 @@ import actionSettings from '../../../icons/actions/action_settings.svg'
 const router = useRouter()
 const authStore = useAuthStore()
 const announcementsStore = useAnnouncementsStore()
+const uiStore = useUiStore()
 const isSecondaryMenuOpen = ref(false)
 const isProfileMenuOpen = ref(false)
 const settingsModal = ref(null)

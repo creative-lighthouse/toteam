@@ -56,6 +56,15 @@
               <input type="checkbox" v-model="darkMode" @change="applyDarkMode" class="settings-toggle_input">
               <span class="settings-toggle_track"></span>
             </label>
+
+            <div class="settings-select">
+              <span class="settings-select_label">Navigation Style</span>
+              <select class="settings-select_input" v-model="navStyle" @change="applyNavStyle">
+                <option v-for="option in navStyleOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
           </section>
         </div>
       </div>
@@ -66,6 +75,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { apiGet, apiPost } from '@utils/api'
+import { useUiStore } from '@stores/ui'
+
+const uiStore = useUiStore()
 
 const dialogEl = ref(null)
 const loadingPrefs = ref(true)
@@ -78,6 +90,12 @@ const prefs = reactive({
 })
 
 const darkMode = ref(false)
+const navStyle = ref(uiStore.navStyle)
+
+const navStyleOptions = [
+  { value: 'AppMenu--default', label: 'Standard' },
+  { value: 'AppMenu--iphone', label: 'iPhone' },
+]
 
 onMounted(() => {
   darkMode.value = document.body.classList.contains('theme--dark')
@@ -122,6 +140,10 @@ async function savePrefs() {
 function applyDarkMode() {
   document.body.classList.toggle('theme--dark', darkMode.value)
   localStorage.setItem('theme', darkMode.value ? 'dark' : 'light')
+}
+
+function applyNavStyle() {
+  uiStore.setNavStyle(navStyle.value)
 }
 
 defineExpose({ open, close })
