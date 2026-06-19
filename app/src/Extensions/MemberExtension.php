@@ -21,6 +21,7 @@ use App\Teams\OrganizationMembership;
  * @property \SilverStripe\Security\Member|\App\Extensions\MemberExtension $owner
  * @property ?string $Joindate
  * @property ?string $Username
+ * @property ?string $NameVisibility
  * @property ?string $FoodPreference
  * @property ?string $DateOfBirth
  * @property ?string $Hash
@@ -37,8 +38,9 @@ use App\Teams\OrganizationMembership;
 class MemberExtension extends Extension
 {
     private static $db = [
-        "Joindate"       => "Date",
-        "Username"       => "Varchar(50)",
+        "Joindate"         => "Date",
+        "Username"         => "Varchar(50)",
+        "NameVisibility"   => "Enum('full,first,username','full')",
         "FoodPreference" => "Varchar(255)",
         "DateOfBirth"    => "Date",
         "Hash"           => "Varchar(255)",

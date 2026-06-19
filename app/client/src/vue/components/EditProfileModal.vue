@@ -102,6 +102,14 @@
                   <option value="Vegan">Vegan</option>
                 </select>
               </div>
+              <div class="field">
+                <label for="ep-namevis">Name öffentlich anzeigen</label>
+                <select id="ep-namevis" v-model="form.NameVisibility">
+                  <option value="full">Ganzer Name</option>
+                  <option value="first">Nur Vorname</option>
+                  <option value="username">Nur Benutzername</option>
+                </select>
+              </div>
 
               <p v-if="saveError" class="status-text status-text--error">{{ saveError }}</p>
               <p v-if="saveSuccess" class="status-text status-text--success">{{ saveSuccess }}</p>
@@ -209,8 +217,9 @@ async function loadProfile() {
       form.FirstName      = p.FirstName      ?? ''
       form.Surname        = p.Surname        ?? ''
       form.Email          = p.Email          ?? ''
-      form.FoodPreference = p.FoodPreference ?? 'None'
-      orgs.value          = p.Organizations  ?? []
+      form.FoodPreference   = p.FoodPreference   ?? 'None'
+      form.NameVisibility   = p.NameVisibility   ?? 'full'
+      orgs.value            = p.Organizations    ?? []
     }
   } catch (err) {
     console.error('Profil laden fehlgeschlagen:', err)
@@ -422,7 +431,7 @@ function resetEditor() {
 }
 
 // ── Profile form ───────────────────────────────────
-const form = reactive({ FirstName: '', Surname: '', Email: '', FoodPreference: 'None' })
+const form = reactive({ FirstName: '', Surname: '', Email: '', FoodPreference: 'None', NameVisibility: 'full' })
 const saving      = ref(false)
 const saveError   = ref(null)
 const saveSuccess = ref(null)

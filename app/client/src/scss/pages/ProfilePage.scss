@@ -1,105 +1,179 @@
 @use "../variables" as *;
 
 section.section--ProfilePage {
+    .profile-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--ColorGray);
+
+        &--notfound {
+            color: var(--ColorStatusBad);
+        }
+    }
+
     .section_content {
         text-align: center;
+        padding: 5px;
 
-        .profile-image {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 16px;
-            border-radius: 50%;
+        .section_profilecard {
+            position: relative;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusMedium);
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--ColorWhite);
+            width: auto;
+            max-width: 350px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
-            img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-        }
+            .profilecard-qr-btn {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                width: 32px;
+                height: 32px;
+                padding: 4px;
+                border: none;
+                border-radius: var(--BorderRadiusSmall);
+                background: transparent;
+                cursor: pointer;
+                opacity: 0.5;
+                transition: opacity 0.15s, background 0.15s;
 
-        .profile-email {
-            color: var(--ColorGray);
-            font-size: 14px;
-            margin: 4px 0 16px;
-        }
-
-        .profile-details {
-            margin: 0 auto 20px;
-            border-collapse: collapse;
-
-            th, td {
-                padding: 5px 10px;
-                font-size: 14px;
-                text-align: left;
-            }
-
-            th {
-                font-weight: 600;
-                color: var(--ColorGray);
-                text-align: right;
-                white-space: nowrap;
-            }
-
-            td {
-                color: var(--ColorBlack);
-            }
-        }
-
-        .profile-username {
-            font-size: 14px;
-            color: var(--ColorGray);
-            margin: -8px 0 12px;
-        }
-
-        .profile-orgs {
-            width: 100%;
-            margin: 8px auto 4px;
-            text-align: left;
-            max-width: 400px;
-
-            .profile-orgs_title {
-                font-size: 11px;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                color: var(--ColorGray);
-                margin: 0 0 8px;
-            }
-
-            .profile-org-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 7px 0;
-                border-top: 1px solid var(--ColorLightGray);
-
-                &:last-child {
-                    border-bottom: 1px solid var(--ColorLightGray);
-                }
-
-                .profile-org-item_logo {
-                    width: 32px;
-                    height: 32px;
-                    border-radius: var(--BorderRadiusSmall);
+                img {
+                    width: 100%;
+                    height: 100%;
                     object-fit: contain;
-                    flex-shrink: 0;
+                    display: block;
                 }
 
-                .profile-org-item_text {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1px;
+                &:hover {
+                    opacity: 1;
+                    background: var(--ColorLightGray);
+                }
+            }
 
-                    strong {
-                        font-size: 14px;
-                    }
+            .profile-image {
+                width: 120px;
+                height: 120px;
+                margin: 5px auto 26px;
+                position: relative;
+
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 50%;
+                    border: 2px solid var(--ColorLightGray);
+                    overflow: hidden;
+                    z-index: 2;
+                    position: relative;
+                    box-shadow: 0 2px 28px rgba(0, 0, 0, 0.5);
                 }
 
-                .profile-org-item_role {
-                    font-size: 12px;
+                &::after {
+                    content: "";
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%) rotate(-5deg);
+                    width: 400%;
+                    height: 30px;
+                    opacity: 1;
+                    z-index: 0;
+
+                    //Give texture
+                    background-image: radial-gradient(circle at 1px 1px, var(--ColorLightGray) 1px, transparent 1px);
+                    background-size: 5px 5px;
+                }
+            }
+
+            .profile-email {
+                color: var(--ColorGray);
+                font-size: 14px;
+                margin: 4px 0 16px;
+            }
+
+            .profile-details {
+                margin: 0 auto 20px;
+                border-collapse: collapse;
+
+                th, td {
+                    padding: 5px 10px;
+                    font-size: 14px;
+                    text-align: left;
+                }
+
+                th {
+                    font-weight: 600;
                     color: var(--ColorGray);
+                    text-align: right;
+                    white-space: nowrap;
+                }
+
+                td {
+                    color: var(--ColorBlack);
+                }
+            }
+
+            .profile-username {
+                font-size: 14px;
+                color: var(--ColorGray);
+                margin: 0 0 12px;
+            }
+
+            .profile-orgs {
+                width: 100%;
+                margin: 8px auto 4px;
+                text-align: left;
+                max-width: 400px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+
+                .profile-orgs_title {
+                    font-size: 11px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    color: var(--ColorGray);
+                    margin: 0 0 8px;
+                }
+
+                .profile-org-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 7px 0;
+                    border-top: 1px solid var(--ColorLightGray);
+
+                    &:last-child {
+                        border-bottom: 1px solid var(--ColorLightGray);
+                    }
+
+                    .profile-org-item_logo {
+                        width: 32px;
+                        height: 32px;
+                        border-radius: var(--BorderRadiusSmall);
+                        object-fit: contain;
+                        flex-shrink: 0;
+                    }
+
+                    .profile-org-item_text {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 1px;
+
+                        strong {
+                            font-size: 14px;
+                        }
+                    }
+
+                    .profile-org-item_role {
+                        font-size: 12px;
+                        color: var(--ColorGray);
+                    }
                 }
             }
         }
@@ -109,6 +183,7 @@ section.section--ProfilePage {
             flex-direction: column;
             align-items: center;
             gap: 8px;
+            margin-top: 20px;
         }
     }
 }

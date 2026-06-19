@@ -23,6 +23,7 @@ class ProfileApiController extends ApiController
         'update',
         'uploadImage',
         'leaveOrg',
+        'user',
     ];
 
     public function index(HTTPRequest $request): HTTPResponse
@@ -62,6 +63,9 @@ class ProfileApiController extends ApiController
         }
         if (isset($data['FoodPreference']) && in_array($data['FoodPreference'], ['None', 'Vegetarian', 'Vegan'], true)) {
             $member->FoodPreference = $data['FoodPreference'];
+        }
+        if (isset($data['NameVisibility']) && in_array($data['NameVisibility'], ['full', 'first', 'username'], true)) {
+            $member->NameVisibility = $data['NameVisibility'];
         }
 
         $member->write();
@@ -138,6 +142,28 @@ class ProfileApiController extends ApiController
         ], 'Profilbild gespeichert');
     }
 
+    public function user(HTTPRequest $request): HTTPResponse
+    {
+        if (!$this->requireAuth()) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $username = trim($request->param('ID') ?? '');
+        if (!$username) {
+            return $this->errorResponse('Benutzername fehlt', 400);
+        }
+
+        $member = Member::get()->filter('Username', $username)->first();
+        if (!$member) {
+            return $this->errorResponse('Profil nicht gefunden', 404);
+        }
+
+        return $this->jsonResponse([
+            'success' => true,
+            'profile' => $this->serializePublicProfile($member),
+        ]);
+    }
+
     public function leaveOrg(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
@@ -164,6 +190,41 @@ class ProfileApiController extends ApiController
         return $this->successResponse([], 'Mitgliedschaft aufgelöst');
     }
 
+    private function serializePublicProfile(Member $member): array
+    {
+        $orgs = [];
+        foreach ($member->OrganizationMemberships() as $ms) {
+            $org = $ms->Organization();
+            if (!$org || !$org->exists()) {
+                continue;
+            }
+            $orgs[] = [
+                'MembershipID' => $ms->ID,
+                'OrgID'        => $org->ID,
+                'Title'        => $org->Title,
+                'Role'         => $ms->Role,
+                'LogoURL'      => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(60)->getURL() : null,
+            ];
+        }
+
+        $visibility = $member->NameVisibility ?: 'full';
+
+        return [
+            'FirstName'      => in_array($visibility, ['full', 'first']) ? $member->FirstName : null,
+            'Surname'        => $visibility === 'full' ? $member->Surname : null,
+            'Username'       => $member->Username ?: null,
+            'NameVisibility' => $visibility,
+            'FoodPreference' => $member->FoodPreference ?: 'None',
+            'DateOfBirth'    => $member->DateOfBirth,
+            'Joindate'       => $member->Joindate,
+            'Gravatar'       => $member->getGravatar(),
+            'ProfileImage'   => ($member->ProfileImageID && $member->ProfileImage()->exists())
+                ? ['URL' => $member->ProfileImage()->FillMax(400, 400)->getURL()]
+                : null,
+            'Organizations'  => $orgs,
+        ];
+    }
+
     private function serializeProfile(Member $member): array
     {
         $orgs = [];
@@ -187,8 +248,9 @@ class ProfileApiController extends ApiController
             'FirstName'      => $member->FirstName,
             'Surname'        => $member->Surname,
             'Email'          => $member->Email,
-            'Username'       => $member->Username ?: null,
-            'FoodPreference' => $member->FoodPreference ?: 'None',
+            'Username'        => $member->Username ?: null,
+            'NameVisibility'  => $member->NameVisibility ?: 'full',
+            'FoodPreference'  => $member->FoodPreference ?: 'None',
             'DateOfBirth'    => $member->DateOfBirth,
             'Joindate'       => $member->Joindate,
             'Gravatar'       => $member->getGravatar(),

@@ -8,6 +8,7 @@ import Food from '@views/Food.vue'
 import Announcements from '@views/Announcements.vue'
 import AnnouncementDetail from '@views/AnnouncementDetail.vue'
 import Profile from '@views/Profile.vue'
+import PublicProfile from '@views/PublicProfile.vue'
 import MealDetail from '@views/MealDetail.vue'
 import Map from '@views/Map.vue'
 import MapDetail from '@views/MapDetail.vue'
@@ -67,6 +68,12 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: Profile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile/:username',
+    name: 'PublicProfile',
+    component: PublicProfile,
     meta: { requiresAuth: true }
   },
   {

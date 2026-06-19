@@ -1,9 +1,15 @@
 <template>
     <section class="section--ProfilePage">
         <div class="section_content">
-            <div class="section_profilecard" v-if="authStore.user">
+
+        <div v-if="loading" class="profile-state">Profil wird geladen …</div>
+            <div v-else-if="notFound" class="profile-state profile-state--notfound">
+                <p>Profil <strong>@{{ route.params.username }}</strong> nicht gefunden.</p>
+            </div>
+
+            <div v-else-if="profile" class="section_profilecard">
                 <button
-                    v-if="authStore.user.Username"
+                    v-if="profile.Username"
                     class="profilecard-qr-btn"
                     aria-label="QR-Code anzeigen"
                     @click="qrModal?.open()"
@@ -13,52 +19,49 @@
 
                 <div class="profile-image">
                     <img
-                        v-if="authStore.user.ProfileImage"
-                        :src="authStore.user.ProfileImage.URL"
-                        :alt="`Profilbild von ${authStore.user.FirstName}`"
+                        v-if="profile.ProfileImage"
+                        :src="profile.ProfileImage.URL"
+                        :alt="`Profilbild von ${displayName}`"
                     >
                     <img
                         v-else
-                        :src="authStore.user.Gravatar"
+                        :src="profile.Gravatar"
                         alt="Standard Profilbild"
                     >
                 </div>
 
-                <h2 class="hl2">{{ authStore.userName }}</h2>
-                <p v-if="authStore.user.Username" class="profile-username">@{{ authStore.user.Username }}</p>
+                <p v-if="profile.Username && profile.NameVisibility !== 'username'" class="profile-username">
+                    @{{ profile.Username }}
+                </p>
 
                 <table class="profile-details">
                     <tbody>
-                        <tr>
+                        <tr v-if="profile.FirstName">
                             <th>Vorname</th>
-                            <td>{{ authStore.user.FirstName }}</td>
+                            <td>{{ profile.FirstName }}</td>
                         </tr>
-                        <tr>
+                        <tr v-if="profile.Surname">
                             <th>Nachname</th>
-                            <td>{{ authStore.user.Surname }}</td>
-                        </tr>
-                        <tr>
-                            <th>E-Mail</th>
-                            <td>{{ authStore.user.Email }}</td>
+                            <td>{{ profile.Surname }}</td>
                         </tr>
                         <tr>
                             <th>Essenspräferenz</th>
-                            <td>{{ foodLabel(authStore.user.FoodPreference) }}</td>
+                            <td>{{ foodLabel(profile.FoodPreference) }}</td>
                         </tr>
-                        <tr v-if="authStore.user.DateOfBirth">
+                        <tr v-if="profile.DateOfBirth">
                             <th>Alter</th>
-                            <td>{{ calcAge(authStore.user.DateOfBirth) }} Jahre</td>
+                            <td>{{ calcAge(profile.DateOfBirth) }} Jahre</td>
                         </tr>
-                        <tr v-if="authStore.user.Joindate">
+                        <tr v-if="profile.Joindate">
                             <th>Mitglied seit</th>
-                            <td>{{ formatDate(authStore.user.Joindate) }}</td>
+                            <td>{{ formatDate(profile.Joindate) }}</td>
                         </tr>
                     </tbody>
                 </table>
 
-                <div v-if="orgs.length > 0" class="profile-orgs">
+                <div v-if="profile.Organizations?.length > 0" class="profile-orgs">
                     <h3 class="profile-orgs_title">Organisationen</h3>
-                    <div v-for="org in orgs" :key="org.MembershipID" class="profile-org-item">
+                    <div v-for="org in profile.Organizations" :key="org.MembershipID" class="profile-org-item">
                         <img v-if="org.LogoURL" :src="org.LogoURL" class="profile-org-item_logo" alt="">
                         <div class="profile-org-item_text">
                             <strong>{{ org.Title }}</strong>
@@ -68,48 +71,48 @@
                 </div>
             </div>
 
-            <div class="profile-actions">
-                <button class="button" @click="editModal?.open()">
-                    Profil bearbeiten
-                </button>
-                <button @click="authStore.logout()" class="button button--danger">
-                    Abmelden
-                </button>
-            </div>
+        <QrCodeModal v-if="profile?.Username" ref="qrModal" :username="profile.Username" />
         </div>
-
-        <EditProfileModal ref="editModal" @updated="loadOrgs" />
-        <QrCodeModal v-if="authStore.user?.Username" ref="qrModal" :username="authStore.user.Username" />
     </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@stores/auth'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
-import EditProfileModal from '@components/EditProfileModal.vue'
 import QrCodeModal from '@components/QrCodeModal.vue'
 
-const authStore = useAuthStore()
-usePageHeaderStore().setHeader('Profil', 'Verwalte dein Profil und deine Einstellungen.')
+const route    = useRoute()
+const loading  = ref(true)
+const notFound = ref(false)
+const profile  = ref(null)
+const qrModal  = ref(null)
 
-const editModal = ref(null)
-const qrModal   = ref(null)
-const orgs = ref([])
+const displayName = computed(() => {
+  if (!profile.value) return ''
+  const vis = profile.value.NameVisibility
+  if (vis === 'username') return `@${profile.value.Username}`
+  if (vis === 'first')    return profile.value.FirstName
+  return `${profile.value.FirstName} ${profile.value.Surname}`
+})
 
-onMounted(loadOrgs)
-
-async function loadOrgs() {
+onMounted(async () => {
+  usePageHeaderStore().setHeader('Profil', '')
   try {
-    const data = await apiGet('/profile', false)
+    const data = await apiGet(`/profile/user/${encodeURIComponent(route.params.username)}`, false)
     if (data.success && data.profile) {
-      orgs.value = data.profile.Organizations ?? []
+      profile.value = data.profile
+      usePageHeaderStore().setHeader(displayName.value, profile.value.Username ? `@${profile.value.Username}` : '')
+    } else {
+      notFound.value = true
     }
   } catch (err) {
-    console.error('Organisationen laden fehlgeschlagen:', err)
+    notFound.value = true
+  } finally {
+    loading.value = false
   }
-}
+})
 
 function formatDate(dateStr) {
   if (!dateStr) return '–'

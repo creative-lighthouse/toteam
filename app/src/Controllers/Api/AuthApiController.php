@@ -109,8 +109,9 @@ class AuthApiController extends ApiController
             'Surname'        => $member->Surname,
             'Gravatar'       => $member->getGravatar(),
             'Hash'           => $member->Hash,
-            'Username'       => $member->Username ?: null,
-            'FoodPreference' => $member->FoodPreference ?: 'None',
+            'Username'        => $member->Username ?: null,
+            'NameVisibility'  => $member->NameVisibility ?: 'full',
+            'FoodPreference'  => $member->FoodPreference ?: 'None',
             'DateOfBirth'    => $member->DateOfBirth,
             'Joindate'       => $member->Joindate,
         ];
