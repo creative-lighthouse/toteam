@@ -19,6 +19,7 @@ class OrganizationsApiController extends ApiController
 
     private static $allowed_actions = [
         'index',
+        'detail',
         'join',
         'applicants',
         'accept',
@@ -61,19 +62,100 @@ class OrganizationsApiController extends ApiController
                 : null;
 
             $data[] = [
-                'ID'             => $org->ID,
-                'Title'          => $org->Title,
-                'Description'    => $org->Description,
-                'LogoURL'        => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(80)->getURL() : null,
-                'CoverURL'       => $org->CoverImage()->exists() ? $org->CoverImage()->ScaleWidth(600)->getURL() : null,
-                'JoinMode'       => $org->JoinMode,
-                'MemberCount'    => $memberCount,
+                'ID'               => $org->ID,
+                'Username'         => $org->Username ?: null,
+                'Title'            => $org->Title,
+                'Description'      => $org->Description,
+                'LogoURL'          => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(80)->getURL() : null,
+                'CoverURL'         => $org->CoverImage()->exists() ? $org->CoverImage()->ScaleWidth(600)->getURL() : null,
+                'JoinMode'         => $org->JoinMode,
+                'MemberCount'      => $memberCount,
                 'MembershipStatus' => $myRole,
-                'ApplicantCount' => $applicantCount,
+                'ApplicantCount'   => $applicantCount,
             ];
         }
 
         return $this->jsonResponse(['organizations' => $data]);
+    }
+
+    public function detail(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $username = $request->getVar('username');
+        if (!$username) {
+            return $this->errorResponse('Benutzername erforderlich', 400);
+        }
+
+        $org = Organization::get()->filter('Username', $username)->first();
+        if (!$org || $org->JoinMode === 'hidden') {
+            return $this->errorResponse('Organisation nicht gefunden', 404);
+        }
+
+        $membership = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'MemberID'       => $member->ID,
+        ])->first();
+        $myRole = $membership ? $membership->Role : null;
+
+        $memberCount = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'Role'           => ['member', 'moderator', 'admin'],
+        ])->count();
+
+        $applicantCount = in_array($myRole, ['admin', 'moderator'])
+            ? OrganizationMembership::get()->filter([
+                'OrganizationID' => $org->ID,
+                'Role'           => 'applicant',
+            ])->count()
+            : null;
+
+        $memberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'Role'           => ['member', 'moderator', 'admin'],
+        ]);
+
+        $roleOrder = ['admin' => 0, 'moderator' => 1, 'member' => 2];
+        $members = [];
+        foreach ($memberships as $ms) {
+            $m = $ms->Member();
+            if (!$m) {
+                continue;
+            }
+            $members[] = [
+                'MemberID'  => $m->ID,
+                'FirstName' => $m->FirstName,
+                'Surname'   => $m->Surname,
+                'Avatar'    => $m->RenderProfileImage(),
+                'Username'  => $m->Username ?: null,
+                'Role'      => $ms->Role,
+                'SortOrder' => $roleOrder[$ms->Role] ?? 3,
+            ];
+        }
+        usort($members, fn($a, $b) => $a['SortOrder'] <=> $b['SortOrder']);
+        foreach ($members as &$m) {
+            unset($m['SortOrder']);
+        }
+        unset($m);
+
+        return $this->jsonResponse([
+            'organization' => [
+                'ID'               => $org->ID,
+                'Username'         => $org->Username ?: null,
+                'Title'            => $org->Title,
+                'Description'      => $org->Description,
+                'LogoURL'          => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(200)->getURL() : null,
+                'CoverURL'         => $org->CoverImage()->exists() ? $org->CoverImage()->ScaleWidth(1200)->getURL() : null,
+                'JoinMode'         => $org->JoinMode,
+                'MemberCount'      => $memberCount,
+                'MembershipStatus' => $myRole,
+                'ApplicantCount'   => $applicantCount,
+                'Members'          => $members,
+            ],
+        ]);
     }
 
     public function join(HTTPRequest $request): HTTPResponse

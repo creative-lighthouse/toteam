@@ -540,15 +540,16 @@ class CalendarApiController extends ApiController
             $seen[$absentMemberID] = true;
 
             $absentMember = $absence->Member();
+            $memberExists = $absentMember && $absentMember->exists();
             $imageURL = null;
-            if ($absentMember && $absentMember->hasMethod('RenderProfileImage')) {
+            if ($memberExists && $absentMember->hasMethod('RenderProfileImage')) {
                 $imageURL = $absentMember->RenderProfileImage();
             }
 
             $result[] = [
                 'AbsenceID'       => $absence->ID,
                 'MemberID'        => $absentMemberID,
-                'MemberName'      => $absentMember ? $absentMember->getName() : 'Unbekannt',
+                'MemberName'      => $memberExists ? $absentMember->getName() : 'Gelöschter Benutzer',
                 'ProfileImageURL' => $imageURL,
                 'Note'            => $absence->Note ?: null,
                 'DateStart'       => $absence->DateStart,

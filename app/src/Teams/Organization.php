@@ -5,6 +5,7 @@ namespace App\Teams;
 use App\Teams\OrganizationMembership;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Core\Validation\ValidationResult;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 
@@ -14,6 +15,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $Title
  * @property ?string $Description
  * @property ?string $JoinMode
+ * @property ?string $Username
  * @property int $LogoID
  * @property int $CoverImageID
  * @method \SilverStripe\Assets\Image Logo()
@@ -31,6 +33,7 @@ class Organization extends DataObject implements PermissionProvider
         "Title"       => "Varchar(255)",
         "Description" => "Text",
         "JoinMode"    => "Enum('open,application,invite_only,hidden','invite_only')",
+        "Username"    => "Varchar(100)",
     ];
 
     private static $has_one = [
@@ -48,14 +51,16 @@ class Organization extends DataObject implements PermissionProvider
     ];
 
     private static $summary_fields = [
-        "Title"            => "Titel",
-        "Description"      => "Beschreibung",
-        "JoinMode"         => "Beitrittsmodus",
+        "Title"             => "Titel",
+        "Username"          => "Benutzername",
+        "Description"       => "Beschreibung",
+        "JoinMode"          => "Beitrittsmodus",
         "Memberships.Count" => "Anzahl Mitglieder",
     ];
 
     private static $field_labels = [
         "Title"       => "Titel",
+        "Username"    => "Benutzername",
         "Description" => "Beschreibung",
         "JoinMode"    => "Beitrittsmodus",
         "CoverImage"  => "Coverbild",
@@ -65,6 +70,21 @@ class Organization extends DataObject implements PermissionProvider
     private static $table_name = 'Organization';
     private static $singular_name = "Organisation";
     private static $plural_name = "Organisationen";
+
+    public function validate(): ValidationResult
+    {
+        $result = parent::validate();
+
+        if ($this->Username) {
+            if (!preg_match('/^[a-z0-9][a-z0-9._-]*$/', $this->Username)) {
+                $result->addFieldError('Username', 'Nur Kleinbuchstaben, Zahlen, Punkte, Bindestriche und Unterstriche erlaubt. Muss mit Buchstabe oder Zahl beginnen.');
+            } elseif (Organization::get()->filter('Username', $this->Username)->exclude('ID', $this->ID ?: 0)->exists()) {
+                $result->addFieldError('Username', 'Dieser Benutzername ist bereits vergeben.');
+            }
+        }
+
+        return $result;
+    }
 
     public function getCMSFields()
     {

@@ -14,6 +14,12 @@ SilverStripe\Admin\LeftAndMain:
   cms_drawer_color: "inherit"
   cms_icon_color: #fff
   menu_groups:
+    LandingPage:
+      icon_class: "fa fa-home" # (optional) Defaults to 'fa fa-folder'
+      priority: -50 # (optional) Defaults to menu item order
+      items:
+        - SilverStripe-CMS-Controllers-CMSMain
+        - SilverStripe-AssetAdmin-Controller-AssetAdmin
     Other:
       icon_class: "fa fa-folder" # (optional) Defaults to 'fa fa-folder'
       priority: -100 # (optional) Defaults to menu item order

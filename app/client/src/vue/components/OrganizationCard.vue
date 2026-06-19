@@ -1,5 +1,5 @@
 <template>
-  <div class="organization-card">
+  <div class="organization-card" :class="{ 'organization-card--clickable': org.Username }" @click="navigateToDetail">
     <div class="organization-card_cover">
       <img
         v-if="org.CoverURL"
@@ -46,7 +46,7 @@
           :disabled="!!org.MembershipStatus || joining"
           @click.stop="handleJoin"
         >
-          {{ joining ? '...' : actionLabel }}
+          {{ joining ? '…' : actionLabel }}
         </button>
 
         <button
@@ -64,6 +64,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
   org: {
@@ -74,6 +75,13 @@ const props = defineProps({
 
 const emit = defineEmits(['joined', 'manage-applicants'])
 const joining = ref(false)
+const router = useRouter()
+
+function navigateToDetail() {
+  if (props.org.Username) {
+    router.push(`/organizations/${props.org.Username}`)
+  }
+}
 
 const joinModeLabel = computed(() => {
   switch (props.org.JoinMode) {

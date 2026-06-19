@@ -147,6 +147,7 @@ section.section--ProfilePage {
                     gap: 10px;
                     padding: 7px 0;
                     border-top: 1px solid var(--ColorLightGray);
+                    width: 100%;
 
                     &:last-child {
                         border-bottom: 1px solid var(--ColorLightGray);
@@ -173,6 +174,19 @@ section.section--ProfilePage {
                     .profile-org-item_role {
                         font-size: 12px;
                         color: var(--ColorGray);
+                    }
+
+                    &.profile-org-item--link {
+                        text-decoration: none;
+                        color: inherit;
+                        cursor: pointer;
+                        margin: 0 -6px;
+                        padding: 6px;
+                        transition: background-color 0.12s;
+
+                        &:hover {
+                            background-color: color-mix(in srgb, var(--ColorPrimary) 8%, transparent);
+                        }
                     }
                 }
             }

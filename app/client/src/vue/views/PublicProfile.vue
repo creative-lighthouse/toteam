@@ -61,13 +61,20 @@
 
                 <div v-if="profile.Organizations?.length > 0" class="profile-orgs">
                     <h3 class="profile-orgs_title">Organisationen</h3>
-                    <div v-for="org in profile.Organizations" :key="org.MembershipID" class="profile-org-item">
+                    <component
+                        :is="org.Username ? RouterLink : 'div'"
+                        v-for="org in profile.Organizations"
+                        :key="org.MembershipID"
+                        :to="org.Username ? `/organizations/${org.Username}` : undefined"
+                        class="profile-org-item"
+                        :class="{ 'profile-org-item--link': org.Username }"
+                    >
                         <img v-if="org.LogoURL" :src="org.LogoURL" class="profile-org-item_logo" alt="">
                         <div class="profile-org-item_text">
                             <strong>{{ org.Title }}</strong>
                             <span class="profile-org-item_role">{{ roleLabel(org.Role) }}</span>
                         </div>
-                    </div>
+                    </component>
                 </div>
             </div>
 
@@ -78,7 +85,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import QrCodeModal from '@components/QrCodeModal.vue'

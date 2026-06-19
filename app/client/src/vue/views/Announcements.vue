@@ -11,7 +11,7 @@
           Alle
         </button>
         <button
-          v-for="category in announcementsStore.categories"
+          v-for="category in announcementsStore.usedCategories"
           :key="category.ID"
           @click="announcementsStore.setCategory(category)"
           class="button"

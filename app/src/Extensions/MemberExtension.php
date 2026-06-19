@@ -9,6 +9,8 @@ use App\HumanResources\Allergy;
 use SilverStripe\Core\Extension;
 use App\SuggestionBox\Suggestion;
 use SilverStripe\Forms\FieldList;
+use App\Calendar\Absence;
+use App\Calendar\AppointmentParticipation;
 use App\Events\EventDayParticipation;
 use SilverStripe\Forms\DropdownField;
 use App\Controllers\AnnouncementsController;
@@ -112,6 +114,28 @@ class MemberExtension extends Extension
         }
     }
 
+    public function onBeforeDelete()
+    {
+        $id = $this->owner->ID;
+
+        foreach (Absence::get()->filter('MemberID', $id) as $absence) {
+            $absence->Organisations()->removeAll();
+            $absence->delete();
+        }
+
+        foreach (AppointmentParticipation::get()->filter('MemberID', $id) as $participation) {
+            $participation->delete();
+        }
+
+        foreach (EventDayParticipation::get()->filter('MemberID', $id) as $participation) {
+            $participation->delete();
+        }
+
+        foreach (OrganizationMembership::get()->filter('MemberID', $id) as $membership) {
+            $membership->delete();
+        }
+    }
+
     public function getParticipations()
     {
         return EventDayParticipation::get()->filter('MemberID', $this->owner->ID);
@@ -153,7 +177,7 @@ class MemberExtension extends Extension
         $atts = array(); //Extra attributes to add
 
         $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5(strtolower(trim($this->owner->Email)));
+        $url .= md5(strtolower(trim($this->owner->Email ?? '')));
         $url .= "?s=$s&d=$d&r=$r";
         if ($img) {
             $url = '<img src="' . $url . '"';
