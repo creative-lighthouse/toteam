@@ -24,6 +24,7 @@
 @use "pages/MapPage.scss";
 @use "pages/OrganizationsPage.scss";
 @use "pages/OrganizationDetailPage.scss";
+@use "pages/LinksPage.scss";
 @use "pages/LoginPage.scss";
 
 
@@ -66,6 +67,7 @@ body {
         grid-area: content;
         width: 100%;
         margin: 0 auto;
+        padding-top: 3px;
 
         .section {
             max-width: var(--MaxWidth);

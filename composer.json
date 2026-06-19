@@ -2,7 +2,7 @@
     "name": "creativelighthouse/silverstripe-toteam",
     "type": "silverstripe-recipe",
     "description": "An organizing tool for groups and freelancers",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "repositories": [
         {
             "type": "git",
@@ -21,7 +21,8 @@
         "symbiote/silverstripe-gridfieldextensions": "^5.0",
         "silverstripe/linkfield": "^5.0",
         "ryanpotter/silverstripe-cms-theme": "dev-master",
-        "colymba/gridfield-bulk-editing-tools": "^5.0"
+        "colymba/gridfield-bulk-editing-tools": "^5.0",
+        "stevenpaw/stevens-silverstripe-icons": "dev-main"
     },
     "require-dev": {
         "silverleague/ideannotator": "4.0",

@@ -87,7 +87,7 @@
                         <div class="nav_icon">
                             <img :src="downloadsTotem" alt="Links Icon" class="nav_image">
                         </div>
-                        <p class="nav_title">Links & Downloads <span class="nav_alpha">Alpha</span></p>
+                        <p class="nav_title">Links & Downloads</p>
                     </router-link>
                 </li>
 

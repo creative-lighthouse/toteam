@@ -14,6 +14,11 @@ SilverStripe\Admin\LeftAndMain:
   cms_drawer_color: "inherit"
   cms_icon_color: #fff
   menu_groups:
+    TaskManagement:
+      icon_class: "fa fa-tasks" # (optional) Defaults to 'fa fa-folder'
+      priority: -10 # (optional) Defaults to menu item order
+      items:
+        - App-Admins-TaskAdmin
     LandingPage:
       icon_class: "fa fa-home" # (optional) Defaults to 'fa fa-folder'
       priority: -50 # (optional) Defaults to menu item order

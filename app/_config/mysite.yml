@@ -27,3 +27,7 @@ SilverStripe\Core\Injector\Injector:
 SilverStripe\Security\Member:
   extensions:
     - App\Extensions\MemberExtension
+
+SilverStripe\LinkField\Models\FileLink:
+  extensions:
+    - App\Extensions\FileLinkExtension
