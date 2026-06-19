@@ -106,7 +106,7 @@ class CalendarApiController extends ApiController
                 $participations[] = [
                     'ID'              => $p->ID,
                     'MemberID'        => $p->MemberID,
-                    'MemberName'      => $pMember ? $pMember->getName() : 'Unknown',
+                    'MemberName'      => $pMember ? $pMember->getDisplayName() : 'Unknown',
                     'ProfileImageURL' => $pMember && $pMember->hasMethod('RenderProfileImage')
                         ? $pMember->RenderProfileImage()
                         : null,
@@ -549,7 +549,7 @@ class CalendarApiController extends ApiController
             $result[] = [
                 'AbsenceID'       => $absence->ID,
                 'MemberID'        => $absentMemberID,
-                'MemberName'      => $memberExists ? $absentMember->getName() : 'Gelöschter Benutzer',
+                'MemberName'      => $memberExists ? $absentMember->getDisplayName() : 'Gelöschter Benutzer',
                 'ProfileImageURL' => $imageURL,
                 'Note'            => $absence->Note ?: null,
                 'DateStart'       => $absence->DateStart,

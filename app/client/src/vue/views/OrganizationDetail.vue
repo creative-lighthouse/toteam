@@ -58,8 +58,8 @@
                         class="org-detail-member"
                         :class="{ 'org-detail-member--no-link': !m.Username }"
                         >
-                            <img :src="m.Avatar" :alt="`${m.FirstName} ${m.Surname}`" class="org-detail-member_avatar">
-                            <span class="org-detail-member_name">{{ m.FirstName }} {{ m.Surname }}</span>
+                            <img :src="m.Avatar" :alt="m.Name" class="org-detail-member_avatar">
+                            <span class="org-detail-member_name">{{ m.Name }}</span>
                             <span class="org-detail-member_role" :class="`org-detail-member_role--${m.Role}`">{{ roleLabel(m.Role) }}</span>
                         </RouterLink>
                     </div>

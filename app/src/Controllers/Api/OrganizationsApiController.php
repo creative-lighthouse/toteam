@@ -127,8 +127,7 @@ class OrganizationsApiController extends ApiController
             }
             $members[] = [
                 'MemberID'  => $m->ID,
-                'FirstName' => $m->FirstName,
-                'Surname'   => $m->Surname,
+                'Name'      => $m->getDisplayName(),
                 'Avatar'    => $m->RenderProfileImage(),
                 'Username'  => $m->Username ?: null,
                 'Role'      => $ms->Role,

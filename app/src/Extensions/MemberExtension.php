@@ -194,6 +194,16 @@ class MemberExtension extends Extension
         return $this->owner->FirstName;
     }
 
+    public function getDisplayName(): string
+    {
+        $visibility = $this->owner->NameVisibility ?: 'full';
+        return match ($visibility) {
+            'first'    => $this->owner->FirstName ?? '',
+            'username' => $this->owner->Username ?: ($this->owner->FirstName ?? ''),
+            default    => trim(($this->owner->FirstName ?? '') . ' ' . ($this->owner->Surname ?? '')),
+        };
+    }
+
     public function RenderProfileImage()
     {
         if ($this->owner->ProfileImageID && $this->owner->ProfileImage()->exists()) {
