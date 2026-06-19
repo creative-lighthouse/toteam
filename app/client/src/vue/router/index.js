@@ -8,6 +8,7 @@ import Food from '@views/Food.vue'
 import Announcements from '@views/Announcements.vue'
 import AnnouncementDetail from '@views/AnnouncementDetail.vue'
 import Profile from '@views/Profile.vue'
+import PublicProfile from '@views/PublicProfile.vue'
 import MealDetail from '@views/MealDetail.vue'
 import Map from '@views/Map.vue'
 import MapDetail from '@views/MapDetail.vue'
@@ -15,6 +16,7 @@ import MapCreate from '@views/MapCreate.vue'
 import MapLayerEdit from '@views/MapLayerEdit.vue'
 import Links from '@views/Links.vue'
 import Organizations from '@views/Organizations.vue'
+import OrganizationDetail from '@views/OrganizationDetail.vue'
 import Login from '@views/Login.vue'
 import Register from '@views/Register.vue'
 
@@ -70,6 +72,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/profile/:username',
+    name: 'PublicProfile',
+    component: PublicProfile,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/map',
     name: 'Map',
     component: Map,
@@ -103,6 +111,12 @@ const routes = [
     path: '/organizations',
     name: 'Organizations',
     component: Organizations,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/organizations/:username',
+    name: 'OrganizationDetail',
+    component: OrganizationDetail,
     meta: { requiresAuth: true }
   },
   {

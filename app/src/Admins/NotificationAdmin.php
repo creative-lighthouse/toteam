@@ -14,7 +14,7 @@ class NotificationsAdmin extends ModelAdmin
     private static $menu_title = 'Benachrichtigungen';
 
     private static $url_segment = 'notifications';
-    private static $menu_icon = 'app/client/icons/totems/essen_totem_admin.png';
+    private static $menu_icon_class = 'sp-icon-megaphone-admin-currentColor';
 
     private static $managed_models = [
         SavedNotification::class,

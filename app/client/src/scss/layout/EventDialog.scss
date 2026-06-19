@@ -191,13 +191,48 @@
                 }
             }
 
+            .event-admin-section {
+                .add-actions-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-top: 20px;
+
+                    button {
+                        background: none;
+                        border: none;
+                        color: var(--ColorPrimary);
+                        font-size: 13px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        padding: 5px 10px;
+                        border-radius: var(--BorderRadiusSmall);
+                        display: flex;
+                        align-items: center;
+                        background-color: var(--ColorLightGray);
+                        gap: 6px;
+
+                        .action-icon {
+                            width: 20px;
+                            height: 20px;
+                        }
+
+                        p { margin: 0; }
+
+                        &:hover { text-decoration: underline; }
+                        &:disabled { opacity: 0.5; cursor: default; }
+                    }
+                }
+            }
+
             .status--Scheduled { color: var(--ColorStatusGood); font-weight: bold; }
             .status--Suggested { color: var(--ColorStatusWarning); font-weight: bold; }
             .status--Cancelled { color: var(--ColorStatusBad); font-weight: bold; }
 
             .participants-section,
-            .meals-section {
-                padding: 15px 0 0 0;
+            .meals-section,
+            .event-admin-section {
+                padding: 15px 0 15px 0;
             }
 
             form {
@@ -498,6 +533,38 @@
                                     background-color: var(--ColorGray);
                                     border: var(--ColorLightGray) 1px solid;
                                     color: var(--ColorWhite);
+                                }
+                            }
+                        }
+                    }
+
+                    .meal-info {
+                        .meal-info-row {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+
+                            .meal-name {
+                                font-size: 14px;
+                                font-weight: 500;
+                                color: var(--ColorFont);
+                            }
+
+                            .meal-manage-actions {
+                                display: flex;
+                                gap: 5px;
+                                .button {
+                                    margin: 0;
+                                    border-radius: 50%;
+                                    padding: 0;
+                                    background-color: var(--ColorLightGray);
+
+                                    img {
+                                        width: 24px;
+                                        height: 24px;
+                                        padding: 5px;
+                                        display: block;
+                                    }
                                 }
                             }
                         }

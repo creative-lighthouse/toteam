@@ -1,0 +1,233 @@
+@use "../variables" as *;
+
+section.section--OrganizationDetailPage {
+    padding: 0;
+    margin: 0 auto 100px;
+    max-width: var(--MaxWidth);
+
+    .org-detail-notfound {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--ColorStatusBad);
+    }
+
+    .org-detail-hero {
+        position: relative;
+        width: 100%;
+        height: 220px;
+        background-color: var(--ColorLightGray);
+        flex-shrink: 0;
+        padding: 0 10px;
+
+        @include media(max-medium) {
+            height: 160px;
+        }
+
+        .org-detail-hero_cover {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            border-radius: 10px;
+        }
+
+        .org-detail-hero_cover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .org-detail-hero_cover-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--ColorPrimary) 0%, color-mix(in srgb, var(--ColorPrimary) 60%, black) 100%);
+            opacity: 0.35;
+        }
+
+        .org-detail-hero_logo-wrap {
+            position: absolute;
+            bottom: -28px;
+            left: 28px;
+            width: 64px;
+            height: 64px;
+            border-radius: var(--BorderRadiusMedium);
+            border: 3px solid var(--ColorWhite);
+            overflow: hidden;
+            background-color: var(--ColorWhite);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+            @include media(max-medium) {
+                left: 16px;
+                width: 52px;
+                height: 52px;
+                bottom: -22px;
+            }
+        }
+
+        .org-detail-hero_logo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .org-detail-hero_logo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-weight: 700;
+            font-size: 26px;
+        }
+    }
+
+    .org-detail-content {
+        padding: 48px 28px 40px;
+
+        @include media(max-medium) {
+            padding: 40px 16px 32px;
+        }
+    }
+
+    .org-detail-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+
+        @include media(max-medium) {
+            flex-direction: column;
+        }
+    }
+
+    .org-detail-title {
+        margin: 0 0 4px;
+    }
+
+    .org-detail-username {
+        font-size: 14px;
+        color: var(--ColorGray);
+        margin: 0;
+    }
+
+    .org-detail-header_actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .org-detail-count {
+        font-size: 13px;
+        color: var(--ColorGray);
+        white-space: nowrap;
+    }
+
+    .org-detail-membership-badge {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: var(--BorderRadiusSmall);
+
+        &--member    { background-color: color-mix(in srgb, var(--ColorStatusGood) 12%, transparent); color: var(--ColorStatusGood); }
+        &--moderator { background-color: color-mix(in srgb, var(--ColorPrimary) 12%, transparent); color: var(--ColorPrimary); }
+        &--admin     { background-color: color-mix(in srgb, var(--ColorPrimary) 20%, transparent); color: var(--ColorPrimaryDark); }
+        &--applicant { background-color: var(--ColorLightGray); color: var(--ColorGray); }
+    }
+
+    .org-detail-description {
+        font-size: 15px;
+        line-height: 1.65;
+        color: var(--ColorBlack);
+        margin: 0 0 32px;
+        max-width: 720px;
+    }
+
+    .org-detail-members {
+        margin-top: 8px;
+
+        .org-detail-members_title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ColorGray);
+            margin: 0 0 14px;
+        }
+
+        .org-detail-members_grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+
+            @include media(max-smartphone) {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            }
+        }
+    }
+
+    .org-detail-member {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 16px 12px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        text-decoration: none;
+        color: inherit;
+        transition: box-shadow 0.15s, transform 0.15s;
+
+        &:not(.org-detail-member--no-link):hover {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        &.org-detail-member--no-link {
+            cursor: default;
+        }
+
+        .org-detail-member_avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--ColorLightGray);
+        }
+
+        .org-detail-member_name {
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .org-detail-member_role {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 2px 7px;
+            border-radius: var(--BorderRadiusSmall);
+
+            &--admin     { background-color: color-mix(in srgb, var(--ColorPrimary) 15%, transparent); color: var(--ColorPrimaryDark); }
+            &--moderator { background-color: color-mix(in srgb, var(--ColorPrimary) 10%, transparent); color: var(--ColorPrimary); }
+            &--member    { background-color: var(--ColorLightGray); color: var(--ColorGray); }
+        }
+    }
+}
+
+.organization-card--clickable {
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.13);
+    }
+}

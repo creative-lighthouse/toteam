@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "17b43ea76cf64627ece58289bb303673",
+    "content-hash": "a6fb601e9374618e8cbb5c6c692ecbd1",
     "packages": [
         {
             "name": "atwx/silverstripe-vitehelper",
@@ -3756,6 +3756,54 @@
                 "source": "https://github.com/sminnee/callbacklist/tree/0.1.1"
             },
             "time": "2020-12-06T22:00:29+00:00"
+        },
+        {
+            "name": "stevenpaw/stevens-silverstripe-icons",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/StevenPaw/stevens-silverstripe-icons.git",
+                "reference": "6d7f05684e230882b9a07c2df8bacc019d70677b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/StevenPaw/stevens-silverstripe-icons/zipball/6d7f05684e230882b9a07c2df8bacc019d70677b",
+                "reference": "6d7f05684e230882b9a07c2df8bacc019d70677b",
+                "shasum": ""
+            },
+            "default-branch": true,
+            "type": "silverstripe-vendormodule",
+            "extra": {
+                "expose": [
+                    "client/dist"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Steffen Kahl",
+                    "homepage": "https://www.steffenkahl.com/",
+                    "role": "Developer & Designer"
+                }
+            ],
+            "description": "A whole Set of new icons for SilverStripe CMS",
+            "keywords": [
+                "Steven",
+                "admin",
+                "elemental",
+                "icons",
+                "pages",
+                "silverstripe",
+                "sp"
+            ],
+            "support": {
+                "issues": "https://github.com/StevenPaw/stevens-silverstripe-icons/issues",
+                "source": "https://github.com/StevenPaw/stevens-silverstripe-icons/tree/main"
+            },
+            "time": "2026-06-15T14:12:50+00:00"
         },
         {
             "name": "symbiote/silverstripe-gridfieldextensions",
@@ -8670,7 +8718,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "ryanpotter/silverstripe-cms-theme": 20
+        "ryanpotter/silverstripe-cms-theme": 20,
+        "stevenpaw/stevens-silverstripe-icons": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

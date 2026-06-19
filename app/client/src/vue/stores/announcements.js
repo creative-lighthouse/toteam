@@ -14,6 +14,11 @@ export const useAnnouncementsStore = defineStore('announcements', () => {
     return announcements.value.filter(a => a.CategoryID === selectedCategory.value.ID)
   })
 
+  const usedCategories = computed(() => {
+    const usedIDs = new Set(announcements.value.map(a => a.CategoryID).filter(Boolean))
+    return categories.value.filter(c => usedIDs.has(c.ID))
+  })
+
   async function fetchAnnouncements(forceRefresh = false) {
     try {
       loading.value = true
@@ -50,6 +55,7 @@ export const useAnnouncementsStore = defineStore('announcements', () => {
   return {
     announcements,
     categories,
+    usedCategories,
     selectedCategory,
     loading,
     error,

@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <dialog ref="dialogEl" class="settings-modal" @click="handleBackdropClick">
+    <dialog ref="dialogEl" class="settings-modal" @cancel.prevent="close">
       <div class="settings-modal_content" @click.stop>
         <div class="settings-modal_header">
           <h2 class="hl2 settings-modal_title">Einstellungen</h2>
@@ -56,15 +56,6 @@
               <input type="checkbox" v-model="darkMode" @change="applyDarkMode" class="settings-toggle_input">
               <span class="settings-toggle_track"></span>
             </label>
-
-            <div class="settings-select">
-              <span class="settings-select_label">Navigation Style</span>
-              <select class="settings-select_input" v-model="navStyle" @change="applyNavStyle">
-                <option v-for="option in navStyleOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
           </section>
         </div>
       </div>
@@ -90,12 +81,6 @@ const prefs = reactive({
 })
 
 const darkMode = ref(false)
-const navStyle = ref(uiStore.navStyle)
-
-const navStyleOptions = [
-  { value: 'AppMenu--default', label: 'Standard' },
-  { value: 'AppMenu--iphone', label: 'iPhone' },
-]
 
 onMounted(() => {
   darkMode.value = document.body.classList.contains('theme--dark')
@@ -108,10 +93,6 @@ async function open() {
 
 function close() {
   dialogEl.value?.close()
-}
-
-function handleBackdropClick(e) {
-  if (e.target === dialogEl.value) close()
 }
 
 async function loadPrefs() {
@@ -140,10 +121,6 @@ async function savePrefs() {
 function applyDarkMode() {
   document.body.classList.toggle('theme--dark', darkMode.value)
   localStorage.setItem('theme', darkMode.value ? 'dark' : 'light')
-}
-
-function applyNavStyle() {
-  uiStore.setNavStyle(navStyle.value)
 }
 
 defineExpose({ open, close })

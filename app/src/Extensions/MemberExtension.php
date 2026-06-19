@@ -9,6 +9,8 @@ use App\HumanResources\Allergy;
 use SilverStripe\Core\Extension;
 use App\SuggestionBox\Suggestion;
 use SilverStripe\Forms\FieldList;
+use App\Calendar\Absence;
+use App\Calendar\AppointmentParticipation;
 use App\Events\EventDayParticipation;
 use SilverStripe\Forms\DropdownField;
 use App\Controllers\AnnouncementsController;
@@ -20,6 +22,8 @@ use App\Teams\OrganizationMembership;
  *
  * @property \SilverStripe\Security\Member|\App\Extensions\MemberExtension $owner
  * @property ?string $Joindate
+ * @property ?string $Username
+ * @property ?string $NameVisibility
  * @property ?string $FoodPreference
  * @property ?string $DateOfBirth
  * @property ?string $Hash
@@ -36,7 +40,9 @@ use App\Teams\OrganizationMembership;
 class MemberExtension extends Extension
 {
     private static $db = [
-        "Joindate"       => "Date",
+        "Joindate"         => "Date",
+        "Username"         => "Varchar(50)",
+        "NameVisibility"   => "Enum('full,first,username','full')",
         "FoodPreference" => "Varchar(255)",
         "DateOfBirth"    => "Date",
         "Hash"           => "Varchar(255)",
@@ -108,6 +114,28 @@ class MemberExtension extends Extension
         }
     }
 
+    public function onBeforeDelete()
+    {
+        $id = $this->owner->ID;
+
+        foreach (Absence::get()->filter('MemberID', $id) as $absence) {
+            $absence->Organisations()->removeAll();
+            $absence->delete();
+        }
+
+        foreach (AppointmentParticipation::get()->filter('MemberID', $id) as $participation) {
+            $participation->delete();
+        }
+
+        foreach (EventDayParticipation::get()->filter('MemberID', $id) as $participation) {
+            $participation->delete();
+        }
+
+        foreach (OrganizationMembership::get()->filter('MemberID', $id) as $membership) {
+            $membership->delete();
+        }
+    }
+
     public function getParticipations()
     {
         return EventDayParticipation::get()->filter('MemberID', $this->owner->ID);
@@ -149,7 +177,7 @@ class MemberExtension extends Extension
         $atts = array(); //Extra attributes to add
 
         $url = 'https://www.gravatar.com/avatar/';
-        $url .= md5(strtolower(trim($this->owner->Email)));
+        $url .= md5(strtolower(trim($this->owner->Email ?? '')));
         $url .= "?s=$s&d=$d&r=$r";
         if ($img) {
             $url = '<img src="' . $url . '"';

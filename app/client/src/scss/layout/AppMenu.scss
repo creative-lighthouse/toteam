@@ -9,9 +9,7 @@
 
     .primary_menu {
         position: fixed;
-        bottom: 5px;
         left: 5px;
-        width: calc(100% - 10px);
         right: 5px;
         display: flex;
         justify-content: space-between;
@@ -24,6 +22,9 @@
         box-shadow: var(--BoxShadowMenu);
         z-index: 100;
         view-transition-name: primary-menu;
+
+        bottom: 17px;
+        width: calc(100% - 30px);
 
         gap: 20px;
         height: auto;
@@ -300,7 +301,8 @@
         }
 
         .secnav--open &{
-            bottom: 50px;
+            bottom: 40px;
+            padding-bottom: 30px;
 
             .nav_button{
                 right: -50px;
@@ -434,9 +436,10 @@
         }
 
         .profilenav--open &{
-            bottom: 30px;
             opacity: 1;
             pointer-events: auto;
+            bottom: 40px;
+            padding-bottom: 50px;
         }
     }
 
@@ -472,27 +475,6 @@
     .profilenav--open &, .secnav--open &{
         &::after{
             opacity: 1;
-        }
-    }
-
-    &.AppMenu--iphone {
-        .primary_menu {
-            bottom: 17px;
-            width: calc(100% - 30px);
-        }
-
-        .secondarynav {
-            .secnav--open & {
-                bottom: 40px;
-                padding-bottom: 30px;
-            }
-        }
-
-        .profilenav {
-            .profilenav--open &{
-                bottom: 40px;
-                padding-bottom: 50px;
-            }
         }
     }
 }

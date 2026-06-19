@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <dialog ref="dialogEl" class="applicants-modal" @click="handleBackdropClick">
+    <dialog ref="dialogEl" class="applicants-modal" @cancel.prevent="close">
       <div class="applicants-modal_content" @click.stop>
         <div class="applicants-modal_header">
           <h2 class="hl2 applicants-modal_title">Bewerber – {{ org?.Title }}</h2>
@@ -78,9 +78,7 @@ function close() {
   dialogEl.value?.close()
 }
 
-function handleBackdropClick(e) {
-  if (e.target === dialogEl.value) close()
-}
+
 
 async function loadApplicants() {
   try {
