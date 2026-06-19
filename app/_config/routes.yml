@@ -18,5 +18,6 @@ SilverStripe\Control\Director:
     'api/v1/register': 'App\Controllers\Api\RegisterApiController'
     'api/v1/maps//$Action/$ID': 'App\Controllers\Api\MapsApiController'
     'api/v1/food//$Action/$ID': 'App\Controllers\Api\FoodApiController'
+    'api/v1/profile//$Action/$ID': 'App\Controllers\Api\ProfileApiController'
     'api/v1/calendar//$Action/$ID': 'App\Controllers\Api\CalendarApiController'
     'api/notifications//$Action': 'App\Controllers\NotificationApiController'

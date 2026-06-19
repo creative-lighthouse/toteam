@@ -20,6 +20,7 @@ use App\Teams\OrganizationMembership;
  *
  * @property \SilverStripe\Security\Member|\App\Extensions\MemberExtension $owner
  * @property ?string $Joindate
+ * @property ?string $Username
  * @property ?string $FoodPreference
  * @property ?string $DateOfBirth
  * @property ?string $Hash
@@ -37,6 +38,7 @@ class MemberExtension extends Extension
 {
     private static $db = [
         "Joindate"       => "Date",
+        "Username"       => "Varchar(50)",
         "FoodPreference" => "Varchar(255)",
         "DateOfBirth"    => "Date",
         "Hash"           => "Varchar(255)",

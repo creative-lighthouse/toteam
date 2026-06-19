@@ -1,17 +1,16 @@
 @use "../variables" as *;
 
-.section.section--ProfilePage {
+section.section--ProfilePage {
     .section_content {
         text-align: center;
 
-        .section_profileimage {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 20px auto;
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 16px;
             border-radius: 50%;
             overflow: hidden;
-            border: 4px solid var(--ColorPrimaryLight);
-            display: block;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
             img {
                 width: 100%;
@@ -20,134 +19,96 @@
             }
         }
 
-        .section_details {
-            margin: 0 auto;
+        .profile-email {
+            color: var(--ColorGray);
+            font-size: 14px;
+            margin: 4px 0 16px;
+        }
 
-            td{
-                padding: 8px 10px;
+        .profile-details {
+            margin: 0 auto 20px;
+            border-collapse: collapse;
+
+            th, td {
+                padding: 5px 10px;
+                font-size: 14px;
                 text-align: left;
-
-                &:first-of-type{
-                    font-weight: bold;
-                    color: var(--ColorTextSecondary);
-                    text-align: right;
-                }
-            }
-        }
-    }
-}
-
-.section_editprofilemodal {
-    border: none;
-    max-width: 400px;
-    width: 90%;
-    border-radius: var(--BorderRadiusMedium);
-    font-weight: 500;
-    padding: 0;
-    text-align: center;
-
-    .modal-header{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        width: 100%;
-        background-color: black;
-        padding: 15px 20px;
-        color: white;
-
-        .modal-title{
-            margin: 0;
-        }
-    }
-
-    .dialog_close {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: white;
-    }
-
-    .modal-body {
-        padding: 20px;
-        text-align: left;
-
-        form {
-            border: none;
-
-            fieldset{
-                border: none;
-                margin: 0 auto;
-                padding: 0;
-
-                .field {
-                    margin-bottom: 15px;
-                    text-align: left;
-
-                    label {
-                        display: block;
-                        margin-bottom: 5px;
-                        font-weight: bold;
-                    }
-
-                    input, select {
-                        width: 100%;
-                        padding: 8px;
-                        border: 1px solid #ccc;
-                        border-radius: var(--BorderRadiusSmall);
-                        box-sizing: border-box;
-                    }
-
-                    .checkboxset{
-                        display: flex;
-                        flex-direction: column;
-                        gap: 5px;
-                        margin: 0;
-                        list-style: none;
-                        padding: 0;
-
-                        li{
-                            display: flex;
-                            align-items: flex-start;
-                            gap: 10px;
-
-                            input[type="checkbox"]{
-                                margin: 0;
-                                width: auto;
-                            }
-                        }
-                    }
-                }
             }
 
-            .btn-toolbar {
-                text-align: center;
+            th {
+                font-weight: 600;
+                color: var(--ColorGray);
+                text-align: right;
+                white-space: nowrap;
+            }
 
-                input[type="submit"] {
-                    background-color: var(--ColorPrimary);
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
+            td {
+                color: var(--ColorBlack);
+            }
+        }
+
+        .profile-username {
+            font-size: 14px;
+            color: var(--ColorGray);
+            margin: -8px 0 12px;
+        }
+
+        .profile-orgs {
+            width: 100%;
+            margin: 8px auto 4px;
+            text-align: left;
+            max-width: 400px;
+
+            .profile-orgs_title {
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--ColorGray);
+                margin: 0 0 8px;
+            }
+
+            .profile-org-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 7px 0;
+                border-top: 1px solid var(--ColorLightGray);
+
+                &:last-child {
+                    border-bottom: 1px solid var(--ColorLightGray);
+                }
+
+                .profile-org-item_logo {
+                    width: 32px;
+                    height: 32px;
                     border-radius: var(--BorderRadiusSmall);
-                    cursor: pointer;
-                    font-size: 16px;
+                    object-fit: contain;
+                    flex-shrink: 0;
+                }
 
-                    &:hover {
-                        background-color: var(--ColorPrimaryDark);
+                .profile-org-item_text {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1px;
+
+                    strong {
+                        font-size: 14px;
                     }
+                }
+
+                .profile-org-item_role {
+                    font-size: 12px;
+                    color: var(--ColorGray);
                 }
             }
         }
-    }
 
-    &::backdrop {
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(5px);
-        z-index: -1;
+        .profile-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
     }
 }

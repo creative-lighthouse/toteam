@@ -103,21 +103,25 @@ class AuthApiController extends ApiController
     private function serializeMember(Member $member): array
     {
         $data = [
-            'ID' => $member->ID,
-            'Email' => $member->Email,
-            'FirstName' => $member->FirstName,
-            'Surname' => $member->Surname,
-            'Gravatar' => $member->getGravatar(),
-            'Hash' => $member->Hash
+            'ID'             => $member->ID,
+            'Email'          => $member->Email,
+            'FirstName'      => $member->FirstName,
+            'Surname'        => $member->Surname,
+            'Gravatar'       => $member->getGravatar(),
+            'Hash'           => $member->Hash,
+            'Username'       => $member->Username ?: null,
+            'FoodPreference' => $member->FoodPreference ?: 'None',
+            'DateOfBirth'    => $member->DateOfBirth,
+            'Joindate'       => $member->Joindate,
         ];
-        
+
         // Add profile image if exists
-        if ($member->hasMethod('getProfileImage') && $member->getProfileImage() && $member->getProfileImage()->exists()) {
+        if ($member->ProfileImageID && $member->ProfileImage()->exists()) {
             $data['ProfileImage'] = [
-                'URL' => $member->getProfileImage()->FillMax(300, 300)->getURL()
+                'URL' => $member->ProfileImage()->FillMax(300, 300)->getURL()
             ];
         }
-        
+
         return $data;
     }
 }

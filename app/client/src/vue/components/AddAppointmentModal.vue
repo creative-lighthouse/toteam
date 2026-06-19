@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <dialog ref="dialogEl" class="event-modal addappointmentmodal" @click="handleBackdropClick">
+    <dialog ref="dialogEl" class="event-modal addappointmentmodal" @cancel.prevent="close">
       <div class="dialog-content" @click.stop>
 
         <!-- Header -->
@@ -399,10 +399,6 @@ async function deleteAppointment() {
   } finally {
     apptSubmitting.value = false
   }
-}
-
-function handleBackdropClick(e) {
-  if (e.target === dialogEl.value) close()
 }
 
 async function loadOrgsAndTypes() {

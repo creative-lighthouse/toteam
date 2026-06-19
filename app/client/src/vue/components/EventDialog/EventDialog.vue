@@ -3,7 +3,7 @@
     <dialog
       ref="dialogEl"
       :class="['event-modal', `event-modal--${event.Status}`]"
-      @click="handleBackdropClick"
+      @cancel.prevent="$emit('close')"
     >
       <div class="dialog-content" @click.stop>
         <EventDialogHeader :event="event" @close="$emit('close')" />
@@ -81,21 +81,11 @@ function showStatusMessage(text, type = 'success') {
   setTimeout(() => { statusMessage.value = null }, 3000)
 }
 
-function handleBackdropClick(e) {
-  if (e.target === dialogEl.value) emit('close')
-}
-
-function handleEscape(e) {
-  if (e.key === 'Escape') emit('close')
-}
-
 onMounted(() => {
   dialogEl.value?.showModal()
-  document.addEventListener('keydown', handleEscape)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscape)
   dialogEl.value?.close()
 })
 </script>

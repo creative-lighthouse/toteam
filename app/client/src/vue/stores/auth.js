@@ -78,6 +78,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
   
+  function updateUser(data) {
+    if (user.value) {
+      Object.assign(user.value, data)
+    }
+  }
+
   return {
     // State
     user,
@@ -90,6 +96,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Actions
     checkAuth,
     login,
-    logout
+    logout,
+    updateUser
   }
 })
