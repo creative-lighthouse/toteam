@@ -39,7 +39,7 @@ const deferredPrompt = ref(null)
 const mode = ref(null) // 'install' | 'open' | 'ios'
 const visible = ref(false)
 
-const appUrl = window.location.origin
+const appUrl = window.location.href
 
 const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
 
