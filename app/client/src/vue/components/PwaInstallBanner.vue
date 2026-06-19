@@ -22,7 +22,7 @@
                 </div>
             </div>
             <div class="pwa-banner_actions">
-                <a v-if="mode === 'open'" :href="appUrl" class="button pwa-banner_btn">Öffnen</a>
+                <a v-if="mode === 'open'" :href="appUrl" target="_blank" rel="noopener" class="button pwa-banner_btn">Öffnen</a>
                 <button v-else-if="mode === 'install'" class="button pwa-banner_btn" @click="install">Installieren</button>
                 <button class="pwa-banner_close" @click="dismiss" aria-label="Schließen">&#x2715;</button>
             </div>

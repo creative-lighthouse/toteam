@@ -21,6 +21,16 @@
       "name": "Kalender",
       "url": "/app/calendar",
       "description": "Verfügbarkeiten eintragen und ansehen"
+    },
+    {
+      "name": "Ankündigungen",
+      "url": "/app/announcements",
+      "description": "Wichtige Mitteilungen auf einen Blick"
+    },
+    {
+      "name": "Links & Downloads",
+      "url": "/app/links",
+      "description": "Wichtige Links und Dokumente auf einen Blick"
     }
   ],
   "orientation": "portrait",
