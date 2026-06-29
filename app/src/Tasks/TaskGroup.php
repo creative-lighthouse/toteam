@@ -10,8 +10,8 @@ use SilverStripe\Security\PermissionProvider;
  * Class \App\Tasks\TaskGroup
  *
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\Task[] Tasks()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

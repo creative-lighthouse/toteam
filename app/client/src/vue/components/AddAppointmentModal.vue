@@ -168,6 +168,20 @@
                     <textarea v-model="appt.description" rows="3"></textarea>
                 </label>
 
+                <label class="field field--features">
+                    Features
+                    <div class="multiselect-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" v-model="appt.enableMeals" />
+                            Mahlzeiten
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" v-model="appt.enableAgenda" />
+                            Tagesordnung
+                        </label>
+                    </div>
+                </label>
+
                 <div v-if="apptError" class="form-error">{{ apptError }}</div>
 
                 <div class="form-actions">
@@ -199,7 +213,9 @@ import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import { apiGet } from '@utils/api'
 
-const emit = defineEmits(['appointment-created', 'absence-created', 'appointment-updated', 'absence-updated', 'appointment-deleted', 'absence-deleted'])
+const emit = defineEmits(['appointment-created', 'absence-created', 'appointment-updated', 'absence-updated', 'appointment-deleted', 'absence-deleted', 'closed'])
+
+const savedThisSession = ref(false)
 
 const dialogEl = ref(null)
 const activeTab = ref('absence')
@@ -259,6 +275,7 @@ async function submitAbsence() {
       note: absence.value.note || null,
       organizationIds: absence.value.allOrgs ? [] : absence.value.organizationIds,
     }
+    savedThisSession.value = true
     if (editMode.value === 'absence') {
       await eventsStore.updateAbsence(editId.value, payload)
       emit('absence-updated')
@@ -279,6 +296,7 @@ async function deleteAbsence() {
   if (!confirm('Abwesenheit wirklich löschen?')) return
   absenceSubmitting.value = true
   try {
+    savedThisSession.value = true
     await eventsStore.deleteAbsence(editId.value)
     emit('absence-deleted')
     close()
@@ -347,6 +365,8 @@ function resetAppt(date = '') {
     description: '',
     status: 'Scheduled',
     organizationIds: [],
+    enableMeals: true,
+    enableAgenda: true,
   }
 }
 
@@ -370,7 +390,10 @@ async function submitAppointment() {
       status: appt.value.status,
       typeId: appt.value.typeId || null,
       organizationIds: appt.value.organizationIds,
+      enableMeals: appt.value.enableMeals,
+      enableAgenda: appt.value.enableAgenda,
     }
+    savedThisSession.value = true
     if (editMode.value === 'appointment') {
       await eventsStore.updateAppointment(editId.value, payload)
       emit('appointment-updated')
@@ -391,6 +414,7 @@ async function deleteAppointment() {
   if (!confirm('Termin wirklich löschen?')) return
   apptSubmitting.value = true
   try {
+    savedThisSession.value = true
     await eventsStore.deleteAppointment(editId.value)
     emit('appointment-deleted')
     close()
@@ -473,6 +497,8 @@ async function openEditAppointment(event) {
     status: event.Status ?? 'Scheduled',
     typeId: event.TypeID ?? '',
     organizationIds: (event.OrganizationIDs ?? []).map(Number),
+    enableMeals: event.EnableMeals ?? true,
+    enableAgenda: event.EnableAgenda ?? true,
   }
 
   dialogEl.value?.showModal()
@@ -480,6 +506,8 @@ async function openEditAppointment(event) {
 
 function close() {
   dialogEl.value?.close()
+  emit('closed', savedThisSession.value)
+  savedThisSession.value = false
 }
 
 defineExpose({ open, openEditAbsence, openEditAppointment })

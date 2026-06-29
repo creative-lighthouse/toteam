@@ -38,6 +38,8 @@ use SilverStripe\Forms\TimeField;
  * @property ?string $Description
  * @property int $ICSSequence
  * @property ?string $Status
+ * @property bool $EnableMeals
+ * @property bool $EnableAgenda
  * @property int $ImageID
  * @property int $TypeID
  * @method \SilverStripe\Assets\Image Image()
@@ -46,8 +48,8 @@ use SilverStripe\Forms\TimeField;
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
@@ -67,6 +69,9 @@ class Appointment extends DataObject implements PermissionProvider
         "Description" => "Text",
         "ICSSequence" => "Int",
         "Status" => "Enum('Suggested,Scheduled,Cancelled','Scheduled')",
+
+        "EnableMeals" => "Boolean(1)",
+        "EnableAgenda" => "Boolean(1)",
     ];
 
     private static $has_one = [

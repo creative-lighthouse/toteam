@@ -30,6 +30,12 @@
             @show-status="({ text, type }) => showStatusMessage(text, type)"
           />
 
+          <EventAgendaSection
+            :event="event"
+            :can-manage-content="canManageContent"
+            @show-status="({ text, type }) => showStatusMessage(text, type)"
+          />
+
           <EventParticipantsList :event="event" />
 
           <EventAdminSection
@@ -56,6 +62,7 @@ import EventDialogHeader from './EventDialogHeader.vue'
 import EventInfo from './EventInfo.vue'
 import EventParticipationForm from './EventParticipationForm.vue'
 import EventMealsSection from './EventMealsSection.vue'
+import EventAgendaSection from './EventAgendaSection.vue'
 import EventParticipantsList from './EventParticipantsList.vue'
 import EventAdminSection from './EventAdminSection.vue'
 

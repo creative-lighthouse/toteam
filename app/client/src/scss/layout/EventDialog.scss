@@ -164,15 +164,180 @@
                 }
             }
 
+            // ── Shared: section header with inline "+" button ────────────────────
+            .section-feature-header {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 10px;
+
+                h3 {
+                    margin: 0;
+                    font-size: 18px;
+                    color: var(--ColorFont);
+                }
+            }
+
+            .btn-feature-add {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background-color: var(--ColorLightGray);
+                border: none;
+                color: var(--ColorPrimary);
+                font-size: 20px;
+                font-weight: 400;
+                line-height: 1;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                flex-shrink: 0;
+                margin-left: 10px;
+                transition: background-color 0.15s ease, color 0.15s ease;
+
+                &:hover:not(:disabled) {
+                    background-color: var(--ColorPrimary);
+                    color: var(--ColorWhite);
+                }
+
+                &:disabled {
+                    opacity: 0.4;
+                    cursor: default;
+                }
+            }
+
+            .event-section-empty {
+                font-size: 13px;
+                color: var(--ColorGray);
+                margin: 4px 0 0 0;
+                padding: 6px 0;
+            }
+
+            // ── Shared: add / edit inline forms in feature sections ──────────────
+            .meals-section,
+            .agenda-section {
+                .fieldset-update-time {
+                    border: none;
+                    padding: 0;
+                    margin-top: 10px;
+                    display: block;
+
+                    .time-input-row {
+                        display: grid;
+                        grid-template-columns: 90px 1fr;
+                        align-items: center;
+                        gap: 6px;
+                        margin-bottom: 8px;
+
+                        label {
+                            font-size: 13px;
+                            font-weight: 500;
+                            white-space: nowrap;
+                        }
+
+                        input,
+                        textarea {
+                            border: 1px solid var(--ColorLightGray);
+                            border-radius: var(--BorderRadiusSmall);
+                            padding: 7px 8px;
+                            font-size: 14px;
+                            width: 100%;
+                            box-sizing: border-box;
+                            font-family: inherit;
+                        }
+
+                        textarea {
+                            resize: vertical;
+                            min-height: 56px;
+                        }
+                    }
+
+                    .time-button-row {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        margin-top: 4px;
+
+                        .button--small {
+                            padding: 6px 14px;
+                            font-size: 13px;
+                            margin: 0;
+                        }
+
+                        .btn-remove-time {
+                            background: none;
+                            border: none;
+                            color: var(--ColorGray);
+                            font-size: 13px;
+                            cursor: pointer;
+                            padding: 4px 0;
+
+                            &:hover { color: #c33; text-decoration: underline; }
+                            &:disabled { opacity: 0.5; cursor: default; }
+                        }
+                    }
+                }
+            }
+
+            // ── Meals section ────────────────────────────────────────────────────
             .meals-section {
                 border-bottom: 1px solid var(--ColorLightGray);
                 padding: 15px 0;
+            }
 
-                .event-meals_title {
-                    margin-top: 0;
-                    margin-bottom: 10px;
-                    font-size: 18px;
-                    color: var(--ColorFont);
+            // ── Agenda section ───────────────────────────────────────────────────
+            .agenda-section {
+                border-bottom: 1px solid var(--ColorLightGray);
+                padding: 15px 0;
+
+                .agenda-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+
+                    .agenda-point {
+                        .agenda-point-row {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 8px;
+
+                            .agenda-point_time {
+                                font-size: 13px;
+                                color: var(--ColorGray);
+                                font-weight: normal;
+                            }
+
+                            .meal-manage-actions {
+                                display: flex;
+                                flex-shrink: 0;
+                                gap: 5px;
+
+                                .button {
+                                    margin: 0;
+                                    border-radius: 50%;
+                                    padding: 0;
+                                    background-color: var(--ColorLightGray);
+
+                                    img {
+                                        width: 24px;
+                                        height: 24px;
+                                        padding: 5px;
+                                        display: block;
+                                    }
+                                }
+                            }
+                        }
+
+                        .agenda-point_desc {
+                            font-size: 13px;
+                            color: var(--ColorGray);
+                            margin: 4px 0 0 0;
+                            line-height: 1.4;
+                        }
+                    }
                 }
             }
 
@@ -231,6 +396,7 @@
 
             .participants-section,
             .meals-section,
+            .agenda-section,
             .event-admin-section {
                 padding: 15px 0 15px 0;
             }

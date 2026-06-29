@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Calendar\Absence;
 use App\Calendar\Appointment;
+use App\Calendar\AppointmentAgendaPoint;
 use App\Calendar\AppointmentParticipation;
 use App\Calendar\AppointmentType;
 use App\Food\Meal;
@@ -33,6 +34,7 @@ class CalendarApiController extends ApiController
         'appointment',
         'appointmentTypes',
         'meal',
+        'agendaPoint',
     ];
 
     /**
@@ -99,6 +101,19 @@ class CalendarApiController extends ApiController
                 ];
             }
 
+            // Get agenda points
+            $agendaPoints = [];
+            foreach ($appointment->AgendaPoints()->sort('StartTime', 'ASC') as $point) {
+                $agendaPoints[] = [
+                    'ID'          => $point->ID,
+                    'Title'       => $point->Title,
+                    'StartTime'   => $point->StartTime,
+                    'EndTime'     => $point->EndTime,
+                    'Description' => $point->Description,
+                    'RenderTime'  => $point->RenderTime(),
+                ];
+            }
+
             // Get all participations for this appointment
             $participations = [];
             foreach ($appointment->Participations() as $p) {
@@ -156,7 +171,10 @@ class CalendarApiController extends ApiController
                     'CustomTimeframe' => (bool) $participation->CustomTimeframe,
                     'Notes'           => $participation->Notes ?: null,
                 ] : null,
-                'Meals' => $meals,
+                'EnableMeals'   => (bool)$appointment->EnableMeals,
+                'EnableAgenda'  => (bool)$appointment->EnableAgenda,
+                'Meals'         => $meals,
+                'AgendaPoints'  => $agendaPoints,
                 'Participations' => $participations
             ];
         }
@@ -615,17 +633,23 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
             $allDay = !empty($body['allDay']);
-            $appt->Title       = trim($body['title'] ?? '') ?: $appt->Title;
-            $appt->DateStart   = $body['dateStart'] ?? $appt->DateStart;
-            $appt->DateEnd     = $body['dateEnd'] ?: ($body['dateStart'] ?? $appt->DateEnd);
-            $appt->TimeStart   = $allDay ? null : ($body['timeStart'] ?: null);
-            $appt->TimeEnd     = $allDay ? null : ($body['timeEnd'] ?: null);
-            $appt->AllDay      = $allDay;
-            $appt->Location    = $body['location'] ?? '';
-            $appt->Description = $body['description'] ?? '';
-            $appt->Status      = in_array($body['status'] ?? '', ['Suggested', 'Scheduled', 'Cancelled'])
+            $appt->Title        = trim($body['title'] ?? '') ?: $appt->Title;
+            $appt->DateStart    = $body['dateStart'] ?? $appt->DateStart;
+            $appt->DateEnd      = $body['dateEnd'] ?: ($body['dateStart'] ?? $appt->DateEnd);
+            $appt->TimeStart    = $allDay ? null : ($body['timeStart'] ?: null);
+            $appt->TimeEnd      = $allDay ? null : ($body['timeEnd'] ?: null);
+            $appt->AllDay       = $allDay;
+            $appt->Location     = $body['location'] ?? '';
+            $appt->Description  = $body['description'] ?? '';
+            $appt->Status       = in_array($body['status'] ?? '', ['Suggested', 'Scheduled', 'Cancelled'])
                 ? $body['status'] : $appt->Status;
-            $appt->TypeID = !empty($body['typeId']) ? (int) $body['typeId'] : 0;
+            $appt->TypeID       = !empty($body['typeId']) ? (int) $body['typeId'] : 0;
+            if (array_key_exists('enableMeals', $body)) {
+                $appt->EnableMeals = (bool) $body['enableMeals'];
+            }
+            if (array_key_exists('enableAgenda', $body)) {
+                $appt->EnableAgenda = (bool) $body['enableAgenda'];
+            }
             $appt->write();
             $newOrgIDs = array_map('intval', $body['organizationIds'] ?? []);
             if (!empty($newOrgIDs)) {
@@ -841,6 +865,136 @@ class CalendarApiController extends ApiController
             'RenderTime'   => $meal->RenderTime(),
             'UserResponse' => null,
         ], 'Mahlzeit hinzugefügt');
+    }
+
+    /**
+     * CRUD for appointment agenda points (moderator/admin only).
+     * POST   /api/v1/calendar/agendaPoint/:appointmentId  — create
+     * PUT    /api/v1/calendar/agendaPoint/:agendaPointId  — update
+     * DELETE /api/v1/calendar/agendaPoint/:agendaPointId  — delete
+     */
+    public function agendaPoint(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $method = $request->httpMethod();
+        $id     = (int) $request->param('ID');
+
+        if ($method === 'PUT') {
+            $point = AppointmentAgendaPoint::get()->byID($id);
+            if (!$point || !$point->exists()) {
+                return $this->errorResponse('Tagesordnungspunkt nicht gefunden', 404);
+            }
+            $apptOrgIDs = $point->Parent()->Organisations()->column('ID');
+            $hasPermission = OrganizationMembership::get()->filter([
+                'MemberID'       => $member->ID,
+                'OrganizationID' => $apptOrgIDs,
+                'Role'           => ['moderator', 'admin'],
+            ])->exists();
+            if (!$hasPermission) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+
+            $body = $this->getJsonBody();
+            $title = trim($body['title'] ?? '');
+            if (!$title) {
+                return $this->errorResponse('Titel ist erforderlich', 400);
+            }
+            $startTime = $body['startTime'] ?? null;
+            $endTime   = $body['endTime'] ?? null;
+            if ($startTime && preg_match('/^\d{2}:\d{2}$/', $startTime)) {
+                $startTime .= ':00';
+            }
+            if ($endTime && preg_match('/^\d{2}:\d{2}$/', $endTime)) {
+                $endTime .= ':00';
+            }
+
+            $point->Title       = $title;
+            $point->StartTime   = $startTime ?: null;
+            $point->EndTime     = $endTime ?: null;
+            $point->Description = $body['description'] ?? '';
+            $point->write();
+
+            return $this->successResponse([
+                'ID'          => $point->ID,
+                'Title'       => $point->Title,
+                'StartTime'   => $point->StartTime,
+                'EndTime'     => $point->EndTime,
+                'Description' => $point->Description,
+                'RenderTime'  => $point->RenderTime(),
+            ], 'Tagesordnungspunkt aktualisiert');
+        }
+
+        if ($method === 'DELETE') {
+            $point = AppointmentAgendaPoint::get()->byID($id);
+            if (!$point || !$point->exists()) {
+                return $this->errorResponse('Tagesordnungspunkt nicht gefunden', 404);
+            }
+            $apptOrgIDs = $point->Parent()->Organisations()->column('ID');
+            $hasPermission = OrganizationMembership::get()->filter([
+                'MemberID'       => $member->ID,
+                'OrganizationID' => $apptOrgIDs,
+                'Role'           => ['moderator', 'admin'],
+            ])->exists();
+            if (!$hasPermission) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+
+            $point->delete();
+            return $this->successResponse([], 'Tagesordnungspunkt gelöscht');
+        }
+
+        if ($method !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $appointment = Appointment::get()->byID($id);
+        if (!$appointment) {
+            return $this->errorResponse('Termin nicht gefunden', 404);
+        }
+        $apptOrgIDs = $appointment->Organisations()->column('ID');
+        $hasPermission = OrganizationMembership::get()->filter([
+            'MemberID'       => $member->ID,
+            'OrganizationID' => $apptOrgIDs,
+            'Role'           => ['moderator', 'admin'],
+        ])->exists();
+        if (!$hasPermission) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $body = $this->getJsonBody();
+        $title = trim($body['title'] ?? '');
+        if (!$title) {
+            return $this->errorResponse('Titel ist erforderlich', 400);
+        }
+        $startTime = $body['startTime'] ?? null;
+        $endTime   = $body['endTime'] ?? null;
+        if ($startTime && preg_match('/^\d{2}:\d{2}$/', $startTime)) {
+            $startTime .= ':00';
+        }
+        if ($endTime && preg_match('/^\d{2}:\d{2}$/', $endTime)) {
+            $endTime .= ':00';
+        }
+
+        $point = AppointmentAgendaPoint::create();
+        $point->Title       = $title;
+        $point->StartTime   = $startTime ?: null;
+        $point->EndTime     = $endTime ?: null;
+        $point->Description = $body['description'] ?? '';
+        $point->ParentID    = $appointment->ID;
+        $point->write();
+
+        return $this->successResponse([
+            'ID'          => $point->ID,
+            'Title'       => $point->Title,
+            'StartTime'   => $point->StartTime,
+            'EndTime'     => $point->EndTime,
+            'Description' => $point->Description,
+            'RenderTime'  => $point->RenderTime(),
+        ], 'Tagesordnungspunkt hinzugefügt');
     }
 
     /**

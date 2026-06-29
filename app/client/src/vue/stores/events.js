@@ -333,6 +333,48 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
+  async function addAgendaPoint(appointmentId, data) {
+    const response = await apiPost(`/calendar/agendaPoint/${appointmentId}`, data)
+    const event = getEventById(appointmentId)
+    if (event) {
+      if (!event.AgendaPoints) event.AgendaPoints = []
+      event.AgendaPoints.push(response.data)
+      event.AgendaPoints.sort((a, b) => (a.StartTime ?? '').localeCompare(b.StartTime ?? ''))
+    }
+    await clearCacheForEndpoint('/calendar')
+    return response.data
+  }
+
+  async function updateAgendaPoint(pointId, data) {
+    const response = await apiPut(`/calendar/agendaPoint/${pointId}`, data)
+    for (const event of events.value) {
+      if (event.AgendaPoints) {
+        const point = event.AgendaPoints.find(p => p.ID === pointId)
+        if (point) {
+          Object.assign(point, response.data)
+          event.AgendaPoints.sort((a, b) => (a.StartTime ?? '').localeCompare(b.StartTime ?? ''))
+          break
+        }
+      }
+    }
+    await clearCacheForEndpoint('/calendar')
+    return response.data
+  }
+
+  async function deleteAgendaPoint(pointId) {
+    await apiDelete(`/calendar/agendaPoint/${pointId}`)
+    for (const event of events.value) {
+      if (event.AgendaPoints) {
+        const idx = event.AgendaPoints.findIndex(p => p.ID === pointId)
+        if (idx !== -1) {
+          event.AgendaPoints.splice(idx, 1)
+          break
+        }
+      }
+    }
+    await clearCacheForEndpoint('/calendar')
+  }
+
   /**
    * Leert alle Events (z.B. für Logout)
    */
@@ -397,6 +439,9 @@ export const useEventsStore = defineStore('events', () => {
     addMeal,
     updateMeal,
     deleteMeal,
+    addAgendaPoint,
+    updateAgendaPoint,
+    deleteAgendaPoint,
     clearEvents,
     createAbsence,
     updateAbsence,

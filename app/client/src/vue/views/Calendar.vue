@@ -136,6 +136,7 @@
                 @absence-created="refreshAbsences"
                 @absence-updated="refreshAbsences"
                 @absence-deleted="refreshAbsences"
+                @closed="onAddAppointmentModalClosed"
             />
         </div>
     </div>
@@ -143,7 +144,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useAuthStore } from '@stores/auth'
@@ -162,6 +163,7 @@ const canManageContent = computed(() =>
   orgsStore.organizations.some(o => ['moderator', 'admin'].includes(o.MembershipStatus))
 )
 const route = useRoute()
+const router = useRouter()
 usePageHeaderStore().setHeader('Kalender', 'Verwalte deine Termine und Events. Du kannst hier Termine erstellen, einsehen und bei den Terminen Zu- oder absagen')
 
 // Use store state
@@ -401,17 +403,28 @@ async function refreshEvents() {
       selectedDateAbsences.value = []
     }
   }
+  // Reopen event dialog with fresh data after editing
+  const id = pendingReopenId.value
+  pendingReopenId.value = null
+  if (id) {
+    const fresh = eventsStore.getEventById(id)
+    if (fresh) openEventDialog(fresh)
+  }
 }
 
 // Event dialog
 const selectedEvent = ref(null)
+const pendingReopenId = ref(null)
 
 function openEventDialog(event) {
   selectedEvent.value = event
+  router.replace({ query: { ...route.query, eventID: event.ID } })
 }
 
 function closeEventDialog() {
   selectedEvent.value = null
+  const { eventID: _removed, ...rest } = route.query
+  router.replace({ query: rest })
 }
 
 function handleParticipationChanged(_eventId, _updatedParticipation) {
@@ -428,8 +441,21 @@ function handleFoodChanged(mealId, type) {
 }
 
 function onEditAppointment(event) {
-  closeEventDialog()
+  selectedEvent.value = null
+  pendingReopenId.value = event.ID
+  // Remove eventID from URL while editing (onAddAppointmentModalClosed handles both cancel + save)
+  const { eventID: _removed, ...rest } = route.query
+  router.replace({ query: rest })
   entryModalRef.value.openEditAppointment(event)
+}
+
+function onAddAppointmentModalClosed(wasSaved) {
+  if (!wasSaved) {
+    // User cancelled — clear pending reopen and clean up URL
+    pendingReopenId.value = null
+    const { eventID: _removed, ...rest } = route.query
+    router.replace({ query: rest })
+  }
 }
 
 async function onAppointmentDeleted() {
@@ -454,9 +480,9 @@ async function copyICSLink() {
 
 // Load events on mount
 onMounted(async () => {
-  // Check for deep-link query params from notification
+  // Check for deep-link query params from notification or shared URL
   const linkDate = route.query.date
-  const linkEventID = linkDate ? Number(route.query.eventID) : null
+  const linkEventID = route.query.eventID ? Number(route.query.eventID) : null
 
   // If a specific date was linked, navigate to that month
   if (linkDate) {
@@ -482,12 +508,10 @@ onMounted(async () => {
     }
   }
 
-  // If a specific event was linked, open its dialog
+  // If a specific event was linked, open its dialog (without modifying URL since it's already correct)
   if (linkEventID) {
     const event = eventsStore.getEventById(linkEventID)
-    if (event) {
-      selectedEvent.value = event
-    }
+    if (event) selectedEvent.value = event
   }
 })
 </script>

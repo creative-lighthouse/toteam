@@ -24,8 +24,8 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Security\Member Author()
  * @method \App\Announcements\AnnouncementCategory Category()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

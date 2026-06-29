@@ -11,8 +11,8 @@ use SilverStripe\Security\PermissionProvider;
  *
  * @property ?string $Title
  * @method \SilverStripe\ORM\ManyManyList|\App\Announcements\Announcement[] Announcements()
- * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
+ * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
