@@ -751,6 +751,11 @@
                                 }
                             }
                         }
+
+                        @include media(max-medium) {
+                            width: 100%;
+                            margin-top: 10px;
+                        }
                     }
 
                     .meal-info {
@@ -782,7 +787,20 @@
                                     }
                                 }
                             }
+
+                            @include media(max-medium) {
+                                align-items: center;
+                                justify-content: space-between;
+                            }
                         }
+
+                        @include media(max-medium) {
+                            width: 100%;
+                        }
+                    }
+
+                    @include media(max-medium) {
+                        margin: 10px 0;
                     }
                 }
             }
