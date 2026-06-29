@@ -76,8 +76,7 @@
       <div v-for="point in event.AgendaPoints" :key="point.ID" class="agenda-point">
         <div class="agenda-point-row">
           <span>
-            <strong>{{ point.Title }}</strong>
-            <span v-if="point.RenderTime" class="agenda-point_time"> ({{ point.RenderTime }})</span>
+            <span v-if="point.RenderTime" class="agenda-point_time">{{ point.RenderTime }} · </span><strong>{{ point.Title }}</strong>
           </span>
           <div v-if="canManageContent" class="meal-manage-actions">
             <button
@@ -101,7 +100,7 @@
           </div>
         </div>
 
-        <p v-if="point.Description && editingPointId !== point.ID" class="agenda-point_desc">
+        <p v-if="point.Description && editingPointId !== point.ID" class="agenda-point_desc agenda-point_desc--pre">
           {{ point.Description }}
         </p>
 
