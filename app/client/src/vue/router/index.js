@@ -19,6 +19,8 @@ import Organizations from '@views/Organizations.vue'
 import OrganizationDetail from '@views/OrganizationDetail.vue'
 import Login from '@views/Login.vue'
 import Register from '@views/Register.vue'
+import Tasks from '@views/Tasks.vue'
+import TaskDetail from '@views/TaskDetail.vue'
 
 const routes = [
   {
@@ -117,6 +119,18 @@ const routes = [
     path: '/organizations/:username',
     name: 'OrganizationDetail',
     component: OrganizationDetail,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/tasks',
+    name: 'Tasks',
+    component: Tasks,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/tasks/:hash',
+    name: 'TaskDetail',
+    component: TaskDetail,
     meta: { requiresAuth: true }
   },
   {

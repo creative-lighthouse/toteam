@@ -34,8 +34,15 @@ export class Event {
     // Alle Teilnahmen
     this.Participations = data.Participations || []
 
+    // Feature-Flags
+    this.EnableMeals = data.EnableMeals ?? true
+    this.EnableAgenda = data.EnableAgenda ?? true
+
     // Essen/Mahlzeiten
     this.Meals = data.Meals || []
+
+    // Tagesordnung
+    this.AgendaPoints = data.AgendaPoints || []
 
     // Metadata
     this.CreatedAt = data.CreatedAt || null
@@ -157,7 +164,10 @@ export class Event {
       OrganizationIDs: this.OrganizationIDs,
       UserParticipation: this.UserParticipation,
       Participations: this.Participations,
-      Meals: this.Meals
+      EnableMeals: this.EnableMeals,
+      EnableAgenda: this.EnableAgenda,
+      Meals: this.Meals,
+      AgendaPoints: this.AgendaPoints,
     }
   }
 }

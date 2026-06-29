@@ -1,0 +1,173 @@
+@use "../variables" as *;
+
+.section.section--TasksPage {
+    .tasks-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .tasks-toolbar_filters {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .tasks-toolbar_search {
+        min-width: 160px;
+        flex: 1;
+    }
+
+    .tasks-toolbar_select,
+    .tasks-toolbar_date {
+        flex-shrink: 0;
+    }
+
+    // Generic .input styles for the toolbar controls
+    .input {
+        padding: 8px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 14px;
+        background-color: var(--ColorWhite);
+        height: 38px;
+        box-sizing: border-box;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+    }
+
+    .tasks-toolbar_view-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    // Hide kanban toggle on small screens
+    .tasks-toolbar_kanban-btn {
+        @include media(max-medium) {
+            display: none;
+        }
+    }
+
+    // Segmented view toggle
+    .tasks-view-toggle {
+        display: flex;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        overflow: hidden;
+        background-color: var(--ColorLightGray);
+    }
+
+    .tasks-view-toggle_btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 12px;
+        border: none;
+        background-color: var(--ColorLightGray);
+        color: var(--ColorPrimary);
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+        line-height: 1;
+
+        &:hover:not(.tasks-view-toggle_btn--active) {
+            background-color: var(--ColorGray);
+            color: var(--ColorWhite);
+        }
+
+        &--active {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        }
+
+        svg {
+            display: block;
+        }
+    }
+
+    // ── LIST VIEW ────────────────────────────────────────────
+    .tasks-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    // ── KANBAN VIEW ──────────────────────────────────────────
+    .tasks-kanban {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(220px, 1fr));
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 12px;
+
+        @include media(max-desktop) {
+            grid-template-columns: repeat(2, minmax(220px, 1fr));
+        }
+
+        @include media(max-medium) {
+            display: none; // Kanban not shown on small screens
+        }
+    }
+
+    .tasks-kanban_column {
+        background-color: var(--ColorLightGray);
+        border-radius: var(--BorderRadiusMedium);
+        display: flex;
+        flex-direction: column;
+        min-height: 200px;
+    }
+
+    .tasks-kanban_column-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .tasks-kanban_column-title {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ColorGray);
+    }
+
+    .tasks-kanban_column-count {
+        font-size: 12px;
+        font-weight: 700;
+        background-color: var(--ColorWhite);
+        color: var(--ColorGray);
+        padding: 1px 8px;
+        border-radius: 50px;
+    }
+
+    .tasks-kanban_cards {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        flex: 1;
+
+        .task-card {
+            // Slightly smaller in kanban columns
+            padding: 10px 12px;
+
+            .task-card_description {
+                display: none; // Too compact for kanban
+            }
+        }
+    }
+}

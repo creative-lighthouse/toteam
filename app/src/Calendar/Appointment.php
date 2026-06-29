@@ -38,6 +38,8 @@ use SilverStripe\Forms\TimeField;
  * @property ?string $Description
  * @property int $ICSSequence
  * @property ?string $Status
+ * @property bool $EnableMeals
+ * @property bool $EnableAgenda
  * @property int $ImageID
  * @property int $TypeID
  * @method \SilverStripe\Assets\Image Image()
@@ -67,6 +69,9 @@ class Appointment extends DataObject implements PermissionProvider
         "Description" => "Text",
         "ICSSequence" => "Int",
         "Status" => "Enum('Suggested,Scheduled,Cancelled','Scheduled')",
+
+        "EnableMeals" => "Boolean(1)",
+        "EnableAgenda" => "Boolean(1)",
     ];
 
     private static $has_one = [

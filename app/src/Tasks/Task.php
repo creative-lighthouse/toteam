@@ -14,9 +14,14 @@ use SilverStripe\Security\PermissionProvider;
  *
  * @property ?string $Title
  * @property ?string $Description
+ * @property ?string $Deadline
+ * @property ?string $State
+ * @property ?string $Hash
  * @property int $ParentID
+ * @property int $OrganizationID
  * @property int $OwnerID
  * @method \App\Tasks\Task Parent()
+ * @method \App\Teams\Organization Organization()
  * @method \SilverStripe\Security\Member Owner()
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\TaskGroup[] TaskGroups()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Supporters()
@@ -30,20 +35,23 @@ use SilverStripe\Security\PermissionProvider;
 class Task extends DataObject implements PermissionProvider
 {
     private static $db = [
-        "Title" => "Varchar(255)",
+        "Title"       => "Varchar(255)",
         "Description" => "Text",
+        "Deadline"    => "Datetime",
+        "State"       => "Enum('open,in_progress,feedback,finished', 'open')",
+        "Hash"        => "Varchar(64)",
     ];
 
     private static $has_one = [
-        "Parent" => Organization::class,
-        "Owner" => Member::class,
-        "Parent" => Task::class,
+        "Parent"       => Task::class,
+        "Organization" => Organization::class,
+        "Owner"        => Member::class,
     ];
 
     private static $many_many = [
         'TaskGroups' => TaskGroup::class,
         'Supporters' => Member::class,
-        'SubTasks' => Task::class,
+        'SubTasks'   => Task::class,
     ];
 
     private static $owns = [
@@ -51,13 +59,16 @@ class Task extends DataObject implements PermissionProvider
     ];
 
     private static $field_labels = [
-        "Title" => "Titel",
-        "Description" => "Beschreibung",
-        "Owner" => "Verantwortlicher",
-        "TaskGroups" => "Aufgaben-Gruppen",
-        "Supporters" => "Unterstützer",
-        "SubTasks" => "Unteraufgaben",
-        "Parent" => "Organisation",
+        "Title"        => "Titel",
+        "Description"  => "Beschreibung",
+        "Deadline"     => "Fälligkeitsdatum",
+        "State"        => "Status",
+        "Owner"        => "Verantwortlicher",
+        "Organization" => "Organisation",
+        "TaskGroups"   => "Aufgaben-Gruppen",
+        "Supporters"   => "Unterstützer",
+        "SubTasks"     => "Unteraufgaben",
+        "Parent"       => "Übergeordnete Aufgabe",
     ];
 
     private static $summary_fields = [
@@ -67,6 +78,14 @@ class Task extends DataObject implements PermissionProvider
     private static $table_name = 'Task';
     private static $singular_name = "Aufgabe";
     private static $plural_name = "Aufgaben";
+
+    public function onBeforeWrite()
+    {
+        parent::onBeforeWrite();
+        if (!$this->Hash) {
+            $this->Hash = bin2hex(random_bytes(16));
+        }
+    }
 
     public function getCMSFields()
     {
@@ -78,24 +97,24 @@ class Task extends DataObject implements PermissionProvider
     {
         return [
             'CREATE_TASKS' => [
-                'name' => 'Aufgaben erstellen',
+                'name'     => 'Aufgaben erstellen',
                 'category' => 'Aufgaben',
-                'help' => 'Erlaubt das Erstellen, von Aufgaben'
+                'help'     => 'Erlaubt das Erstellen, von Aufgaben'
             ],
             'EDIT_TASKS' => [
-                'name' => 'Aufgaben bearbeiten',
+                'name'     => 'Aufgaben bearbeiten',
                 'category' => 'Aufgaben',
-                'help' => 'Erlaubt das Bearbeiten von Aufgaben'
+                'help'     => 'Erlaubt das Bearbeiten von Aufgaben'
             ],
             'VIEW_TASKS' => [
-                'name' => 'Aufgaben ansehen',
+                'name'     => 'Aufgaben ansehen',
                 'category' => 'Aufgaben',
-                'help' => 'Erlaubt das Ansehen von Aufgaben'
+                'help'     => 'Erlaubt das Ansehen von Aufgaben'
             ],
             'DELETE_TASKS' => [
-                'name' => 'Aufgaben löschen',
+                'name'     => 'Aufgaben löschen',
                 'category' => 'Aufgaben',
-                'help' => 'Erlaubt das Löschen von Aufgaben'
+                'help'     => 'Erlaubt das Löschen von Aufgaben'
             ],
         ];
     }

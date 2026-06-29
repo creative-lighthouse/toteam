@@ -19,12 +19,40 @@
             <img :src="meal.organizationLogoUrl" :alt="meal.organizationTitle" />
           </div>
           <div class="meal-detail-hero_info">
-            <p class="meal-detail-hero_date">{{ formatDate(meal.date) }}</p>
+            <p class="meal-detail-hero_date">{{ formatDate(meal.date) }} • {{ meal.time }} Uhr</p>
             <h2 class="meal-detail-hero_title">{{ meal.title }}</h2>
             <p class="meal-detail-hero_sub">
-              {{ meal.time }} Uhr · {{ meal.appointmentTitle }}
-              <span v-if="meal.organizationTitle"> · {{ meal.organizationTitle }}</span>
+              {{ meal.appointmentTitle }}
+              <span v-if="meal.organizationTitle"> • {{ meal.organizationTitle }}</span>
             </p>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div v-if="meal.description || meal.canManage" class="section_infobox meal-description">
+          <div v-if="!descriptionEditing" class="meal-description_view">
+            <p v-if="meal.description" class="meal-description_text">{{ meal.description }}</p>
+            <p v-else class="meal-card_empty">Keine Beschreibung vorhanden.</p>
+            <button
+              v-if="meal.canManage"
+              class="meal-description_edit-btn"
+              @click="startDescriptionEdit"
+              aria-label="Beschreibung bearbeiten"
+            >Bearbeiten</button>
+          </div>
+          <div v-else class="meal-description_edit">
+            <textarea
+              v-model="descriptionDraft"
+              class="form-control meal-description_textarea"
+              rows="4"
+              placeholder="Beschreibung der Mahlzeit…"
+            ></textarea>
+            <div class="meal-description_edit-actions">
+              <button class="button" :disabled="descriptionSaving" @click="saveDescription">
+                {{ descriptionSaving ? '…' : 'Speichern' }}
+              </button>
+              <button class="button button--secondary" @click="cancelDescriptionEdit">Abbrechen</button>
+            </div>
           </div>
         </div>
 
@@ -62,28 +90,105 @@
           </ul>
         </div>
 
-        <!-- Foods -->
+        <!-- Geplante Gerichte (orderable + regular combined) -->
         <div class="section_infobox">
           <div class="meal-detail-block_heading-row">
-            <h3 class="hl3">Geplante Gerichte ({{ meal.foods.length }})</h3>
-            <button
-              v-if="meal.acceptsContributions"
-              class="meal-suggest-btn"
-              @click="modalOpen = true"
-            >+ Vorschlagen</button>
+            <h3 class="hl3">Geplante Gerichte ({{ allFoods.length }})</h3>
+            <div class="meal-detail-heading-actions">
+              <button
+                v-if="meal.canManage"
+                class="meal-suggest-btn"
+                @click="addProductOpen = !addProductOpen"
+              >{{ addProductOpen ? '× Abbrechen' : '+ Gericht' }}</button>
+              <button
+                v-if="meal.acceptsContributions"
+                class="meal-suggest-btn"
+                @click="modalOpen = true"
+              >+ Vorschlagen</button>
+            </div>
           </div>
-          <ul v-if="meal.foods.length" class="meal-food-list">
-            <li v-for="f in meal.foods" :key="f.id" class="meal-food">
-              <span
-                class="food-status-dot"
-                :class="`food-status-dot--${(f.status || 'new').toLowerCase()}`"
-                :title="statusLabel(f.status)"
-              ></span>
-              <span class="meal-food_title">{{ f.title }}</span>
-              <span v-if="f.preference !== 'None'" class="meal-food_pref">
-                {{ f.preference === 'Vegetarian' ? '🥗 Vegetarisch' : '🌱 Vegan' }}
-              </span>
-              <span v-if="f.supplier" class="meal-food_supplier">von {{ f.supplier }}</span>
+
+          <!-- Add orderable product form (admin/mod) -->
+          <div v-if="addProductOpen" class="meal-product-add-form">
+            <input
+              v-model="addProductTitle"
+              type="text"
+              placeholder="Bezeichnung (z.B. Burger)"
+              class="form-control"
+              @keyup.enter="submitProduct"
+            />
+            <div class="meal-product-add-row">
+              <label>
+                Max. pro Person (0 = unbegrenzt)
+                <input
+                  v-model.number="addProductMax"
+                  type="number"
+                  min="0"
+                  placeholder="0 = unbegrenzt"
+                  class="form-control"
+                />
+              </label>
+              <button
+                class="button"
+                :disabled="!addProductTitle.trim() || addProductSaving"
+                @click="submitProduct"
+              >{{ addProductSaving ? '…' : 'Speichern' }}</button>
+            </div>
+          </div>
+
+          <ul v-if="allFoods.length" class="meal-food-list">
+            <li
+              v-for="item in allFoods"
+              :key="item.id"
+              class="meal-food"
+              :class="{ 'meal-food--orderable': item.isOrderable }"
+            >
+              <template v-if="item.isOrderable">
+                <span class="meal-food_title">{{ item.title }}</span>
+                <span v-if="item.maxQuantity > 0" class="meal-product-item_max">max. {{ item.maxQuantity }} pro Person</span>
+                <div class="meal-food_right">
+                  <div v-if="meal.userResponse === 'Accept'" class="meal-product-qty">
+                    <button
+                      class="meal-product-qty_btn"
+                      :disabled="(userOrders[item.id] ?? 0) <= 0"
+                      @click="changeQty(item, -1)"
+                    >−</button>
+                    <span class="meal-product-qty_val">{{ userOrders[item.id] ?? 0 }}</span>
+                    <button
+                      class="meal-product-qty_btn"
+                      :disabled="item.maxQuantity > 0 && (userOrders[item.id] ?? 0) >= item.maxQuantity"
+                      @click="changeQty(item, 1)"
+                    >+</button>
+                  </div>
+                  <button
+                    v-if="meal.canManage"
+                    class="meal-product-delete-btn"
+                    :disabled="deletingProductId === item.id"
+                    @click="deleteProduct(item.id)"
+                    aria-label="Produkt löschen"
+                  >×</button>
+                </div>
+                <div v-if="item.totalOrdered > 0" class="meal-product-item_summary meal-food_full-row">
+                  <span class="meal-product-item_total">{{ item.totalOrdered }}× bestellt</span>
+                  <span
+                    v-for="o in item.orders"
+                    :key="o.memberId"
+                    class="meal-product-item_order"
+                  >{{ o.name }} ({{ o.quantity }})</span>
+                </div>
+              </template>
+              <template v-else>
+                <span
+                  class="food-status-dot"
+                  :class="`food-status-dot--${(item.status || 'new').toLowerCase()}`"
+                  :title="statusLabel(item.status)"
+                ></span>
+                <span class="meal-food_title">{{ item.title }}</span>
+                <span v-if="item.preference !== 'None'" class="meal-food_pref">
+                  {{ item.preference === 'Vegetarian' ? '🥗 Vegetarisch' : '🌱 Vegan' }}
+                </span>
+                <span v-if="item.supplier" class="meal-food_supplier">von {{ item.supplier }}</span>
+              </template>
             </li>
           </ul>
           <p v-else class="meal-card_empty">Noch keine Gerichte geplant.</p>
@@ -147,7 +252,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import { apiGet, apiPost } from '@utils/api'
+import { apiGet, apiPost, apiPut, apiDelete } from '@utils/api'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')
@@ -159,6 +264,49 @@ const responding = ref(false)
 const modalOpen = ref(false)
 const modalForm = ref({ title: '', preference: 'None', submitting: false })
 
+// Products
+const userOrders        = ref({})
+const ordersSaving      = ref(false)
+const ordersSaveTimer   = ref(null)
+const addProductOpen    = ref(false)
+const addProductTitle   = ref('')
+const addProductMax     = ref(0)
+const addProductSaving  = ref(false)
+const deletingProductId     = ref(null)
+const descriptionEditing    = ref(false)
+const descriptionDraft      = ref('')
+const descriptionSaving     = ref(false)
+
+function startDescriptionEdit() {
+  descriptionDraft.value  = meal.value.description ?? ''
+  descriptionEditing.value = true
+}
+
+function cancelDescriptionEdit() {
+  descriptionEditing.value = false
+}
+
+async function saveDescription() {
+  if (descriptionSaving.value) return
+  descriptionSaving.value = true
+  try {
+    await apiPut(`/food/mealDescription/${meal.value.id}`, { description: descriptionDraft.value })
+    meal.value.description   = descriptionDraft.value
+    descriptionEditing.value = false
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  } finally {
+    descriptionSaving.value = false
+  }
+}
+
+const allFoods = computed(() => {
+  if (!meal.value) return []
+  const orderable = (meal.value.products ?? []).map(p => ({ ...p, isOrderable: true }))
+  const regular   = (meal.value.foods ?? []).map(f => ({ ...f, isOrderable: false }))
+  return [...orderable, ...regular].sort((a, b) => a.id - b.id)
+})
+
 async function load() {
   loading.value = true
   error.value   = null
@@ -166,6 +314,9 @@ async function load() {
     const data = await apiGet(`/food/mealdetail/${route.params.id}`, false)
     meal.value  = data.meal
     usePageHeaderStore().setHeader(data.meal.title, '')
+    const initial = {}
+    for (const p of data.meal.products ?? []) initial[p.id] = p.userQuantity
+    userOrders.value = initial
   } catch (e) {
     error.value = e.message
   } finally {
@@ -234,6 +385,65 @@ function formatDate(dateStr) {
   return new Intl.DateTimeFormat('de-DE', {
     weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(date)
+}
+
+function changeQty(product, delta) {
+  const current = userOrders.value[product.id] ?? 0
+  let next = current + delta
+  if (next < 0) next = 0
+  if (product.maxQuantity > 0 && next > product.maxQuantity) next = product.maxQuantity
+  userOrders.value = { ...userOrders.value, [product.id]: next }
+
+  clearTimeout(ordersSaveTimer.value)
+  ordersSaveTimer.value = setTimeout(saveOrders, 1000)
+}
+
+async function saveOrders() {
+  if (ordersSaving.value) return
+  ordersSaving.value = true
+  try {
+    await apiPut(`/food/mealProductOrder/${meal.value.id}`, { orders: userOrders.value })
+    await load()
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  } finally {
+    ordersSaving.value = false
+  }
+}
+
+async function submitProduct() {
+  if (!addProductTitle.value.trim() || addProductSaving.value) return
+  addProductSaving.value = true
+  try {
+    const result = await apiPost(`/food/mealProduct/${meal.value.id}`, {
+      title: addProductTitle.value.trim(),
+      maxQuantity: addProductMax.value ?? 0,
+    })
+    meal.value.products.push(result.data.product)
+    userOrders.value = { ...userOrders.value, [result.data.product.id]: 0 }
+    addProductTitle.value = ''
+    addProductMax.value   = 0
+    addProductOpen.value  = false
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  } finally {
+    addProductSaving.value = false
+  }
+}
+
+async function deleteProduct(productId) {
+  if (!confirm('Produkt wirklich löschen?')) return
+  deletingProductId.value = productId
+  try {
+    await apiDelete(`/food/mealProduct/${productId}`)
+    meal.value.products = meal.value.products.filter(p => p.id !== productId)
+    const { [productId]: _, ...rest } = userOrders.value
+    userOrders.value = rest
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  } finally {
+    deletingProductId.value = null
+  }
 }
 
 onMounted(load)

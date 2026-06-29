@@ -26,6 +26,8 @@
 @use "pages/OrganizationDetailPage.scss";
 @use "pages/LinksPage.scss";
 @use "pages/LoginPage.scss";
+@use "pages/TasksPage.scss";
+@use "pages/TaskDetailPage.scss";
 
 
 @use "landingpage/landingpage.scss";
@@ -37,6 +39,8 @@
 @use "components/participantcard.scss";
 @use "components/addappointmentmodal.scss";
 @use "components/pwainstallbanner.scss";
+@use "components/taskcard.scss";
+@use "components/taskcreatemodal.scss";
 
 
 html{

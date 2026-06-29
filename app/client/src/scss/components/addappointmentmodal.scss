@@ -109,6 +109,14 @@
                         }
                     }
 
+                    &.field--features {
+                        grid-column: span 6;
+
+                        .multiselect-group {
+                            margin-top: 6px;
+                        }
+                    }
+
                     &.field--startdatetime, &.field--startdate {
                         grid-column: span 3;
                     }

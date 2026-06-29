@@ -9,8 +9,19 @@
     <p v-else>
       <strong>Ganztägig</strong>
     </p>
-    <p v-if="event.Location"><strong>Ort:</strong> {{ event.Location }}</p>
-    <p v-if="event.Description"><strong>Beschreibung:</strong> {{ event.Description }}</p>
+    <p v-if="event.Location">
+      <strong>Ort:</strong>
+      <a
+        :href="`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.Location)}`"
+        target="_blank"
+        rel="noopener"
+        class="location-link"
+      >{{ event.Location }}</a>
+    </p>
+    <div v-if="event.Description" class="event-description">
+      <strong>Beschreibung:</strong>
+      <p class="event-description_text">{{ event.Description }}</p>
+    </div>
   </div>
 </template>
 

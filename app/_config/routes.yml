@@ -22,3 +22,4 @@ SilverStripe\Control\Director:
     'api/v1/calendar//$Action/$ID': 'App\Controllers\Api\CalendarApiController'
     'api/v1/links//$Action/$ID': 'App\Controllers\Api\LinksApiController'
     'api/notifications//$Action': 'App\Controllers\NotificationApiController'
+    'api/v1/tasks//$Action/$ID': 'App\Controllers\Api\TasksApiController'
