@@ -368,6 +368,9 @@
                             color: var(--ColorGray);
                             margin: 4px 0 0 0;
                             line-height: 1.4;
+                            text-align: left;
+
+                            &--pre { white-space: pre-wrap; word-break: break-word; }
                         }
                     }
                 }
