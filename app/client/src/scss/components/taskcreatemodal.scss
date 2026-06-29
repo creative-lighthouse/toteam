@@ -1,0 +1,160 @@
+@use "../variables" as *;
+
+.task-create-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    .task-create-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .task-create-modal_header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+
+        .task-create-modal_title {
+            margin: 0;
+            color: var(--ColorWhite);
+            font-size: 18px;
+        }
+
+        .button--close {
+            background: none;
+            border: none;
+            color: var(--ColorWhite);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+    }
+
+    .task-create-modal_body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+
+        // Override global form styles
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        max-width: none;
+        margin: 0;
+        align-items: stretch;
+    }
+
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+
+        @include media(max-smartphone) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ColorGray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .input {
+        padding: 9px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 15px;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: var(--ColorWhite);
+        height: auto;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+
+        &[type="date"] {
+            cursor: pointer;
+        }
+    }
+
+    textarea.input {
+        resize: vertical;
+        min-height: 72px;
+    }
+
+    // Organisation radio group — reuse .multiselect-group pattern from appointment modal
+    .multiselect-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .checkbox-label {
+            input[type="radio"] {
+                display: none;
+            }
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 14px;
+            border: 2px solid var(--ColorGray);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            user-select: none;
+
+            &:has(input:checked) {
+                background-color: var(--ColorPrimary);
+                border-color: var(--ColorPrimary);
+                color: var(--ColorWhite);
+            }
+
+            &:hover:not(:has(input:checked)) {
+                border-color: var(--ColorPrimary);
+            }
+        }
+    }
+
+    .task-create-modal_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    .task-create-modal_actions {
+        display: flex;
+        gap: 10px;
+        padding-top: 4px;
+
+        .button {
+            flex: 1;
+        }
+    }
+}

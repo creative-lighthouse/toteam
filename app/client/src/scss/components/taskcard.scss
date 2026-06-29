@@ -1,0 +1,151 @@
+@use "../variables" as *;
+
+// State badge — shared between card and detail page
+.task-card_state-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+
+    &--open        { background-color: var(--ColorLightGray); color: var(--ColorGray); }
+    &--in_progress { background-color: var(--ColorPrimaryLight); color: var(--ColorPrimary); }
+    &--feedback    { background-color: var(--ColorStatusWarningAccent); color: #b07800; }
+    &--finished    { background-color: var(--ColorStatusGoodAccent); color: #2e7d32; }
+}
+
+.task-card {
+    padding: 14px 16px;
+    background-color: var(--ColorWhite);
+    border-radius: var(--BorderRadiusMedium);
+    box-shadow: var(--BoxShadowLight);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-left: 3px solid transparent;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    &--open        { border-left-color: var(--ColorGray); }
+    &--in_progress { border-left-color: var(--ColorPrimary); }
+    &--feedback    { border-left-color: var(--ColorStatusWarning); }
+    &--finished    { border-left-color: var(--ColorStatusGood); }
+
+    .task-card_header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .task-card_org-logo {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+        border-radius: 3px;
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .task-card_org-name {
+        font-size: 12px;
+        color: var(--ColorGray);
+        margin-left: auto;
+        flex-shrink: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+
+    .task-card_title {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.4;
+    }
+
+    .task-card_description {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+        line-height: 1.5;
+    }
+
+    .task-card_footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .task-card_meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .task-card_deadline {
+        font-size: 12px;
+        color: var(--ColorGray);
+
+        &--overdue {
+            color: var(--ColorStatusBad);
+            font-weight: 600;
+        }
+    }
+
+    .task-card_subtasks-count {
+        font-size: 12px;
+        color: var(--ColorGray);
+        background-color: var(--ColorLightGray);
+        padding: 2px 8px;
+        border-radius: 50px;
+    }
+
+    .task-card_avatars {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .task-card_avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--ColorWhite);
+        margin-left: -6px;
+
+        &:first-child {
+            margin-left: 0;
+        }
+
+        &--owner {
+            border-color: var(--ColorPrimaryLight);
+        }
+    }
+
+    .task-card_avatar-overflow {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background-color: var(--ColorLightGray);
+        color: var(--ColorGray);
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--ColorWhite);
+        margin-left: -6px;
+    }
+}

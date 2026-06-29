@@ -16,8 +16,8 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $OrganizationID
  * @method \SilverStripe\Security\Member Member()
  * @method \App\Teams\Organization Organization()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

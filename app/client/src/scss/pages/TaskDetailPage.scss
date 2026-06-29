@@ -1,0 +1,142 @@
+@use "../variables" as *;
+
+.section.section--TaskDetailPage {
+    .task-detail {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .task-detail_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .task-detail_meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .task-detail_org {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: var(--ColorGray);
+        font-weight: 500;
+    }
+
+    .task-detail_org-logo {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+
+    .task-detail_share-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .task-detail_title {
+        margin: 0;
+    }
+
+    .task-detail_deadline {
+        font-size: 14px;
+        color: var(--ColorGray);
+        margin: 0;
+
+        &.task-card_deadline--overdue {
+            color: var(--ColorStatusBad);
+            font-weight: 600;
+        }
+    }
+
+    .task-detail_description {
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        padding: 16px 20px;
+        box-shadow: var(--BoxShadowLight);
+
+        p {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+    }
+
+    // People row (owner + supporters)
+    .task-detail_people {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .task-detail_person {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        padding: 10px 14px;
+        box-shadow: var(--BoxShadowLight);
+        flex: 1;
+        min-width: 160px;
+    }
+
+    .task-detail_avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 2px solid var(--ColorLightGray);
+    }
+
+    .task-detail_person-role {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ColorGray);
+    }
+
+    .task-detail_person-name {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    // Subtasks
+    .task-detail_subtasks {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .hl3 {
+            margin: 0;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+
+    // Back to parent
+    .task-detail_parent {
+        padding-top: 4px;
+    }
+}
