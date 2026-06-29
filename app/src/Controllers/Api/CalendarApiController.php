@@ -9,6 +9,7 @@ use App\Calendar\AppointmentParticipation;
 use App\Calendar\AppointmentType;
 use App\Food\Meal;
 use App\Food\MealEater;
+use App\Food\MealProductOrder;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Controllers\ApiController;
@@ -92,12 +93,27 @@ class CalendarApiController extends ApiController
             $meals = [];
             foreach ($appointment->Meals() as $meal) {
                 $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
+                $products = [];
+                foreach ($meal->Foods()->filter('IsOrderable', true)->sort('ID ASC') as $food) {
+                    $userOrder = MealProductOrder::get()->filter([
+                        'FoodID'   => $food->ID,
+                        'MealID'   => $meal->ID,
+                        'MemberID' => $member->ID,
+                    ])->first();
+                    $products[] = [
+                        'ID'           => $food->ID,
+                        'Title'        => $food->Title,
+                        'MaxQuantity'  => (int) $food->MaxQuantity,
+                        'UserQuantity' => $userOrder ? (int) $userOrder->Quantity : 0,
+                    ];
+                }
                 $meals[] = [
-                    'ID' => $meal->ID,
-                    'Title' => $meal->Title,
-                    'Time' => $meal->Time,
-                    'RenderTime' => $meal->RenderTime(),
-                    'UserResponse' => $mealEater ? $mealEater->Type : null
+                    'ID'           => $meal->ID,
+                    'Title'        => $meal->Title,
+                    'Time'         => $meal->Time,
+                    'RenderTime'   => $meal->RenderTime(),
+                    'UserResponse' => $mealEater ? $mealEater->Type : null,
+                    'Products'     => $products,
                 ];
             }
 

@@ -18,6 +18,7 @@ use SilverStripe\Security\Security;
  * @property ?string $Title
  * @property ?string $Time
  * @property bool $AcceptsContributions
+ * @property ?string $Description
  * @property int $ParentID
  * @method \App\Calendar\Appointment Parent()
  * @method \SilverStripe\ORM\DataList|\App\Food\MealEater[] Eaters()
@@ -31,9 +32,10 @@ use SilverStripe\Security\Security;
 class Meal extends DataObject implements PermissionProvider
 {
     private static $db = [
-        "Title" => "Varchar(255)",
-        "Time" => "Time",
+        "Title"                => "Varchar(255)",
+        "Time"                 => "Time",
         "AcceptsContributions" => "Boolean",
+        "Description"          => "Text",
     ];
 
     private static $defaults = [

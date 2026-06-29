@@ -285,6 +285,38 @@
             .meals-section {
                 border-bottom: 1px solid var(--ColorLightGray);
                 padding: 15px 0;
+
+                .meal-product-orders {
+                    flex-basis: 100%;
+                    margin-top: 8px;
+                    padding: 8px 10px;
+                    background: var(--ColorVeryLightGray);
+                    border-radius: var(--BorderRadiusSmall);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+
+                .meal-product-order-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 8px;
+                }
+
+                .meal-product-order-label {
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .meal-product-order-max {
+                    font-size: 0.75rem;
+                    color: var(--ColorTextSecondary);
+                    font-weight: normal;
+                }
+
             }
 
             // ── Agenda section ───────────────────────────────────────────────────
@@ -345,6 +377,22 @@
                 margin-bottom: 20px;
 
                 p { margin: 8px 0; }
+
+                .location-link {
+                    color: var(--ColorPrimary);
+                    text-decoration: none;
+                    &:hover { text-decoration: underline; }
+                }
+
+                .event-description {
+                    margin: 8px 0;
+
+                    &_text {
+                        margin: 4px 0 0;
+                        white-space: pre-wrap;
+                        word-break: break-word;
+                    }
+                }
             }
 
             .event-image {
@@ -633,6 +681,7 @@
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
+                    flex-wrap: wrap;
 
                     form {
                         border: none;

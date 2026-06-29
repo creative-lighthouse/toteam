@@ -4,6 +4,7 @@ namespace App\Food;
 
 use Override;
 use App\Food\Meal;
+use App\Food\MealProductOrder;
 use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use App\HumanResources\Allergy;
@@ -21,12 +22,15 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @property ?string $FoodPreference
  * @property ?string $Notes
  * @property ?string $Status
+ * @property bool $IsOrderable
+ * @property int $MaxQuantity
  * @property int $ParentID
  * @property int $ImageID
  * @property int $SupplierID
  * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\Security\Member Supplier()
+ * @method \SilverStripe\ORM\DataList|\App\Food\MealProductOrder[] Orders()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Meal[] Meals()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
@@ -38,10 +42,17 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 class Food extends DataObject implements PermissionProvider
 {
     private static $db = [
-        "Title" => "Varchar(255)",
+        "Title"          => "Varchar(255)",
         "FoodPreference" => "Varchar(255)",
-        "Notes" => "Text",
-        "Status" => "Enum('Accepted, New, Rejected', 'New')",
+        "Notes"          => "Text",
+        "Status"         => "Enum('Accepted, New, Rejected', 'New')",
+        "IsOrderable"    => "Boolean",
+        "MaxQuantity"    => "Int",
+    ];
+
+    private static $defaults = [
+        "IsOrderable" => false,
+        "MaxQuantity" => 0,
     ];
 
     private static $has_one = [
@@ -54,9 +65,13 @@ class Food extends DataObject implements PermissionProvider
         'Image',
     ];
 
+    private static $has_many = [
+        "Orders" => MealProductOrder::class . '.Food',
+    ];
+
     private static $many_many = [
         "Allergies" => Allergy::class,
-        "Meals" => Meal::class,
+        "Meals"     => Meal::class,
     ];
 
     private static $field_labels = [

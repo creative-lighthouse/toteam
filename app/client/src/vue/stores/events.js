@@ -414,6 +414,25 @@ export const useEventsStore = defineStore('events', () => {
     return response.absences ?? []
   }
 
+  async function saveMealProductOrders(mealId, orders) {
+    try {
+      await apiPut(`/food/mealProductOrder/${mealId}`, { orders })
+      // Update local state for all matching events
+      for (const event of events.value) {
+        const meal = event.Meals?.find(m => m.ID === mealId)
+        if (meal) {
+          for (const product of meal.Products || []) {
+            product.UserQuantity = orders[product.ID] ?? 0
+          }
+        }
+      }
+      await clearCacheForEndpoint('/calendar')
+    } catch (err) {
+      console.error('Failed to save meal product orders:', err)
+      throw err
+    }
+  }
+
   async function fetchAbsenceCountsForMonth(year, month) {
     const monthParam = `${year}-${String(month).padStart(2, '0')}`
     const response = await apiGet(`/calendar/absences?month=${monthParam}`, false)
@@ -451,5 +470,6 @@ export const useEventsStore = defineStore('events', () => {
     deleteAppointment,
     fetchAbsencesForDate,
     fetchAbsenceCountsForMonth,
+    saveMealProductOrders,
   }
 })

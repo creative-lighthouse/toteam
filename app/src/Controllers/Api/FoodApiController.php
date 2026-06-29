@@ -6,6 +6,7 @@ use App\Calendar\Appointment;
 use App\Food\Food;
 use App\Food\Meal;
 use App\Food\MealEater;
+use App\Food\MealProductOrder;
 use App\Teams\OrganizationMembership;
 use App\Controllers\ApiController;
 use SilverStripe\Control\HTTPRequest;
@@ -23,6 +24,9 @@ class FoodApiController extends ApiController
         'index',
         'suggest',
         'mealdetail',
+        'mealDescription',
+        'mealProduct',
+        'mealProductOrder',
     ];
 
     public function index(HTTPRequest $request): HTTPResponse
@@ -257,12 +261,215 @@ class FoodApiController extends ApiController
             $orgTitle = $org?->Title;
             $orgLogo  = ($org && $org->Logo()->exists()) ? $org->Logo()->ScaleWidth(80)->getURL() : null;
 
-            return $this->jsonResponse([
-                'meal' => $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses),
-            ]);
+            $canManage = OrganizationMembership::get()->filter([
+                'MemberID' => $member->ID,
+                'Role'     => ['moderator', 'admin'],
+            ])->count() > 0;
+
+            $products = [];
+            foreach ($meal->Foods()->filter('IsOrderable', true)->sort('ID ASC') as $food) {
+                $perPerson = [];
+                foreach (MealProductOrder::get()->filter([
+                    'FoodID'           => $food->ID,
+                    'MealID'           => $meal->ID,
+                    'Quantity:GreaterThan' => 0,
+                ])->sort('ID ASC') as $order) {
+                    $m = $order->Member();
+                    if ($m && $m->exists()) {
+                        $perPerson[] = [
+                            'memberId'  => $m->ID,
+                            'name'      => trim($m->FirstName . ' ' . $m->Surname),
+                            'avatarUrl' => method_exists($m, 'getGravatar') ? $m->getGravatar() : null,
+                            'quantity'  => (int) $order->Quantity,
+                        ];
+                    }
+                }
+                $userOrder = MealProductOrder::get()->filter([
+                    'FoodID'   => $food->ID,
+                    'MealID'   => $meal->ID,
+                    'MemberID' => $member->ID,
+                ])->first();
+                $products[] = [
+                    'id'           => $food->ID,
+                    'title'        => $food->Title,
+                    'maxQuantity'  => (int) $food->MaxQuantity,
+                    'totalOrdered' => array_sum(array_column($perPerson, 'quantity')),
+                    'userQuantity' => $userOrder ? (int) $userOrder->Quantity : 0,
+                    'orders'       => $perPerson,
+                ];
+            }
+
+            $mealData             = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses);
+            $mealData['products'] = $products;
+            $mealData['canManage'] = $canManage;
+
+            return $this->jsonResponse(['meal' => $mealData]);
         } catch (\Exception $e) {
             return $this->errorResponse('Fehler: ' . $e->getMessage(), 500);
         }
+    }
+
+    public function mealDescription(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'PUT') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $canManage = OrganizationMembership::get()->filter([
+            'MemberID' => $member->ID,
+            'Role'     => ['moderator', 'admin'],
+        ])->count() > 0;
+
+        if (!$canManage) {
+            return $this->errorResponse('Zugriff verweigert', 403);
+        }
+
+        $id   = (int) $request->param('ID');
+        $meal = Meal::get()->byID($id);
+        if (!$meal || !$meal->exists()) {
+            return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+        }
+
+        $body = $this->getJsonBody();
+        $meal->Description = trim($body['description'] ?? '');
+        $meal->write();
+
+        return $this->successResponse(['description' => $meal->Description], 'Beschreibung gespeichert');
+    }
+
+    public function mealProduct(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $canManage = OrganizationMembership::get()->filter([
+            'MemberID' => $member->ID,
+            'Role'     => ['moderator', 'admin'],
+        ])->count() > 0;
+
+        if (!$canManage) {
+            return $this->errorResponse('Zugriff verweigert', 403);
+        }
+
+        $id     = (int) $request->param('ID');
+        $method = $request->httpMethod();
+
+        if ($method === 'POST') {
+            $meal = Meal::get()->byID($id);
+            if (!$meal || !$meal->exists()) {
+                return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+            }
+
+            $body = $this->getJsonBody();
+            if (empty($body['title'])) {
+                return $this->errorResponse('Titel erforderlich', 400);
+            }
+
+            $appointment  = $meal->Parent();
+            $org          = $appointment->Organisations()->first();
+
+            $food              = Food::create();
+            $food->Title       = trim($body['title']);
+            $food->IsOrderable = true;
+            $food->MaxQuantity = max(0, (int) ($body['maxQuantity'] ?? 0));
+            $food->Status      = 'Accepted';
+            $food->ParentID    = $org?->ID ?? 0;
+            $food->write();
+            $food->Meals()->add($meal);
+
+            return $this->successResponse([
+                'product' => [
+                    'id'           => $food->ID,
+                    'title'        => $food->Title,
+                    'maxQuantity'  => (int) $food->MaxQuantity,
+                    'totalOrdered' => 0,
+                    'userQuantity' => 0,
+                    'orders'       => [],
+                ],
+            ], 'Produkt hinzugefügt');
+        }
+
+        if ($method === 'DELETE') {
+            $food = Food::get()->byID($id);
+            if (!$food || !$food->exists()) {
+                return $this->errorResponse('Produkt nicht gefunden', 404);
+            }
+            foreach ($food->Orders() as $order) {
+                $order->delete();
+            }
+            $food->Meals()->removeAll();
+            $food->delete();
+
+            return $this->successResponse([], 'Produkt gelöscht');
+        }
+
+        return $this->errorResponse('Method not allowed', 405);
+    }
+
+    public function mealProductOrder(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'PUT') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $mealId = (int) $request->param('ID');
+        $meal   = Meal::get()->byID($mealId);
+
+        if (!$meal || !$meal->exists()) {
+            return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+        }
+
+        $eater = MealEater::get()->filter([
+            'MemberID' => $member->ID,
+            'ParentID' => $meal->ID,
+            'Type'     => 'Accept',
+        ])->first();
+
+        if (!$eater) {
+            return $this->errorResponse('Nur zugesagte Teilnehmer können Produkte bestellen', 403);
+        }
+
+        $body   = $this->getJsonBody();
+        $orders = $body['orders'] ?? [];
+
+        foreach ($meal->Foods()->filter('IsOrderable', true) as $food) {
+            $quantity = max(0, (int) ($orders[$food->ID] ?? 0));
+            if ($food->MaxQuantity > 0 && $quantity > $food->MaxQuantity) {
+                $quantity = (int) $food->MaxQuantity;
+            }
+
+            $existing = MealProductOrder::get()->filter([
+                'FoodID'   => $food->ID,
+                'MealID'   => $meal->ID,
+                'MemberID' => $member->ID,
+            ])->first();
+
+            if ($existing) {
+                $existing->Quantity = $quantity;
+                $existing->write();
+            } elseif ($quantity > 0) {
+                $order           = MealProductOrder::create();
+                $order->FoodID   = $food->ID;
+                $order->MealID   = $meal->ID;
+                $order->MemberID = $member->ID;
+                $order->Quantity = $quantity;
+                $order->write();
+            }
+        }
+
+        return $this->successResponse([], 'Bestellung gespeichert');
     }
 
     private function formatMeal(
@@ -286,7 +493,7 @@ class FoodApiController extends ApiController
         }
 
         $foods = [];
-        foreach ($meal->Foods() as $food) {
+        foreach ($meal->Foods()->filter('IsOrderable', false) as $food) {
             $supplier = $food->Supplier();
             $foods[] = [
                 'id'         => $food->ID,
@@ -302,6 +509,7 @@ class FoodApiController extends ApiController
         return [
             'id'                   => $meal->ID,
             'title'                => $meal->Title,
+            'description'          => $meal->Description ?: '',
             'time'                 => $meal->RenderTime(),
             'acceptsContributions' => (bool) $meal->AcceptsContributions,
             'date'                 => $appointment->DateStart,
