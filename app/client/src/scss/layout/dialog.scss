@@ -532,6 +532,41 @@ dialog{
     }
 
     // Organization list
+    .allergy-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .allergy-chip {
+        padding: 4px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--ColorLightGray);
+        background: transparent;
+        color: var(--ColorTextSecondary);
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+        &:hover:not(:disabled) {
+            border-color: var(--ColorPrimary);
+            color: var(--ColorPrimary);
+        }
+
+        &--selected {
+            background: var(--ColorPrimary);
+            border-color: var(--ColorPrimary);
+            color: #fff;
+
+            &:hover:not(:disabled) {
+                background: var(--ColorPrimaryDark, var(--ColorPrimary));
+                color: #fff;
+            }
+        }
+
+        &:disabled { opacity: 0.6; cursor: default; }
+    }
+
     .org-item {
         width: 100%;
         display: flex;

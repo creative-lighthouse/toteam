@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
+use App\HumanResources\Allergy;
 use App\Teams\OrganizationMembership;
 use SilverStripe\Assets\Image;
 use SilverStripe\Assets\Upload;
@@ -24,6 +25,7 @@ class ProfileApiController extends ApiController
         'uploadImage',
         'leaveOrg',
         'user',
+        'allergies',
     ];
 
     public function index(HTTPRequest $request): HTTPResponse
@@ -188,6 +190,36 @@ class ProfileApiController extends ApiController
         $membership->delete();
 
         return $this->successResponse([], 'Mitgliedschaft aufgelöst');
+    }
+
+    public function allergies(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() === 'GET') {
+            $memberIds = $member->Allergies()->column('ID');
+            $result    = [];
+            foreach (Allergy::get()->sort('Title ASC') as $allergy) {
+                $result[] = [
+                    'id'       => $allergy->ID,
+                    'title'    => $allergy->Title,
+                    'selected' => in_array($allergy->ID, $memberIds),
+                ];
+            }
+            return $this->jsonResponse(['allergies' => $result]);
+        }
+
+        if ($request->httpMethod() === 'PUT') {
+            $body = $this->getJsonBody();
+            $ids  = array_map('intval', $body['allergyIds'] ?? []);
+            $member->Allergies()->setByIDList($ids);
+            return $this->successResponse([], 'Allergien gespeichert');
+        }
+
+        return $this->errorResponse('Method not allowed', 405);
     }
 
     private function serializePublicProfile(Member $member): array
