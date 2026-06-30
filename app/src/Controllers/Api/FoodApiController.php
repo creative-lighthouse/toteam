@@ -279,7 +279,7 @@ class FoodApiController extends ApiController
                         $perPerson[] = [
                             'memberId'  => $m->ID,
                             'name'      => trim($m->FirstName . ' ' . $m->Surname),
-                            'avatarUrl' => method_exists($m, 'getGravatar') ? $m->getGravatar() : null,
+                            'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
                             'quantity'  => (int) $order->Quantity,
                         ];
                     }
@@ -488,7 +488,8 @@ class FoodApiController extends ApiController
             $attendees[] = [
                 'id'        => $m->ID,
                 'name'      => trim($m->FirstName . ' ' . $m->Surname),
-                'avatarUrl' => method_exists($m, 'getGravatar') ? $m->getGravatar() : null,
+                'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+                'allergies' => $m->Allergies()->column('Title'),
             ];
         }
 

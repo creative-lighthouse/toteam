@@ -120,6 +120,25 @@
             </form>
           </section>
 
+          <!-- ── Section: Allergien ── -->
+          <section class="edit-section">
+            <h3 class="edit-section_title">Allergien & Unverträglichkeiten</h3>
+            <div v-if="allergiesLoading" class="empty-hint">Wird geladen…</div>
+            <div v-else-if="allergies.length === 0" class="empty-hint">Keine Allergien hinterlegt.</div>
+            <div v-else class="allergy-chips">
+              <button
+                v-for="a in allergies"
+                :key="a.id"
+                type="button"
+                class="allergy-chip"
+                :class="{ 'allergy-chip--selected': a.selected }"
+                :disabled="allergiesSaving"
+                @click="toggleAllergy(a)"
+              >{{ a.title }}</button>
+            </div>
+            <p v-if="allergiesSaveError" class="status-text status-text--error">{{ allergiesSaveError }}</p>
+          </section>
+
           <!-- ── Section: Organisationen ── -->
           <section class="edit-section">
             <h3 class="edit-section_title">Meine Organisationen</h3>
@@ -183,7 +202,7 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick } from 'vue'
-import { apiGet, apiPost, apiPostForm } from '@utils/api'
+import { apiGet, apiPost, apiPostForm, apiPut } from '@utils/api'
 import { useAuthStore } from '@stores/auth'
 
 const emit = defineEmits(['updated'])
@@ -195,7 +214,7 @@ const dialogEl = ref(null)
 
 async function open() {
   dialogEl.value?.showModal()
-  await loadProfile()
+  await Promise.all([loadProfile(), loadAllergies()])
 }
 
 function close() {
@@ -225,6 +244,39 @@ async function loadProfile() {
     console.error('Profil laden fehlgeschlagen:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// ── Allergies ──────────────────────────────────────
+const allergies         = ref([])
+const allergiesLoading  = ref(false)
+const allergiesSaving   = ref(false)
+const allergiesSaveError = ref(null)
+
+async function loadAllergies() {
+  allergiesLoading.value = true
+  try {
+    const data = await apiGet('/profile/allergies', false)
+    allergies.value = data.allergies ?? []
+  } catch (err) {
+    console.error('Allergien laden fehlgeschlagen:', err)
+  } finally {
+    allergiesLoading.value = false
+  }
+}
+
+async function toggleAllergy(allergy) {
+  allergy.selected = !allergy.selected
+  allergiesSaving.value   = true
+  allergiesSaveError.value = null
+  try {
+    const ids = allergies.value.filter(a => a.selected).map(a => a.id)
+    await apiPut('/profile/allergies', { allergyIds: ids })
+  } catch (err) {
+    allergy.selected = !allergy.selected
+    allergiesSaveError.value = 'Fehler beim Speichern.'
+  } finally {
+    allergiesSaving.value = false
   }
 }
 

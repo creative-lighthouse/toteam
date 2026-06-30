@@ -85,7 +85,12 @@
             <li v-for="a in meal.attendees" :key="a.id" class="meal-attendee">
               <img v-if="a.avatarUrl" :src="a.avatarUrl" :alt="a.name" class="meal-attendee_avatar" />
               <span v-else class="meal-attendee_avatar meal-attendee_avatar--placeholder">{{ a.name[0] }}</span>
-              <span>{{ a.name }}</span>
+              <span class="meal-attendee_name">{{ a.name }}</span>
+              <span
+                v-for="allergy in a.allergies"
+                :key="allergy"
+                class="allergy-pill"
+              >{{ allergy }}</span>
             </li>
           </ul>
         </div>
