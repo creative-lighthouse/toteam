@@ -5,6 +5,7 @@ namespace App\Money;
 use Override;
 use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 
@@ -18,7 +19,8 @@ use SilverStripe\Security\PermissionProvider;
  * @property float $TargetAmount
  * @property ?string $CanBeChangedBy
  * @property bool $RequiresApproval
- * @property bool $RequiresReceipt
+ * @property bool $RequiresReceiptDeposit
+ * @property bool $RequiresReceiptWithdrawal
  * @property float $CachedCurrentBalance
  * @property int $ParentID
  * @method \App\Teams\Organization Parent()
@@ -40,7 +42,8 @@ class MoneyAccount extends DataObject implements PermissionProvider
         "TargetAmount" => "Decimal(19,2)",
         "CanBeChangedBy" => "Enum('All,Moderators,Admins','All')",
         "RequiresApproval" => "Boolean",
-        "RequiresReceipt" => "Boolean",
+        "RequiresReceiptDeposit" => "Boolean",
+        "RequiresReceiptWithdrawal" => "Boolean",
         "CachedCurrentBalance" => "Decimal(19,2)",
     ];
 
@@ -67,7 +70,8 @@ class MoneyAccount extends DataObject implements PermissionProvider
         "StartingAmount" => "Startbetrag",
         "CanBeChangedBy" => "Änderbar von",
         "RequiresApproval" => "Änderungen müssen genehmigt werden",
-        "RequiresReceipt" => "Beleg erforderlich",
+        "RequiresReceiptDeposit" => "Beleg für Einnahmen erforderlich",
+        "RequiresReceiptWithdrawal" => "Beleg für Ausgaben erforderlich",
         "CachedCurrentBalance" => "Zwischengespeicherter Kontostand",
         "MoneyHistory" => "Änderungsverlauf",
         "MoneyBudget" => "Budgets",
@@ -135,5 +139,45 @@ class MoneyAccount extends DataObject implements PermissionProvider
     public function canDelete($member = null, $context = [])
     {
         return Permission::checkMember($member, 'DELETE_MONEYACCOUNTS');
+    }
+
+    /**
+     * Ob der Nutzer den Kontostand und Buchungsverlauf dieser Kasse sehen darf.
+     * Jedes aktive Mitglied der Organisation (member/moderator/admin).
+     */
+    public function canViewInApp(Member $member): bool
+    {
+        return $member->isActiveMemberOfOrg($this->Parent());
+    }
+
+    /**
+     * Ob der Nutzer laut CanBeChangedBy Buchungen auf dieser Kasse anlegen darf.
+     */
+    public function canEnterTransaction(Member $member): bool
+    {
+        $org = $this->Parent();
+
+        return match ($this->CanBeChangedBy) {
+            'Admins' => $member->isAdminOfOrg($org),
+            'Moderators' => $member->canManageOrg($org),
+            default => $member->isActiveMemberOfOrg($org),
+        };
+    }
+
+    /**
+     * Ob der Nutzer diese Kasse selbst (Titel, IBAN, Einstellungen) anlegen/bearbeiten darf.
+     * Da hier sensible Daten wie die IBAN hinterlegt sind, ist dies auf Admins beschränkt.
+     */
+    public function canManageAccountInApp(Member $member): bool
+    {
+        return $member->isAdminOfOrg($this->Parent());
+    }
+
+    /**
+     * Ob der Nutzer Budgets dieser Kasse anlegen/bearbeiten und offene Buchungen freigeben darf.
+     */
+    public function canManageBudgetsInApp(Member $member): bool
+    {
+        return $member->canManageOrg($this->Parent());
     }
 }

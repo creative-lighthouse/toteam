@@ -1,0 +1,237 @@
+@use "../variables" as *;
+
+.section.section--MoneyAccountDetailPage {
+    padding-bottom: 80px; // room for floating action button
+
+    .money-detail_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .money-detail_org {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .money-detail_org-logo {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        object-fit: contain;
+    }
+
+    .money-detail_title {
+        margin: 0 0 4px;
+    }
+
+    .money-detail_balance {
+        margin: 0 0 12px;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+
+        &--negative {
+            color: var(--ColorStatusBad);
+        }
+    }
+
+    .money-section {
+        margin-top: 32px;
+    }
+
+    .money-section_heading-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .money-section_title {
+        margin: 0 0 8px;
+    }
+
+    .money-section_add-btn {
+        background: none;
+        border: 1px solid var(--ColorPrimary);
+        color: var(--ColorPrimary);
+        border-radius: var(--BorderRadiusSmall);
+        padding: 4px 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    // ── Budgets ──────────────────────────────────────────────
+    .money-budget-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .money-budget {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        text-align: left;
+        padding: 12px 14px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: var(--BoxShadowLight);
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+
+        &:disabled {
+            cursor: default;
+        }
+    }
+
+    .money-budget_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .money-budget_title {
+        font-weight: 600;
+    }
+
+    .money-budget_amount {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    // ── Buchungsverlauf / Freigaben ──────────────────────────
+    .money-entry-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .money-entry {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px 14px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: var(--BoxShadowLight);
+
+        &--pending {
+            flex-direction: column;
+            align-items: stretch;
+            border-left: 3px solid var(--ColorStatusWarning);
+        }
+    }
+
+    .money-entry_row {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .money-entry_top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .money-entry_reason {
+        font-weight: 600;
+    }
+
+    .money-entry_amount {
+        font-weight: 700;
+        white-space: nowrap;
+
+        &--deposit {
+            color: var(--ColorStatusGood);
+        }
+
+        &--withdrawal {
+            color: var(--ColorStatusBad);
+        }
+    }
+
+    .money-entry_meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .money-entry_budget-tag {
+        background-color: var(--ColorLightGray);
+        border-radius: 50px;
+        padding: 1px 8px;
+    }
+
+    .money-entry_receipt {
+        color: var(--ColorPrimary);
+        text-decoration: underline;
+    }
+
+    .money-entry_pending-badge {
+        color: #b07800;
+        font-weight: 700;
+    }
+
+    .money-entry_delete {
+        background: none;
+        border: none;
+        color: var(--ColorGray);
+        cursor: pointer;
+        font-size: 14px;
+        padding: 2px 6px;
+        flex-shrink: 0;
+
+        &:hover {
+            color: var(--ColorStatusBad);
+        }
+    }
+
+    .money-entry_approve-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 10px;
+
+        .button {
+            margin: 0;
+        }
+    }
+}
+
+// ── Floating action button ──────────────────────────────────
+.money-fab {
+    position: fixed;
+    right: 20px;
+    bottom: 90px;
+    z-index: 50;
+    background-color: var(--ColorPrimary);
+    color: var(--ColorWhite);
+    border: none;
+    border-radius: 50px;
+    padding: 14px 20px;
+    font-weight: 700;
+    box-shadow: var(--BoxShadowMenu);
+    cursor: pointer;
+
+    &:hover {
+        background-color: var(--ColorPrimaryDark);
+    }
+}

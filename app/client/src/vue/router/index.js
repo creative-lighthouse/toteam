@@ -21,6 +21,8 @@ import Login from '@views/Login.vue'
 import Register from '@views/Register.vue'
 import Tasks from '@views/Tasks.vue'
 import TaskDetail from '@views/TaskDetail.vue'
+import Money from '@views/Money.vue'
+import MoneyAccountDetail from '@views/MoneyAccountDetail.vue'
 
 const routes = [
   {
@@ -131,6 +133,18 @@ const routes = [
     path: '/tasks/:hash',
     name: 'TaskDetail',
     component: TaskDetail,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/money',
+    name: 'Money',
+    component: Money,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/money/:id',
+    name: 'MoneyAccountDetail',
+    component: MoneyAccountDetail,
     meta: { requiresAuth: true }
   },
   {

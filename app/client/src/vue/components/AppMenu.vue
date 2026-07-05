@@ -110,6 +110,15 @@
                 </li>
 
                 <li>
+                    <router-link to="/money" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="$route.name === 'Money' || $route.name === 'MoneyAccountDetail' ? geldTotem : geldTotemInactive" alt="Geld Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Geld <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
+                <li>
                     <router-link to="/organizations" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Organizations' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="organizationsTotem" alt="Organisationen Icon" class="nav_image">
@@ -179,6 +188,8 @@ import kalenderTotemInactive from '../../../icons/totems/kalender_totem_inactive
 import essenTotem from '../../../icons/totems/essen_totem.png'
 import downloadsTotem from '../../../icons/totems/downloads_totem.png'
 import todosTotem from '../../../icons/totems/todos_totem.png'
+import geldTotem from '../../../icons/totems/geld_totem.png'
+import geldTotemInactive from '../../../icons/totems/geld_totem_inactive.png'
 import kartenTotem from '../../../icons/totems/karten_totem.png'
 import organizationsTotem from '../../../icons/totems/organizations_totem.png'
 import actionLogout from '../../../icons/actions/action_logout.svg'

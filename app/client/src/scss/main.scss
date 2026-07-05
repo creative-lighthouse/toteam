@@ -28,6 +28,8 @@
 @use "pages/LoginPage.scss";
 @use "pages/TasksPage.scss";
 @use "pages/TaskDetailPage.scss";
+@use "pages/MoneyPage.scss";
+@use "pages/MoneyAccountDetailPage.scss";
 
 
 @use "landingpage/landingpage.scss";
@@ -41,6 +43,7 @@
 @use "components/pwainstallbanner.scss";
 @use "components/taskcard.scss";
 @use "components/taskcreatemodal.scss";
+@use "components/moneymodals.scss";
 
 
 html{

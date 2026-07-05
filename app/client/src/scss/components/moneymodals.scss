@@ -1,0 +1,195 @@
+@use "../variables" as *;
+
+.money-entry-modal,
+.money-account-modal,
+.money-budget-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    &_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &_header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+
+        h2 {
+            margin: 0;
+            color: var(--ColorWhite);
+            font-size: 18px;
+        }
+
+        .button--close {
+            background: none;
+            border: none;
+            color: var(--ColorWhite);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+    }
+
+    &_body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        max-width: none;
+        margin: 0;
+        align-items: stretch;
+    }
+
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+
+        @include media(max-smartphone) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ColorGray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .form-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .input {
+        padding: 9px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 15px;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: var(--ColorWhite);
+        height: auto;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+
+        &[type="date"] {
+            cursor: pointer;
+        }
+    }
+
+    .multiselect-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .checkbox-label {
+            input[type="radio"] {
+                display: none;
+            }
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 14px;
+            border: 2px solid var(--ColorGray);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            user-select: none;
+
+            &:has(input:checked) {
+                background-color: var(--ColorPrimary);
+                border-color: var(--ColorPrimary);
+                color: var(--ColorWhite);
+            }
+
+            &:hover:not(:has(input:checked)) {
+                border-color: var(--ColorPrimary);
+            }
+        }
+    }
+
+    &_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    &_actions {
+        display: flex;
+        gap: 10px;
+        padding-top: 4px;
+
+        .button {
+            flex: 1;
+            margin: 0;
+        }
+    }
+}
+
+// ── Beleg-Upload (nur money-entry-modal) ────────────────────
+.money-entry-modal {
+    .file-input-hidden {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+    }
+
+    &_file-label {
+        display: inline-block;
+        text-align: center;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    &_preview {
+        margin-top: 8px;
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: var(--BorderRadiusSmall);
+        object-fit: contain;
+    }
+
+    &_filename {
+        margin: 8px 0 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+}
