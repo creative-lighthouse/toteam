@@ -55,6 +55,16 @@
         align-items: stretch;
     }
 
+    .task-create-modal_parent-hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+
+        strong {
+            color: var(--ColorPrimary);
+        }
+    }
+
     .form-field {
         display: flex;
         flex-direction: column;

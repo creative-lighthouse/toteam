@@ -25,7 +25,6 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Security\Member Owner()
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\TaskGroup[] TaskGroups()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Supporters()
- * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\Task[] SubTasks()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -51,11 +50,6 @@ class Task extends DataObject implements PermissionProvider
     private static $many_many = [
         'TaskGroups' => TaskGroup::class,
         'Supporters' => Member::class,
-        'SubTasks'   => Task::class,
-    ];
-
-    private static $owns = [
-        'SubTasks'
     ];
 
     private static $field_labels = [
@@ -67,7 +61,6 @@ class Task extends DataObject implements PermissionProvider
         "Organization" => "Organisation",
         "TaskGroups"   => "Aufgaben-Gruppen",
         "Supporters"   => "Unterstützer",
-        "SubTasks"     => "Unteraufgaben",
         "Parent"       => "Übergeordnete Aufgabe",
     ];
 
@@ -137,5 +130,16 @@ class Task extends DataObject implements PermissionProvider
     public function canDelete($member = null, $context = [])
     {
         return Permission::checkMember($member, 'DELETE_TASKS');
+    }
+
+    /**
+     * Ob der Nutzer diese Aufgabe im Frontend ansehen/bearbeiten/löschen darf.
+     * Jedes aktive Mitglied (member/moderator/admin) der zugehörigen Organisation.
+     * Unabhängig von den CMS-Permissions oben, die für den SilverStripe-Admin-Bereich gelten.
+     */
+    public function isAccessibleBy(Member $member): bool
+    {
+        $org = $this->Organization();
+        return $org && $org->exists() && $member->isActiveMemberOfOrg($org);
     }
 }

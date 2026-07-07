@@ -86,6 +86,16 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
+  async function fetchOrgMembers(orgId) {
+    try {
+      const response = await apiGet(`/tasks/orgMembers/${orgId}`, false)
+      return response.members || []
+    } catch (err) {
+      console.error('Failed to fetch organization members:', err)
+      return []
+    }
+  }
+
   async function createTask(data) {
     const response = await apiPost('/tasks/store', data)
     if (response.success && response.data?.task) {
@@ -121,8 +131,9 @@ export const useTasksStore = defineStore('tasks', () => {
     return response
   }
 
-  async function deleteTask(id) {
-    const response = await apiDelete(`/tasks/remove/${id}`)
+  async function deleteTask(id, subtasksMode = null) {
+    const query = subtasksMode ? `?subtasks=${subtasksMode}` : ''
+    const response = await apiDelete(`/tasks/remove/${id}${query}`)
     if (response.success) {
       tasks.value = tasks.value.filter(t => t.ID !== id)
       await clearCacheForEndpoint('/tasks')
@@ -157,6 +168,7 @@ export const useTasksStore = defineStore('tasks', () => {
     STATES,
     fetchTasks,
     fetchTaskByHash,
+    fetchOrgMembers,
     createTask,
     updateTask,
     updateTaskState,
