@@ -16,6 +16,7 @@ use SilverStripe\Forms\DropdownField;
 use App\Controllers\AnnouncementsController;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 
 /**
  * Class \App\Extensions\MemberExtension
@@ -236,19 +237,33 @@ class MemberExtension extends Extension
         return $this->getMembershipInOrg($org)?->Role;
     }
 
-    public function isAdminOfOrg(Organization $org): bool
+    /**
+     * Ob der Nutzer in dieser Organisation eine Rolle mit der angegebenen granularen
+     * Berechtigung (App\Teams\OrgPermissions) hat. ORG_ADMIN wirkt dabei als Wildcard.
+     */
+    public function hasOrgPermission(Organization $org, string $code): bool
     {
-        return $this->getMembershipInOrg($org)?->isAdmin() ?? false;
+        $membership = $this->getMembershipInOrg($org);
+        if (!$membership || $membership->Role !== 'member') {
+            return false;
+        }
+
+        foreach ($membership->Roles() as $role) {
+            if ($role->hasPermission($code)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public function canManageOrg(Organization $org): bool
+    public function isAdminOfOrg(Organization $org): bool
     {
-        return $this->getMembershipInOrg($org)?->canManageContent() ?? false;
+        return $this->hasOrgPermission($org, OrgPermissions::ORG_ADMIN);
     }
 
     public function isActiveMemberOfOrg(Organization $org): bool
     {
-        return $this->getMembershipInOrg($org)?->isActiveMember() ?? false;
+        return $this->getMembershipInOrg($org)?->Role === 'member';
     }
 
     public function getOrganizationIDs(): array
@@ -256,7 +271,7 @@ class MemberExtension extends Extension
         return OrganizationMembership::get()
             ->filter([
                 'MemberID' => $this->owner->ID,
-                'Role'     => ['member', 'moderator', 'admin'],
+                'Role'     => 'member',
             ])
             ->column('OrganizationID');
     }

@@ -16,6 +16,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $OrganizationID
  * @method \SilverStripe\Security\Member Member()
  * @method \App\Teams\Organization Organization()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\OrgRole[] Roles()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -38,8 +39,13 @@ class OrganizationMembership extends DataObject implements PermissionProvider
         'Organization' => Organization::class,
     ];
 
+    private static $many_many = [
+        'Roles' => OrgRole::class,
+    ];
+
     private static $field_labels = [
-        'Role'               => 'Rolle',
+        'Role'               => 'Status',
+        'Roles'              => 'Rollen',
         'JoinedDate'         => 'Beitrittsdatum',
         'Member.Name'        => 'Mitglied',
         'Organization.Title' => 'Organisation',
@@ -48,7 +54,7 @@ class OrganizationMembership extends DataObject implements PermissionProvider
     private static $summary_fields = [
         'Member.Name'        => 'Mitglied',
         'Organization.Title' => 'Organisation',
-        'Role'               => 'Rolle',
+        'Role'               => 'Status',
         'JoinedDate'         => 'Beitrittsdatum',
     ];
 

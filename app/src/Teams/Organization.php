@@ -21,6 +21,7 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Assets\Image Logo()
  * @method \SilverStripe\Assets\Image CoverImage()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] Memberships()
+ * @method \SilverStripe\ORM\DataList|\App\Teams\OrgRole[] OrgRoles()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -48,6 +49,7 @@ class Organization extends DataObject implements PermissionProvider
 
     private static $has_many = [
         "Memberships" => OrganizationMembership::class,
+        "OrgRoles"    => OrgRole::class,
     ];
 
     private static $summary_fields = [
@@ -90,6 +92,116 @@ class Organization extends DataObject implements PermissionProvider
     {
         $fields = parent::getCMSFields();
         return $fields;
+    }
+
+    /**
+     * Die Standardrolle, die neuen bzw. neu angenommenen Mitgliedern automatisch
+     * zugewiesen wird. Fällt auf null zurück, falls eine Organisation ihre "Mitglied"-Rolle
+     * umbenannt/gelöscht hat — dann muss ein Admin die Person manuell einer Rolle zuordnen.
+     */
+    public function getDefaultRole(): ?OrgRole
+    {
+        return OrgRole::get()->filter([
+            'OrganizationID' => $this->ID,
+            'Title'          => 'Mitglied',
+        ])->first();
+    }
+
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        if (!OrgRole::get()->filter('OrganizationID', $this->ID)->exists()) {
+            $this->createDefaultRoles();
+        }
+    }
+
+    /**
+     * Legt die 3 Standardrollen an, sobald eine Organisation zum ersten Mal
+     * gespeichert wird (bzw. noch keine eigenen Rollen hat). Sicherer Standard für
+     * neue Organisationen: nur "Administrator" darf sofort alles, "Moderator" und
+     * "Mitglied" bekommen keine Geld-Eingabe-Rechte, bis ein Admin sie bewusst vergibt.
+     */
+    private function createDefaultRoles(): void
+    {
+        $admin = OrgRole::create();
+        $admin->Title = 'Administrator';
+        $admin->OrganizationID = $this->ID;
+        $admin->SortOrder = 0;
+        $admin->setPermissionCodes([OrgPermissions::ORG_ADMIN]);
+        $admin->write();
+
+        $moderator = OrgRole::create();
+        $moderator->Title = 'Moderator';
+        $moderator->OrganizationID = $this->ID;
+        $moderator->SortOrder = 1;
+        $moderator->setPermissionCodes([
+            OrgPermissions::ORG_MANAGE_MEMBERS,
+            OrgPermissions::TASKS_CREATE,
+            OrgPermissions::TASKS_EDIT,
+            OrgPermissions::TASKS_DELETE,
+            OrgPermissions::MONEY_BUDGETS_MANAGE,
+            OrgPermissions::MONEY_APPROVE_ENTRIES,
+            OrgPermissions::CALENDAR_MANAGE,
+            OrgPermissions::CALENDAR_DELETE,
+            OrgPermissions::FOOD_MANAGE_MEALS,
+            OrgPermissions::LINKS_MANAGE,
+            OrgPermissions::MAPS_MANAGE_MAPS,
+            OrgPermissions::MAPS_MANAGE_LAYERS,
+        ]);
+        $moderator->write();
+
+        $member = OrgRole::create();
+        $member->Title = 'Mitglied';
+        $member->OrganizationID = $this->ID;
+        $member->SortOrder = 2;
+        $member->setPermissionCodes([
+            OrgPermissions::TASKS_CREATE,
+            OrgPermissions::TASKS_EDIT,
+            OrgPermissions::TASKS_DELETE,
+        ]);
+        $member->write();
+    }
+
+    /**
+     * Zählt aktive Mitgliedschaften, die noch mindestens eine Rolle mit ORG_ADMIN halten.
+     * Wird vor jeder Änderung geprüft, die die Admin-Mindestanforderung verletzen könnte
+     * (Rolle löschen, ORG_ADMIN entziehen, Rollen einer Person entfernen, Mitgliedschaft löschen).
+     *
+     * @param int[] $excludeRoleIDs Rollen, die bei der Zählung so behandelt werden, als wären sie kein Admin (mehr)
+     * @param int[] $excludeMembershipIDs Mitgliedschaften, die bei der Zählung ausgeschlossen werden
+     */
+    public function adminHolderCount(array $excludeRoleIDs = [], array $excludeMembershipIDs = []): int
+    {
+        $adminRoleIDs = [];
+        foreach (OrgRole::get()->filter('OrganizationID', $this->ID) as $role) {
+            if (in_array($role->ID, $excludeRoleIDs, true)) {
+                continue;
+            }
+            if ($role->hasPermission(OrgPermissions::ORG_ADMIN)) {
+                $adminRoleIDs[] = $role->ID;
+            }
+        }
+
+        if (empty($adminRoleIDs)) {
+            return 0;
+        }
+
+        $memberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $this->ID,
+            'Role'           => 'member',
+        ]);
+        if (!empty($excludeMembershipIDs)) {
+            $memberships = $memberships->exclude('ID', $excludeMembershipIDs);
+        }
+
+        $count = 0;
+        foreach ($memberships as $membership) {
+            if ($membership->Roles()->filter('ID', $adminRoleIDs)->exists()) {
+                $count++;
+            }
+        }
+        return $count;
     }
 
     public function providePermissions()

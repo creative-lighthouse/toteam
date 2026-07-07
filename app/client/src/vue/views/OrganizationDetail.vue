@@ -31,6 +31,14 @@
                     <div class="org-detail-header_actions">
                         <span class="org-detail-count">{{ org.MemberCount }} {{ org.MemberCount === 1 ? 'Mitglied' : 'Mitglieder' }}</span>
 
+                        <RouterLink
+                        v-if="org.CanManageMembers || org.CanManageRoles"
+                        :to="`/organizations/${org.Username}/manage`"
+                        class="button button--secondary"
+                        >
+                        Organisation verwalten
+                        </RouterLink>
+
                         <button
                         v-if="!org.MembershipStatus && org.JoinMode !== 'invite_only'"
                         class="button"
@@ -60,7 +68,10 @@
                         >
                             <img :src="m.Avatar" :alt="m.Name" class="org-detail-member_avatar">
                             <span class="org-detail-member_name">{{ m.Name }}</span>
-                            <span class="org-detail-member_role" :class="`org-detail-member_role--${m.Role}`">{{ roleLabel(m.Role) }}</span>
+                            <span class="org-detail-member_role">
+                                <span v-if="m.Roles?.length">{{ m.Roles.map(r => r.Title).join(', ') }}</span>
+                                <span v-else>Mitglied</span>
+                            </span>
                         </RouterLink>
                     </div>
                 </section>
@@ -83,13 +94,9 @@ const joining  = ref(false)
 const org      = ref(null)
 
 const membershipLabel = computed(() => {
-  const labels = { member: 'Mitglied', moderator: 'Moderator', admin: 'Admin', applicant: 'Bewerbung ausstehend' }
+  const labels = { member: 'Mitglied', applicant: 'Bewerbung ausstehend' }
   return labels[org.value?.MembershipStatus] ?? ''
 })
-
-function roleLabel(role) {
-  return { member: 'Mitglied', moderator: 'Moderator', admin: 'Administrator' }[role] ?? role
-}
 
 onMounted(async () => {
   usePageHeaderStore().setHeader('Organisation', '')

@@ -6,6 +6,7 @@ use App\Controllers\ApiController;
 use App\Notifications\PushNotificationService;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 
@@ -44,7 +45,7 @@ class OrganizationsApiController extends ApiController
         foreach ($organizations as $org) {
             $memberCount = OrganizationMembership::get()->filter([
                 'OrganizationID' => $org->ID,
-                'Role'           => ['member', 'moderator', 'admin'],
+                'Role'           => 'member',
             ])->count();
 
             $membership = OrganizationMembership::get()->filter([
@@ -54,7 +55,7 @@ class OrganizationsApiController extends ApiController
 
             $myRole = $membership ? $membership->Role : null;
 
-            $applicantCount = in_array($myRole, ['admin', 'moderator'])
+            $applicantCount = $member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)
                 ? OrganizationMembership::get()->filter([
                     'OrganizationID' => $org->ID,
                     'Role'           => 'applicant',
@@ -103,10 +104,13 @@ class OrganizationsApiController extends ApiController
 
         $memberCount = OrganizationMembership::get()->filter([
             'OrganizationID' => $org->ID,
-            'Role'           => ['member', 'moderator', 'admin'],
+            'Role'           => 'member',
         ])->count();
 
-        $applicantCount = in_array($myRole, ['admin', 'moderator'])
+        $canManageMembers = $member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS);
+        $canManageRoles = $member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_ROLES);
+
+        $applicantCount = $canManageMembers
             ? OrganizationMembership::get()->filter([
                 'OrganizationID' => $org->ID,
                 'Role'           => 'applicant',
@@ -115,30 +119,29 @@ class OrganizationsApiController extends ApiController
 
         $memberships = OrganizationMembership::get()->filter([
             'OrganizationID' => $org->ID,
-            'Role'           => ['member', 'moderator', 'admin'],
+            'Role'           => 'member',
         ]);
 
-        $roleOrder = ['admin' => 0, 'moderator' => 1, 'member' => 2];
         $members = [];
         foreach ($memberships as $ms) {
             $m = $ms->Member();
             if (!$m) {
                 continue;
             }
+            $roles = [];
+            foreach ($ms->Roles() as $role) {
+                $roles[] = ['ID' => $role->ID, 'Title' => $role->Title];
+            }
             $members[] = [
-                'MemberID'  => $m->ID,
-                'Name'      => $m->getDisplayName(),
-                'Avatar'    => $m->RenderProfileImage(),
-                'Username'  => $m->Username ?: null,
-                'Role'      => $ms->Role,
-                'SortOrder' => $roleOrder[$ms->Role] ?? 3,
+                'MembershipID' => $ms->ID,
+                'MemberID'     => $m->ID,
+                'Name'         => $m->getDisplayName(),
+                'Avatar'       => $m->RenderProfileImage(),
+                'Username'     => $m->Username ?: null,
+                'Roles'        => $roles,
             ];
         }
-        usort($members, fn($a, $b) => $a['SortOrder'] <=> $b['SortOrder']);
-        foreach ($members as &$m) {
-            unset($m['SortOrder']);
-        }
-        unset($m);
+        usort($members, fn($a, $b) => strcasecmp($a['Name'], $b['Name']));
 
         return $this->jsonResponse([
             'organization' => [
@@ -153,6 +156,8 @@ class OrganizationsApiController extends ApiController
                 'MembershipStatus' => $myRole,
                 'ApplicantCount'   => $applicantCount,
                 'Members'          => $members,
+                'CanManageMembers' => $canManageMembers,
+                'CanManageRoles'   => $canManageRoles,
             ],
         ]);
     }
@@ -196,7 +201,11 @@ class OrganizationsApiController extends ApiController
         $membership->Role           = $role;
         $membership->write();
 
-        if ($role === 'applicant') {
+        if ($role === 'member') {
+            if ($defaultRole = $org->getDefaultRole()) {
+                $membership->Roles()->add($defaultRole);
+            }
+        } else {
             PushNotificationService::notifyNewApplication($membership);
         }
 
@@ -218,13 +227,7 @@ class OrganizationsApiController extends ApiController
             return $this->errorResponse('Organisation nicht gefunden', 404);
         }
 
-        $myMembership = OrganizationMembership::get()->filter([
-            'OrganizationID' => $org->ID,
-            'MemberID'       => $member->ID,
-            'Role'           => ['admin', 'moderator'],
-        ])->first();
-
-        if (!$myMembership) {
+        if (!$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
@@ -270,17 +273,15 @@ class OrganizationsApiController extends ApiController
             return $this->errorResponse('Bewerbung nicht gefunden', 404);
         }
 
-        $myMembership = OrganizationMembership::get()->filter([
-            'OrganizationID' => $membership->OrganizationID,
-            'MemberID'       => $member->ID,
-            'Role'           => ['admin', 'moderator'],
-        ])->first();
-
-        if (!$myMembership) {
+        $org = $membership->Organization();
+        if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
         $membership->approve('member');
+        if ($defaultRole = $org->getDefaultRole()) {
+            $membership->Roles()->add($defaultRole);
+        }
 
         return $this->successResponse([], 'Bewerbung angenommen');
     }
@@ -303,13 +304,8 @@ class OrganizationsApiController extends ApiController
             return $this->errorResponse('Bewerbung nicht gefunden', 404);
         }
 
-        $myMembership = OrganizationMembership::get()->filter([
-            'OrganizationID' => $membership->OrganizationID,
-            'MemberID'       => $member->ID,
-            'Role'           => ['admin', 'moderator'],
-        ])->first();
-
-        if (!$myMembership) {
+        $org = $membership->Organization();
+        if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 

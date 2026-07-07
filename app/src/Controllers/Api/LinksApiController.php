@@ -6,7 +6,7 @@ use App\Controllers\ApiController;
 use App\Links\TeamLink;
 use App\Links\TeamLinkType;
 use App\Teams\Organization;
-use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Upload;
 use SilverStripe\Control\HTTPRequest;
@@ -58,19 +58,13 @@ class LinksApiController extends ApiController
         try {
             $organizationIDs = $member->getOrganizationIDs();
 
-            // Find orgs where user is admin or moderator
-            $adminMemberships = OrganizationMembership::get()->filter([
-                'MemberID' => $member->ID,
-                'Role'     => ['admin', 'moderator'],
-            ]);
-
-            $adminOrgIDs = $adminMemberships->column('OrganizationID');
-
-            // Build adminOrgs list
+            // Find orgs where der Nutzer Links verwalten darf
+            $adminOrgIDs = [];
             $adminOrgs = [];
-            foreach ($adminOrgIDs as $orgID) {
+            foreach ($organizationIDs as $orgID) {
                 $org = Organization::get()->byID($orgID);
-                if ($org) {
+                if ($org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::LINKS_MANAGE)) {
+                    $adminOrgIDs[] = $orgID;
                     $adminOrgs[] = [
                         'ID'    => $org->ID,
                         'Title' => $org->Title,
@@ -189,20 +183,13 @@ class LinksApiController extends ApiController
                 return $this->errorResponse('Organisation ist erforderlich', 400);
             }
 
-            // Check permission
-            $membership = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $orgId,
-                'Role'           => ['admin', 'moderator'],
-            ])->first();
-
-            if (!$membership) {
-                return $this->errorResponse('Keine Berechtigung für diese Organisation', 403);
-            }
-
             $org = Organization::get()->byID($orgId);
             if (!$org) {
                 return $this->errorResponse('Organisation nicht gefunden', 404);
+            }
+
+            if (!$member->hasOrgPermission($org, OrgPermissions::LINKS_MANAGE)) {
+                return $this->errorResponse('Keine Berechtigung für diese Organisation', 403);
             }
 
             // Create the Link (Button)
@@ -280,14 +267,8 @@ class LinksApiController extends ApiController
                 return $this->errorResponse('Link nicht gefunden', 404);
             }
 
-            // Check permission
-            $membership = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $teamLink->ParentID,
-                'Role'           => ['admin', 'moderator'],
-            ])->first();
-
-            if (!$membership) {
+            $org = Organization::get()->byID((int) $teamLink->ParentID);
+            if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::LINKS_MANAGE)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -345,14 +326,8 @@ class LinksApiController extends ApiController
                 return $this->errorResponse('Link nicht gefunden', 404);
             }
 
-            // Check permission
-            $membership = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $teamLink->ParentID,
-                'Role'           => ['admin', 'moderator'],
-            ])->first();
-
-            if (!$membership) {
+            $org = Organization::get()->byID((int) $teamLink->ParentID);
+            if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::LINKS_MANAGE)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 

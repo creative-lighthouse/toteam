@@ -12,9 +12,11 @@ use App\Food\MealEater;
 use App\Food\MealProductOrder;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Security\Member;
 
 /**
  * Calendar API Controller
@@ -597,7 +599,7 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Create a new appointment (moderator/admin only).
+     * Create a new appointment (requires CALENDAR_MANAGE).
      * POST /api/v1/calendar/appointment
      * Body: { title, dateStart, dateEnd, timeStart, timeEnd, allDay, location, description, status, typeId, organizationIds[] }
      */
@@ -618,11 +620,7 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Nicht gefunden', 404);
             }
             $apptOrgIDs = $appt->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_DELETE);
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
@@ -640,11 +638,7 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Nicht gefunden', 404);
             }
             $apptOrgIDs = $appt->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
@@ -684,12 +678,8 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('Mindestens eine Organisation muss gewählt werden', 400);
         }
 
-        // Verify the user is moderator/admin in at least one of the chosen organisations
-        $hasPermission = OrganizationMembership::get()->filter([
-            'MemberID'       => $member->ID,
-            'OrganizationID' => $orgIDs,
-            'Role'           => ['moderator', 'admin'],
-        ])->exists();
+        // Verify the user has CALENDAR_MANAGE in at least one of the chosen organisations
+        $hasPermission = $this->hasPermissionInAnyOrg($member, $orgIDs, OrgPermissions::CALENDAR_MANAGE);
 
         if (!$hasPermission) {
             return $this->errorResponse('Keine Berechtigung', 403);
@@ -749,7 +739,7 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Create a meal for an appointment (moderator/admin only).
+     * Create a meal for an appointment (requires CALENDAR_MANAGE).
      * POST /api/v1/calendar/meal/:appointmentId
      * Body: { title, time } (time as HH:mm)
      */
@@ -771,11 +761,7 @@ class CalendarApiController extends ApiController
             }
 
             $apptOrgIDs = $meal->Parent()->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
 
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
@@ -815,11 +801,7 @@ class CalendarApiController extends ApiController
             }
 
             $apptOrgIDs = $meal->Parent()->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
 
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
@@ -842,11 +824,7 @@ class CalendarApiController extends ApiController
         }
 
         $apptOrgIDs = $appointment->Organisations()->column('ID');
-        $hasPermission = OrganizationMembership::get()->filter([
-            'MemberID'       => $member->ID,
-            'OrganizationID' => $apptOrgIDs,
-            'Role'           => ['moderator', 'admin'],
-        ])->exists();
+        $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
 
         if (!$hasPermission) {
             return $this->errorResponse('Keine Berechtigung', 403);
@@ -884,7 +862,7 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * CRUD for appointment agenda points (moderator/admin only).
+     * CRUD for appointment agenda points (requires CALENDAR_MANAGE).
      * POST   /api/v1/calendar/agendaPoint/:appointmentId  — create
      * PUT    /api/v1/calendar/agendaPoint/:agendaPointId  — update
      * DELETE /api/v1/calendar/agendaPoint/:agendaPointId  — delete
@@ -905,11 +883,7 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Tagesordnungspunkt nicht gefunden', 404);
             }
             $apptOrgIDs = $point->Parent()->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
@@ -950,11 +924,7 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Tagesordnungspunkt nicht gefunden', 404);
             }
             $apptOrgIDs = $point->Parent()->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
@@ -972,11 +942,7 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('Termin nicht gefunden', 404);
         }
         $apptOrgIDs = $appointment->Organisations()->column('ID');
-        $hasPermission = OrganizationMembership::get()->filter([
-            'MemberID'       => $member->ID,
-            'OrganizationID' => $apptOrgIDs,
-            'Role'           => ['moderator', 'admin'],
-        ])->exists();
+        $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
         if (!$hasPermission) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
@@ -1023,7 +989,7 @@ class CalendarApiController extends ApiController
     private function getRelevantAbsences(array $organizationIDs)
     {
         $memberIDsInOrgs = OrganizationMembership::get()
-            ->filter(['OrganizationID' => $organizationIDs, 'Role' => ['member', 'moderator', 'admin']])
+            ->filter(['OrganizationID' => $organizationIDs, 'Role' => 'member'])
             ->column('MemberID');
 
         $absences = Absence::get()->filter(['MemberID' => $memberIDsInOrgs]);
@@ -1062,5 +1028,20 @@ class CalendarApiController extends ApiController
         }
 
         return $this->jsonResponse(['types' => $data]);
+    }
+
+    /**
+     * Ob der Nutzer die granulare Berechtigung $code in mindestens einer der
+     * angegebenen Organisationen hat (Termine können mehreren Orgs zugeordnet sein).
+     */
+    private function hasPermissionInAnyOrg(Member $member, array $orgIDs, string $code): bool
+    {
+        foreach ($orgIDs as $orgID) {
+            $org = Organization::get()->byID($orgID);
+            if ($org && $org->exists() && $member->hasOrgPermission($org, $code)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -6,6 +6,7 @@ use App\Controllers\ApiController;
 use App\Tasks\Task;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Security\Member;
@@ -166,7 +167,7 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Aufgabe nicht gefunden', 404);
         }
 
-        if (!$task->isAccessibleBy($member)) {
+        if (!$task->isViewableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
@@ -188,7 +189,7 @@ class TasksApiController extends ApiController
 
         $memberships = OrganizationMembership::get()->filter([
             'OrganizationID' => $orgID,
-            'Role'           => ['member', 'moderator', 'admin'],
+            'Role'           => 'member',
         ]);
 
         $members = [];
@@ -203,14 +204,14 @@ class TasksApiController extends ApiController
     }
 
     /**
-     * Ob $ownerID ein aktives Mitglied (member/moderator/admin) der Organisation $orgID ist.
+     * Ob $ownerID ein aktives Mitglied der Organisation $orgID ist.
      */
     private function isOrgMember(int $ownerID, int $orgID): bool
     {
         return OrganizationMembership::get()->filter([
             'OrganizationID' => $orgID,
             'MemberID'       => $ownerID,
-            'Role'           => ['member', 'moderator', 'admin'],
+            'Role'           => 'member',
         ])->exists();
     }
 
@@ -234,19 +235,15 @@ class TasksApiController extends ApiController
 
         $parentID = (int) ($body['ParentID'] ?? 0);
         $parentTask = $parentID ? Task::get()->byID($parentID) : null;
-        if ($parentID && (!$parentTask || !$parentTask->exists() || !$parentTask->isAccessibleBy($member))) {
+        if ($parentID && (!$parentTask || !$parentTask->exists() || !$parentTask->isViewableBy($member))) {
             return $this->errorResponse('Übergeordnete Aufgabe nicht gefunden', 404);
         }
 
         // Unteraufgaben übernehmen immer die Organisation der übergeordneten Aufgabe
         $orgID = $parentTask ? (int) $parentTask->OrganizationID : (int) ($body['OrganizationID'] ?? 0);
         if ($orgID) {
-            $membership = OrganizationMembership::get()->filter([
-                'OrganizationID' => $orgID,
-                'MemberID'       => $member->ID,
-                'Role'           => ['member', 'moderator', 'admin'],
-            ])->first();
-            if (!$membership) {
+            $org = Organization::get()->byID($orgID);
+            if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::TASKS_CREATE)) {
                 return $this->errorResponse('Keine Berechtigung für diese Organisation', 403);
             }
         }
@@ -298,7 +295,7 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Aufgabe nicht gefunden', 404);
         }
 
-        if (!$task->isAccessibleBy($member)) {
+        if (!$task->isEditableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
@@ -351,7 +348,7 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Aufgabe nicht gefunden', 404);
         }
 
-        if (!$task->isAccessibleBy($member)) {
+        if (!$task->isEditableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
@@ -386,7 +383,7 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Aufgabe nicht gefunden', 404);
         }
 
-        if (!$task->isAccessibleBy($member)) {
+        if (!$task->isDeletableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 

@@ -7,6 +7,7 @@ use App\Food\Meal;
 use App\Announcements\Announcement;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use App\Events\EventDay;
 use App\Calendar\Appointment;
 use SilverStripe\Security\Member;
@@ -145,7 +146,7 @@ class PushNotificationService
         foreach ($organisations as $organisation) {
             $activeMembers = OrganizationMembership::get()->filter([
                 'OrganizationID' => $organisation->ID,
-                'Role'           => ['member', 'moderator', 'admin'],
+                'Role'           => 'member',
             ]);
             foreach ($activeMembers as $membership) {
                 $memberIDs[$membership->MemberID] = $membership->MemberID;
@@ -175,14 +176,14 @@ class PushNotificationService
         $body  = $applicant->FirstName . ' ' . $applicant->Surname . ' möchte "' . $org->Title . '" beitreten.';
         $url   = '/app/organizations?applicants=' . $org->ID;
 
-        $adminMemberships = OrganizationMembership::get()->filter([
+        $candidateMemberships = OrganizationMembership::get()->filter([
             'OrganizationID' => $org->ID,
-            'Role'           => 'admin',
+            'Role'           => 'member',
         ]);
 
-        foreach ($adminMemberships as $adminMembership) {
-            $admin = $adminMembership->Member();
-            if (!$admin) {
+        foreach ($candidateMemberships as $candidateMembership) {
+            $admin = $candidateMembership->Member();
+            if (!$admin || !$admin->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
                 continue;
             }
 

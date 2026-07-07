@@ -7,6 +7,7 @@ use App\Money\MoneyAccount;
 use App\Money\MoneyBudget;
 use App\Money\MoneyHistory;
 use App\Teams\Organization;
+use App\Teams\OrgPermissions;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Upload;
 use SilverStripe\Control\HTTPRequest;
@@ -26,6 +27,7 @@ class MoneyApiController extends ApiController
         'account',
         'accountStore',
         'accountUpdate',
+        'accountRemove',
         'budgetStore',
         'budgetUpdate',
         'entryStore',
@@ -108,7 +110,7 @@ class MoneyApiController extends ApiController
             return $this->errorResponse('Organisation nicht gefunden', 404);
         }
 
-        if (!$member->isAdminOfOrg($org)) {
+        if (!$member->hasOrgPermission($org, OrgPermissions::MONEY_ACCOUNTS_CREATE)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
@@ -138,7 +140,7 @@ class MoneyApiController extends ApiController
             return $this->errorResponse('Kasse nicht gefunden', 404);
         }
 
-        if (!$account->canManageAccountInApp($member)) {
+        if (!$account->canEditInApp($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
@@ -148,6 +150,45 @@ class MoneyApiController extends ApiController
         $this->recalculateBalances($account);
 
         return $this->successResponse(['account' => $this->formatAccount($account, $member, true)], 'Kasse aktualisiert');
+    }
+
+    /** DELETE /api/v1/money/accountRemove/$ID */
+    public function accountRemove(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'DELETE') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $account = MoneyAccount::get()->byID((int) $request->param('ID'));
+        if (!$account || !$account->exists()) {
+            return $this->errorResponse('Kasse nicht gefunden', 404);
+        }
+
+        if (!$account->canDeleteInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        foreach (MoneyHistory::get()->filter('ParentID', $account->ID) as $entry) {
+            $receipt = $entry->Receipt();
+            if ($receipt && $receipt->exists()) {
+                $receipt->deleteFile();
+                $receipt->delete();
+            }
+            $entry->delete();
+        }
+
+        foreach (MoneyBudget::get()->filter('ParentID', $account->ID) as $budget) {
+            $budget->delete();
+        }
+
+        $account->delete();
+
+        return $this->successResponse([], 'Kasse gelöscht');
     }
 
     /** POST /api/v1/money/budgetStore */
@@ -231,11 +272,15 @@ class MoneyApiController extends ApiController
             return $this->errorResponse('Kasse nicht gefunden', 404);
         }
 
-        if (!$account->canEnterTransaction($member)) {
+        $changeType = ($_POST['ChangeType'] ?? '') === 'Deposit' ? 'Deposit' : 'Withdrawal';
+
+        $canEnter = $changeType === 'Deposit'
+            ? $account->canEnterDepositInApp($member)
+            : $account->canEnterWithdrawalInApp($member);
+        if (!$canEnter) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
-        $changeType = ($_POST['ChangeType'] ?? '') === 'Deposit' ? 'Deposit' : 'Withdrawal';
         $amount = (float) str_replace(',', '.', (string) ($_POST['ChangeAmount'] ?? '0'));
         if ($amount <= 0) {
             return $this->errorResponse('Der Betrag muss größer als 0 sein', 400);
@@ -320,7 +365,7 @@ class MoneyApiController extends ApiController
         }
 
         $account = $entry->Parent();
-        if (!$account || !$account->exists() || !$account->canManageBudgetsInApp($member)) {
+        if (!$account || !$account->exists() || !$account->canApproveEntriesInApp($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
@@ -372,7 +417,7 @@ class MoneyApiController extends ApiController
         }
 
         $isOwner = (int) $entry->UserID === (int) $member->ID;
-        $canManage = $account->canManageBudgetsInApp($member);
+        $canManage = $account->canApproveEntriesInApp($member);
         if (!$canManage && !($isOwner && !$entry->Approved)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
@@ -409,9 +454,6 @@ class MoneyApiController extends ApiController
         }
         if (isset($body['TargetAmount'])) {
             $account->TargetAmount = (float) $body['TargetAmount'];
-        }
-        if (isset($body['CanBeChangedBy']) && in_array($body['CanBeChangedBy'], ['All', 'Moderators', 'Admins'], true)) {
-            $account->CanBeChangedBy = $body['CanBeChangedBy'];
         }
         if (isset($body['RequiresApproval'])) {
             $account->RequiresApproval = (bool) $body['RequiresApproval'];
@@ -562,7 +604,7 @@ class MoneyApiController extends ApiController
     {
         $org = $account->Parent();
 
-        $canApprove = $account->canManageBudgetsInApp($member);
+        $canApprove = $account->canApproveEntriesInApp($member);
 
         $data = [
             'ID' => $account->ID,
@@ -570,7 +612,6 @@ class MoneyApiController extends ApiController
             'IBAN' => $account->IBAN,
             'StartingAmount' => (float) $account->StartingAmount,
             'TargetAmount' => (float) $account->TargetAmount,
-            'CanBeChangedBy' => $account->CanBeChangedBy,
             'RequiresApproval' => (bool) $account->RequiresApproval,
             'RequiresReceiptDeposit' => (bool) $account->RequiresReceiptDeposit,
             'RequiresReceiptWithdrawal' => (bool) $account->RequiresReceiptWithdrawal,
@@ -581,9 +622,11 @@ class MoneyApiController extends ApiController
                 'LogoURL' => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(80)->getURL() : null,
             ] : null,
             'Permissions' => [
-                'canEnterTransaction' => $account->canEnterTransaction($member),
-                'canManageAccount' => $account->canManageAccountInApp($member),
-                'canManageBudgets' => $canApprove,
+                'canEnterDeposit' => $account->canEnterDepositInApp($member),
+                'canEnterWithdrawal' => $account->canEnterWithdrawalInApp($member),
+                'canManageAccount' => $account->canEditInApp($member),
+                'canDeleteAccount' => $account->canDeleteInApp($member),
+                'canManageBudgets' => $account->canManageBudgetsInApp($member),
                 'canApprove' => $canApprove,
             ],
         ];

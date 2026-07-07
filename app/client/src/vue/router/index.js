@@ -17,6 +17,7 @@ import MapLayerEdit from '@views/MapLayerEdit.vue'
 import Links from '@views/Links.vue'
 import Organizations from '@views/Organizations.vue'
 import OrganizationDetail from '@views/OrganizationDetail.vue'
+import OrganizationManage from '@views/OrganizationManage.vue'
 import Login from '@views/Login.vue'
 import Register from '@views/Register.vue'
 import Tasks from '@views/Tasks.vue'
@@ -121,6 +122,12 @@ const routes = [
     path: '/organizations/:username',
     name: 'OrganizationDetail',
     component: OrganizationDetail,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/organizations/:username/manage',
+    name: 'OrganizationManage',
+    component: OrganizationManage,
     meta: { requiresAuth: true }
   },
   {

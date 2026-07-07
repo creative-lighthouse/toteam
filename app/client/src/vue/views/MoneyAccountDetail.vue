@@ -16,9 +16,14 @@
             <img v-if="account.Organization?.LogoURL" :src="account.Organization.LogoURL" :alt="account.Organization.Title" class="money-detail_org-logo">
             {{ account.Organization?.Title }}
           </div>
-          <button v-if="account.Permissions.canManageAccount" class="button button--secondary money-detail_edit-btn" @click="accountModal?.open()">
-            Kasse bearbeiten
-          </button>
+          <div class="money-detail_header-actions">
+            <button v-if="account.Permissions.canManageAccount" class="button button--secondary money-detail_edit-btn" @click="accountModal?.open()">
+              Kasse bearbeiten
+            </button>
+            <button v-if="account.Permissions.canDeleteAccount" class="button button--danger money-detail_delete-btn" @click="removeAccount">
+              Kasse löschen
+            </button>
+          </div>
         </div>
 
         <h2 class="hl2 money-detail_title">{{ account.Title }}</h2>
@@ -104,7 +109,7 @@
 
     <!-- Floating action button -->
     <button
-      v-if="account && account.Permissions.canEnterTransaction"
+      v-if="account && (account.Permissions.canEnterDeposit || account.Permissions.canEnterWithdrawal)"
       class="money-fab"
       title="Ausgabe/Einnahme erfassen"
       @click="entryModal?.open()"
@@ -117,6 +122,8 @@
       :budgets="account.Budgets"
       :requires-receipt-deposit="account.RequiresReceiptDeposit"
       :requires-receipt-withdrawal="account.RequiresReceiptWithdrawal"
+      :can-enter-deposit="account.Permissions.canEnterDeposit"
+      :can-enter-withdrawal="account.Permissions.canEnterWithdrawal"
       @created="onEntryCreated"
     />
     <MoneyAccountModal
@@ -138,7 +145,7 @@
 
 <script setup>
 import { ref, computed, defineComponent, h, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import GLightbox from 'glightbox'
 import { useMoneyStore } from '@stores/money'
 import { usePageHeaderStore } from '@stores/pageHeader'
@@ -147,6 +154,7 @@ import MoneyAccountModal from '@components/MoneyAccountModal.vue'
 import MoneyBudgetModal from '@components/MoneyBudgetModal.vue'
 
 const route = useRoute()
+const router = useRouter()
 const store = useMoneyStore()
 const pageHeaderStore = usePageHeaderStore()
 
@@ -211,6 +219,18 @@ function onEntryCreated() {
 
 function onAccountSaved() {
   accountModal.value?.close()
+}
+
+async function removeAccount() {
+  if (!account.value) return
+  if (!confirm(`Kasse "${account.value.Title}" wirklich löschen? Alle Buchungen und Budgets gehen dabei verloren.`)) return
+
+  const response = await store.removeAccount(account.value.ID)
+  if (response.success) {
+    router.push({ name: 'Money' })
+  } else {
+    alert(response.error || 'Fehler beim Löschen der Kasse.')
+  }
 }
 
 function onBudgetSaved() {

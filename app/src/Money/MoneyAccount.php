@@ -4,6 +4,7 @@ namespace App\Money;
 
 use Override;
 use App\Teams\Organization;
+use App\Teams\OrgPermissions;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
@@ -17,7 +18,6 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $SortOrder
  * @property float $StartingAmount
  * @property float $TargetAmount
- * @property ?string $CanBeChangedBy
  * @property bool $RequiresApproval
  * @property bool $RequiresReceiptDeposit
  * @property bool $RequiresReceiptWithdrawal
@@ -40,7 +40,6 @@ class MoneyAccount extends DataObject implements PermissionProvider
         "SortOrder" => "Int",
         "StartingAmount" => "Decimal(19,2)",
         "TargetAmount" => "Decimal(19,2)",
-        "CanBeChangedBy" => "Enum('All,Moderators,Admins','All')",
         "RequiresApproval" => "Boolean",
         "RequiresReceiptDeposit" => "Boolean",
         "RequiresReceiptWithdrawal" => "Boolean",
@@ -68,7 +67,6 @@ class MoneyAccount extends DataObject implements PermissionProvider
         "SortOrder" => "Sortierreihenfolge",
         "Parent" => "Organisation",
         "StartingAmount" => "Startbetrag",
-        "CanBeChangedBy" => "Änderbar von",
         "RequiresApproval" => "Änderungen müssen genehmigt werden",
         "RequiresReceiptDeposit" => "Beleg für Einnahmen erforderlich",
         "RequiresReceiptWithdrawal" => "Beleg für Ausgaben erforderlich",
@@ -143,7 +141,7 @@ class MoneyAccount extends DataObject implements PermissionProvider
 
     /**
      * Ob der Nutzer den Kontostand und Buchungsverlauf dieser Kasse sehen darf.
-     * Jedes aktive Mitglied der Organisation (member/moderator/admin).
+     * Jedes aktive Mitglied der Organisation.
      */
     public function canViewInApp(Member $member): bool
     {
@@ -151,33 +149,50 @@ class MoneyAccount extends DataObject implements PermissionProvider
     }
 
     /**
-     * Ob der Nutzer laut CanBeChangedBy Buchungen auf dieser Kasse anlegen darf.
+     * Ob der Nutzer Einnahmen auf dieser Kasse erfassen darf.
      */
-    public function canEnterTransaction(Member $member): bool
+    public function canEnterDepositInApp(Member $member): bool
     {
-        $org = $this->Parent();
-
-        return match ($this->CanBeChangedBy) {
-            'Admins' => $member->isAdminOfOrg($org),
-            'Moderators' => $member->canManageOrg($org),
-            default => $member->isActiveMemberOfOrg($org),
-        };
+        return $member->hasOrgPermission($this->Parent(), OrgPermissions::MONEY_DEPOSITS_ENTER);
     }
 
     /**
-     * Ob der Nutzer diese Kasse selbst (Titel, IBAN, Einstellungen) anlegen/bearbeiten darf.
-     * Da hier sensible Daten wie die IBAN hinterlegt sind, ist dies auf Admins beschränkt.
+     * Ob der Nutzer Ausgaben auf dieser Kasse erfassen darf.
      */
-    public function canManageAccountInApp(Member $member): bool
+    public function canEnterWithdrawalInApp(Member $member): bool
     {
-        return $member->isAdminOfOrg($this->Parent());
+        return $member->hasOrgPermission($this->Parent(), OrgPermissions::MONEY_WITHDRAWALS_ENTER);
     }
 
     /**
-     * Ob der Nutzer Budgets dieser Kasse anlegen/bearbeiten und offene Buchungen freigeben darf.
+     * Ob der Nutzer diese Kasse selbst (Titel, IBAN, Einstellungen) bearbeiten darf.
+     */
+    public function canEditInApp(Member $member): bool
+    {
+        return $member->hasOrgPermission($this->Parent(), OrgPermissions::MONEY_ACCOUNTS_EDIT);
+    }
+
+    /**
+     * Ob der Nutzer diese Kasse löschen darf.
+     */
+    public function canDeleteInApp(Member $member): bool
+    {
+        return $member->hasOrgPermission($this->Parent(), OrgPermissions::MONEY_ACCOUNTS_DELETE);
+    }
+
+    /**
+     * Ob der Nutzer Budgets dieser Kasse anlegen/bearbeiten darf.
      */
     public function canManageBudgetsInApp(Member $member): bool
     {
-        return $member->canManageOrg($this->Parent());
+        return $member->hasOrgPermission($this->Parent(), OrgPermissions::MONEY_BUDGETS_MANAGE);
+    }
+
+    /**
+     * Ob der Nutzer offene Buchungen dieser Kasse freigeben/ablehnen darf.
+     */
+    public function canApproveEntriesInApp(Member $member): bool
+    {
+        return $member->hasOrgPermission($this->Parent(), OrgPermissions::MONEY_APPROVE_ENTRIES);
     }
 }

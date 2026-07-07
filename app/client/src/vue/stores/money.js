@@ -51,6 +51,16 @@ export const useMoneyStore = defineStore('money', () => {
     return response
   }
 
+  async function removeAccount(id) {
+    const response = await apiDelete(`/money/accountRemove/${id}`)
+    if (response.success) {
+      accounts.value = accounts.value.filter(a => a.ID !== id)
+      if (currentAccount.value?.ID === id) currentAccount.value = null
+      await clearCacheForEndpoint('/money')
+    }
+    return response
+  }
+
   async function createBudget(data) {
     const response = await apiPost('/money/budgetStore', data)
     if (response.success && currentAccount.value) {
@@ -103,6 +113,7 @@ export const useMoneyStore = defineStore('money', () => {
     fetchAccount,
     createAccount,
     updateAccount,
+    removeAccount,
     createBudget,
     updateBudget,
     createEntry,

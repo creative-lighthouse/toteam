@@ -11,6 +11,16 @@
         margin-bottom: 8px;
     }
 
+    .money-detail_header-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+
+        .button {
+            margin: 0;
+        }
+    }
+
     .money-detail_org {
         display: flex;
         align-items: center;

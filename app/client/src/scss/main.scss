@@ -30,6 +30,7 @@
 @use "pages/TaskDetailPage.scss";
 @use "pages/MoneyPage.scss";
 @use "pages/MoneyAccountDetailPage.scss";
+@use "pages/OrganizationManagePage.scss";
 
 
 @use "landingpage/landingpage.scss";
@@ -47,6 +48,7 @@
 @use "components/tasksupportersmodal.scss";
 @use "components/taskdeletemodal.scss";
 @use "components/moneymodals.scss";
+@use "components/orgrolesmodals.scss";
 
 
 html{

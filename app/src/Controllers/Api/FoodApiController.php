@@ -7,10 +7,12 @@ use App\Food\Food;
 use App\Food\Meal;
 use App\Food\MealEater;
 use App\Food\MealProductOrder;
-use App\Teams\OrganizationMembership;
+use App\Teams\Organization;
+use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Security\Member;
 
 /**
  * Class \App\Controllers\Api\FoodApiController
@@ -39,10 +41,7 @@ class FoodApiController extends ApiController
         try {
             $orgIDs = $member->getOrganizationIDs();
 
-            $canManage = OrganizationMembership::get()->filter([
-                'MemberID' => $member->ID,
-                'Role'     => ['moderator', 'admin'],
-            ])->count() > 0;
+            $canManage = $this->hasPermissionInAnyOrg($member, $orgIDs, OrgPermissions::FOOD_MANAGE_MEALS);
 
             if (empty($orgIDs)) {
                 return $this->jsonResponse([
@@ -261,10 +260,7 @@ class FoodApiController extends ApiController
             $orgTitle = $org?->Title;
             $orgLogo  = ($org && $org->Logo()->exists()) ? $org->Logo()->ScaleWidth(80)->getURL() : null;
 
-            $canManage = OrganizationMembership::get()->filter([
-                'MemberID' => $member->ID,
-                'Role'     => ['moderator', 'admin'],
-            ])->count() > 0;
+            $canManage = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_MANAGE_MEALS);
 
             $products = [];
             foreach ($meal->Foods()->filter('IsOrderable', true)->sort('ID ASC') as $food) {
@@ -320,19 +316,16 @@ class FoodApiController extends ApiController
             return $this->errorResponse('Method not allowed', 405);
         }
 
-        $canManage = OrganizationMembership::get()->filter([
-            'MemberID' => $member->ID,
-            'Role'     => ['moderator', 'admin'],
-        ])->count() > 0;
-
-        if (!$canManage) {
-            return $this->errorResponse('Zugriff verweigert', 403);
-        }
-
         $id   = (int) $request->param('ID');
         $meal = Meal::get()->byID($id);
         if (!$meal || !$meal->exists()) {
             return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+        }
+
+        $appointment = $meal->Parent();
+        $org = ($appointment && $appointment->exists()) ? $appointment->Organisations()->first() : null;
+        if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::FOOD_MANAGE_MEALS)) {
+            return $this->errorResponse('Zugriff verweigert', 403);
         }
 
         $body = $this->getJsonBody();
@@ -349,15 +342,6 @@ class FoodApiController extends ApiController
             return $this->errorResponse('Unauthorized', 401);
         }
 
-        $canManage = OrganizationMembership::get()->filter([
-            'MemberID' => $member->ID,
-            'Role'     => ['moderator', 'admin'],
-        ])->count() > 0;
-
-        if (!$canManage) {
-            return $this->errorResponse('Zugriff verweigert', 403);
-        }
-
         $id     = (int) $request->param('ID');
         $method = $request->httpMethod();
 
@@ -365,6 +349,12 @@ class FoodApiController extends ApiController
             $meal = Meal::get()->byID($id);
             if (!$meal || !$meal->exists()) {
                 return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+            }
+
+            $mealAppointment = $meal->Parent();
+            $mealOrg = ($mealAppointment && $mealAppointment->exists()) ? $mealAppointment->Organisations()->first() : null;
+            if (!$mealOrg || !$mealOrg->exists() || !$member->hasOrgPermission($mealOrg, OrgPermissions::FOOD_MANAGE_MEALS)) {
+                return $this->errorResponse('Zugriff verweigert', 403);
             }
 
             $body = $this->getJsonBody();
@@ -401,6 +391,12 @@ class FoodApiController extends ApiController
             if (!$food || !$food->exists()) {
                 return $this->errorResponse('Produkt nicht gefunden', 404);
             }
+
+            $foodOrg = Organization::get()->byID((int) $food->ParentID);
+            if (!$foodOrg || !$foodOrg->exists() || !$member->hasOrgPermission($foodOrg, OrgPermissions::FOOD_MANAGE_MEALS)) {
+                return $this->errorResponse('Zugriff verweigert', 403);
+            }
+
             foreach ($food->Orders() as $order) {
                 $order->delete();
             }
@@ -522,5 +518,20 @@ class FoodApiController extends ApiController
             'attendees'            => $attendees,
             'foods'                => $foods,
         ];
+    }
+
+    /**
+     * Ob der Nutzer die granulare Berechtigung $code in mindestens einer der
+     * angegebenen Organisationen hat.
+     */
+    private function hasPermissionInAnyOrg(Member $member, array $orgIDs, string $code): bool
+    {
+        foreach ($orgIDs as $orgID) {
+            $org = Organization::get()->byID($orgID);
+            if ($org && $org->exists() && $member->hasOrgPermission($org, $code)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

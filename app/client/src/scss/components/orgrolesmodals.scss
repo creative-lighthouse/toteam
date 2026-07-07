@@ -1,10 +1,9 @@
 @use "../variables" as *;
 
-.money-entry-modal,
-.money-account-modal,
-.money-budget-modal {
+.role-edit-modal,
+.member-roles-modal {
     text-align: left;
-    max-width: 520px;
+    max-width: 480px;
     max-height: 90vh;
     overflow-y: auto;
 
@@ -61,16 +60,6 @@
         gap: 6px;
     }
 
-    .form-field-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-
-        @include media(max-smartphone) {
-            grid-template-columns: 1fr;
-        }
-    }
-
     .form-label {
         font-size: 13px;
         font-weight: 600;
@@ -102,53 +91,6 @@
             outline-offset: 1px;
             border-color: transparent;
         }
-
-        &[type="date"] {
-            cursor: pointer;
-        }
-    }
-
-    .multiselect-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-
-        .checkbox-label {
-            input[type="radio"] {
-                display: none;
-            }
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 6px 14px;
-            border: 2px solid var(--ColorGray);
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-            user-select: none;
-
-            &:has(input:checked) {
-                background-color: var(--ColorPrimary);
-                border-color: var(--ColorPrimary);
-                color: var(--ColorWhite);
-            }
-
-            &:hover:not(:has(input:checked)) {
-                border-color: var(--ColorPrimary);
-            }
-
-            &--disabled {
-                opacity: 0.4;
-                cursor: not-allowed;
-
-                &:hover {
-                    border-color: var(--ColorGray);
-                }
-            }
-        }
     }
 
     &_error {
@@ -171,34 +113,45 @@
     }
 }
 
-// ── Beleg-Upload (nur money-entry-modal) ────────────────────
-.money-entry-modal {
-    .file-input-hidden {
-        position: absolute;
-        opacity: 0;
-        width: 0;
-        height: 0;
-        overflow: hidden;
-    }
+.role-edit-modal_category {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--ColorLightGray);
 
-    &_file-label {
-        display: inline-block;
-        text-align: center;
-        cursor: pointer;
-        margin: 0;
+    &:first-of-type {
+        border-top: none;
+        padding-top: 0;
     }
+}
 
-    &_preview {
-        margin-top: 8px;
-        max-width: 200px;
-        max-height: 200px;
-        border-radius: var(--BorderRadiusSmall);
-        object-fit: contain;
-    }
+.role-edit-modal_category-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ColorGray);
+}
 
-    &_filename {
-        margin: 8px 0 0;
-        font-size: 13px;
-        color: var(--ColorGray);
-    }
+.role-edit-modal_permissions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.member-roles-modal_list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.member-roles-modal_empty {
+    font-size: 14px;
+    color: var(--ColorGray);
+    text-align: center;
+    padding: 12px 0;
 }

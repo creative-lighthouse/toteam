@@ -4,6 +4,7 @@ namespace App\Tasks;
 
 use App\Tasks\TaskGroup;
 use App\Teams\Organization;
+use App\Teams\OrgPermissions;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
@@ -133,13 +134,31 @@ class Task extends DataObject implements PermissionProvider
     }
 
     /**
-     * Ob der Nutzer diese Aufgabe im Frontend ansehen/bearbeiten/löschen darf.
-     * Jedes aktive Mitglied (member/moderator/admin) der zugehörigen Organisation.
-     * Unabhängig von den CMS-Permissions oben, die für den SilverStripe-Admin-Bereich gelten.
+     * Ob der Nutzer diese Aufgabe im Frontend überhaupt sehen darf: jedes aktive
+     * Mitglied der zugehörigen Organisation. Unabhängig von den CMS-Permissions
+     * oben, die für den SilverStripe-Admin-Bereich gelten.
      */
-    public function isAccessibleBy(Member $member): bool
+    public function isViewableBy(Member $member): bool
     {
         $org = $this->Organization();
         return $org && $org->exists() && $member->isActiveMemberOfOrg($org);
+    }
+
+    /**
+     * Ob der Nutzer diese Aufgabe (Status/Verantwortlicher/Unterstützer) bearbeiten darf.
+     */
+    public function isEditableBy(Member $member): bool
+    {
+        $org = $this->Organization();
+        return $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::TASKS_EDIT);
+    }
+
+    /**
+     * Ob der Nutzer diese Aufgabe löschen darf.
+     */
+    public function isDeletableBy(Member $member): bool
+    {
+        $org = $this->Organization();
+        return $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::TASKS_DELETE);
     }
 }

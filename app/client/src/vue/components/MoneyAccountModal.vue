@@ -41,15 +41,6 @@
             </div>
           </div>
 
-          <div class="form-field">
-            <label class="form-label" for="account-changed-by">Buchungen erfassen dürfen</label>
-            <select id="account-changed-by" v-model="form.CanBeChangedBy" class="input">
-              <option value="All">Alle Mitglieder</option>
-              <option value="Moderators">Moderatoren & Admins</option>
-              <option value="Admins">Nur Admins</option>
-            </select>
-          </div>
-
           <label class="form-checkbox">
             <input type="checkbox" v-model="form.RequiresApproval" />
             Buchungen müssen freigegeben werden
@@ -102,7 +93,6 @@ const defaultForm = () => ({
   IBAN: '',
   StartingAmount: 0,
   TargetAmount: 0,
-  CanBeChangedBy: 'All',
   RequiresApproval: false,
   RequiresReceiptDeposit: false,
   RequiresReceiptWithdrawal: false,
@@ -122,7 +112,6 @@ function fillFromAccount(account) {
   form.IBAN = account.IBAN
   form.StartingAmount = account.StartingAmount
   form.TargetAmount = account.TargetAmount
-  form.CanBeChangedBy = account.CanBeChangedBy
   form.RequiresApproval = account.RequiresApproval
   form.RequiresReceiptDeposit = account.RequiresReceiptDeposit
   form.RequiresReceiptWithdrawal = account.RequiresReceiptWithdrawal
@@ -152,7 +141,6 @@ async function submit() {
     IBAN: form.IBAN,
     StartingAmount: parseFloat(form.StartingAmount) || 0,
     TargetAmount: parseFloat(form.TargetAmount) || 0,
-    CanBeChangedBy: form.CanBeChangedBy,
     RequiresApproval: form.RequiresApproval,
     RequiresReceiptDeposit: form.RequiresReceiptDeposit,
     RequiresReceiptWithdrawal: form.RequiresReceiptWithdrawal,

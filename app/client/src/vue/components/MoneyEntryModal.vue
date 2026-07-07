@@ -13,12 +13,12 @@
           <div class="form-field">
             <label class="form-label">Typ</label>
             <div class="multiselect-group">
-              <label class="checkbox-label">
-                <input type="radio" value="Withdrawal" v-model="form.ChangeType" />
+              <label class="checkbox-label" :class="{ 'checkbox-label--disabled': !canEnterWithdrawal }">
+                <input type="radio" value="Withdrawal" v-model="form.ChangeType" :disabled="!canEnterWithdrawal" />
                 Ausgabe
               </label>
-              <label class="checkbox-label">
-                <input type="radio" value="Deposit" v-model="form.ChangeType" />
+              <label class="checkbox-label" :class="{ 'checkbox-label--disabled': !canEnterDeposit }">
+                <input type="radio" value="Deposit" v-model="form.ChangeType" :disabled="!canEnterDeposit" />
                 Einnahme
               </label>
             </div>
@@ -89,6 +89,8 @@ const props = defineProps({
   budgets: { type: Array, default: () => [] },
   requiresReceiptDeposit: { type: Boolean, default: false },
   requiresReceiptWithdrawal: { type: Boolean, default: false },
+  canEnterDeposit: { type: Boolean, default: true },
+  canEnterWithdrawal: { type: Boolean, default: true },
 })
 const emit = defineEmits(['created'])
 const store = useMoneyStore()
@@ -102,7 +104,7 @@ const receiptPreview = ref(null)
 const today = () => new Date().toISOString().slice(0, 10)
 
 const defaultForm = () => ({
-  ChangeType: 'Withdrawal',
+  ChangeType: props.canEnterWithdrawal ? 'Withdrawal' : 'Deposit',
   ChangeAmount: '',
   ChangeReason: '',
   ChangeDate: today(),
