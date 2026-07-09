@@ -4,12 +4,12 @@
       <div class="qrcode-modal_content" @click.stop>
         <div class="qrcode-modal_header">
           <h2 class="hl2 qrcode-modal_title">Profil-QR-Code</h2>
-          <button class="button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
         <div class="qrcode-modal_body">
           <canvas ref="canvasEl" class="qrcode-modal_canvas"></canvas>
           <p class="qrcode-modal_url">{{ profileUrl }}</p>
-          <button class="button" @click="share">{{ shareLabel }}</button>
+          <AppButton variant="primary" @click="share">{{ shareLabel }}</AppButton>
         </div>
       </div>
     </dialog>
@@ -19,6 +19,8 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import QRCode from 'qrcode'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const props = defineProps({
   username: { type: String, required: true }

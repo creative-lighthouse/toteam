@@ -2,14 +2,15 @@
     <section class="section--ProfilePage">
         <div class="section_content">
             <div class="section_profilecard" v-if="authStore.user">
-                <button
+                <AppIconButton
                     v-if="authStore.user.Username"
+                    variant="ghost"
                     class="profilecard-qr-btn"
                     aria-label="QR-Code anzeigen"
                     @click="qrModal?.open()"
                 >
                     <img src="/app/client/icons/actions/action_qrcode.svg" alt="">
-                </button>
+                </AppIconButton>
 
                 <div class="profile-image">
                     <img
@@ -76,12 +77,12 @@
             </div>
 
             <div class="profile-actions">
-                <button class="button" @click="editModal?.open()">
+                <AppButton variant="primary" @click="editModal?.open()">
                     Profil bearbeiten
-                </button>
-                <button @click="authStore.logout()" class="button button--danger">
+                </AppButton>
+                <AppButton variant="danger" @click="authStore.logout()">
                     Abmelden
-                </button>
+                </AppButton>
             </div>
         </div>
 
@@ -98,6 +99,8 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import EditProfileModal from '@components/EditProfileModal.vue'
 import QrCodeModal from '@components/QrCodeModal.vue'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const authStore = useAuthStore()
 usePageHeaderStore().setHeader('Profil', 'Verwalte dein Profil und deine Einstellungen.')

@@ -3,44 +3,12 @@
     <h3 class="event-participation_title">Deine Teilnahme</h3>
 
     <form class="event-response-actions" @submit.prevent>
-      <fieldset class="fieldset-availability">
-        <button
-          type="button"
-          class="event-response-button event-response-accept"
-          :class="{
-            'selected': userParticipationType === 'Accept',
-            'unselected': userParticipationType && userParticipationType !== 'Accept'
-          }"
-          @click="changeParticipation('Accept')"
-          :disabled="submitting"
-        >
-          Zusagen
-        </button>
-        <button
-          type="button"
-          class="event-response-button event-response-maybe"
-          :class="{
-            'selected': userParticipationType === 'Maybe',
-            'unselected': userParticipationType && userParticipationType !== 'Maybe'
-          }"
-          @click="changeParticipation('Maybe')"
-          :disabled="submitting"
-        >
-          Vielleicht
-        </button>
-        <button
-          type="button"
-          class="event-response-button event-response-decline"
-          :class="{
-            'selected': userParticipationType === 'Decline',
-            'unselected': userParticipationType && userParticipationType !== 'Decline'
-          }"
-          @click="changeParticipation('Decline')"
-          :disabled="submitting"
-        >
-          Absagen
-        </button>
-      </fieldset>
+      <AppButtonGroup
+        :options="participationOptions"
+        :model-value="userParticipationType"
+        :disabled="submitting"
+        @select="changeParticipation"
+      />
 
       <div
         v-if="!showTimeInput || !showNoteInput"
@@ -79,14 +47,14 @@
           <input id="time-end" type="time" v-model="timeEnd" :disabled="submitting" aria-label="Endzeit">
         </div>
         <div class="time-button-row">
-          <button
-            type="button"
-            class="button button--primary button--small"
-            @click="saveTime"
+          <AppButton
+            size="small"
+            variant="primary"
             :disabled="submitting || !timeStart || !timeEnd"
+            @click="saveTime"
           >
             Speichern
-          </button>
+          </AppButton>
           <button
             type="button"
             class="btn-remove-time"
@@ -111,14 +79,14 @@
           class="note-textarea"
         ></textarea>
         <div class="note-button-row">
-          <button
-            type="button"
-            class="button button--primary button--small"
-            @click="saveNote"
+          <AppButton
+            size="small"
+            variant="primary"
             :disabled="submitting"
+            @click="saveNote"
           >
             Speichern
-          </button>
+          </AppButton>
           <button
             type="button"
             class="btn-remove-note"
@@ -137,10 +105,18 @@
 import actionTime from '../../../../icons/actions/action_time.svg'
 import actionEdit from '../../../../icons/actions/action_edit.svg'
 import { useEventParticipation } from './useEventParticipation'
+import AppButton from '@components/AppButton.vue'
+import AppButtonGroup from '@components/AppButtonGroup.vue'
 
 const props = defineProps({
   event: { type: Object, required: true }
 })
+
+const participationOptions = [
+  { value: 'Accept', label: 'Zusagen', tone: 'positive' },
+  { value: 'Maybe', label: 'Vielleicht', tone: 'warning' },
+  { value: 'Decline', label: 'Absagen', tone: 'negative' },
+]
 
 const emit = defineEmits(['participation-changed', 'time-changed', 'notes-changed', 'show-status'])
 

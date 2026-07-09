@@ -44,9 +44,9 @@
 
         <!-- New task button + View mode toggle (desktop/tablet only) -->
         <div v-if="!isMobile" class="tasks-toolbar_view-toggle">
-          <button class="button button--primary" @click="createModal?.open()">
+          <AppButton variant="primary" @click="createModal?.open()">
             + Neue Aufgabe
-          </button>
+          </AppButton>
           <div class="tasks-view-toggle">
             <button
               class="tasks-view-toggle_btn"
@@ -78,7 +78,7 @@
       <!-- Error -->
       <div v-else-if="store.error" class="section_infobox error">
         <p>Fehler: {{ store.error }}</p>
-        <button class="button" @click="store.refresh()">Erneut versuchen</button>
+        <AppButton variant="primary" @click="store.refresh()">Erneut versuchen</AppButton>
       </div>
 
       <template v-else>
@@ -142,6 +142,7 @@ import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import TaskCard from '@components/TaskCard.vue'
 import TaskCreateModal from '@components/TaskCreateModal.vue'
+import AppButton from '@components/AppButton.vue'
 
 const router = useRouter()
 const store = useTasksStore()

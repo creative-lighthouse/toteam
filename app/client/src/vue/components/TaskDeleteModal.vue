@@ -5,7 +5,7 @@
 
         <div class="task-delete-modal_header">
           <h2 class="hl2 task-delete-modal_title">Aufgabe löschen</h2>
-          <button class="button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <div class="task-delete-modal_body">
@@ -18,19 +18,19 @@
           <div v-if="error" class="task-delete-modal_error">{{ error }}</div>
 
           <div class="task-delete-modal_actions">
-            <button type="button" class="button" @click="close" :disabled="deleting">Abbrechen</button>
+            <AppButton variant="secondary" :disabled="deleting" @click="close">Abbrechen</AppButton>
 
             <template v-if="subtaskCount > 0">
-              <button type="button" class="button button--secondary" :disabled="deleting" @click="confirmDelete('promote')">
+              <AppButton variant="secondary" :disabled="deleting" @click="confirmDelete('promote')">
                 {{ deleting ? 'Löschen…' : 'Unteraufgaben eigenständig machen' }}
-              </button>
-              <button type="button" class="button button--danger" :disabled="deleting" @click="confirmDelete('delete')">
+              </AppButton>
+              <AppButton variant="danger" :disabled="deleting" @click="confirmDelete('delete')">
                 {{ deleting ? 'Löschen…' : 'Alles löschen' }}
-              </button>
+              </AppButton>
             </template>
-            <button v-else type="button" class="button button--danger" :disabled="deleting" @click="confirmDelete('promote')">
+            <AppButton v-else variant="danger" :disabled="deleting" @click="confirmDelete('promote')">
               {{ deleting ? 'Löschen…' : 'Löschen' }}
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -42,6 +42,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useTasksStore } from '@stores/tasks'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const props = defineProps({
   task: { type: Object, required: true },

@@ -23,7 +23,7 @@
         <section v-if="org.CanManageRoles" class="org-manage_section">
           <div class="org-manage_section-heading">
             <h3 class="hl3">Rollen &amp; Berechtigungen</h3>
-            <button class="button button--primary" @click="openCreateRole">+ Neue Rolle</button>
+            <AppButton variant="primary" @click="openCreateRole">+ Neue Rolle</AppButton>
           </div>
 
           <div v-if="orgRolesStore.loading" class="section_infobox"><p>Lade Rollen…</p></div>
@@ -38,8 +38,8 @@
                 </span>
               </div>
               <div class="org-manage_role-actions">
-                <button class="button button--secondary" @click="openEditRole(role)">Bearbeiten</button>
-                <button class="button button--danger" @click="removeRole(role)">Löschen</button>
+                <AppIconButton variant="primary" size="small" aria-label="Rolle bearbeiten" @click="openEditRole(role)">✎</AppIconButton>
+                <AppIconButton variant="danger" size="small" aria-label="Rolle löschen" @click="removeRole(role)">×</AppIconButton>
               </div>
             </div>
           </div>
@@ -59,7 +59,7 @@
                   <span v-if="!m.Roles.length" class="org-manage_role-chip org-manage_role-chip--empty">Keine Rolle</span>
                 </span>
               </div>
-              <button class="button button--secondary" @click="openMemberRoles(m)">Rollen zuweisen</button>
+              <AppIconButton variant="primary" size="small" aria-label="Rollen zuweisen" @click="openMemberRoles(m)">✎</AppIconButton>
             </div>
           </div>
         </section>
@@ -93,6 +93,8 @@ import { useOrgRolesStore } from '@stores/orgRoles'
 import { apiGet } from '@utils/api'
 import RoleEditModal from '@components/RoleEditModal.vue'
 import MemberRolesModal from '@components/MemberRolesModal.vue'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const route = useRoute()
 const orgRolesStore = useOrgRolesStore()

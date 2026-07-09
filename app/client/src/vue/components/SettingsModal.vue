@@ -4,7 +4,7 @@
       <div class="settings-modal_content" @click.stop>
         <div class="settings-modal_header">
           <h2 class="hl2 settings-modal_title">Einstellungen</h2>
-          <button class="button button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <div class="settings-modal_body">
@@ -67,6 +67,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { apiGet, apiPost } from '@utils/api'
 import { useUiStore } from '@stores/ui'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const uiStore = useUiStore()
 

@@ -10,16 +10,20 @@
             <div v-else class="events-calendar">
                 <!-- Month Navigation -->
                 <div class="calendar-header">
-                    <button @click="previousMonth" class="btn-nav">
-                        <img :src="actionBack" alt="Previous Month" />
-                    </button>
+                    <AppIconButton variant="neutral" aria-label="Vorheriger Monat" @click="previousMonth">
+                        <img :src="actionBack" alt="" />
+                    </AppIconButton>
                     <h2>{{ monthYearDisplay }}</h2>
-                    <button @click="jumptotoday" class="btn-today" :class="{ 'btn-nav--current-month': isCurrentMonth }" title="Heute">
-                        <span class="day-number">Heute</span>
-                    </button>
-                    <button @click="nextMonth" class="btn-nav">
-                        <img :src="actionForward" alt="Next Month" />
-                    </button>
+                    <AppButton
+                        size="small"
+                        variant="secondary"
+                        :disabled="isCurrentMonth"
+                        title="Heute"
+                        @click="jumptotoday"
+                    >Heute</AppButton>
+                    <AppIconButton variant="neutral" aria-label="Nächster Monat" @click="nextMonth">
+                        <img :src="actionForward" alt="" />
+                    </AppIconButton>
                 </div>
 
                 <!-- Calendar Grid -->
@@ -101,9 +105,9 @@
 
                 <!-- ICS Link + Termin eintragen -->
                 <div class="add-container">
-                    <button type="button" class="button" @click="entryModalRef.open(selectedDate)">
+                    <AppIconButton variant="neutral" aria-label="Termin hinzufügen" @click="entryModalRef.open(selectedDate)">
                         +
-                    </button>
+                    </AppIconButton>
                 </div>
                 <div class="copy-container">
                     <button
@@ -153,6 +157,8 @@ import EventDialog from '@components/EventDialog/EventDialog.vue'
 import EventCard from '@components/EventCard.vue'
 import AppMenu from '@components/AppMenu.vue'
 import AddAppointmentModal from '@components/AddAppointmentModal.vue'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 import actionForward from '../../../icons/actions/action_forward.svg'
 import actionBack from '../../../icons/actions/action_back.svg'
 

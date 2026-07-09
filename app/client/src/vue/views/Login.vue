@@ -31,13 +31,14 @@
                         >
                     </div>
 
-                    <button
+                    <AppButton
                         type="submit"
-                        class="button button--primary"
+                        variant="primary"
+                        class="button--primary"
                         :disabled="authStore.loading"
                     >
                         {{ authStore.loading ? 'Anmelden...' : 'Anmelden' }}
-                    </button>
+                    </AppButton>
 
                     <p class="login-register-link">
                         Noch kein Konto?
@@ -54,6 +55,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
+import AppButton from '@components/AppButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

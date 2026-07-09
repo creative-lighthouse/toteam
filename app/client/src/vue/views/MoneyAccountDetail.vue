@@ -17,12 +17,12 @@
             {{ account.Organization?.Title }}
           </div>
           <div class="money-detail_header-actions">
-            <button v-if="account.Permissions.canManageAccount" class="button button--secondary money-detail_edit-btn" @click="accountModal?.open()">
+            <AppButton v-if="account.Permissions.canManageAccount" variant="secondary" @click="accountModal?.open()">
               Kasse bearbeiten
-            </button>
-            <button v-if="account.Permissions.canDeleteAccount" class="button button--danger money-detail_delete-btn" @click="removeAccount">
+            </AppButton>
+            <AppButton v-if="account.Permissions.canDeleteAccount" variant="danger" @click="removeAccount">
               Kasse löschen
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -46,8 +46,8 @@
             <div v-for="entry in account.PendingEntries" :key="entry.ID" class="money-entry money-entry--pending">
               <MoneyEntryRow :entry="entry" />
               <div class="money-entry_approve-actions">
-                <button class="button button--secondary" :disabled="approving === entry.ID" @click="approve(entry.ID, false)">Ablehnen</button>
-                <button class="button button--primary" :disabled="approving === entry.ID" @click="approve(entry.ID, true)">Genehmigen</button>
+                <AppButton variant="secondary" :disabled="approving === entry.ID" @click="approve(entry.ID, false)">Ablehnen</AppButton>
+                <AppButton variant="primary" :disabled="approving === entry.ID" @click="approve(entry.ID, true)">Genehmigen</AppButton>
               </div>
             </div>
           </div>
@@ -57,7 +57,7 @@
         <section class="money-section">
           <div class="money-section_heading-row">
             <h3 class="hl3 money-section_title">Budgets</h3>
-            <button v-if="account.Permissions.canManageBudgets" class="money-section_add-btn" @click="openBudgetModal(null)">+ Budget</button>
+            <AppButton v-if="account.Permissions.canManageBudgets" size="small" variant="secondary" @click="openBudgetModal(null)">+ Budget</AppButton>
           </div>
 
           <div v-if="account.Budgets.length === 0" class="section_infobox"><p>Noch keine Budgets angelegt.</p></div>
@@ -94,12 +94,13 @@
           <div v-else class="money-entry-list">
             <div v-for="entry in account.History" :key="entry.ID" class="money-entry">
               <MoneyEntryRow :entry="entry" />
-              <button
+              <AppIconButton
                 v-if="canDeleteEntry(entry)"
-                class="money-entry_delete"
-                title="Löschen"
+                variant="danger"
+                size="small"
+                aria-label="Buchung löschen"
                 @click="remove(entry.ID)"
-              >✕</button>
+              >✕</AppIconButton>
             </div>
           </div>
         </section>
@@ -152,6 +153,8 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import MoneyEntryModal from '@components/MoneyEntryModal.vue'
 import MoneyAccountModal from '@components/MoneyAccountModal.vue'
 import MoneyBudgetModal from '@components/MoneyBudgetModal.vue'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const route = useRoute()
 const router = useRouter()

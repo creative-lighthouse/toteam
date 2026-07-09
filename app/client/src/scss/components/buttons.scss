@@ -1,0 +1,229 @@
+@use "../variables" as *;
+
+// ── AppButton (Default / Small) ─────────────────────────────────────────────
+.app-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+    font-weight: bold;
+    text-decoration: none;
+    text-wrap: nowrap;
+    cursor: pointer;
+    appearance: none;
+    box-shadow: none;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+
+    &--default {
+        font-size: 16px;
+        padding: 9px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        border: 1px solid transparent;
+    }
+
+    &--small {
+        font-size: 13px;
+        padding: 6px 14px;
+        border-radius: var(--BorderRadiusLarge);
+        border: 1px solid transparent;
+    }
+
+    &--primary {
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+        border-color: var(--ColorPrimary);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorPrimaryDark);
+            border-color: var(--ColorPrimaryDark);
+        }
+    }
+
+    &--secondary {
+        background-color: transparent;
+        color: var(--ColorPrimary);
+        border-color: var(--ColorPrimary);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--danger {
+        background-color: var(--ColorStatusBad);
+        color: var(--ColorWhite);
+        border-color: var(--ColorStatusBad);
+
+        &:hover:not(:disabled) {
+            background-color: color-mix(in srgb, var(--ColorStatusBad) 85%, black);
+            border-color: color-mix(in srgb, var(--ColorStatusBad) 85%, black);
+        }
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    @include media(max-desktop) {
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+}
+
+// ── AppIconButton (Icon Button) ─────────────────────────────────────────────
+.app-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    appearance: none;
+    background: transparent;
+    line-height: 1;
+    padding: 0;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+
+    &--default {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+        border-radius: 50%;
+    }
+
+    &--small {
+        width: 26px;
+        height: 26px;
+        font-size: 0.85rem;
+        border-radius: 50%;
+    }
+
+    &--primary {
+        border: 1px solid var(--ColorPrimary);
+        color: var(--ColorPrimary);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--danger {
+        border: 1px solid var(--ColorStatusBad);
+        color: var(--ColorStatusBad);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorStatusBad);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--neutral {
+        background-color: var(--ColorLightGray);
+        border: 1px solid var(--ColorLightGray);
+        color: var(--ColorGray);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorPrimary);
+            border-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--ghost {
+        border: 1px solid transparent;
+        color: inherit;
+
+        &:hover:not(:disabled) {
+            opacity: 0.7;
+        }
+    }
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    img {
+        width: 60%;
+        height: 60%;
+        object-fit: contain;
+    }
+}
+
+// ── AppButtonGroup (Participation Button) ───────────────────────────────────
+.app-button-group {
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100%;
+    border: none;
+    padding: 0;
+    margin: 0;
+
+    &_item {
+        flex: 1;
+        min-height: 44px;
+        padding: 10px 15px;
+        font-size: 14px;
+        font-weight: bold;
+        font-family: inherit;
+        border: 1px solid transparent;
+        border-radius: 0;
+        background-color: var(--ColorLightGray);
+        opacity: 0.5;
+        cursor: pointer;
+        appearance: none;
+        transition: all 0.3s ease;
+
+        &:first-child { border-radius: var(--BorderRadiusSmall) 0 0 var(--BorderRadiusSmall); }
+        &:last-child { border-radius: 0 var(--BorderRadiusSmall) var(--BorderRadiusSmall) 0; }
+
+        &:disabled { cursor: not-allowed; opacity: 0.3; }
+        &:hover:not(:disabled) { opacity: 1; }
+
+        &--positive {
+            background-color: var(--ColorStatusGoodAccent);
+            color: var(--ColorStatusGood);
+
+            &.is-selected { border-color: var(--ColorStatusGood); opacity: 1; }
+        }
+
+        &--warning {
+            background-color: var(--ColorStatusWarningAccent);
+            color: var(--ColorStatusWarning);
+
+            &.is-selected { border-color: var(--ColorStatusWarning); opacity: 1; }
+        }
+
+        &--negative {
+            background-color: var(--ColorStatusBadAccent);
+            color: var(--ColorStatusBad);
+
+            &.is-selected { border-color: var(--ColorStatusBad); opacity: 1; }
+        }
+
+        &--neutral {
+            background-color: var(--ColorLightGray);
+            color: var(--ColorGray);
+
+            &.is-selected { border-color: var(--ColorGray); opacity: 1; }
+        }
+
+        &.is-unselected {
+            background-color: var(--ColorGray);
+            border-color: var(--ColorLightGray);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--compact &_item {
+        padding: 5px 8px;
+        min-height: auto;
+        font-size: 13px;
+    }
+}

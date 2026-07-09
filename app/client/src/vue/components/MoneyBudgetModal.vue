@@ -5,7 +5,7 @@
 
         <div class="money-budget-modal_header">
           <h2 class="hl2 money-budget-modal_title">{{ isEdit ? 'Budget bearbeiten' : 'Neues Budget' }}</h2>
-          <button class="button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <form class="money-budget-modal_body" @submit.prevent="submit">
@@ -33,10 +33,10 @@
           <div v-if="error" class="money-budget-modal_error">{{ error }}</div>
 
           <div class="money-budget-modal_actions">
-            <button type="button" class="button" @click="close" :disabled="saving">Abbrechen</button>
-            <button type="submit" class="button button--primary" :disabled="saving || !form.Title.trim()">
+            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+            <AppButton type="submit" variant="primary" :disabled="saving || !form.Title.trim()">
               {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
-            </button>
+            </AppButton>
           </div>
 
         </form>
@@ -48,6 +48,8 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useMoneyStore } from '@stores/money'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const props = defineProps({
   accountId: { type: Number, required: true },

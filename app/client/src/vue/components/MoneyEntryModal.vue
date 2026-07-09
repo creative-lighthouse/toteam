@@ -5,7 +5,7 @@
 
         <div class="money-entry-modal_header">
           <h2 class="hl2 money-entry-modal_title">Buchung erfassen</h2>
-          <button class="button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <form class="money-entry-modal_body" @submit.prevent="submit">
@@ -68,10 +68,10 @@
           <div v-if="error" class="money-entry-modal_error">{{ error }}</div>
 
           <div class="money-entry-modal_actions">
-            <button type="button" class="button" @click="close" :disabled="saving">Abbrechen</button>
-            <button type="submit" class="button button--primary" :disabled="saving || !canSubmit">
+            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+            <AppButton type="submit" variant="primary" :disabled="saving || !canSubmit">
               {{ saving ? 'Speichern…' : 'Erfassen' }}
-            </button>
+            </AppButton>
           </div>
 
         </form>
@@ -83,6 +83,8 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useMoneyStore } from '@stores/money'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const props = defineProps({
   accountId: { type: Number, required: true },

@@ -5,7 +5,7 @@
 
         <div class="money-account-modal_header">
           <h2 class="hl2 money-account-modal_title">{{ mode === 'create' ? 'Neue Kasse' : 'Kasse bearbeiten' }}</h2>
-          <button class="button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <form class="money-account-modal_body" @submit.prevent="submit">
@@ -59,10 +59,10 @@
           <div v-if="error" class="money-account-modal_error">{{ error }}</div>
 
           <div class="money-account-modal_actions">
-            <button type="button" class="button" @click="close" :disabled="saving">Abbrechen</button>
-            <button type="submit" class="button button--primary" :disabled="saving || !canSubmit">
+            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+            <AppButton type="submit" variant="primary" :disabled="saving || !canSubmit">
               {{ saving ? 'Speichern…' : (mode === 'create' ? 'Erstellen' : 'Speichern') }}
-            </button>
+            </AppButton>
           </div>
 
         </form>
@@ -74,6 +74,8 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useMoneyStore } from '@stores/money'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const props = defineProps({
   mode: { type: String, default: 'create' },

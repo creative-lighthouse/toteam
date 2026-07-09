@@ -7,7 +7,7 @@
 
       <div v-else-if="error" class="section_infobox error">
         <p>Fehler beim Laden: {{ error }}</p>
-        <router-link to="/map" class="button">← Zurück zur Übersicht</router-link>
+        <AppButton to="/map" variant="primary">← Zurück zur Übersicht</AppButton>
       </div>
 
       <div v-else-if="map" class="map-container">
@@ -90,15 +90,16 @@
                 >
                   <div class="edit-layer-card_header" :style="{ backgroundColor: editLayer.color }">
                     <span>{{ editLayer.title || 'Ebene ' + (i + 1) }}</span>
-                    <button
-                      class="edit-layer-card_delete"
-                      :title="`Ebene &quot;${editLayer.title}&quot; löschen`"
+                    <AppIconButton
+                      variant="danger"
+                      size="small"
+                      :aria-label="`Ebene &quot;${editLayer.title}&quot; löschen`"
                       @click="deleteLayer(i)"
                     >
                       <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M11 1.75V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM6.5 1.75v1.25h3V1.75a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25zM4.997 6.5a.75.75 0 00-1.498.076l.492 7.5a.75.75 0 001.498-.076L4.997 6.5zm6.006.076a.75.75 0 10-1.498-.076l-.492 7.5a.75.75 0 001.498.076l.492-7.5z"/>
                       </svg>
-                    </button>
+                    </AppIconButton>
                   </div>
                   <div class="edit-layer-card_body">
                     <div class="edit-field">
@@ -140,15 +141,15 @@
                         {{ pendingImages[editLayer.id] ? '✓ Bild gewählt' : 'Bild wählen' }}
                       </label>
                     </div>
-                    <button class="button button--small" @click="addPOIToLayer(i)">
+                    <AppButton size="small" variant="secondary" @click="addPOIToLayer(i)">
                       + Marker hinzufügen
-                    </button>
+                    </AppButton>
                   </div>
                 </div>
 
-                <button class="button" style="margin-top: 8px;" @click="addLayer">
+                <AppButton variant="primary" style="margin-top: 8px;" @click="addLayer">
                   + Neue Ebene
-                </button>
+                </AppButton>
               </div>
             </template>
 
@@ -156,7 +157,7 @@
 
           <div class="map-controls_actions">
             <template v-if="!isEditMode">
-              <router-link to="/map" class="button action_back">← Alle Lagepläne</router-link>
+              <AppButton to="/map" variant="primary">← Alle Lagepläne</AppButton>
               <button class="button action_recenter" @click="resetView">
                 <div
                   class="resetMapView_button icon--small"
@@ -165,15 +166,15 @@
               </button>
             </template>
             <template v-else>
-              <button class="button button--danger" @click="deleteMap" :disabled="saving" title="Lageplan löschen">
+              <AppButton variant="danger" :disabled="saving" title="Lageplan löschen" @click="deleteMap">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="display:block">
                   <path d="M11 1.75V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM6.5 1.75v1.25h3V1.75a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25zM4.997 6.5a.75.75 0 00-1.498.076l.492 7.5a.75.75 0 001.498-.076L4.997 6.5zm6.006.076a.75.75 0 10-1.498-.076l-.492 7.5a.75.75 0 001.498.076l.492-7.5z"/>
                 </svg>
-              </button>
-              <button class="button" @click="cancelEdit" :disabled="saving">Abbrechen</button>
-              <button class="button" @click="saveAll" :disabled="saving">
+              </AppButton>
+              <AppButton variant="secondary" :disabled="saving" @click="cancelEdit">Abbrechen</AppButton>
+              <AppButton variant="primary" :disabled="saving" @click="saveAll">
                 {{ saving ? 'Wird gespeichert…' : 'Speichern' }}
-              </button>
+              </AppButton>
             </template>
           </div>
         </div>
@@ -194,6 +195,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPostForm } from '@utils/api'
 import MapRenderer from '../../js/maprenderer.js'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -417,20 +417,6 @@
         word-break: break-word;
     }
 
-    &_edit-btn {
-        flex-shrink: 0;
-        background: transparent;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
-        color: var(--ColorTextSecondary);
-        cursor: pointer;
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        transition: border-color 0.15s, color 0.15s;
-
-        &:hover { border-color: var(--ColorPrimary); color: var(--ColorPrimary); }
-    }
-
     &_textarea {
         width: 100%;
         resize: vertical;
@@ -464,40 +450,6 @@
     h4 { margin: 0; }
 }
 
-.meal-suggest-btn {
-    background: transparent;
-    border: 1px solid var(--ColorPrimary);
-    border-radius: 20px;
-    color: var(--ColorPrimary);
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 2px 10px;
-    white-space: nowrap;
-    transition: background 0.2s, color 0.2s;
-
-    &:hover {
-        background: var(--ColorPrimary);
-        color: white;
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: default;
-        pointer-events: none;
-    }
-
-    &--reject {
-        border-color: var(--ColorStatusBad);
-        color: var(--ColorStatusBad);
-
-        &:hover {
-            background: var(--ColorStatusBad);
-            color: white;
-        }
-    }
-}
-
 // ── Food suggestion modal ─────────────────────────────────────────────────────
 
 .food-modal-overlay {
@@ -526,18 +478,6 @@
         border-bottom: 1px solid var(--ColorLightGray);
 
         h3 { margin: 0; font-size: 1.1rem; }
-    }
-
-    &_close {
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        color: var(--ColorTextSecondary);
-        display: flex;
-        padding: 4px;
-        border-radius: 4px;
-
-        &:hover { background: var(--ColorLightGray); }
     }
 
     &_body {
@@ -780,85 +720,12 @@
     align-items: center;
     gap: 2px;
 
-    &_btn {
-        width: 28px;
-        height: 28px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: 50%;
-        background: var(--ColorWhite);
-        cursor: pointer;
-        font-size: 1rem;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--ColorPrimary);
-        transition: background 0.15s, color 0.15s;
-
-        &:hover:not(:disabled) {
-            background: var(--ColorPrimary);
-            color: var(--ColorWhite);
-            border-color: var(--ColorPrimary);
-        }
-
-        &:disabled {
-            opacity: 0.35;
-            cursor: default;
-        }
-    }
-
     &_val {
         min-width: 24px;
         text-align: center;
         font-size: 0.9rem;
         font-weight: 600;
     }
-}
-
-.meal-product-delete-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 1px solid var(--ColorStatusBad);
-    background: transparent;
-    color: var(--ColorStatusBad);
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s, color 0.2s;
-
-    &:hover:not(:disabled) {
-        background: var(--ColorStatusBad);
-        color: white;
-    }
-
-    &:disabled { opacity: 0.4; cursor: default; }
-}
-
-.meal-food-edit-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 1px solid var(--ColorPrimary);
-    background: transparent;
-    color: var(--ColorPrimary);
-    cursor: pointer;
-    font-size: 0.85rem;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s, color 0.2s;
-
-    &:hover:not(:disabled) {
-        background: var(--ColorPrimary);
-        color: white;
-    }
-
-    &:disabled { opacity: 0.4; cursor: default; }
 }
 
 .meal-food-edit-form {

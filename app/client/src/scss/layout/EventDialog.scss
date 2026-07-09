@@ -31,19 +31,6 @@
             top: 50%;
         }
 
-        .button--close {
-            background: transparent;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 5px 10px;
-            color: var(--ColorWhite);
-            margin: 0;
-
-            &:hover {
-                color: var(--ColorGray);
-            }
-        }
     }
 
     .dialog-infobox {
@@ -55,21 +42,6 @@
             right: 10px;
             width: 20px;
             height: 20px;
-
-            .event-manage-button {
-                width: 100%;
-                height: 100%;
-                background: none;
-                border: none;
-                padding: 0;
-                cursor: pointer;
-                margin: 0;
-
-                img {
-                    width: 100%;
-                    height: 100%;
-                }
-            }
         }
     }
 
@@ -169,42 +141,13 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                gap: 10px;
                 margin-bottom: 10px;
 
                 h3 {
                     margin: 0;
                     font-size: 18px;
                     color: var(--ColorFont);
-                }
-            }
-
-            .btn-feature-add {
-                width: 28px;
-                height: 28px;
-                border-radius: 50%;
-                background-color: var(--ColorLightGray);
-                border: none;
-                color: var(--ColorPrimary);
-                font-size: 20px;
-                font-weight: 400;
-                line-height: 1;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0;
-                flex-shrink: 0;
-                margin-left: 10px;
-                transition: background-color 0.15s ease, color 0.15s ease;
-
-                &:hover:not(:disabled) {
-                    background-color: var(--ColorPrimary);
-                    color: var(--ColorWhite);
-                }
-
-                &:disabled {
-                    opacity: 0.4;
-                    cursor: default;
                 }
             }
 
@@ -259,12 +202,6 @@
                         align-items: center;
                         gap: 12px;
                         margin-top: 4px;
-
-                        .button--small {
-                            padding: 6px 14px;
-                            font-size: 13px;
-                            margin: 0;
-                        }
 
                         .btn-remove-time {
                             background: none;
@@ -373,20 +310,6 @@
                                 display: flex;
                                 flex-shrink: 0;
                                 gap: 5px;
-
-                                .button {
-                                    margin: 0;
-                                    border-radius: 50%;
-                                    padding: 0;
-                                    background-color: var(--ColorLightGray);
-
-                                    img {
-                                        width: 24px;
-                                        height: 24px;
-                                        padding: 5px;
-                                        display: block;
-                                    }
-                                }
                             }
                         }
 
@@ -503,75 +426,6 @@
                     border: none;
                     padding: 0;
 
-                    &.fieldset-availability {
-                        display: flex;
-                        align-items: stretch;
-                        justify-content: stretch;
-                        width: 100%;
-
-                        .event-response-button {
-                            padding: 10px 15px;
-                            border: 1px solid transparent;
-                            border-radius: var(--BorderRadiusSmall);
-                            background-color: var(--ColorLightGray);
-                            font-weight: bold;
-                            opacity: 0.5;
-                            cursor: pointer;
-                            transition: all 0.3s ease;
-                            width: calc(100% / 3);
-                            min-height: 44px;
-                            font-size: 14px;
-
-                            &:disabled {
-                                cursor: not-allowed;
-                                opacity: 0.3;
-                            }
-
-                            &:hover:not(:disabled) {
-                                opacity: 1;
-                            }
-
-                            &.event-response-accept {
-                                background-color: var(--ColorStatusGoodAccent);
-                                color: var(--ColorStatusGood);
-                                border-radius: var(--BorderRadiusSmall) 0 0 var(--BorderRadiusSmall);
-
-                                &.selected {
-                                    border-color: var(--ColorStatusGood);
-                                    opacity: 1;
-                                }
-                            }
-
-                            &.event-response-maybe {
-                                background-color: var(--ColorStatusWarningAccent);
-                                color: var(--ColorStatusWarning);
-                                border-radius: 0;
-
-                                &.selected {
-                                    border-color: var(--ColorStatusWarning);
-                                    opacity: 1;
-                                }
-                            }
-
-                            &.event-response-decline {
-                                background-color: var(--ColorStatusBadAccent);
-                                color: var(--ColorStatusBad);
-                                border-radius: 0 var(--BorderRadiusSmall) var(--BorderRadiusSmall) 0;
-
-                                &.selected {
-                                    border-color: var(--ColorStatusBad);
-                                    opacity: 1;
-                                }
-                            }
-
-                            &.unselected {
-                                background-color: var(--ColorGray);
-                                border: var(--ColorLightGray) 1px solid;
-                                color: var(--ColorWhite);
-                            }
-                        }
-                    }
-
                     .add-actions-row {
                         margin-top: 10px;
                         display: flex;
@@ -637,11 +491,6 @@
                             align-items: center;
                             gap: 12px;
 
-                            .button--small {
-                                padding: 6px 14px;
-                                font-size: 13px;
-                            }
-
                             .btn-remove-time {
                                 background: none;
                                 border: none;
@@ -680,12 +529,6 @@
                         justify-content: center;
                         gap: 12px;
                         margin-top: 6px;
-
-                        .button--small {
-                            padding: 6px 14px;
-                            font-size: 13px;
-                            margin: 0;
-                        }
 
                         .btn-remove-note {
                             background: none;
@@ -731,57 +574,6 @@
                         padding: 0;
                         width: 50%;
 
-                        .fieldset-availability {
-                            margin: 0;
-                            padding: 0;
-                            border: none;
-                            display: flex;
-
-                            .event-response-button {
-                                padding: 5px 8px;
-                                border: 1px solid transparent;
-                                border-radius: var(--BorderRadiusSmall);
-                                background-color: var(--ColorLightGray);
-                                font-weight: bold;
-                                opacity: 0.5;
-                                cursor: pointer;
-                                transition: all 0.3s ease;
-                                width: 50%;
-
-                                &:hover {
-                                    opacity: 1;
-                                }
-
-                                &.event-response-accept {
-                                    background-color: var(--ColorStatusGoodAccent);
-                                    color: var(--ColorStatusGood);
-                                    border-radius: var(--BorderRadiusSmall) 0 0 var(--BorderRadiusSmall);
-
-                                    &.selected {
-                                        border-color: var(--ColorStatusGood);
-                                        opacity: 1;
-                                    }
-                                }
-
-                                &.event-response-decline {
-                                    background-color: var(--ColorStatusBadAccent);
-                                    color: var(--ColorStatusBad);
-                                    border-radius: 0 var(--BorderRadiusSmall) var(--BorderRadiusSmall) 0;
-
-                                    &.selected {
-                                        border-color: var(--ColorStatusBad);
-                                        opacity: 1;
-                                    }
-                                }
-
-                                &.unselected {
-                                    background-color: var(--ColorGray);
-                                    border: var(--ColorLightGray) 1px solid;
-                                    color: var(--ColorWhite);
-                                }
-                            }
-                        }
-
                         @include media(max-medium) {
                             width: 100%;
                             margin-top: 10px;
@@ -803,19 +595,6 @@
                             .meal-manage-actions {
                                 display: flex;
                                 gap: 5px;
-                                .button {
-                                    margin: 0;
-                                    border-radius: 50%;
-                                    padding: 0;
-                                    background-color: var(--ColorLightGray);
-
-                                    img {
-                                        width: 24px;
-                                        height: 24px;
-                                        padding: 5px;
-                                        display: block;
-                                    }
-                                }
                             }
 
                             @include media(max-medium) {

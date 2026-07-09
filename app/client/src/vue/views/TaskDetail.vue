@@ -13,10 +13,10 @@
       <div v-else class="task-detail">
 
         <!-- Parent link -->
-        <button v-if="task.Parent" class="task-detail_parent-btn" @click="goToParent">
+        <AppButton v-if="task.Parent" size="small" variant="secondary" @click="goToParent">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M7.354 3.146a.5.5 0 010 .708L4.207 7h8.043a.5.5 0 010 1H4.207l3.147 3.146a.5.5 0 01-.708.708l-4-4a.5.5 0 010-.708l4-4a.5.5 0 01.708 0z"/></svg>
           Übergeordnete Aufgabe: {{ task.Parent.Title }}
-        </button>
+        </AppButton>
 
         <!-- Header row -->
         <div class="task-detail_header">
@@ -43,16 +43,16 @@
 
           <div class="task-detail_header-actions">
             <!-- Share link button -->
-            <button class="button task-detail_share-btn" @click="copyShareLink" :title="copied ? 'Kopiert!' : 'Link teilen'">
+            <AppButton variant="secondary" :title="copied ? 'Kopiert!' : 'Link teilen'" @click="copyShareLink">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               {{ copied ? 'Kopiert!' : 'Teilen' }}
-            </button>
+            </AppButton>
 
             <!-- Delete button -->
-            <button class="button button--danger task-detail_delete-btn" title="Aufgabe löschen" @click="deleteModal?.open()">
+            <AppButton variant="danger" title="Aufgabe löschen" @click="deleteModal?.open()">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               Löschen
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -104,16 +104,16 @@
             </select>
           </div>
 
-          <button class="task-detail_add-supporter-btn" @click="supportersModal?.open()">
+          <AppButton size="small" variant="secondary" @click="supportersModal?.open()">
             + Unterstützer hinzufügen
-          </button>
+          </AppButton>
         </div>
 
         <!-- Subtasks -->
         <div class="task-detail_subtasks">
           <div class="task-detail_subtasks-header">
             <h3 class="hl3">Unteraufgaben</h3>
-            <button class="task-detail_add-subtask-btn" @click="subtaskModal?.open()">+ Unteraufgabe</button>
+            <AppButton size="small" variant="secondary" @click="subtaskModal?.open()">+ Unteraufgabe</AppButton>
           </div>
 
           <TaskProgressBar :subtasks="task.SubTasks || []" />
@@ -166,6 +166,7 @@ import TaskSupportersModal from '@components/TaskSupportersModal.vue'
 import TaskCreateModal from '@components/TaskCreateModal.vue'
 import TaskProgressBar from '@components/TaskProgressBar.vue'
 import TaskDeleteModal from '@components/TaskDeleteModal.vue'
+import AppButton from '@components/AppButton.vue'
 
 const route = useRoute()
 const router = useRouter()

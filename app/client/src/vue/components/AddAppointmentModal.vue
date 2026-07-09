@@ -6,7 +6,7 @@
         <!-- Header -->
         <div class="dialog-header">
           <h2 class="hl2">{{ editMode === 'appointment' ? 'Termin bearbeiten' : editMode === 'absence' ? 'Abwesenheit bearbeiten' : canManageContent ? 'Termin hinzufügen' : 'Abwesenheit eintragen' }}</h2>
-          <button type="button" class="button button--close" @click="close" aria-label="Schließen">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <!-- Tabs (nur beim Anlegen, nicht beim Bearbeiten) -->
@@ -80,16 +80,15 @@
                 <div v-if="absenceError" class="form-error">{{ absenceError }}</div>
 
                 <div class="form-actions">
-                    <button type="submit" class="button" :disabled="absenceSubmitting">
+                    <AppButton type="submit" variant="primary" :disabled="absenceSubmitting">
                         {{ absenceSubmitting ? 'Wird gespeichert…' : (editMode === 'absence' ? 'Speichern' : 'Abwesenheit eintragen') }}
-                    </button>
-                    <button
+                    </AppButton>
+                    <AppButton
                         v-if="editMode === 'absence'"
-                        type="button"
-                        class="button button--danger"
+                        variant="danger"
                         :disabled="absenceSubmitting"
                         @click="deleteAbsence"
-                    >Löschen</button>
+                    >Löschen</AppButton>
                 </div>
             </form>
         </div>
@@ -185,16 +184,15 @@
                 <div v-if="apptError" class="form-error">{{ apptError }}</div>
 
                 <div class="form-actions">
-                    <button type="submit" class="button" :disabled="apptSubmitting">
+                    <AppButton type="submit" variant="primary" :disabled="apptSubmitting">
                         {{ apptSubmitting ? 'Wird gespeichert…' : (editMode === 'appointment' ? 'Speichern' : 'Termin erstellen') }}
-                    </button>
-                    <button
+                    </AppButton>
+                    <AppButton
                         v-if="editMode === 'appointment'"
-                        type="button"
-                        class="button button--danger"
+                        variant="danger"
                         :disabled="apptSubmitting"
                         @click="deleteAppointment"
-                    >Löschen</button>
+                    >Löschen</AppButton>
                 </div>
             </form>
         </div>
@@ -212,6 +210,8 @@ import { ref, computed } from 'vue'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import { apiGet } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const emit = defineEmits(['appointment-created', 'absence-created', 'appointment-updated', 'absence-updated', 'appointment-deleted', 'absence-deleted', 'closed'])
 

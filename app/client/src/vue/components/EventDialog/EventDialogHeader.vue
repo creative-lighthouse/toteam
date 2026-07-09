@@ -11,13 +11,15 @@
       <p v-if="event.Status === 'Suggested'" class="event-card_status">(Vorschlag)</p>
       <p v-else-if="event.Status === 'Cancelled'" class="event-card_status">(Abgesagt)</p>
     </div>
-    <button @click="$emit('close')" class="button button--close" aria-label="Schließen">
+    <AppIconButton variant="ghost" aria-label="Schließen" @click="$emit('close')">
       ✕
-    </button>
+    </AppIconButton>
   </div>
 </template>
 
 <script setup>
+import AppIconButton from '@components/AppIconButton.vue'
+
 defineProps({
   event: { type: Object, required: true }
 })

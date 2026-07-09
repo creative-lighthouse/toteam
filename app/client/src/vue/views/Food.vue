@@ -6,7 +6,7 @@
 
       <div v-else-if="error" class="section_infobox error">
         <p>Fehler: {{ error }}</p>
-        <button class="button" @click="load">Erneut versuchen</button>
+        <AppButton variant="primary" @click="load">Erneut versuchen</AppButton>
       </div>
 
       <template v-else>
@@ -116,16 +116,18 @@
                   </span>
                 </div>
                 <div class="pending-food-actions">
-                  <button
-                    class="meal-suggest-btn"
+                  <AppButton
+                    size="small"
+                    variant="primary"
                     :disabled="decidingFoodId === f.id"
                     @click="decidePending(f.id, 'Accepted')"
-                  >Bestätigen</button>
-                  <button
-                    class="meal-suggest-btn meal-suggest-btn--reject"
+                  >Bestätigen</AppButton>
+                  <AppButton
+                    size="small"
+                    variant="secondary"
                     :disabled="decidingFoodId === f.id"
                     @click="decidePending(f.id, 'Rejected')"
-                  >Ablehnen</button>
+                  >Ablehnen</AppButton>
                 </div>
               </div>
             </div>
@@ -143,11 +145,11 @@
         <div class="food-modal" role="dialog" aria-modal="true">
           <div class="food-modal_header">
             <h3>Gericht vorschlagen</h3>
-            <button class="food-modal_close" aria-label="Schließen" @click="closeModal">
+            <AppIconButton variant="ghost" aria-label="Schließen" @click="closeModal">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
               </svg>
-            </button>
+            </AppIconButton>
           </div>
           <div class="food-modal_body">
             <div class="edit-field">
@@ -165,10 +167,10 @@
             </div>
           </div>
           <div class="food-modal_actions">
-            <button class="button button--secondary" @click="closeModal">Abbrechen</button>
-            <button class="button" :disabled="!modalForm.title.trim() || modalForm.submitting" @click="submitModal">
+            <AppButton variant="secondary" @click="closeModal">Abbrechen</AppButton>
+            <AppButton variant="primary" :disabled="!modalForm.title.trim() || modalForm.submitting" @click="submitModal">
               {{ modalForm.submitting ? 'Wird eingereicht…' : 'Vorschlagen' }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -197,6 +199,8 @@ import { ref, computed, onMounted, defineComponent, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const router = useRouter()
 
@@ -418,15 +422,17 @@ const MealCard = defineComponent({
       const foodsHeadingRow = h('div', { class: 'meal-detail-block_heading-row' }, [
         h('h4', `Geplante Gerichte (${m.foods.length})`),
         h('div', { class: 'meal-detail-heading-actions' }, [
-          h('button', {
-            class: 'meal-suggest-btn',
+          h(AppButton, {
+            size: 'small',
+            variant: 'secondary',
             onClick: e => { e.stopPropagation(); router.push(`/food/meal/${m.id}`) },
-          }, 'Details'),
+          }, () => 'Details'),
           m.acceptsContributions
-            ? h('button', {
-                class: 'meal-suggest-btn',
+            ? h(AppButton, {
+                size: 'small',
+                variant: 'secondary',
                 onClick: e => { e.stopPropagation(); emit('open-suggest-modal') },
-              }, '+ Vorschlagen')
+              }, () => '+ Vorschlagen')
             : null,
         ]),
       ])

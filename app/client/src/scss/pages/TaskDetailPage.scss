@@ -7,31 +7,6 @@
         gap: 20px;
     }
 
-    .task-detail_parent-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        align-self: flex-start;
-        background: none;
-        border: 1px solid var(--ColorLightGray);
-        color: var(--ColorGray);
-        border-radius: 50px;
-        padding: 5px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        margin-bottom: -8px; // pull closer to the header below, .task-detail already applies a 20px gap
-
-        &:hover {
-            border-color: var(--ColorPrimary);
-            color: var(--ColorPrimary);
-        }
-
-        svg {
-            flex-shrink: 0;
-        }
-    }
-
     .task-detail_header {
         display: flex;
         align-items: center;
@@ -68,16 +43,6 @@
         align-items: center;
         gap: 8px;
         flex-shrink: 0;
-    }
-
-    .task-detail_share-btn,
-    .task-detail_delete-btn {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13px;
-        flex-shrink: 0;
-        margin: 0;
     }
 
     .task-detail_title {
@@ -225,28 +190,6 @@
             outline: 2px solid var(--ColorPrimary);
             outline-offset: 2px;
         }
-    }
-
-    .task-detail_add-supporter-btn,
-    .task-detail_add-subtask-btn {
-        background: none;
-        border: 1px dashed var(--ColorGray);
-        color: var(--ColorGray);
-        border-radius: var(--BorderRadiusMedium);
-        padding: 10px 14px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-
-        &:hover {
-            border-color: var(--ColorPrimary);
-            color: var(--ColorPrimary);
-        }
-    }
-
-    .task-detail_add-subtask-btn {
-        border-radius: 50px;
-        padding: 4px 12px;
     }
 
     // Subtasks

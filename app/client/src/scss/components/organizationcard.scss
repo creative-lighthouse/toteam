@@ -140,12 +140,6 @@
                     opacity: 0.65;
                     cursor: default;
                 }
-
-                &.button--secondary {
-                    background-color: transparent;
-                    border: 1px solid var(--ColorPrimary);
-                    color: var(--ColorPrimary);
-                }
             }
 
             .organization-card_manage {

@@ -85,10 +85,6 @@
         display: flex;
         gap: 8px;
         flex-shrink: 0;
-
-        .button {
-            margin: 0;
-        }
     }
 
     .org-manage_members {
@@ -105,11 +101,6 @@
         background-color: var(--ColorWhite);
         border-radius: var(--BorderRadiusMedium);
         box-shadow: var(--BoxShadowLight);
-
-        .button {
-            margin: 0;
-            flex-shrink: 0;
-        }
     }
 
     .org-manage_member-avatar {

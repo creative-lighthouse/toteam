@@ -5,7 +5,7 @@
 
         <div class="task-create-modal_header">
           <h2 class="hl2 task-create-modal_title">{{ parentTask ? 'Neue Unteraufgabe' : 'Neue Aufgabe' }}</h2>
-          <button class="button button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <form class="task-create-modal_body" @submit.prevent="submit">
@@ -82,12 +82,12 @@
           </div>
 
           <div class="task-create-modal_actions">
-            <button type="button" class="button" @click="close" :disabled="saving">
+            <AppButton variant="secondary" :disabled="saving" @click="close">
               Abbrechen
-            </button>
-            <button type="submit" class="button button--primary" :disabled="saving || !form.Title.trim() || !form.OrganizationID || !form.OwnerID">
+            </AppButton>
+            <AppButton type="submit" variant="primary" :disabled="saving || !form.Title.trim() || !form.OrganizationID || !form.OwnerID">
               {{ saving ? 'Speichern…' : 'Erstellen' }}
-            </button>
+            </AppButton>
           </div>
 
         </form>
@@ -100,6 +100,8 @@
 import { ref, reactive, watch } from 'vue'
 import { useTasksStore } from '@stores/tasks'
 import { useAuthStore } from '@stores/auth'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const props = defineProps({
   // When set, the modal creates a subtask of this task instead of a top-level task

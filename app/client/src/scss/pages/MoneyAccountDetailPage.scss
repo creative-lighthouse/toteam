@@ -66,22 +66,6 @@
         margin: 0 0 8px;
     }
 
-    .money-section_add-btn {
-        background: none;
-        border: 1px solid var(--ColorPrimary);
-        color: var(--ColorPrimary);
-        border-radius: var(--BorderRadiusSmall);
-        padding: 4px 10px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-
-        &:hover {
-            background-color: var(--ColorPrimary);
-            color: var(--ColorWhite);
-        }
-    }
-
     // ── Budgets ──────────────────────────────────────────────
     .money-budget-list {
         display: flex;
@@ -198,20 +182,6 @@
     .money-entry_pending-badge {
         color: #b07800;
         font-weight: 700;
-    }
-
-    .money-entry_delete {
-        background: none;
-        border: none;
-        color: var(--ColorGray);
-        cursor: pointer;
-        font-size: 14px;
-        padding: 2px 6px;
-        flex-shrink: 0;
-
-        &:hover {
-            color: var(--ColorStatusBad);
-        }
     }
 
     .money-entry_approve-actions {

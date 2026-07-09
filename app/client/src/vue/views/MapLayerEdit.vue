@@ -7,7 +7,7 @@
 
       <div v-else-if="error" class="section_infobox error">
         <p>Fehler: {{ error }}</p>
-        <router-link :to="`/map/${mapId}`" class="button">← Zurück</router-link>
+        <AppButton :to="`/map/${mapId}`" variant="primary">← Zurück</AppButton>
       </div>
 
       <div v-else-if="layer && map" class="map-container">
@@ -63,12 +63,12 @@
             <div class="map-controls_pois">
               <h4>Marker</h4>
               <p class="map-controls_help">Marker auf der Karte anklicken zum Bearbeiten, per Drag&nbsp;&amp;&nbsp;Drop verschieben.</p>
-              <button class="button" @click="addPOI">+ Marker hinzufügen</button>
+              <AppButton variant="primary" @click="addPOI">+ Marker hinzufügen</AppButton>
             </div>
           </div>
 
           <div class="map-controls_actions">
-            <router-link :to="`/map/${mapId}`" class="button action_back">← Zurück</router-link>
+            <AppButton :to="`/map/${mapId}`" variant="primary">← Zurück</AppButton>
             <button class="button action_recenter" @click="resetView">
               <div
                 class="resetMapView_button icon--small"
@@ -94,6 +94,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPostForm } from '@utils/api'
 import MapRenderer from '../../js/maprenderer.js'
+import AppButton from '@components/AppButton.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -49,12 +49,6 @@
         }
     }
 
-    .button--addlink {
-        margin: 0;
-        margin-left: 10px;
-        font-size: 12px;
-    }
-
     .links-list {
         display: flex;
         flex-direction: column;
@@ -180,32 +174,6 @@
         }
     }
 
-    .link-item__action-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        width: 32px;
-        height: 32px;
-        border-radius: var(--BorderRadiusSmall);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 15px;
-        color: var(--ColorGray);
-        padding: 0;
-        transition: background-color 0.1s, color 0.1s;
-
-        &:hover {
-            background-color: var(--ColorLightGray);
-            color: var(--ColorPrimary);
-        }
-
-        &--delete:hover {
-            background-color: var(--ColorStatusBadAccent);
-            color: var(--ColorStatusBad);
-        }
-    }
-
     // Link modal
     .link-modal {
         text-align: left;
@@ -228,16 +196,6 @@
                 margin: 0;
                 color: var(--ColorWhite);
                 font-size: 18px;
-            }
-
-            .button--close {
-                background: none;
-                border: none;
-                color: var(--ColorWhite);
-                font-size: 18px;
-                cursor: pointer;
-                padding: 4px 8px;
-                line-height: 1;
             }
         }
 

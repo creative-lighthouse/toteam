@@ -2,14 +2,13 @@
   <div v-if="visible" class="meals-section">
     <div class="section-feature-header">
       <h3 class="event-meals_title">Mahlzeiten</h3>
-      <button
+      <AppIconButton
         v-if="canManageContent && !showAddForm"
-        type="button"
-        class="btn-feature-add"
-        @click="startAdd"
+        variant="neutral"
         :disabled="submitting"
         aria-label="Mahlzeit hinzufügen"
-      >+</button>
+        @click="startAdd"
+      >+</AppIconButton>
     </div>
 
     <!-- Inline add form -->
@@ -46,12 +45,12 @@
         Mitglieder dürfen Gerichte vorschlagen
       </label>
       <div class="time-button-row">
-        <button
-          type="button"
-          class="button button--primary button--small"
-          @click="saveAdd"
+        <AppButton
+          size="small"
+          variant="primary"
           :disabled="submitting || !addTitle || !addTime"
-        >Speichern</button>
+          @click="saveAdd"
+        >Speichern</AppButton>
         <button
           type="button"
           class="btn-remove-time"
@@ -70,24 +69,24 @@
               <span v-if="meal.RenderTime"> ({{ meal.RenderTime }})</span>
             </span>
             <div v-if="canManageContent" class="meal-manage-actions">
-              <button
-                type="button"
-                class="button event-manage-button"
-                @click="startEdit(meal)"
+              <AppIconButton
+                variant="primary"
+                size="small"
                 :disabled="submitting"
                 aria-label="Mahlzeit bearbeiten"
+                @click="startEdit(meal)"
               >
-                <img :src="EditIcon" alt="Bearbeiten">
-              </button>
-              <button
-                type="button"
-                class="button event-manage-button"
-                @click="deleteMeal(meal.ID)"
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </AppIconButton>
+              <AppIconButton
+                variant="danger"
+                size="small"
                 :disabled="submitting"
                 aria-label="Mahlzeit löschen"
+                @click="deleteMeal(meal.ID)"
               >
-                <img :src="TrashIcon" alt="Löschen">
-              </button>
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </AppIconButton>
             </div>
           </div>
 
@@ -123,12 +122,12 @@
               Mitglieder dürfen Gerichte vorschlagen
             </label>
             <div class="time-button-row">
-              <button
-                type="button"
-                class="button button--primary button--small"
-                @click="saveEdit(meal.ID)"
+              <AppButton
+                size="small"
+                variant="primary"
                 :disabled="submitting || !editTitle || !editTime"
-              >Speichern</button>
+                @click="saveEdit(meal.ID)"
+              >Speichern</AppButton>
               <button
                 type="button"
                 class="btn-remove-time"
@@ -140,28 +139,13 @@
         </div>
 
         <form class="event-response-actions" @submit.prevent>
-          <fieldset class="fieldset-availability">
-            <button
-              type="button"
-              class="event-response-button event-response-accept"
-              :class="{
-                'selected': meal.UserResponse === 'Accept',
-                'unselected': meal.UserResponse && meal.UserResponse !== 'Accept'
-              }"
-              @click="changeFoodParticipation(meal.ID, 'Accept')"
-              :disabled="submitting"
-            >Dabei</button>
-            <button
-              type="button"
-              class="event-response-button event-response-decline"
-              :class="{
-                'selected': meal.UserResponse === 'Decline',
-                'unselected': meal.UserResponse && meal.UserResponse !== 'Decline'
-              }"
-              @click="changeFoodParticipation(meal.ID, 'Decline')"
-              :disabled="submitting"
-            >Nicht dabei</button>
-          </fieldset>
+          <AppButtonGroup
+            :options="foodParticipationOptions"
+            :model-value="meal.UserResponse"
+            size="compact"
+            :disabled="submitting"
+            @select="type => changeFoodParticipation(meal.ID, type)"
+          />
         </form>
 
         <!-- Product orders (only when accepted and products exist) -->
@@ -181,19 +165,21 @@
               </span>
             </span>
             <div class="meal-product-qty">
-              <button
-                type="button"
-                class="meal-product-qty_btn"
+              <AppIconButton
+                variant="neutral"
+                size="small"
+                aria-label="Menge verringern"
                 :disabled="(localOrders[meal.ID]?.[product.ID] ?? 0) <= 0"
                 @click="changeQty(meal, product, -1)"
-              >−</button>
+              >−</AppIconButton>
               <span class="meal-product-qty_val">{{ localOrders[meal.ID]?.[product.ID] ?? 0 }}</span>
-              <button
-                type="button"
-                class="meal-product-qty_btn"
+              <AppIconButton
+                variant="neutral"
+                size="small"
+                aria-label="Menge erhöhen"
                 :disabled="product.MaxQuantity > 0 && (localOrders[meal.ID]?.[product.ID] ?? 0) >= product.MaxQuantity"
                 @click="changeQty(meal, product, 1)"
-              >+</button>
+              >+</AppIconButton>
             </div>
           </div>
         </div>
@@ -220,13 +206,19 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useEventsStore } from '@stores/events'
-import EditIcon from '../../../../icons/actions/action_edit.svg'
-import TrashIcon from '../../../../icons/actions/action_trash_blue.svg'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
+import AppButtonGroup from '@components/AppButtonGroup.vue'
 
 const props = defineProps({
   event: { type: Object, required: true },
   canManageContent: { type: Boolean, default: false }
 })
+
+const foodParticipationOptions = [
+  { value: 'Accept', label: 'Dabei', tone: 'positive' },
+  { value: 'Decline', label: 'Nicht dabei', tone: 'negative' },
+]
 
 const emit = defineEmits(['food-changed', 'show-status'])
 

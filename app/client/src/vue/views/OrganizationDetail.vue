@@ -31,22 +31,22 @@
                     <div class="org-detail-header_actions">
                         <span class="org-detail-count">{{ org.MemberCount }} {{ org.MemberCount === 1 ? 'Mitglied' : 'Mitglieder' }}</span>
 
-                        <RouterLink
+                        <AppButton
                         v-if="org.CanManageMembers || org.CanManageRoles"
                         :to="`/organizations/${org.Username}/manage`"
-                        class="button button--secondary"
+                        variant="secondary"
                         >
                         Organisation verwalten
-                        </RouterLink>
+                        </AppButton>
 
-                        <button
+                        <AppButton
                         v-if="!org.MembershipStatus && org.JoinMode !== 'invite_only'"
-                        class="button"
+                        variant="primary"
                         :disabled="joining"
                         @click="handleJoin"
                         >
                         {{ joining ? '…' : (org.JoinMode === 'open' ? 'Beitreten' : 'Bewerben') }}
-                        </button>
+                        </AppButton>
 
                         <span v-else-if="org.MembershipStatus" class="org-detail-membership-badge" :class="`org-detail-membership-badge--${org.MembershipStatus}`">
                         {{ membershipLabel }}
@@ -86,6 +86,7 @@ import { useRoute } from 'vue-router'
 import { RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

@@ -6,14 +6,14 @@
 
       <div v-else-if="error" class="section_infobox error">
         <p>Fehler: {{ error }}</p>
-        <button class="button" @click="load">Erneut versuchen</button>
+        <AppButton variant="primary" @click="load">Erneut versuchen</AppButton>
       </div>
 
       <template v-else>
         <div class="money-toolbar">
-          <button v-if="adminOrgs.length" class="button button--primary" @click="accountModal?.open()">
+          <AppButton v-if="adminOrgs.length" variant="primary" @click="accountModal?.open()">
             + Neue Kasse
-          </button>
+          </AppButton>
         </div>
 
         <div v-if="store.accounts.length === 0" class="section_infobox">
@@ -66,6 +66,7 @@ import { useMoneyStore } from '@stores/money'
 import { useOrganizationsStore } from '@stores/organizations'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import MoneyAccountModal from '@components/MoneyAccountModal.vue'
+import AppButton from '@components/AppButton.vue'
 
 const router = useRouter()
 const store = useMoneyStore()

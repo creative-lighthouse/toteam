@@ -8,7 +8,7 @@
 
       <div v-else-if="error" class="section_infobox error">
         <p>{{ error }}</p>
-        <router-link to="/food" class="button">← Zurück</router-link>
+        <AppButton to="/food" variant="primary">← Zurück</AppButton>
       </div>
 
       <template v-else-if="meal">
@@ -33,12 +33,12 @@
           <div v-if="!descriptionEditing" class="meal-description_view">
             <p v-if="meal.description" class="meal-description_text">{{ meal.description }}</p>
             <p v-else class="meal-card_empty">Keine Beschreibung vorhanden.</p>
-            <button
+            <AppButton
               v-if="meal.canManage"
-              class="meal-description_edit-btn"
+              size="small"
+              variant="secondary"
               @click="startDescriptionEdit"
-              aria-label="Beschreibung bearbeiten"
-            >Bearbeiten</button>
+            >Bearbeiten</AppButton>
           </div>
           <div v-else class="meal-description_edit">
             <textarea
@@ -48,10 +48,10 @@
               placeholder="Beschreibung der Mahlzeit…"
             ></textarea>
             <div class="meal-description_edit-actions">
-              <button class="button" :disabled="descriptionSaving" @click="saveDescription">
+              <AppButton variant="primary" :disabled="descriptionSaving" @click="saveDescription">
                 {{ descriptionSaving ? '…' : 'Speichern' }}
-              </button>
-              <button class="button button--secondary" @click="cancelDescriptionEdit">Abbrechen</button>
+              </AppButton>
+              <AppButton variant="secondary" @click="cancelDescriptionEdit">Abbrechen</AppButton>
             </div>
           </div>
         </div>
@@ -62,20 +62,12 @@
             Deine Antwort:
             <strong :class="rsvpClass">{{ rsvpLabel }}</strong>
           </div>
-          <div class="meal-rsvp_actions">
-            <button
-              v-if="meal.userResponse !== 'Accept'"
-              class="button"
-              :disabled="responding"
-              @click="respond('Accept')"
-            >Zusagen</button>
-            <button
-              v-if="meal.userResponse !== 'Decline'"
-              class="button button--secondary"
-              :disabled="responding"
-              @click="respond('Decline')"
-            >Absagen</button>
-          </div>
+          <AppButtonGroup
+            :options="rsvpOptions"
+            :model-value="meal.userResponse"
+            :disabled="responding"
+            @select="respond"
+          />
         </div>
 
         <!-- Attendees -->
@@ -100,16 +92,18 @@
           <div class="meal-detail-block_heading-row">
             <h3 class="hl3">Geplante Gerichte ({{ meal.foods.length }})</h3>
             <div class="meal-detail-heading-actions">
-              <button
+              <AppButton
                 v-if="meal.canManage"
-                class="meal-suggest-btn"
+                size="small"
+                variant="secondary"
                 @click="addProductOpen = !addProductOpen"
-              >{{ addProductOpen ? '× Abbrechen' : '+ Gericht' }}</button>
-              <button
+              >{{ addProductOpen ? '× Abbrechen' : '+ Gericht' }}</AppButton>
+              <AppButton
                 v-if="meal.acceptsContributions"
-                class="meal-suggest-btn"
+                size="small"
+                variant="secondary"
                 @click="modalOpen = true"
-              >+ Vorschlagen</button>
+              >+ Vorschlagen</AppButton>
             </div>
           </div>
 
@@ -139,11 +133,11 @@
               </label>
             </div>
             <div class="meal-product-add-row">
-              <button
-                class="button"
+              <AppButton
+                variant="primary"
                 :disabled="!addProductTitle.trim() || addProductSaving"
                 @click="submitProduct"
-              >{{ addProductSaving ? '…' : 'Speichern' }}</button>
+              >{{ addProductSaving ? '…' : 'Speichern' }}</AppButton>
             </div>
           </div>
 
@@ -180,12 +174,12 @@
                   </label>
                 </div>
                 <div class="meal-product-add-row">
-                  <button
-                    class="button"
+                  <AppButton
+                    variant="primary"
                     :disabled="!editFoodTitle.trim() || editFoodSaving"
                     @click="saveFoodEdit(item.id)"
-                  >{{ editFoodSaving ? '…' : 'Speichern' }}</button>
-                  <button class="button button--secondary" :disabled="editFoodSaving" @click="cancelFoodEdit">Abbrechen</button>
+                  >{{ editFoodSaving ? '…' : 'Speichern' }}</AppButton>
+                  <AppButton variant="secondary" :disabled="editFoodSaving" @click="cancelFoodEdit">Abbrechen</AppButton>
                 </div>
               </div>
               <template v-else-if="item.isOrderable">
@@ -193,31 +187,37 @@
                 <span v-if="item.maxQuantity > 0" class="meal-product-item_max">max. {{ item.maxQuantity }} pro Person</span>
                 <div class="meal-food_right">
                   <div v-if="meal.userResponse === 'Accept'" class="meal-product-qty">
-                    <button
-                      class="meal-product-qty_btn"
+                    <AppIconButton
+                      variant="neutral"
+                      size="small"
+                      aria-label="Menge verringern"
                       :disabled="(userOrders[item.id] ?? 0) <= 0"
                       @click="changeQty(item, -1)"
-                    >−</button>
+                    >−</AppIconButton>
                     <span class="meal-product-qty_val">{{ userOrders[item.id] ?? 0 }}</span>
-                    <button
-                      class="meal-product-qty_btn"
+                    <AppIconButton
+                      variant="neutral"
+                      size="small"
+                      aria-label="Menge erhöhen"
                       :disabled="item.maxQuantity > 0 && (userOrders[item.id] ?? 0) >= item.maxQuantity"
                       @click="changeQty(item, 1)"
-                    >+</button>
+                    >+</AppIconButton>
                   </div>
-                  <button
+                  <AppIconButton
                     v-if="meal.canManage"
-                    class="meal-food-edit-btn"
-                    @click="startFoodEdit(item)"
+                    variant="primary"
+                    size="small"
                     aria-label="Gericht bearbeiten"
-                  >✎</button>
-                  <button
+                    @click="startFoodEdit(item)"
+                  >✎</AppIconButton>
+                  <AppIconButton
                     v-if="meal.canManage"
-                    class="meal-product-delete-btn"
+                    variant="danger"
+                    size="small"
+                    aria-label="Produkt löschen"
                     :disabled="deletingProductId === item.id"
                     @click="deleteProduct(item.id)"
-                    aria-label="Produkt löschen"
-                  >×</button>
+                  >×</AppIconButton>
                 </div>
                 <div v-if="item.totalOrdered > 0" class="meal-product-item_summary meal-food_full-row">
                   <span class="meal-product-item_total">{{ item.totalOrdered }}× bestellt</span>
@@ -240,29 +240,33 @@
                 </span>
                 <span v-if="item.supplier" class="meal-food_supplier">von {{ item.supplier }}</span>
                 <div v-if="item.status === 'New' && meal.canApprove" class="meal-food_full-row meal-food_approve-actions">
-                  <button
-                    class="meal-suggest-btn"
+                  <AppButton
+                    size="small"
+                    variant="primary"
                     :disabled="decidingFoodId === item.id"
                     @click="decideFood(item.id, 'Accepted')"
-                  >Bestätigen</button>
-                  <button
-                    class="meal-suggest-btn meal-suggest-btn--reject"
+                  >Bestätigen</AppButton>
+                  <AppButton
+                    size="small"
+                    variant="secondary"
                     :disabled="decidingFoodId === item.id"
                     @click="decideFood(item.id, 'Rejected')"
-                  >Ablehnen</button>
+                  >Ablehnen</AppButton>
                 </div>
                 <div v-else-if="meal.canManage" class="meal-food_right">
-                  <button
-                    class="meal-food-edit-btn"
-                    @click="startFoodEdit(item)"
+                  <AppIconButton
+                    variant="primary"
+                    size="small"
                     aria-label="Gericht bearbeiten"
-                  >✎</button>
-                  <button
-                    class="meal-product-delete-btn"
+                    @click="startFoodEdit(item)"
+                  >✎</AppIconButton>
+                  <AppIconButton
+                    variant="danger"
+                    size="small"
+                    aria-label="Gericht löschen"
                     :disabled="deletingProductId === item.id"
                     @click="deleteProduct(item.id)"
-                    aria-label="Gericht löschen"
-                  >×</button>
+                  >×</AppIconButton>
                 </div>
               </template>
             </li>
@@ -283,11 +287,11 @@
         <div class="food-modal" role="dialog" aria-modal="true">
           <div class="food-modal_header">
             <h3>Gericht vorschlagen</h3>
-            <button class="food-modal_close" aria-label="Schließen" @click="modalOpen = false">
+            <AppIconButton variant="ghost" aria-label="Schließen" @click="modalOpen = false">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
               </svg>
-            </button>
+            </AppIconButton>
           </div>
           <div class="food-modal_body">
             <div class="edit-field">
@@ -311,12 +315,12 @@
             </div>
           </div>
           <div class="food-modal_actions">
-            <button class="button button--secondary" @click="modalOpen = false">Abbrechen</button>
-            <button
-              class="button"
+            <AppButton variant="secondary" @click="modalOpen = false">Abbrechen</AppButton>
+            <AppButton
+              variant="primary"
               :disabled="!modalForm.title.trim() || modalForm.submitting"
               @click="submitSuggestion"
-            >{{ modalForm.submitting ? 'Wird eingereicht…' : 'Vorschlagen' }}</button>
+            >{{ modalForm.submitting ? 'Wird eingereicht…' : 'Vorschlagen' }}</AppButton>
           </div>
         </div>
       </div>
@@ -329,9 +333,17 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
+import AppButtonGroup from '@components/AppButtonGroup.vue'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')
+
+const rsvpOptions = [
+  { value: 'Accept', label: 'Zusagen', tone: 'positive' },
+  { value: 'Decline', label: 'Absagen', tone: 'negative' },
+]
 
 const meal      = ref(null)
 const loading   = ref(true)

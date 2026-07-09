@@ -7,7 +7,7 @@
 
       <div v-else-if="organizations.length === 0" class="section_infobox">
         <p>Du hast keine Organisation, für die du Lagepläne erstellen kannst.</p>
-        <router-link to="/map" class="button">← Zurück</router-link>
+        <AppButton to="/map" variant="primary">← Zurück</AppButton>
       </div>
 
       <form v-else class="map-create-form" @submit.prevent="createMap">
@@ -62,10 +62,10 @@
         </div>
 
         <div class="form-actions">
-          <router-link to="/map" class="button button--secondary">Abbrechen</router-link>
-          <button type="submit" class="button" :disabled="saving">
+          <AppButton to="/map" variant="secondary">Abbrechen</AppButton>
+          <AppButton type="submit" variant="primary" :disabled="saving">
             {{ saving ? 'Wird erstellt…' : 'Lageplan erstellen' }}
-          </button>
+          </AppButton>
         </div>
       </form>
     </div>
@@ -77,6 +77,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPostForm, clearCacheForEndpoint } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
 
 usePageHeaderStore().setHeader('Neuen Lageplan erstellen', '')
 

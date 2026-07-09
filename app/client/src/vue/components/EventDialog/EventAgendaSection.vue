@@ -2,14 +2,13 @@
   <div v-if="visible" class="agenda-section">
     <div class="section-feature-header">
       <h3 class="event-agenda_title">Tagesordnung</h3>
-      <button
+      <AppIconButton
         v-if="canManageContent && !showAddForm"
-        type="button"
-        class="btn-feature-add"
-        @click="startAdd"
+        variant="neutral"
         :disabled="submitting"
         aria-label="Tagesordnungspunkt hinzufügen"
-      >+</button>
+        @click="startAdd"
+      >+</AppIconButton>
     </div>
 
     <!-- Inline add form -->
@@ -57,12 +56,12 @@
         ></textarea>
       </div>
       <div class="time-button-row">
-        <button
-          type="button"
-          class="button button--primary button--small"
-          @click="saveAdd"
+        <AppButton
+          size="small"
+          variant="primary"
           :disabled="submitting || !addForm.title"
-        >Speichern</button>
+          @click="saveAdd"
+        >Speichern</AppButton>
         <button
           type="button"
           class="btn-remove-time"
@@ -79,24 +78,24 @@
             <span v-if="point.RenderTime" class="agenda-point_time">{{ point.RenderTime }} · </span><strong>{{ point.Title }}</strong>
           </span>
           <div v-if="canManageContent" class="meal-manage-actions">
-            <button
-              type="button"
-              class="button event-manage-button"
-              @click="startEdit(point)"
+            <AppIconButton
+              variant="primary"
+              size="small"
               :disabled="submitting"
               aria-label="Tagesordnungspunkt bearbeiten"
+              @click="startEdit(point)"
             >
-              <img :src="EditIcon" alt="Bearbeiten">
-            </button>
-            <button
-              type="button"
-              class="button event-manage-button"
-              @click="deletePoint(point.ID)"
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </AppIconButton>
+            <AppIconButton
+              variant="danger"
+              size="small"
               :disabled="submitting"
               aria-label="Tagesordnungspunkt löschen"
+              @click="deletePoint(point.ID)"
             >
-              <img :src="TrashIcon" alt="Löschen">
-            </button>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </AppIconButton>
           </div>
         </div>
 
@@ -147,12 +146,12 @@
             ></textarea>
           </div>
           <div class="time-button-row">
-            <button
-              type="button"
-              class="button button--primary button--small"
-              @click="saveEdit(point.ID)"
+            <AppButton
+              size="small"
+              variant="primary"
               :disabled="submitting || !editForm.title"
-            >Speichern</button>
+              @click="saveEdit(point.ID)"
+            >Speichern</AppButton>
             <button
               type="button"
               class="btn-remove-time"
@@ -173,8 +172,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useEventsStore } from '@stores/events'
-import EditIcon from '../../../../icons/actions/action_edit.svg'
-import TrashIcon from '../../../../icons/actions/action_trash_blue.svg'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const props = defineProps({
   event: { type: Object, required: true },

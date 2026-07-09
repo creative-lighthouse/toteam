@@ -39,24 +39,26 @@
           {{ joinModeLabel }}
         </span>
 
-        <button
+        <AppButton
           v-if="actionLabel"
-          class="button organization-card_action"
-          :class="{ 'button--secondary': org.MembershipStatus === 'applicant' }"
+          class="organization-card_action"
+          :variant="org.MembershipStatus === 'applicant' ? 'secondary' : 'primary'"
           :disabled="!!org.MembershipStatus || joining"
           @click.stop="handleJoin"
         >
           {{ joining ? '…' : actionLabel }}
-        </button>
+        </AppButton>
 
-        <button
+        <AppButton
           v-if="org.Permissions?.includes('ORG_MANAGE_MEMBERS')"
-          class="button button--secondary organization-card_manage"
+          size="small"
+          variant="secondary"
+          class="organization-card_manage"
           @click.stop="$emit('manage-applicants', org)"
         >
           Bewerber
           <span v-if="org.ApplicantCount" class="organization-card_badge-count">{{ org.ApplicantCount }}</span>
-        </button>
+        </AppButton>
       </div>
     </div>
   </div>
@@ -65,6 +67,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import AppButton from '@components/AppButton.vue'
 
 const props = defineProps({
   org: {
