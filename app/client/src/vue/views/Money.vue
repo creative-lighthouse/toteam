@@ -77,7 +77,7 @@ const loading = computed(() => store.loading)
 const error = computed(() => store.error)
 
 const adminOrgs = computed(() =>
-  organizationsStore.organizations.filter(o => o.MembershipStatus === 'admin')
+  organizationsStore.organizations.filter(o => o.Permissions?.includes('MONEY_ACCOUNTS_CREATE'))
 )
 
 function formatCurrency(value) {

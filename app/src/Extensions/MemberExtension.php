@@ -261,6 +261,30 @@ class MemberExtension extends Extension
         return $this->hasOrgPermission($org, OrgPermissions::ORG_ADMIN);
     }
 
+    /**
+     * Alle Berechtigungs-Codes, die der Nutzer in dieser Organisation effektiv hat
+     * (Vereinigung aller zugewiesenen Rollen). Bei ORG_ADMIN werden alle Codes
+     * zurückgegeben, da ORG_ADMIN als Wildcard wirkt. Fürs Frontend gedacht, damit
+     * dort einfache `Permissions.includes('CODE')`-Prüfungen möglich sind.
+     * @return string[]
+     */
+    public function getOrgPermissionCodes(Organization $org): array
+    {
+        $membership = $this->getMembershipInOrg($org);
+        if (!$membership || $membership->Role !== 'member') {
+            return [];
+        }
+
+        $codes = [];
+        foreach ($membership->Roles() as $role) {
+            if ($role->hasPermission(OrgPermissions::ORG_ADMIN)) {
+                return OrgPermissions::allCodes();
+            }
+            $codes = [...$codes, ...$role->getPermissionCodes()];
+        }
+        return array_values(array_unique($codes));
+    }
+
     public function isActiveMemberOfOrg(Organization $org): bool
     {
         return $this->getMembershipInOrg($org)?->Role === 'member';

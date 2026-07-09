@@ -3,6 +3,7 @@
 namespace App\Teams;
 
 use Override;
+use SilverStripe\Forms\CheckboxSetField;
 use SilverStripe\ORM\DataObject;
 
 /**
@@ -62,6 +63,23 @@ class OrgRole extends DataObject
         $fields = parent::getCMSFields();
         $fields->removeByName('SortOrder');
         $fields->removeByName('Permissions');
+
+        // Checkbox je Berechtigung, gruppiert nach Kategorie über das Label.
+        // Bindet direkt an das $db-Feld "Permissions": MultiSelectField::saveInto()
+        // JSON-kodiert die Auswahl automatisch in dasselbe Format, das
+        // getPermissionCodes()/setPermissionCodes() erwarten.
+        $source = [];
+        foreach (OrgPermissions::categories() as $category => $permissions) {
+            foreach ($permissions as $code => $label) {
+                $source[$code] = "{$category}: {$label}";
+            }
+        }
+
+        $fields->addFieldToTab(
+            'Root.Main',
+            CheckboxSetField::create('Permissions', 'Berechtigungen', $source)
+        );
+
         return $fields;
     }
 

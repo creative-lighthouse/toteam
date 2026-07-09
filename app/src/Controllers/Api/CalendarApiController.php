@@ -109,13 +109,28 @@ class CalendarApiController extends ApiController
                         'UserQuantity' => $userOrder ? (int) $userOrder->Quantity : 0,
                     ];
                 }
+                // Feste, bereits bestätigte Gerichte (mitgebrachte Vorschläge oder direkt fest angelegt)
+                $foods = [];
+                foreach ($meal->Foods()->filter(['IsOrderable' => false, 'Status' => 'Accepted'])->sort('ID ASC') as $food) {
+                    $supplier = $food->Supplier();
+                    $foods[] = [
+                        'ID'         => $food->ID,
+                        'Title'      => $food->Title,
+                        'Preference' => $food->FoodPreference ?: 'None',
+                        'Supplier'   => ($supplier && $supplier->exists())
+                            ? trim($supplier->FirstName . ' ' . $supplier->Surname)
+                            : null,
+                    ];
+                }
                 $meals[] = [
-                    'ID'           => $meal->ID,
-                    'Title'        => $meal->Title,
-                    'Time'         => $meal->Time,
-                    'RenderTime'   => $meal->RenderTime(),
-                    'UserResponse' => $mealEater ? $mealEater->Type : null,
-                    'Products'     => $products,
+                    'ID'                   => $meal->ID,
+                    'Title'                => $meal->Title,
+                    'Time'                 => $meal->Time,
+                    'RenderTime'           => $meal->RenderTime(),
+                    'UserResponse'         => $mealEater ? $mealEater->Type : null,
+                    'AcceptsContributions' => (bool) $meal->AcceptsContributions,
+                    'Products'             => $products,
+                    'Foods'                => $foods,
                 ];
             }
 
@@ -783,13 +798,15 @@ class CalendarApiController extends ApiController
 
             $meal->Title = $title;
             $meal->Time  = $time;
+            $meal->AcceptsContributions = (bool) ($body['acceptsContributions'] ?? false);
             $meal->write();
 
             return $this->successResponse([
-                'ID'         => $meal->ID,
-                'Title'      => $meal->Title,
-                'Time'       => $meal->Time,
-                'RenderTime' => $meal->RenderTime(),
+                'ID'                   => $meal->ID,
+                'Title'                => $meal->Title,
+                'Time'                 => $meal->Time,
+                'RenderTime'           => $meal->RenderTime(),
+                'AcceptsContributions' => (bool) $meal->AcceptsContributions,
             ], 'Mahlzeit aktualisiert');
         }
 
@@ -850,14 +867,18 @@ class CalendarApiController extends ApiController
         $meal->Title    = $title;
         $meal->Time     = $time;
         $meal->ParentID = $appointment->ID;
+        $meal->AcceptsContributions = (bool) ($body['acceptsContributions'] ?? false);
         $meal->write();
 
         return $this->successResponse([
-            'ID'           => $meal->ID,
-            'Title'        => $meal->Title,
-            'Time'         => $meal->Time,
-            'RenderTime'   => $meal->RenderTime(),
-            'UserResponse' => null,
+            'ID'                   => $meal->ID,
+            'Title'                => $meal->Title,
+            'Time'                 => $meal->Time,
+            'RenderTime'           => $meal->RenderTime(),
+            'AcceptsContributions' => (bool) $meal->AcceptsContributions,
+            'UserResponse'         => null,
+            'Products'             => [],
+            'Foods'                => [],
         ], 'Mahlzeit hinzugefügt');
     }
 

@@ -36,6 +36,15 @@
           aria-label="Uhrzeit der neuen Mahlzeit"
         >
       </div>
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          v-model="addAcceptsContributions"
+          :disabled="submitting"
+          aria-label="Mitglieder dürfen Gerichte vorschlagen"
+        >
+        Mitglieder dürfen Gerichte vorschlagen
+      </label>
       <div class="time-button-row">
         <button
           type="button"
@@ -104,6 +113,15 @@
                 aria-label="Uhrzeit der Mahlzeit"
               >
             </div>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                v-model="editAcceptsContributions"
+                :disabled="submitting"
+                aria-label="Mitglieder dürfen Gerichte vorschlagen"
+              >
+              Mitglieder dürfen Gerichte vorschlagen
+            </label>
             <div class="time-button-row">
               <button
                 type="button"
@@ -179,6 +197,17 @@
             </div>
           </div>
         </div>
+
+        <!-- Feste/mitgebrachte Gerichte (bereits bestätigt) -->
+        <ul v-if="meal.Foods?.length" class="meal-fixed-foods">
+          <li v-for="food in meal.Foods" :key="food.ID" class="meal-fixed-food">
+            <span class="meal-fixed-food_title">{{ food.Title }}</span>
+            <span v-if="food.Preference !== 'None'" class="meal-fixed-food_pref">
+              {{ food.Preference === 'Vegetarian' ? '🥗 Vegetarisch' : '🌱 Vegan' }}
+            </span>
+            <span v-if="food.Supplier" class="meal-fixed-food_supplier">von {{ food.Supplier }}</span>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -215,10 +244,12 @@ const visible = computed(() => {
 const showAddForm = ref(false)
 const addTitle = ref('')
 const addTime = ref('')
+const addAcceptsContributions = ref(false)
 
 function startAdd() {
   addTitle.value = ''
   addTime.value = ''
+  addAcceptsContributions.value = false
   showAddForm.value = true
 }
 
@@ -230,10 +261,11 @@ async function saveAdd() {
   if (!addTitle.value || !addTime.value || submitting.value) return
   submitting.value = true
   try {
-    await eventsStore.addMeal(props.event.ID, addTitle.value, addTime.value)
+    await eventsStore.addMeal(props.event.ID, addTitle.value, addTime.value, addAcceptsContributions.value)
     showAddForm.value = false
     addTitle.value = ''
     addTime.value = ''
+    addAcceptsContributions.value = false
     emit('show-status', { text: 'Mahlzeit hinzugefügt', type: 'success' })
   } catch (err) {
     console.error('Error adding meal:', err)
@@ -247,11 +279,13 @@ async function saveAdd() {
 const editingMealId = ref(null)
 const editTitle = ref('')
 const editTime = ref('')
+const editAcceptsContributions = ref(false)
 
 function startEdit(meal) {
   editingMealId.value = meal.ID
   editTitle.value = meal.Title
   editTime.value = meal.RenderTime ?? ''
+  editAcceptsContributions.value = !!meal.AcceptsContributions
 }
 
 function cancelEdit() {
@@ -264,7 +298,7 @@ async function saveEdit(mealId) {
   if (!editTitle.value || !editTime.value || submitting.value) return
   submitting.value = true
   try {
-    await eventsStore.updateMeal(mealId, editTitle.value, editTime.value)
+    await eventsStore.updateMeal(mealId, editTitle.value, editTime.value, editAcceptsContributions.value)
     editingMealId.value = null
     emit('show-status', { text: 'Mahlzeit aktualisiert', type: 'success' })
   } catch (err) {

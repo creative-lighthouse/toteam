@@ -199,7 +199,7 @@
             </form>
         </div>
         <div v-else-if="activeTab === 'appointment' && !canManageContent" class="dialog-infobox">
-            <p>Nur Admins und Moderatoren können Termine erstellen.</p>
+            <p>{{ noPermissionMessage }}</p>
         </div>
 
       </div>
@@ -227,18 +227,28 @@ const eventsStore = useEventsStore()
 const appointmentTypes = ref([])
 
 const memberOrgs = computed(() =>
-  orgsStore.organizations.filter(o =>
-    ['member', 'moderator', 'admin'].includes(o.MembershipStatus)
-  )
+  orgsStore.organizations.filter(o => o.MembershipStatus === 'member')
 )
 
 const managedOrgs = computed(() =>
-  orgsStore.organizations.filter(o =>
-    ['moderator', 'admin'].includes(o.MembershipStatus)
-  )
+  memberOrgs.value.filter(o => o.Permissions?.includes('CALENDAR_MANAGE'))
 )
 
 const canManageContent = computed(() => managedOrgs.value.length > 0)
+
+const calendarManagerRoleNames = computed(() => {
+  const names = new Set()
+  memberOrgs.value.forEach(o => {
+    (o.CalendarManagerRoles || []).forEach(name => names.add(name))
+  })
+  return [...names]
+})
+
+const noPermissionMessage = computed(() => {
+  const names = calendarManagerRoleNames.value
+  if (!names.length) return 'Nur bestimmte Rollen können Termine erstellen.'
+  return `Nur folgende Rollen können Termine erstellen: ${names.join(', ')}.`
+})
 
 // Absence form state
 const absence = ref(resetAbsence())

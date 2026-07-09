@@ -300,6 +300,12 @@
     &_supplier { font-size: 0.75rem; color: var(--ColorTextSecondary); font-style: italic; }
     &_right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
     &_full-row { flex-basis: 100%; margin-top: 2px; }
+    &_approve-actions {
+        display: flex;
+        gap: 6px;
+
+        .button { margin: 0; }
+    }
 }
 
 .meal-detail-heading-actions {
@@ -377,6 +383,12 @@
     &--new      { background: #fef3c7; color: #92400e; }
     &--accepted { background: #d1fae5; color: #065f46; }
     &--rejected { background: #fee2e2; color: #991b1b; }
+}
+
+.pending-food-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .meal-section_toggle--compact {
@@ -467,6 +479,22 @@
     &:hover {
         background: var(--ColorPrimary);
         color: white;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    &--reject {
+        border-color: var(--ColorStatusBad);
+        color: var(--ColorStatusBad);
+
+        &:hover {
+            background: var(--ColorStatusBad);
+            color: white;
+        }
     }
 }
 
@@ -791,24 +819,62 @@
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    border: 1px solid var(--ColorLightGray);
+    border: 1px solid var(--ColorStatusBad);
     background: transparent;
-    color: var(--ColorTextSecondary);
+    color: var(--ColorStatusBad);
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    transition: background 0.2s, color 0.2s;
 
     &:hover:not(:disabled) {
-        background: #fee2e2;
-        color: #991b1b;
-        border-color: #fca5a5;
+        background: var(--ColorStatusBad);
+        color: white;
     }
 
     &:disabled { opacity: 0.4; cursor: default; }
+}
+
+.meal-food-edit-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--ColorPrimary);
+    background: transparent;
+    color: var(--ColorPrimary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+
+    &:hover:not(:disabled) {
+        background: var(--ColorPrimary);
+        color: white;
+    }
+
+    &:disabled { opacity: 0.4; cursor: default; }
+}
+
+.meal-food-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-basis: 100%;
+    padding: 10px;
+    background: var(--ColorVeryLightGray);
+    border-radius: var(--BorderRadiusSmall);
+
+    .form-control {
+        padding: 7px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+    }
 }
 
 

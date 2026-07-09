@@ -30,7 +30,7 @@ class OrganizationMembership extends DataObject implements PermissionProvider
     private static $plural_name = 'Organisationsmitgliedschaften';
 
     private static $db = [
-        'Role'       => "Enum('applicant,member,moderator,admin','applicant')",
+        'Role'       => "Enum('applicant,member','applicant')",
         'JoinedDate' => 'Date',
     ];
 

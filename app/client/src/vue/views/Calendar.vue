@@ -160,7 +160,7 @@ const eventsStore = useEventsStore()
 const authStore = useAuthStore()
 const orgsStore = useOrganizationsStore()
 const canManageContent = computed(() =>
-  orgsStore.organizations.some(o => ['moderator', 'admin'].includes(o.MembershipStatus))
+  orgsStore.organizations.some(o => o.Permissions?.includes('CALENDAR_MANAGE'))
 )
 const route = useRoute()
 const router = useRouter()

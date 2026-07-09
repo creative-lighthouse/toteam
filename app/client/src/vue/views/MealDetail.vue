@@ -98,7 +98,7 @@
         <!-- Geplante Gerichte (orderable + regular combined) -->
         <div class="section_infobox">
           <div class="meal-detail-block_heading-row">
-            <h3 class="hl3">Geplante Gerichte ({{ allFoods.length }})</h3>
+            <h3 class="hl3">Geplante Gerichte ({{ meal.foods.length }})</h3>
             <div class="meal-detail-heading-actions">
               <button
                 v-if="meal.canManage"
@@ -113,16 +113,20 @@
             </div>
           </div>
 
-          <!-- Add orderable product form (admin/mod) -->
+          <!-- Add product form (admin/mod) -->
           <div v-if="addProductOpen" class="meal-product-add-form">
             <input
               v-model="addProductTitle"
               type="text"
-              placeholder="Bezeichnung (z.B. Burger)"
+              placeholder="Bezeichnung (z.B. Nudelsalat)"
               class="form-control"
               @keyup.enter="submitProduct"
             />
-            <div class="meal-product-add-row">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="addProductOrderable" aria-label="Bestellbar (Menge pro Person begrenzbar)" />
+              Bestellbar (Menge pro Person begrenzbar)
+            </label>
+            <div v-if="addProductOrderable" class="meal-product-add-row">
               <label>
                 Max. pro Person (0 = unbegrenzt)
                 <input
@@ -133,6 +137,8 @@
                   class="form-control"
                 />
               </label>
+            </div>
+            <div class="meal-product-add-row">
               <button
                 class="button"
                 :disabled="!addProductTitle.trim() || addProductSaving"
@@ -141,14 +147,48 @@
             </div>
           </div>
 
-          <ul v-if="allFoods.length" class="meal-food-list">
+          <ul v-if="meal.foods.length" class="meal-food-list">
             <li
-              v-for="item in allFoods"
+              v-for="item in meal.foods"
               :key="item.id"
               class="meal-food"
               :class="{ 'meal-food--orderable': item.isOrderable }"
             >
-              <template v-if="item.isOrderable">
+              <div v-if="editingFoodId === item.id" class="meal-food-edit-form">
+                <input
+                  v-model="editFoodTitle"
+                  type="text"
+                  class="form-control"
+                  placeholder="Titel"
+                  aria-label="Titel des Gerichts"
+                  @keyup.enter="saveFoodEdit(item.id)"
+                />
+                <label class="checkbox-label">
+                  <input type="checkbox" v-model="editFoodOrderable" aria-label="Bestellbar (Menge pro Person begrenzbar)" />
+                  Bestellbar (Menge pro Person begrenzbar)
+                </label>
+                <div v-if="editFoodOrderable" class="meal-product-add-row">
+                  <label>
+                    Max. pro Person (0 = unbegrenzt)
+                    <input
+                      v-model.number="editFoodMax"
+                      type="number"
+                      min="0"
+                      class="form-control"
+                      aria-label="Max. pro Person"
+                    />
+                  </label>
+                </div>
+                <div class="meal-product-add-row">
+                  <button
+                    class="button"
+                    :disabled="!editFoodTitle.trim() || editFoodSaving"
+                    @click="saveFoodEdit(item.id)"
+                  >{{ editFoodSaving ? '…' : 'Speichern' }}</button>
+                  <button class="button button--secondary" :disabled="editFoodSaving" @click="cancelFoodEdit">Abbrechen</button>
+                </div>
+              </div>
+              <template v-else-if="item.isOrderable">
                 <span class="meal-food_title">{{ item.title }}</span>
                 <span v-if="item.maxQuantity > 0" class="meal-product-item_max">max. {{ item.maxQuantity }} pro Person</span>
                 <div class="meal-food_right">
@@ -165,6 +205,12 @@
                       @click="changeQty(item, 1)"
                     >+</button>
                   </div>
+                  <button
+                    v-if="meal.canManage"
+                    class="meal-food-edit-btn"
+                    @click="startFoodEdit(item)"
+                    aria-label="Gericht bearbeiten"
+                  >✎</button>
                   <button
                     v-if="meal.canManage"
                     class="meal-product-delete-btn"
@@ -193,6 +239,31 @@
                   {{ item.preference === 'Vegetarian' ? '🥗 Vegetarisch' : '🌱 Vegan' }}
                 </span>
                 <span v-if="item.supplier" class="meal-food_supplier">von {{ item.supplier }}</span>
+                <div v-if="item.status === 'New' && meal.canApprove" class="meal-food_full-row meal-food_approve-actions">
+                  <button
+                    class="meal-suggest-btn"
+                    :disabled="decidingFoodId === item.id"
+                    @click="decideFood(item.id, 'Accepted')"
+                  >Bestätigen</button>
+                  <button
+                    class="meal-suggest-btn meal-suggest-btn--reject"
+                    :disabled="decidingFoodId === item.id"
+                    @click="decideFood(item.id, 'Rejected')"
+                  >Ablehnen</button>
+                </div>
+                <div v-else-if="meal.canManage" class="meal-food_right">
+                  <button
+                    class="meal-food-edit-btn"
+                    @click="startFoodEdit(item)"
+                    aria-label="Gericht bearbeiten"
+                  >✎</button>
+                  <button
+                    class="meal-product-delete-btn"
+                    :disabled="deletingProductId === item.id"
+                    @click="deleteProduct(item.id)"
+                    aria-label="Gericht löschen"
+                  >×</button>
+                </div>
               </template>
             </li>
           </ul>
@@ -275,9 +346,16 @@ const ordersSaving      = ref(false)
 const ordersSaveTimer   = ref(null)
 const addProductOpen    = ref(false)
 const addProductTitle   = ref('')
+const addProductOrderable = ref(false)
 const addProductMax     = ref(0)
 const addProductSaving  = ref(false)
 const deletingProductId     = ref(null)
+const decidingFoodId        = ref(null)
+const editingFoodId       = ref(null)
+const editFoodTitle       = ref('')
+const editFoodOrderable   = ref(false)
+const editFoodMax         = ref(0)
+const editFoodSaving      = ref(false)
 const descriptionEditing    = ref(false)
 const descriptionDraft      = ref('')
 const descriptionSaving     = ref(false)
@@ -305,13 +383,6 @@ async function saveDescription() {
   }
 }
 
-const allFoods = computed(() => {
-  if (!meal.value) return []
-  const orderable = (meal.value.products ?? []).map(p => ({ ...p, isOrderable: true }))
-  const regular   = (meal.value.foods ?? []).map(f => ({ ...f, isOrderable: false }))
-  return [...orderable, ...regular].sort((a, b) => a.id - b.id)
-})
-
 async function load() {
   loading.value = true
   error.value   = null
@@ -320,7 +391,9 @@ async function load() {
     meal.value  = data.meal
     usePageHeaderStore().setHeader(data.meal.title, '')
     const initial = {}
-    for (const p of data.meal.products ?? []) initial[p.id] = p.userQuantity
+    for (const f of data.meal.foods ?? []) {
+      if (f.isOrderable) initial[f.id] = f.userQuantity
+    }
     userOrders.value = initial
   } catch (e) {
     error.value = e.message
@@ -422,11 +495,15 @@ async function submitProduct() {
   try {
     const result = await apiPost(`/food/mealProduct/${meal.value.id}`, {
       title: addProductTitle.value.trim(),
+      isOrderable: addProductOrderable.value,
       maxQuantity: addProductMax.value ?? 0,
     })
-    meal.value.products.push(result.data.product)
-    userOrders.value = { ...userOrders.value, [result.data.product.id]: 0 }
+    meal.value.foods.push(result.data.product)
+    if (result.data.product.isOrderable) {
+      userOrders.value = { ...userOrders.value, [result.data.product.id]: 0 }
+    }
     addProductTitle.value = ''
+    addProductOrderable.value = false
     addProductMax.value   = 0
     addProductOpen.value  = false
   } catch (e) {
@@ -436,18 +513,65 @@ async function submitProduct() {
   }
 }
 
+async function decideFood(foodId, status) {
+  if (decidingFoodId.value) return
+  decidingFoodId.value = foodId
+  try {
+    await apiPut(`/food/foodStatus/${foodId}`, { status })
+    if (status === 'Accepted') {
+      const item = meal.value.foods.find(f => f.id === foodId)
+      if (item) item.status = 'Accepted'
+    } else {
+      meal.value.foods = meal.value.foods.filter(f => f.id !== foodId)
+    }
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  } finally {
+    decidingFoodId.value = null
+  }
+}
+
 async function deleteProduct(productId) {
-  if (!confirm('Produkt wirklich löschen?')) return
+  if (!confirm('Gericht wirklich löschen?')) return
   deletingProductId.value = productId
   try {
     await apiDelete(`/food/mealProduct/${productId}`)
-    meal.value.products = meal.value.products.filter(p => p.id !== productId)
+    meal.value.foods = meal.value.foods.filter(f => f.id !== productId)
     const { [productId]: _, ...rest } = userOrders.value
     userOrders.value = rest
   } catch (e) {
     alert('Fehler: ' + e.message)
   } finally {
     deletingProductId.value = null
+  }
+}
+
+function startFoodEdit(item) {
+  editingFoodId.value     = item.id
+  editFoodTitle.value     = item.title
+  editFoodOrderable.value = item.isOrderable
+  editFoodMax.value       = item.maxQuantity ?? 0
+}
+
+function cancelFoodEdit() {
+  editingFoodId.value = null
+}
+
+async function saveFoodEdit(foodId) {
+  if (!editFoodTitle.value.trim() || editFoodSaving.value) return
+  editFoodSaving.value = true
+  try {
+    await apiPut(`/food/mealProduct/${foodId}`, {
+      title: editFoodTitle.value.trim(),
+      isOrderable: editFoodOrderable.value,
+      maxQuantity: editFoodMax.value ?? 0,
+    })
+    editingFoodId.value = null
+    await load()
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  } finally {
+    editFoodSaving.value = false
   }
 }
 

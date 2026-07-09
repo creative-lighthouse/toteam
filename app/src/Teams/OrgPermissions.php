@@ -32,6 +32,7 @@ class OrgPermissions
     public const CALENDAR_DELETE = 'CALENDAR_DELETE';
 
     public const FOOD_MANAGE_MEALS = 'FOOD_MANAGE_MEALS';
+    public const FOOD_APPROVE_SUGGESTIONS = 'FOOD_APPROVE_SUGGESTIONS';
 
     public const LINKS_MANAGE = 'LINKS_MANAGE';
 
@@ -70,6 +71,7 @@ class OrgPermissions
             ],
             'Essen' => [
                 self::FOOD_MANAGE_MEALS => 'Mahlzeiten verwalten',
+                self::FOOD_APPROVE_SUGGESTIONS => 'Essens-Vorschläge bestätigen',
             ],
             'Links' => [
                 self::LINKS_MANAGE => 'Links verwalten',

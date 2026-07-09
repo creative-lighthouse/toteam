@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Maps\Map;
+use App\Food\Food;
 use App\Food\Meal;
 use App\Announcements\Announcement;
 use App\Teams\Organization;
@@ -214,6 +215,65 @@ class PushNotificationService
         $url = '/app/food';
 
         self::sendToUsers('meals', $title, $body, $url);
+    }
+
+    /**
+     * Benachrichtigt alle Mitglieder mit FOOD_APPROVE_SUGGESTIONS in der Organisation
+     * über einen neuen, noch offenen Essens-Vorschlag.
+     */
+    public static function notifyFoodSuggestionPending(Food $food, Meal $meal): void
+    {
+        $appointment = $meal->Parent();
+        $org = ($appointment && $appointment->exists()) ? $appointment->Organisations()->first() : null;
+        if (!$org || !$org->exists()) {
+            return;
+        }
+
+        $supplier = $food->Supplier();
+        $title    = '🍽️ Neuer Essens-Vorschlag';
+        $body     = ($supplier && $supplier->exists() ? trim($supplier->FirstName . ' ' . $supplier->Surname) . ' schlägt "' : 'Vorschlag: "')
+            . $food->Title . '" für "' . $meal->Title . '" vor.';
+        $url      = '/app/food/meal/' . $meal->ID;
+
+        $candidateMemberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'Role'           => 'member',
+        ]);
+
+        foreach ($candidateMemberships as $candidateMembership) {
+            $approver = $candidateMembership->Member();
+            if (!$approver || !$approver->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
+                continue;
+            }
+
+            self::saveNotification($approver->ID, 'meals', $title, $body, $url);
+
+            if ($approver->NotifyMeals) {
+                self::sendToMember($approver, $title, $body, $url);
+            }
+        }
+    }
+
+    /**
+     * Benachrichtigt den Vorschlagenden über die Entscheidung des Essensorganisators.
+     */
+    public static function notifyFoodSuggestionDecision(Food $food): void
+    {
+        $supplier = $food->Supplier();
+        if (!$supplier || !$supplier->exists()) {
+            return;
+        }
+
+        $accepted = $food->Status === 'Accepted';
+        $title    = $accepted ? '✅ Vorschlag bestätigt' : '❌ Vorschlag abgelehnt';
+        $body     = 'Dein Vorschlag "' . $food->Title . '" wurde ' . ($accepted ? 'bestätigt' : 'abgelehnt') . '.';
+        $url      = '/app/food';
+
+        self::saveNotification($supplier->ID, 'meals', $title, $body, $url);
+
+        if ($supplier->NotifyMeals) {
+            self::sendToMember($supplier, $title, $body, $url);
+        }
     }
 
     /**

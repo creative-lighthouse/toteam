@@ -55,6 +55,13 @@ class OrganizationsApiController extends ApiController
 
             $myRole = $membership ? $membership->Role : null;
 
+            $myRoleNames = [];
+            if ($membership) {
+                foreach ($membership->Roles() as $role) {
+                    $myRoleNames[] = $role->Title;
+                }
+            }
+
             $applicantCount = $member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)
                 ? OrganizationMembership::get()->filter([
                     'OrganizationID' => $org->ID,
@@ -63,16 +70,19 @@ class OrganizationsApiController extends ApiController
                 : null;
 
             $data[] = [
-                'ID'               => $org->ID,
-                'Username'         => $org->Username ?: null,
-                'Title'            => $org->Title,
-                'Description'      => $org->Description,
-                'LogoURL'          => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(80)->getURL() : null,
-                'CoverURL'         => $org->CoverImage()->exists() ? $org->CoverImage()->ScaleWidth(600)->getURL() : null,
-                'JoinMode'         => $org->JoinMode,
-                'MemberCount'      => $memberCount,
-                'MembershipStatus' => $myRole,
-                'ApplicantCount'   => $applicantCount,
+                'ID'                   => $org->ID,
+                'Username'             => $org->Username ?: null,
+                'Title'                => $org->Title,
+                'Description'          => $org->Description,
+                'LogoURL'              => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(80)->getURL() : null,
+                'CoverURL'             => $org->CoverImage()->exists() ? $org->CoverImage()->ScaleWidth(600)->getURL() : null,
+                'JoinMode'             => $org->JoinMode,
+                'MemberCount'          => $memberCount,
+                'MembershipStatus'     => $myRole,
+                'MyRoleNames'          => $myRoleNames,
+                'ApplicantCount'       => $applicantCount,
+                'Permissions'          => $member->getOrgPermissionCodes($org),
+                'CalendarManagerRoles' => $org->rolesWithPermission(OrgPermissions::CALENDAR_MANAGE),
             ];
         }
 
@@ -158,6 +168,7 @@ class OrganizationsApiController extends ApiController
                 'Members'          => $members,
                 'CanManageMembers' => $canManageMembers,
                 'CanManageRoles'   => $canManageRoles,
+                'Permissions'      => $member->getOrgPermissionCodes($org),
             ],
         ]);
     }

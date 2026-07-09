@@ -79,7 +79,7 @@ const statusMessage = ref(null)
 const canManageContent = computed(() => {
   const eventOrgIds = props.event.OrganizationIDs ?? []
   return orgsStore.organizations.some(o =>
-    eventOrgIds.includes(o.ID) && ['moderator', 'admin'].includes(o.MembershipStatus)
+    eventOrgIds.includes(o.ID) && o.Permissions?.includes('CALENDAR_MANAGE')
   )
 })
 

@@ -317,6 +317,33 @@
                     font-weight: normal;
                 }
 
+                .meal-fixed-foods {
+                    flex-basis: 100%;
+                    margin: 8px 0 0;
+                    padding: 0;
+                    list-style: none;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+
+                .meal-fixed-food {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: 0.85rem;
+                }
+
+                .meal-fixed-food_title {
+                    font-weight: 500;
+                }
+
+                .meal-fixed-food_pref,
+                .meal-fixed-food_supplier {
+                    font-size: 0.75rem;
+                    color: var(--ColorTextSecondary);
+                }
+
             }
 
             // ── Agenda section ───────────────────────────────────────────────────

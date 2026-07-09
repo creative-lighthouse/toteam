@@ -107,6 +107,23 @@ class Organization extends DataObject implements PermissionProvider
         ])->first();
     }
 
+    /**
+     * Titel aller Rollen dieser Organisation, die eine bestimmte Berechtigung
+     * gewähren (direkt oder über den ORG_ADMIN-Wildcard). Für Hinweistexte im
+     * Frontend, z.B. "Nur folgende Rollen dürfen Termine erstellen: ...".
+     * @return string[]
+     */
+    public function rolesWithPermission(string $code): array
+    {
+        $titles = [];
+        foreach (OrgRole::get()->filter('OrganizationID', $this->ID) as $role) {
+            if ($role->hasPermission($code)) {
+                $titles[] = $role->Title;
+            }
+        }
+        return $titles;
+    }
+
     public function onAfterWrite()
     {
         parent::onAfterWrite();

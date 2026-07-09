@@ -4,6 +4,7 @@ namespace App\Admins;
 
 use App\HumanResources\Department;
 use App\Teams\Organization;
+use App\Teams\OrgRole;
 use SilverStripe\Admin\ModelAdmin;
 use SilverStripe\Security\Member;
 
@@ -22,5 +23,6 @@ class TeamAdmin extends ModelAdmin
     private static $managed_models = [
         Member::class,
         Organization::class,
+        OrgRole::class,
     ];
 }
