@@ -34,6 +34,11 @@ export class Event {
     // Alle Teilnahmen
     this.Participations = data.Participations || []
 
+    // Eingeladene Personen
+    this.InvitedMemberIDs = data.InvitedMemberIDs || []
+    this.IsInvited = data.IsInvited ?? true
+    this.MembersWithoutResponse = data.MembersWithoutResponse || []
+
     // Feature-Flags
     this.EnableMeals = data.EnableMeals ?? true
     this.EnableAgenda = data.EnableAgenda ?? true
@@ -164,6 +169,9 @@ export class Event {
       OrganizationIDs: this.OrganizationIDs,
       UserParticipation: this.UserParticipation,
       Participations: this.Participations,
+      InvitedMemberIDs: this.InvitedMemberIDs,
+      IsInvited: this.IsInvited,
+      MembersWithoutResponse: this.MembersWithoutResponse,
       EnableMeals: this.EnableMeals,
       EnableAgenda: this.EnableAgenda,
       Meals: this.Meals,

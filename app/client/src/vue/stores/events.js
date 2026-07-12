@@ -415,6 +415,17 @@ export const useEventsStore = defineStore('events', () => {
     return response.absences ?? []
   }
 
+  async function fetchCalendarMembers(orgIds) {
+    if (!orgIds?.length) return []
+    try {
+      const response = await apiGet(`/calendar/members?organizationIds=${orgIds.join(',')}`, false)
+      return response.members ?? []
+    } catch (err) {
+      console.error('Failed to fetch calendar members:', err)
+      return []
+    }
+  }
+
   async function saveMealProductOrders(mealId, orders) {
     try {
       await apiPut(`/food/mealProductOrder/${mealId}`, { orders })
@@ -470,6 +481,7 @@ export const useEventsStore = defineStore('events', () => {
     updateAppointment,
     deleteAppointment,
     fetchAbsencesForDate,
+    fetchCalendarMembers,
     fetchAbsenceCountsForMonth,
     saveMealProductOrders,
   }

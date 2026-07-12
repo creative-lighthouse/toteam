@@ -18,6 +18,11 @@
         border-left: 4px solid var(--ColorStatusBad);
     }
 
+    &.participant--status-Pending {
+        border-left: 4px solid var(--ColorGray);
+        opacity: 0.8;
+    }
+
     .participant-main {
         display: grid;
         grid-template-columns: auto 1fr;

@@ -34,6 +34,15 @@
           @toggle-note="toggleNoteExpanded(p.ID)"
         />
       </template>
+
+      <template v-if="membersWithoutResponse.length > 0">
+        <h5 class="participant-group_title">Ohne Antwort ({{ membersWithoutResponse.length }})</h5>
+        <ParticipantCard
+          v-for="p in membersWithoutResponse"
+          :key="p.ID"
+          :participation="p"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -56,6 +65,15 @@ const groupedParticipations = computed(() => {
     Decline: props.event.Participations.filter(p => p.Type === 'Decline'),
   }
 })
+
+const membersWithoutResponse = computed(() =>
+  (props.event.MembersWithoutResponse || []).map(m => ({
+    ID: m.ID,
+    MemberName: m.MemberName,
+    ProfileImageURL: m.ProfileImageURL,
+    Type: 'Pending',
+  }))
+)
 
 function toggleNoteExpanded(participationId) {
   const next = new Set(expandedNoteIds.value)

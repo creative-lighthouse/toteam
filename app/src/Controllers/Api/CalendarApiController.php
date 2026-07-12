@@ -38,6 +38,7 @@ class CalendarApiController extends ApiController
         'appointmentTypes',
         'meal',
         'agendaPoint',
+        'members',
     ];
 
     /**
@@ -167,6 +168,19 @@ class CalendarApiController extends ApiController
                 ];
             }
 
+            // Invited members / who hasn't responded yet
+            $invitedMemberIDs = array_map('intval', $appointment->InvitedMembers()->column('ID'));
+            $membersWithoutResponse = [];
+            foreach ($appointment->getMembersWithoutResponse() as $pendingMember) {
+                $membersWithoutResponse[] = [
+                    'ID'              => $pendingMember->ID,
+                    'MemberName'      => $pendingMember->getDisplayName(),
+                    'ProfileImageURL' => $pendingMember->hasMethod('RenderProfileImage')
+                        ? $pendingMember->RenderProfileImage()
+                        : null,
+                ];
+            }
+
             // Organisation logos (all organisations)
             $orgLogos = [];
             foreach ($appointment->Organisations() as $orgItem) {
@@ -208,7 +222,10 @@ class CalendarApiController extends ApiController
                 'EnableAgenda'  => (bool)$appointment->EnableAgenda,
                 'Meals'         => $meals,
                 'AgendaPoints'  => $agendaPoints,
-                'Participations' => $participations
+                'Participations' => $participations,
+                'InvitedMemberIDs' => $invitedMemberIDs,
+                'IsInvited' => in_array($member->ID, $invitedMemberIDs, true),
+                'MembersWithoutResponse' => $membersWithoutResponse,
             ];
         }
 
@@ -640,6 +657,7 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
             $appt->Organisations()->removeAll();
+            $appt->InvitedMembers()->removeAll();
             $appt->Participations()->removeAll();
             $appt->delete();
             return $this->successResponse([], 'Termin gelöscht');
@@ -680,6 +698,18 @@ class CalendarApiController extends ApiController
             if (!empty($newOrgIDs)) {
                 $appt->Organisations()->setByIDList($newOrgIDs);
             }
+
+            $effectiveOrgIDs = !empty($newOrgIDs) ? $newOrgIDs : $apptOrgIDs;
+            $validMemberIDs = OrganizationMembership::get()->filter([
+                'OrganizationID' => $effectiveOrgIDs,
+                'Role'           => 'member',
+            ])->column('MemberID');
+            $invitedIDs = array_values(array_intersect(
+                array_map('intval', $body['invitedMemberIds'] ?? []),
+                $validMemberIDs
+            ));
+            $appt->InvitedMembers()->setByIDList($invitedIDs);
+
             return $this->successResponse(['ID' => $appt->ID], 'Termin aktualisiert');
         }
 
@@ -710,6 +740,15 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('Startdatum ist erforderlich', 400);
         }
 
+        $validMemberIDs = OrganizationMembership::get()->filter([
+            'OrganizationID' => $orgIDs,
+            'Role'           => 'member',
+        ])->column('MemberID');
+        $invitedIDs = array_values(array_intersect(
+            array_map('intval', $body['invitedMemberIds'] ?? []),
+            $validMemberIDs
+        ));
+
         $allDay = !empty($body['allDay']);
 
         $appt = Appointment::create();
@@ -731,6 +770,7 @@ class CalendarApiController extends ApiController
 
         $appt->write();
         $appt->Organisations()->addMany($orgIDs);
+        $appt->InvitedMembers()->addMany($invitedIDs);
 
         // Auto-decline members who are absent on the appointment's start date
         $absentEntries = $this->getRelevantAbsences($orgIDs);
@@ -1026,6 +1066,48 @@ class CalendarApiController extends ApiController
         }
 
         return $filtered;
+    }
+
+    /**
+     * List members of the given organisations, for the appointment invite picker.
+     * GET /api/v1/calendar/members?organizationIds=1,2,3
+     */
+    public function members(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $orgIDsParam = (string) ($request->getVar('organizationIds') ?? '');
+        $requestedOrgIDs = array_filter(array_map('intval', explode(',', $orgIDsParam)));
+        $orgIDs = array_values(array_intersect($requestedOrgIDs, $member->getOrganizationIDs()));
+
+        if (empty($orgIDs)) {
+            return $this->jsonResponse(['members' => []]);
+        }
+
+        $memberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $orgIDs,
+            'Role'           => 'member',
+        ]);
+
+        $seen = [];
+        $members = [];
+        foreach ($memberships as $ms) {
+            $m = $ms->Member();
+            if (!$m || !$m->exists() || isset($seen[$m->ID])) {
+                continue;
+            }
+            $seen[$m->ID] = true;
+            $members[] = [
+                'ID'     => $m->ID,
+                'Name'   => $m->getDisplayName(),
+                'Avatar' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+            ];
+        }
+
+        return $this->jsonResponse(['members' => $members]);
     }
 
     /**

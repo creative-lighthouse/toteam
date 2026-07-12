@@ -110,6 +110,53 @@
                     </div>
                 </label>
 
+                <div class="field field--invited-members">
+                    <span class="invited-members-header">
+                        Eingeladene Personen
+                        <AppButton
+                            type="button"
+                            size="small"
+                            variant="secondary"
+                            :disabled="!orgMembersForSelectedOrgs.length"
+                            @click="toggleAllInvited"
+                        >{{ allInvitedSelected ? 'Alle abwählen' : 'Alle auswählen' }}</AppButton>
+                    </span>
+                    <p v-if="loadingMembers" class="invited-members-loading">Lade Mitglieder…</p>
+                    <p v-else-if="!orgMembersForSelectedOrgs.length" class="invited-members-loading">Bitte zuerst eine Organisation wählen.</p>
+                    <div v-else class="member-search">
+                        <div v-if="selectedInvitedMembers.length" class="member-chip-list">
+                            <span v-for="m in selectedInvitedMembers" :key="m.ID" class="member-chip">
+                                {{ m.Name }}
+                                <button
+                                    type="button"
+                                    class="member-chip_remove"
+                                    aria-label="Entfernen"
+                                    @click="removeInvitedMember(m.ID)"
+                                >×</button>
+                            </span>
+                        </div>
+                        <div class="member-search-input-wrap">
+                            <input
+                                type="text"
+                                v-model="memberSearchQuery"
+                                placeholder="Name eingeben, um Personen hinzuzufügen…"
+                                @focus="memberDropdownOpen = true"
+                                @blur="memberDropdownOpen = false"
+                                @keydown.enter.prevent="addFirstFilteredMember"
+                                @keydown.escape="memberDropdownOpen = false"
+                            />
+                            <ul v-if="memberDropdownOpen && filteredMemberOptions.length" class="member-search-dropdown">
+                                <li v-for="m in filteredMemberOptions" :key="m.ID">
+                                    <button type="button" @mousedown.prevent="addInvitedMember(m.ID)">{{ m.Name }}</button>
+                                </li>
+                            </ul>
+                            <p v-else-if="memberDropdownOpen && memberSearchQuery && !filteredMemberOptions.length" class="member-search-empty">
+                                Keine Treffer
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <label class="field field--title">
                     Titel *
                     <input type="text" v-model="appt.title" required />
@@ -206,7 +253,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import { apiGet } from '@utils/api'
@@ -235,6 +282,11 @@ const managedOrgs = computed(() =>
 )
 
 const canManageContent = computed(() => managedOrgs.value.length > 0)
+
+// Eingeladene Personen
+const orgMembersForSelectedOrgs = ref([])
+const loadingMembers = ref(false)
+const skipInvitedReset = ref(false)
 
 const calendarManagerRoleNames = computed(() => {
   const names = new Set()
@@ -322,6 +374,72 @@ const appt = ref(resetAppt())
 const apptSubmitting = ref(false)
 const apptError = ref('')
 
+const allInvitedSelected = computed(() =>
+  orgMembersForSelectedOrgs.value.length > 0 &&
+  appt.value.invitedMemberIds.length === orgMembersForSelectedOrgs.value.length
+)
+
+function toggleAllInvited() {
+  appt.value.invitedMemberIds = allInvitedSelected.value
+    ? []
+    : orgMembersForSelectedOrgs.value.map(m => m.ID)
+}
+
+async function loadInvitedMembersForSelectedOrgs() {
+  loadingMembers.value = true
+  memberSearchQuery.value = ''
+  memberDropdownOpen.value = false
+  try {
+    orgMembersForSelectedOrgs.value = await eventsStore.fetchCalendarMembers(appt.value.organizationIds)
+  } finally {
+    loadingMembers.value = false
+  }
+  if (skipInvitedReset.value) {
+    skipInvitedReset.value = false
+    return
+  }
+  appt.value.invitedMemberIds = orgMembersForSelectedOrgs.value.map(m => m.ID)
+}
+
+// Personensuche (Chip-Auswahl)
+const memberSearchQuery = ref('')
+const memberDropdownOpen = ref(false)
+
+const selectedInvitedMembers = computed(() =>
+  orgMembersForSelectedOrgs.value.filter(m => appt.value.invitedMemberIds.includes(m.ID))
+)
+
+const filteredMemberOptions = computed(() => {
+  const query = memberSearchQuery.value.trim().toLowerCase()
+  return orgMembersForSelectedOrgs.value
+    .filter(m => !appt.value.invitedMemberIds.includes(m.ID))
+    .filter(m => !query || m.Name.toLowerCase().includes(query))
+    .slice(0, 30)
+})
+
+function addInvitedMember(id) {
+  if (!appt.value.invitedMemberIds.includes(id)) {
+    appt.value.invitedMemberIds.push(id)
+  }
+  memberSearchQuery.value = ''
+}
+
+function removeInvitedMember(id) {
+  appt.value.invitedMemberIds = appt.value.invitedMemberIds.filter(i => i !== id)
+}
+
+function addFirstFilteredMember() {
+  if (filteredMemberOptions.value.length) {
+    addInvitedMember(filteredMemberOptions.value[0].ID)
+  }
+}
+
+watch(() => [...appt.value.organizationIds], () => {
+  if (activeTab.value === 'appointment') {
+    loadInvitedMembersForSelectedOrgs()
+  }
+})
+
 const apptDateTimeEnd = computed({
   get() {
     const date = appt.value.dateEnd
@@ -375,6 +493,7 @@ function resetAppt(date = '') {
     description: '',
     status: 'Scheduled',
     organizationIds: [],
+    invitedMemberIds: [],
     enableMeals: true,
     enableAgenda: true,
   }
@@ -400,6 +519,7 @@ async function submitAppointment() {
       status: appt.value.status,
       typeId: appt.value.typeId || null,
       organizationIds: appt.value.organizationIds,
+      invitedMemberIds: appt.value.invitedMemberIds,
       enableMeals: appt.value.enableMeals,
       enableAgenda: appt.value.enableAgenda,
     }
@@ -456,6 +576,7 @@ async function open(preselectedDate = null) {
   activeTab.value = canManageContent.value ? 'appointment' : 'absence'
   absence.value = resetAbsence(date)
   appt.value = resetAppt(date)
+  orgMembersForSelectedOrgs.value = []
 
   await loadOrgsAndTypes()
   if (managedOrgs.value.length === 1) {
@@ -492,9 +613,11 @@ async function openEditAppointment(event) {
   absenceError.value = ''
   apptError.value = ''
   activeTab.value = 'appointment'
+  orgMembersForSelectedOrgs.value = []
 
   await loadOrgsAndTypes()
 
+  skipInvitedReset.value = true
   appt.value = {
     title: event.Title ?? '',
     dateStart: event.DateStart ?? '',
@@ -507,6 +630,7 @@ async function openEditAppointment(event) {
     status: event.Status ?? 'Scheduled',
     typeId: event.TypeID ?? '',
     organizationIds: (event.OrganizationIDs ?? []).map(Number),
+    invitedMemberIds: (event.InvitedMemberIDs ?? []).map(Number),
     enableMeals: event.EnableMeals ?? true,
     enableAgenda: event.EnableAgenda ?? true,
   }

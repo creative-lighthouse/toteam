@@ -56,6 +56,24 @@ class PushNotificationService
     private static function saveNotification($memberID, $type, $title, $body, $url = null)
     {
         SavedNotification::createNotification($memberID, $type, $title, $body, $url);
+    }
+
+    /**
+     * Send notification to a specific, pre-scoped list of member IDs (e.g. invited members
+     * of an appointment), still respecting each member's Notify{Type} preference.
+     */
+    private static function sendToMemberList(array $memberIDs, $type, $title, $body, $url = null)
+    {
+        $field = 'Notify' . ucfirst($type);
+
+        foreach ($memberIDs as $memberID) {
+            self::saveNotification($memberID, $type, $title, $body, $url);
+
+            $member = Member::get()->byID($memberID);
+            if ($member && $member->$field) {
+                self::sendToMember($member, $title, $body, $url);
+            }
+        }
     }    /**
      * Send notification for suggested event
      */
@@ -101,7 +119,7 @@ class PushNotificationService
         $body = $appointment->Title . ' am ' . $appointment->RenderDate();
         $url = $appointment->getLink();
 
-        self::sendToUsers('events', $title, $body, $url);
+        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
     }
 
     /**
@@ -113,7 +131,7 @@ class PushNotificationService
         $body = $appointment->Title . ' am ' . $appointment->RenderDate();
         $url = $appointment->getLink();
 
-        self::sendToUsers('events', $title, $body, $url);
+        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
     }
 
     /**
@@ -125,7 +143,7 @@ class PushNotificationService
         $body = $appointment->Title . ' am ' . $appointment->RenderDate() . ' wurde abgesagt.';
         $url = $appointment->getLink();
 
-        self::sendToUsers('events', $title, $body, $url);
+        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
     }
 
     /**

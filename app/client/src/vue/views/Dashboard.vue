@@ -197,7 +197,7 @@ const upcomingAccepted = computed(() =>
 
 const pendingFeedback = computed(() =>
   eventsStore.upcomingEvents
-    .filter(e => !e.getUserParticipationType())
+    .filter(e => e.IsInvited && !e.getUserParticipationType())
     .slice(0, 5)
 )
 
