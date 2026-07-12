@@ -5,6 +5,7 @@
       `event-card--${event.EventType || 'default'}`,
       event.AllDay ? 'event-card--allday' : 'event-card--timed',
       event.Status ? `event-card--${event.Status.toLowerCase()}` : '',
+      event.IsPoll ? 'event-card--poll' : '',
     ]"
     @click="openEventDetails"
   >
@@ -27,7 +28,8 @@
           alt=""
         >
         <h4 class="event-card_title">{{ event.Title }}</h4>
-        <p v-if="event.Status=='Suggested'" class="event-card_status">(Vorschlag)</p>
+        <p v-if="event.IsPoll" class="event-card_status event-card_status--poll">🗳️ Terminfindung</p>
+        <p v-else-if="event.Status=='Suggested'" class="event-card_status">(Vorschlag)</p>
         <p v-else-if="event.Status=='Cancelled'" class="event-card_status">(Abgesagt)</p>
       </div>
       <span v-if="dateDisplay" class="event-card_time">{{ dateDisplay }}</span>

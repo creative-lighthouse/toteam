@@ -319,6 +319,11 @@
                 &.event-dot--none {
                     background-color: var(--ColorGray);
                 }
+
+                &.event-dot--poll {
+                    background-color: var(--ColorWhite);
+                    border: 2px dashed var(--ColorPrimary);
+                }
             }
 
             &:hover {

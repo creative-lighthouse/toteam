@@ -682,19 +682,4 @@ class FoodApiController extends ApiController
             'canApprove'           => $canApprove,
         ];
     }
-
-    /**
-     * Ob der Nutzer die granulare Berechtigung $code in mindestens einer der
-     * angegebenen Organisationen hat.
-     */
-    private function hasPermissionInAnyOrg(Member $member, array $orgIDs, string $code): bool
-    {
-        foreach ($orgIDs as $orgID) {
-            $org = Organization::get()->byID($orgID);
-            if ($org && $org->exists() && $member->hasOrgPermission($org, $code)) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

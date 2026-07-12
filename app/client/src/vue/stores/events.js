@@ -415,6 +415,74 @@ export const useEventsStore = defineStore('events', () => {
     return response.absences ?? []
   }
 
+  async function createSchedulingPoll(data) {
+    const response = await apiPost('/scheduling-poll/poll', data)
+    return response
+  }
+
+  async function updateSchedulingPoll(id, data) {
+    return apiPut('/scheduling-poll/poll', { id, ...data })
+  }
+
+  async function deleteSchedulingPoll(id) {
+    return apiDelete('/scheduling-poll/poll?id=' + id)
+  }
+
+  async function finalizePoll(pollId, optionId) {
+    const response = await apiPost(`/scheduling-poll/finalize/${pollId}`, { optionId })
+    await clearCacheForEndpoint('/calendar')
+    return response
+  }
+
+  async function voteOnPollOption(optionId, type) {
+    try {
+      const response = await apiPost(`/scheduling-poll/pollOptionParticipation/${optionId}`, {
+        response: type
+      })
+
+      const authStore = useAuthStore()
+      const u = authStore.user
+
+      function patchParticipations(participations) {
+        if (!participations) return
+        const existing = participations.find(p => p.IsCurrentUser)
+        if (existing) {
+          existing.Type = response.data.Type
+        } else {
+          participations.push({
+            ID: response.data.ID,
+            MemberID: u?.ID ?? null,
+            MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
+            ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
+            Type: response.data.Type,
+            IsCurrentUser: true,
+          })
+        }
+      }
+
+      events.value.forEach(event => {
+        if (event.OptionID === optionId) {
+          event.updateUserParticipation(response.data)
+          patchParticipations(event.Participations)
+        }
+        if (event.PollOptions) {
+          const sibling = event.PollOptions.find(o => o.OptionID === optionId)
+          if (sibling) {
+            sibling.UserVote = response.data.Type
+            patchParticipations(sibling.Participations)
+          }
+        }
+      })
+
+      await clearCacheForEndpoint('/calendar')
+
+      return response.data
+    } catch (err) {
+      console.error('Failed to vote on poll option:', err)
+      throw err
+    }
+  }
+
   async function fetchCalendarMembers(orgIds) {
     if (!orgIds?.length) return []
     try {
@@ -480,6 +548,11 @@ export const useEventsStore = defineStore('events', () => {
     createAppointment,
     updateAppointment,
     deleteAppointment,
+    createSchedulingPoll,
+    updateSchedulingPoll,
+    deleteSchedulingPoll,
+    finalizePoll,
+    voteOnPollOption,
     fetchAbsencesForDate,
     fetchCalendarMembers,
     fetchAbsenceCountsForMonth,

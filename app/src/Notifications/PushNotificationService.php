@@ -11,6 +11,7 @@ use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
 use App\Events\EventDay;
 use App\Calendar\Appointment;
+use App\Calendar\SchedulingPoll;
 use SilverStripe\Security\Member;
 use SilverStripe\Core\Environment;
 
@@ -144,6 +145,18 @@ class PushNotificationService
         $url = $appointment->getLink();
 
         self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
+    }
+
+    /**
+     * Send notification for a new scheduling poll (Terminfindung)
+     */
+    public static function notifyPollCreated(SchedulingPoll $poll)
+    {
+        $title = '🗳️ Neue Terminfindung';
+        $body = $poll->Title;
+        $url = $poll->getLink();
+
+        self::sendToMemberList($poll->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
     }
 
     /**

@@ -74,7 +74,7 @@
                         v-for="event in selectedDayEvents"
                         :key="event.ID"
                         :event="event"
-                        @click="openEventDialog(event)"
+                        @click="openEvent(event)"
                         />
                     </div>
                     <div v-else-if="selectedDateAbsences.length === 0" class="no-events-message">
@@ -131,12 +131,25 @@
                 @edit-appointment="onEditAppointment"
             />
 
+            <!-- Poll (Terminfindung) Dialog -->
+            <PollDialog
+                v-if="selectedPollEvent"
+                :event="selectedPollEvent"
+                @close="closePollDialog"
+                @edit-poll="onEditPoll"
+                @finalized="onPollFinalized"
+                @deleted="onPollDeleted"
+            />
+
             <!-- Add Appointment Modal -->
             <AddAppointmentModal
                 ref="entryModalRef"
                 @appointment-created="refreshEvents"
                 @appointment-updated="refreshEvents"
                 @appointment-deleted="onAppointmentDeleted"
+                @poll-created="refreshEvents"
+                @poll-updated="refreshEvents"
+                @poll-deleted="refreshEvents"
                 @absence-created="refreshAbsences"
                 @absence-updated="refreshAbsences"
                 @absence-deleted="refreshAbsences"
@@ -154,6 +167,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { useAuthStore } from '@stores/auth'
 import { useOrganizationsStore } from '@stores/organizations'
 import EventDialog from '@components/EventDialog/EventDialog.vue'
+import PollDialog from '@components/PollDialog.vue'
 import EventCard from '@components/EventCard.vue'
 import AppMenu from '@components/AppMenu.vue'
 import AddAppointmentModal from '@components/AddAppointmentModal.vue'
@@ -277,8 +291,12 @@ const getEventsCountForDay = (day, month = currentMonth.value, year = currentYea
 const getEventDotsForDay = (day, month = currentMonth.value, year = currentYear.value) => {
   const events = eventsByDate.value[makeDateKey(day, month, year)] || []
 
-  const counts = { accept: 0, maybe: 0, decline: 0, none: 0 }
+  const counts = { poll: 0, accept: 0, maybe: 0, decline: 0, none: 0 }
   events.forEach(e => {
+    if (e.IsPoll) {
+      counts.poll++
+      return
+    }
     const status = e.UserParticipation?.Type?.toLowerCase() || 'none'
     counts[status] = (counts[status] || 0) + 1
   })
@@ -420,7 +438,16 @@ async function refreshEvents() {
 
 // Event dialog
 const selectedEvent = ref(null)
+const selectedPollEvent = ref(null)
 const pendingReopenId = ref(null)
+
+function openEvent(event) {
+  if (event.IsPoll) {
+    openPollDialog(event)
+  } else {
+    openEventDialog(event)
+  }
+}
 
 function openEventDialog(event) {
   selectedEvent.value = event
@@ -431,6 +458,34 @@ function closeEventDialog() {
   selectedEvent.value = null
   const { eventID: _removed, ...rest } = route.query
   router.replace({ query: rest })
+}
+
+function openPollDialog(event) {
+  selectedPollEvent.value = event
+  router.replace({ query: { ...route.query, eventID: event.ID } })
+}
+
+function closePollDialog() {
+  selectedPollEvent.value = null
+  const { eventID: _removed, ...rest } = route.query
+  router.replace({ query: rest })
+}
+
+function onEditPoll(event) {
+  selectedPollEvent.value = null
+  const { eventID: _removed, ...rest } = route.query
+  router.replace({ query: rest })
+  entryModalRef.value.openEditPoll(event)
+}
+
+async function onPollFinalized() {
+  closePollDialog()
+  await refreshEvents()
+}
+
+async function onPollDeleted() {
+  closePollDialog()
+  await refreshEvents()
 }
 
 function handleParticipationChanged(_eventId, _updatedParticipation) {
@@ -517,7 +572,13 @@ onMounted(async () => {
   // If a specific event was linked, open its dialog (without modifying URL since it's already correct)
   if (linkEventID) {
     const event = eventsStore.getEventById(linkEventID)
-    if (event) selectedEvent.value = event
+    if (event) {
+      if (event.IsPoll) {
+        selectedPollEvent.value = event
+      } else {
+        selectedEvent.value = event
+      }
+    }
   }
 })
 </script>

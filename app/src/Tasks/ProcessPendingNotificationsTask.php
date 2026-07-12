@@ -3,6 +3,7 @@
 namespace App\Tasks;
 
 use App\Calendar\Appointment;
+use App\Calendar\SchedulingPoll;
 use App\Announcements\Announcement;
 use App\Notifications\PendingNotificationJob;
 use App\Notifications\PushNotificationService;
@@ -66,6 +67,13 @@ class ProcessPendingNotificationsTask extends BuildTask
                 $appointment = Appointment::get()->byID($job->SourceID);
                 if ($appointment) {
                     PushNotificationService::notifyAppointmentCancelled($appointment);
+                }
+                break;
+
+            case 'poll_created':
+                $poll = SchedulingPoll::get()->byID($job->SourceID);
+                if ($poll) {
+                    PushNotificationService::notifyPollCreated($poll);
                 }
                 break;
         }

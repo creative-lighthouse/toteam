@@ -7,6 +7,7 @@ use App\Calendar\Appointment;
 use App\Calendar\AppointmentAgendaPoint;
 use App\Calendar\AppointmentParticipation;
 use App\Calendar\AppointmentType;
+use App\Calendar\SchedulingPollOption;
 use App\Food\Meal;
 use App\Food\MealEater;
 use App\Food\MealProductOrder;
@@ -226,6 +227,110 @@ class CalendarApiController extends ApiController
                 'InvitedMemberIDs' => $invitedMemberIDs,
                 'IsInvited' => in_array($member->ID, $invitedMemberIDs, true),
                 'MembersWithoutResponse' => $membersWithoutResponse,
+            ];
+        }
+
+        // Get open scheduling-poll options for this month in user's organizations
+        $pollOptions = SchedulingPollOption::get()
+            ->filter([
+                'Parent.Organisations.ID' => $organizationIDs,
+                'DateStart:GreaterThanOrEqual' => $startDate,
+                'DateStart:LessThanOrEqual' => $endDate,
+            ])
+            ->distinct(true)
+            ->sort('DateStart', 'ASC');
+
+        foreach ($pollOptions as $option) {
+            $poll = $option->Parent();
+            if (!$poll || !$poll->exists() || $poll->Status !== 'Open') {
+                continue;
+            }
+
+            $userVote = $option->OptionParticipations()->filter(['MemberID' => $member->ID])->first();
+            $optionParticipations = $this->formatPollOptionParticipations($option, $member);
+
+            $pollInvitedMemberIDs = array_map('intval', $poll->InvitedMembers()->column('ID'));
+            $respondedIDs = $option->OptionParticipations()->column('MemberID');
+            $missingIDs = array_diff($pollInvitedMemberIDs, $respondedIDs);
+            $membersWithoutResponse = [];
+            if (!empty($missingIDs)) {
+                foreach (Member::get()->filter('ID', $missingIDs) as $pendingMember) {
+                    $membersWithoutResponse[] = [
+                        'ID'              => $pendingMember->ID,
+                        'MemberName'      => $pendingMember->getDisplayName(),
+                        'ProfileImageURL' => $pendingMember->hasMethod('RenderProfileImage')
+                            ? $pendingMember->RenderProfileImage()
+                            : null,
+                    ];
+                }
+            }
+
+            // Geschwister-Optionen derselben Terminfindung, für die Vergleichsansicht im Dialog
+            $siblingOptions = [];
+            foreach ($poll->Options() as $sibling) {
+                $siblingUserVote = $sibling->OptionParticipations()->filter(['MemberID' => $member->ID])->first();
+                $siblingOptions[] = [
+                    'OptionID'   => $sibling->ID,
+                    'DateStart'  => $sibling->DateStart,
+                    'DateEnd'    => $sibling->DateEnd,
+                    'TimeStart'  => $sibling->AllDay ? null : $sibling->TimeStart,
+                    'TimeEnd'    => $sibling->AllDay ? null : $sibling->TimeEnd,
+                    'AllDay'     => (bool) $sibling->AllDay,
+                    'RenderDate' => $sibling->RenderDate(),
+                    'RenderTime' => $sibling->RenderTime(),
+                    'VotedYes'   => $sibling->getVotedYes(),
+                    'VotedMaybe' => $sibling->getVotedMaybe(),
+                    'VotedNo'    => $sibling->getVotedNo(),
+                    'UserVote'   => $siblingUserVote ? $siblingUserVote->Type : null,
+                    'Participations' => $this->formatPollOptionParticipations($sibling, $member),
+                ];
+            }
+
+            $pollOrgLogos = [];
+            foreach ($poll->Organisations() as $orgItem) {
+                if ($orgItem->Logo()->exists()) {
+                    $pollOrgLogos[] = [
+                        'ID'      => $orgItem->ID,
+                        'LogoURL' => $orgItem->Logo()->ScaleWidth(40)->getURL(),
+                    ];
+                }
+            }
+            $pollOrgLogoURL = !empty($pollOrgLogos) ? $pollOrgLogos[0]['LogoURL'] : null;
+
+            $events[] = [
+                // Negative ID, damit Terminfindungs-Pseudo-Events nie mit echten Appointment-IDs kollidieren.
+                'ID' => -$option->ID,
+                'Title' => $poll->Title,
+                'DateStart' => $option->DateStart,
+                'DateEnd' => $option->DateEnd ?: $option->DateStart,
+                'TimeStart' => $option->AllDay ? null : $option->TimeStart,
+                'TimeEnd' => $option->AllDay ? null : $option->TimeEnd,
+                'AllDay' => (bool) $option->AllDay,
+                'Location' => $poll->Location,
+                'Description' => $poll->Description,
+                'Status' => 'Scheduled',
+                'EventType' => null,
+                'TypeID' => null,
+                'OrganizationIDs' => array_map('intval', $poll->Organisations()->column('ID')),
+                'ImageURL' => null,
+                'OrganizationLogoURL' => $pollOrgLogoURL,
+                'OrganizationLogos' => $pollOrgLogos,
+                'UserParticipation' => $userVote ? [
+                    'ID'   => $userVote->ID,
+                    'Type' => $userVote->Type,
+                ] : null,
+                'EnableMeals'   => false,
+                'EnableAgenda'  => false,
+                'Meals'         => [],
+                'AgendaPoints'  => [],
+                'Participations' => $optionParticipations,
+                'InvitedMemberIDs' => $pollInvitedMemberIDs,
+                'IsInvited' => in_array($member->ID, $pollInvitedMemberIDs, true),
+                'MembersWithoutResponse' => $membersWithoutResponse,
+                'IsPoll' => true,
+                'PollID' => $poll->ID,
+                'OptionID' => $option->ID,
+                'PollOptions' => $siblingOptions,
             ];
         }
 
@@ -1041,6 +1146,28 @@ class CalendarApiController extends ApiController
     }
 
     /**
+     * Formatiert die Teilnahmen einer Terminfindungs-Option fürs Frontend.
+     */
+    private function formatPollOptionParticipations(SchedulingPollOption $option, Member $member): array
+    {
+        $participations = [];
+        foreach ($option->OptionParticipations() as $p) {
+            $pMember = $p->Member();
+            $participations[] = [
+                'ID'              => $p->ID,
+                'MemberID'        => $p->MemberID,
+                'MemberName'      => $pMember ? $pMember->getDisplayName() : 'Unknown',
+                'ProfileImageURL' => $pMember && $pMember->hasMethod('RenderProfileImage')
+                    ? $pMember->RenderProfileImage()
+                    : null,
+                'Type'            => $p->Type,
+                'IsCurrentUser'   => $p->MemberID == $member->ID,
+            ];
+        }
+        return $participations;
+    }
+
+    /**
      * Fetch all Absence records visible to the given organisation IDs,
      * with their Organisations relation pre-filtered for the org-scope check.
      *
@@ -1131,20 +1258,5 @@ class CalendarApiController extends ApiController
         }
 
         return $this->jsonResponse(['types' => $data]);
-    }
-
-    /**
-     * Ob der Nutzer die granulare Berechtigung $code in mindestens einer der
-     * angegebenen Organisationen hat (Termine können mehreren Orgs zugeordnet sein).
-     */
-    private function hasPermissionInAnyOrg(Member $member, array $orgIDs, string $code): bool
-    {
-        foreach ($orgIDs as $orgID) {
-            $org = Organization::get()->byID($orgID);
-            if ($org && $org->exists() && $member->hasOrgPermission($org, $code)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

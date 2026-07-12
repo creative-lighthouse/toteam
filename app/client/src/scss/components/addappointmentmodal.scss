@@ -74,7 +74,7 @@
                 }
             }
 
-            &.form--appointment {
+            &.form--appointment, &.form--poll {
                 .field {
                     margin: 0;
                     grid-column: span 6;
@@ -243,6 +243,53 @@
 
                     &.field--enddatetime, &.field--enddate {
                         grid-column: span 3;
+                    }
+
+                    &.field--poll-options {
+                        grid-column: span 6;
+                        margin: 0;
+
+                        .poll-options-header {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: 10px;
+                            margin-bottom: 8px;
+                        }
+
+                        .poll-option-row {
+                            display: flex;
+                            align-items: flex-end;
+                            flex-wrap: wrap;
+                            gap: 10px;
+                            padding: 10px;
+                            margin-bottom: 8px;
+                            background-color: var(--ColorVeryLightGray);
+                            border-radius: var(--BorderRadiusSmall);
+
+                            .field {
+                                flex: 1 1 130px;
+                                margin: 0;
+                                min-width: 0;
+                            }
+
+                            .field--allday {
+                                flex: 0 0 auto;
+                                flex-direction: row;
+                                align-items: center;
+                                gap: 6px;
+
+                                input[type="checkbox"] {
+                                    width: 20px;
+                                    margin: 0;
+                                }
+                            }
+
+                            .app-icon-button {
+                                flex: 0 0 auto;
+                                margin-bottom: 2px;
+                            }
+                        }
                     }
 
                     @include media(medium) {

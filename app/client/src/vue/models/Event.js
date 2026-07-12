@@ -39,6 +39,12 @@ export class Event {
     this.IsInvited = data.IsInvited ?? true
     this.MembersWithoutResponse = data.MembersWithoutResponse || []
 
+    // Terminfindung (Scheduling-Poll)
+    this.IsPoll = data.IsPoll ?? false
+    this.PollID = data.PollID ?? null
+    this.OptionID = data.OptionID ?? null
+    this.PollOptions = data.PollOptions || []
+
     // Feature-Flags
     this.EnableMeals = data.EnableMeals ?? true
     this.EnableAgenda = data.EnableAgenda ?? true
@@ -172,6 +178,10 @@ export class Event {
       InvitedMemberIDs: this.InvitedMemberIDs,
       IsInvited: this.IsInvited,
       MembersWithoutResponse: this.MembersWithoutResponse,
+      IsPoll: this.IsPoll,
+      PollID: this.PollID,
+      OptionID: this.OptionID,
+      PollOptions: this.PollOptions,
       EnableMeals: this.EnableMeals,
       EnableAgenda: this.EnableAgenda,
       Meals: this.Meals,

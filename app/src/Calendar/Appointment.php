@@ -400,20 +400,6 @@ class Appointment extends DataObject implements PermissionProvider
         return $this->Participations()->filter('Type', 'Decline')->count();
     }
 
-    public function getAllOfSameTitleSuggestedEvents()
-    {
-        $alloptions = Appointment::get()->filter([
-            'Title' => $this->Title,
-            'Status' => 'Suggested',
-        ]);
-        // Sortiere in PHP nach Accept-Teilnahmen
-        $alloptionsArr = $alloptions->toArray();
-        usort($alloptionsArr, function ($a, $b) {
-            return $b->Participations()->filter('Type', 'Accept')->count() <=> $a->Participations()->filter('Type', 'Accept')->count();
-        });
-        return ArrayList::create($alloptionsArr);
-    }
-
     public function providePermissions()
     {
         return [

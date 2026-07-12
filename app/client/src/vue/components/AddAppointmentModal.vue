@@ -5,7 +5,7 @@
 
         <!-- Header -->
         <div class="dialog-header">
-          <h2 class="hl2">{{ editMode === 'appointment' ? 'Termin bearbeiten' : editMode === 'absence' ? 'Abwesenheit bearbeiten' : canManageContent ? 'Termin hinzufügen' : 'Abwesenheit eintragen' }}</h2>
+          <h2 class="hl2">{{ headerTitle }}</h2>
           <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
@@ -23,6 +23,12 @@
             :class="{ 'tab-btn--active': activeTab === 'appointment' }"
             @click="activeTab = 'appointment'"
           >Termin hinzufügen</button>
+          <button
+            type="button"
+            class="tab-btn"
+            :class="{ 'tab-btn--active': activeTab === 'poll' }"
+            @click="activeTab = 'poll'"
+          >Terminfindung</button>
         </div>
 
         <!-- Tab: Abwesenheit -->
@@ -96,66 +102,13 @@
         <!-- Tab: Termin hinzufügen -->
         <div class="dialog-infobox" v-if="activeTab === 'appointment' && canManageContent">
             <form class="modal-form form--appointment" @submit.prevent="submitAppointment">
-                <label class="field field--organizations">
-                    Organisation(en) *
-                    <div class="multiselect-group">
-                        <label
-                        v-for="org in managedOrgs"
-                        :key="org.ID"
-                        class="checkbox-label"
-                        >
-                            <input type="checkbox" :value="org.ID" v-model="appt.organizationIds" />
-                            {{ org.Title }}
-                        </label>
-                    </div>
-                </label>
-
-                <div class="field field--invited-members">
-                    <span class="invited-members-header">
-                        Eingeladene Personen
-                        <AppButton
-                            type="button"
-                            size="small"
-                            variant="secondary"
-                            :disabled="!orgMembersForSelectedOrgs.length"
-                            @click="toggleAllInvited"
-                        >{{ allInvitedSelected ? 'Alle abwählen' : 'Alle auswählen' }}</AppButton>
-                    </span>
-                    <p v-if="loadingMembers" class="invited-members-loading">Lade Mitglieder…</p>
-                    <p v-else-if="!orgMembersForSelectedOrgs.length" class="invited-members-loading">Bitte zuerst eine Organisation wählen.</p>
-                    <div v-else class="member-search">
-                        <div v-if="selectedInvitedMembers.length" class="member-chip-list">
-                            <span v-for="m in selectedInvitedMembers" :key="m.ID" class="member-chip">
-                                {{ m.Name }}
-                                <button
-                                    type="button"
-                                    class="member-chip_remove"
-                                    aria-label="Entfernen"
-                                    @click="removeInvitedMember(m.ID)"
-                                >×</button>
-                            </span>
-                        </div>
-                        <div class="member-search-input-wrap">
-                            <input
-                                type="text"
-                                v-model="memberSearchQuery"
-                                placeholder="Name eingeben, um Personen hinzuzufügen…"
-                                @focus="memberDropdownOpen = true"
-                                @blur="memberDropdownOpen = false"
-                                @keydown.enter.prevent="addFirstFilteredMember"
-                                @keydown.escape="memberDropdownOpen = false"
-                            />
-                            <ul v-if="memberDropdownOpen && filteredMemberOptions.length" class="member-search-dropdown">
-                                <li v-for="m in filteredMemberOptions" :key="m.ID">
-                                    <button type="button" @mousedown.prevent="addInvitedMember(m.ID)">{{ m.Name }}</button>
-                                </li>
-                            </ul>
-                            <p v-else-if="memberDropdownOpen && memberSearchQuery && !filteredMemberOptions.length" class="member-search-empty">
-                                Keine Treffer
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <InviteePicker
+                    ref="apptInviteePickerRef"
+                    v-model:organization-ids="appt.organizationIds"
+                    v-model:invited-member-ids="appt.invitedMemberIds"
+                    :available-orgs="managedOrgs"
+                    :auto-select-all="!editMode"
+                />
 
                 <label class="field field--title">
                     Titel *
@@ -243,7 +196,87 @@
                 </div>
             </form>
         </div>
-        <div v-else-if="activeTab === 'appointment' && !canManageContent" class="dialog-infobox">
+
+        <!-- Tab: Terminfindung -->
+        <div class="dialog-infobox" v-if="activeTab === 'poll' && canManageContent">
+            <form class="modal-form form--poll" @submit.prevent="submitPoll">
+                <InviteePicker
+                    ref="pollInviteePickerRef"
+                    v-model:organization-ids="poll.organizationIds"
+                    v-model:invited-member-ids="poll.invitedMemberIds"
+                    :available-orgs="managedOrgs"
+                    :auto-select-all="!editMode"
+                />
+
+                <label class="field field--title">
+                    Titel *
+                    <input type="text" v-model="poll.title" required />
+                </label>
+
+                <label class="field field--location">
+                    Ort
+                    <input type="text" v-model="poll.location" />
+                </label>
+
+                <label class="field field--description">
+                    Beschreibung
+                    <textarea v-model="poll.description" rows="3"></textarea>
+                </label>
+
+                <div class="field field--poll-options">
+                    <span class="poll-options-header">
+                        Terminoptionen *
+                        <AppButton type="button" size="small" variant="secondary" @click="addPollOption">+ Option hinzufügen</AppButton>
+                    </span>
+                    <div v-for="(option, index) in poll.options" :key="index" class="poll-option-row">
+                        <label class="field field--allday">
+                            <input type="checkbox" v-model="option.allDay" />
+                            Ganztägig
+                        </label>
+
+                        <label class="field field--startdate">
+                            {{ option.allDay ? 'Datum *' : 'Start *' }}
+                            <input type="date" v-model="option.dateStart" required />
+                        </label>
+
+                        <label v-if="!option.allDay" class="field field--starttime">
+                            Uhrzeit von
+                            <input type="time" v-model="option.timeStart" />
+                        </label>
+
+                        <label v-if="!option.allDay" class="field field--endtime">
+                            Uhrzeit bis
+                            <input type="time" v-model="option.timeEnd" />
+                        </label>
+
+                        <AppIconButton
+                            variant="danger"
+                            aria-label="Option entfernen"
+                            :disabled="poll.options.length <= 2"
+                            @click="removePollOption(index)"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                        </AppIconButton>
+                    </div>
+                </div>
+
+                <div v-if="pollError" class="form-error">{{ pollError }}</div>
+
+                <div class="form-actions">
+                    <AppButton type="submit" variant="primary" :disabled="pollSubmitting">
+                        {{ pollSubmitting ? 'Wird gespeichert…' : (editMode === 'poll' ? 'Speichern' : 'Terminfindung erstellen') }}
+                    </AppButton>
+                    <AppButton
+                        v-if="editMode === 'poll'"
+                        variant="danger"
+                        :disabled="pollSubmitting"
+                        @click="deletePoll"
+                    >Löschen</AppButton>
+                </div>
+            </form>
+        </div>
+
+        <div v-else-if="(activeTab === 'appointment' || activeTab === 'poll') && !canManageContent" class="dialog-infobox">
             <p>{{ noPermissionMessage }}</p>
         </div>
 
@@ -253,23 +286,31 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import { apiGet } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import InviteePicker from '@components/InviteePicker.vue'
 
-const emit = defineEmits(['appointment-created', 'absence-created', 'appointment-updated', 'absence-updated', 'appointment-deleted', 'absence-deleted', 'closed'])
+const emit = defineEmits([
+  'appointment-created', 'absence-created', 'poll-created',
+  'appointment-updated', 'absence-updated', 'poll-updated',
+  'appointment-deleted', 'absence-deleted', 'poll-deleted',
+  'closed',
+])
 
 const savedThisSession = ref(false)
 
 const dialogEl = ref(null)
 const activeTab = ref('absence')
-const editMode = ref(null) // null | 'absence' | 'appointment'
+const editMode = ref(null) // null | 'absence' | 'appointment' | 'poll'
 const editId = ref(null)
 const orgsStore = useOrganizationsStore()
 const eventsStore = useEventsStore()
+const apptInviteePickerRef = ref(null)
+const pollInviteePickerRef = ref(null)
 
 const appointmentTypes = ref([])
 
@@ -283,10 +324,14 @@ const managedOrgs = computed(() =>
 
 const canManageContent = computed(() => managedOrgs.value.length > 0)
 
-// Eingeladene Personen
-const orgMembersForSelectedOrgs = ref([])
-const loadingMembers = ref(false)
-const skipInvitedReset = ref(false)
+const headerTitle = computed(() => {
+  if (editMode.value === 'appointment') return 'Termin bearbeiten'
+  if (editMode.value === 'poll') return 'Terminfindung bearbeiten'
+  if (editMode.value === 'absence') return 'Abwesenheit bearbeiten'
+  if (activeTab.value === 'poll') return 'Terminfindung erstellen'
+  if (activeTab.value === 'appointment') return 'Termin hinzufügen'
+  return 'Abwesenheit eintragen'
+})
 
 const calendarManagerRoleNames = computed(() => {
   const names = new Set()
@@ -373,72 +418,6 @@ async function deleteAbsence() {
 const appt = ref(resetAppt())
 const apptSubmitting = ref(false)
 const apptError = ref('')
-
-const allInvitedSelected = computed(() =>
-  orgMembersForSelectedOrgs.value.length > 0 &&
-  appt.value.invitedMemberIds.length === orgMembersForSelectedOrgs.value.length
-)
-
-function toggleAllInvited() {
-  appt.value.invitedMemberIds = allInvitedSelected.value
-    ? []
-    : orgMembersForSelectedOrgs.value.map(m => m.ID)
-}
-
-async function loadInvitedMembersForSelectedOrgs() {
-  loadingMembers.value = true
-  memberSearchQuery.value = ''
-  memberDropdownOpen.value = false
-  try {
-    orgMembersForSelectedOrgs.value = await eventsStore.fetchCalendarMembers(appt.value.organizationIds)
-  } finally {
-    loadingMembers.value = false
-  }
-  if (skipInvitedReset.value) {
-    skipInvitedReset.value = false
-    return
-  }
-  appt.value.invitedMemberIds = orgMembersForSelectedOrgs.value.map(m => m.ID)
-}
-
-// Personensuche (Chip-Auswahl)
-const memberSearchQuery = ref('')
-const memberDropdownOpen = ref(false)
-
-const selectedInvitedMembers = computed(() =>
-  orgMembersForSelectedOrgs.value.filter(m => appt.value.invitedMemberIds.includes(m.ID))
-)
-
-const filteredMemberOptions = computed(() => {
-  const query = memberSearchQuery.value.trim().toLowerCase()
-  return orgMembersForSelectedOrgs.value
-    .filter(m => !appt.value.invitedMemberIds.includes(m.ID))
-    .filter(m => !query || m.Name.toLowerCase().includes(query))
-    .slice(0, 30)
-})
-
-function addInvitedMember(id) {
-  if (!appt.value.invitedMemberIds.includes(id)) {
-    appt.value.invitedMemberIds.push(id)
-  }
-  memberSearchQuery.value = ''
-}
-
-function removeInvitedMember(id) {
-  appt.value.invitedMemberIds = appt.value.invitedMemberIds.filter(i => i !== id)
-}
-
-function addFirstFilteredMember() {
-  if (filteredMemberOptions.value.length) {
-    addInvitedMember(filteredMemberOptions.value[0].ID)
-  }
-}
-
-watch(() => [...appt.value.organizationIds], () => {
-  if (activeTab.value === 'appointment') {
-    loadInvitedMembersForSelectedOrgs()
-  }
-})
 
 const apptDateTimeEnd = computed({
   get() {
@@ -555,6 +534,99 @@ async function deleteAppointment() {
   }
 }
 
+// Terminfindung (Poll) form state
+const poll = ref(resetPoll())
+const pollSubmitting = ref(false)
+const pollError = ref('')
+
+function resetPollOption(date = '') {
+  return { id: null, dateStart: date, timeStart: '', timeEnd: '', allDay: true }
+}
+
+function resetPoll(date = '') {
+  return {
+    title: '',
+    description: '',
+    location: '',
+    organizationIds: [],
+    invitedMemberIds: [],
+    options: [resetPollOption(date), resetPollOption(date)],
+  }
+}
+
+function addPollOption() {
+  const lastDate = poll.value.options[poll.value.options.length - 1]?.dateStart || ''
+  poll.value.options.push(resetPollOption(lastDate))
+}
+
+function removePollOption(index) {
+  if (poll.value.options.length <= 2) return
+  poll.value.options.splice(index, 1)
+}
+
+async function submitPoll() {
+  pollError.value = ''
+  if (!poll.value.organizationIds.length) {
+    pollError.value = 'Bitte mindestens eine Organisation wählen.'
+    return
+  }
+  if (poll.value.options.length < 2) {
+    pollError.value = 'Bitte mindestens 2 Terminoptionen angeben.'
+    return
+  }
+  if (poll.value.options.some(o => !o.dateStart)) {
+    pollError.value = 'Bitte für jede Terminoption ein Datum angeben.'
+    return
+  }
+  pollSubmitting.value = true
+  try {
+    const payload = {
+      title: poll.value.title,
+      description: poll.value.description,
+      location: poll.value.location,
+      organizationIds: poll.value.organizationIds,
+      invitedMemberIds: poll.value.invitedMemberIds,
+      options: poll.value.options.map(o => ({
+        id: o.id || null,
+        dateStart: o.dateStart,
+        dateEnd: o.dateStart,
+        timeStart: o.allDay ? null : (o.timeStart || null),
+        timeEnd: o.allDay ? null : (o.timeEnd || null),
+        allDay: o.allDay,
+      })),
+    }
+    savedThisSession.value = true
+    if (editMode.value === 'poll') {
+      await eventsStore.updateSchedulingPoll(editId.value, payload)
+      emit('poll-updated')
+    } else {
+      await eventsStore.createSchedulingPoll(payload)
+      emit('poll-created')
+    }
+    poll.value = resetPoll()
+    close()
+  } catch (err) {
+    pollError.value = err.message || 'Fehler beim Speichern'
+  } finally {
+    pollSubmitting.value = false
+  }
+}
+
+async function deletePoll() {
+  if (!confirm('Terminfindung wirklich löschen?')) return
+  pollSubmitting.value = true
+  try {
+    savedThisSession.value = true
+    await eventsStore.deleteSchedulingPoll(editId.value)
+    emit('poll-deleted')
+    close()
+  } catch (err) {
+    pollError.value = err.message || 'Fehler beim Löschen'
+  } finally {
+    pollSubmitting.value = false
+  }
+}
+
 async function loadOrgsAndTypes() {
   await orgsStore.fetchOrganizations()
   if (!appointmentTypes.value.length) {
@@ -573,14 +645,18 @@ async function open(preselectedDate = null) {
   editId.value = null
   absenceError.value = ''
   apptError.value = ''
+  pollError.value = ''
   activeTab.value = canManageContent.value ? 'appointment' : 'absence'
   absence.value = resetAbsence(date)
   appt.value = resetAppt(date)
-  orgMembersForSelectedOrgs.value = []
+  poll.value = resetPoll(date)
+  apptInviteePickerRef.value?.reset()
+  pollInviteePickerRef.value?.reset()
 
   await loadOrgsAndTypes()
   if (managedOrgs.value.length === 1) {
     appt.value.organizationIds = [managedOrgs.value[0].ID]
+    poll.value.organizationIds = [managedOrgs.value[0].ID]
   }
   dialogEl.value?.showModal()
 }
@@ -612,12 +688,13 @@ async function openEditAppointment(event) {
   editId.value = event.ID
   absenceError.value = ''
   apptError.value = ''
+  pollError.value = ''
   activeTab.value = 'appointment'
-  orgMembersForSelectedOrgs.value = []
+  apptInviteePickerRef.value?.reset()
+  pollInviteePickerRef.value?.reset()
 
   await loadOrgsAndTypes()
 
-  skipInvitedReset.value = true
   appt.value = {
     title: event.Title ?? '',
     dateStart: event.DateStart ?? '',
@@ -638,11 +715,41 @@ async function openEditAppointment(event) {
   dialogEl.value?.showModal()
 }
 
+async function openEditPoll(event) {
+  editMode.value = 'poll'
+  editId.value = event.PollID
+  absenceError.value = ''
+  apptError.value = ''
+  pollError.value = ''
+  activeTab.value = 'poll'
+  apptInviteePickerRef.value?.reset()
+  pollInviteePickerRef.value?.reset()
+
+  await loadOrgsAndTypes()
+
+  poll.value = {
+    title: event.Title ?? '',
+    description: event.Description ?? '',
+    location: event.Location ?? '',
+    organizationIds: (event.OrganizationIDs ?? []).map(Number),
+    invitedMemberIds: (event.InvitedMemberIDs ?? []).map(Number),
+    options: (event.PollOptions ?? []).map(o => ({
+      id: o.OptionID,
+      dateStart: o.DateStart ?? '',
+      timeStart: o.TimeStart ? o.TimeStart.substring(0, 5) : '',
+      timeEnd: o.TimeEnd ? o.TimeEnd.substring(0, 5) : '',
+      allDay: !!o.AllDay,
+    })),
+  }
+
+  dialogEl.value?.showModal()
+}
+
 function close() {
   dialogEl.value?.close()
   emit('closed', savedThisSession.value)
   savedThisSession.value = false
 }
 
-defineExpose({ open, openEditAbsence, openEditAppointment })
+defineExpose({ open, openEditAbsence, openEditAppointment, openEditPoll })
 </script>
