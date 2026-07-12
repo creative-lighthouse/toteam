@@ -97,7 +97,6 @@
               <AppIconButton
                 v-if="canDeleteEntry(entry)"
                 variant="danger"
-                size="small"
                 aria-label="Buchung löschen"
                 @click="remove(entry.ID)"
               >✕</AppIconButton>

@@ -38,8 +38,8 @@
                 </span>
               </div>
               <div class="org-manage_role-actions">
-                <AppIconButton variant="primary" size="small" aria-label="Rolle bearbeiten" @click="openEditRole(role)">✎</AppIconButton>
-                <AppIconButton variant="danger" size="small" aria-label="Rolle löschen" @click="removeRole(role)">×</AppIconButton>
+                <AppIconButton variant="primary" aria-label="Rolle bearbeiten" @click="openEditRole(role)">✎</AppIconButton>
+                <AppIconButton variant="danger" aria-label="Rolle löschen" @click="removeRole(role)">×</AppIconButton>
               </div>
             </div>
           </div>
@@ -59,7 +59,7 @@
                   <span v-if="!m.Roles.length" class="org-manage_role-chip org-manage_role-chip--empty">Keine Rolle</span>
                 </span>
               </div>
-              <AppIconButton variant="primary" size="small" aria-label="Rollen zuweisen" @click="openMemberRoles(m)">✎</AppIconButton>
+              <AppIconButton variant="primary" aria-label="Rollen zuweisen" @click="openMemberRoles(m)">✎</AppIconButton>
             </div>
           </div>
         </section>

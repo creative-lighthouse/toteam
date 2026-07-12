@@ -189,7 +189,6 @@
                   <div v-if="meal.userResponse === 'Accept'" class="meal-product-qty">
                     <AppIconButton
                       variant="neutral"
-                      size="small"
                       aria-label="Menge verringern"
                       :disabled="(userOrders[item.id] ?? 0) <= 0"
                       @click="changeQty(item, -1)"
@@ -197,7 +196,6 @@
                     <span class="meal-product-qty_val">{{ userOrders[item.id] ?? 0 }}</span>
                     <AppIconButton
                       variant="neutral"
-                      size="small"
                       aria-label="Menge erhöhen"
                       :disabled="item.maxQuantity > 0 && (userOrders[item.id] ?? 0) >= item.maxQuantity"
                       @click="changeQty(item, 1)"
@@ -206,14 +204,12 @@
                   <AppIconButton
                     v-if="meal.canManage"
                     variant="primary"
-                    size="small"
                     aria-label="Gericht bearbeiten"
                     @click="startFoodEdit(item)"
                   >✎</AppIconButton>
                   <AppIconButton
                     v-if="meal.canManage"
                     variant="danger"
-                    size="small"
                     aria-label="Produkt löschen"
                     :disabled="deletingProductId === item.id"
                     @click="deleteProduct(item.id)"
@@ -256,13 +252,11 @@
                 <div v-else-if="meal.canManage" class="meal-food_right">
                   <AppIconButton
                     variant="primary"
-                    size="small"
                     aria-label="Gericht bearbeiten"
                     @click="startFoodEdit(item)"
                   >✎</AppIconButton>
                   <AppIconButton
                     variant="danger"
-                    size="small"
                     aria-label="Gericht löschen"
                     :disabled="deletingProductId === item.id"
                     @click="deleteProduct(item.id)"

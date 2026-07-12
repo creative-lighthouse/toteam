@@ -85,21 +85,11 @@
     background: transparent;
     line-height: 1;
     padding: 0;
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
+    border-radius: 50%;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-
-    &--default {
-        width: 32px;
-        height: 32px;
-        font-size: 1rem;
-        border-radius: 50%;
-    }
-
-    &--small {
-        width: 26px;
-        height: 26px;
-        font-size: 0.85rem;
-        border-radius: 50%;
-    }
 
     &--primary {
         border: 1px solid var(--ColorPrimary);

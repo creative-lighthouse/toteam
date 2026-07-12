@@ -4,7 +4,7 @@
       <h3 class="event-agenda_title">Tagesordnung</h3>
       <AppIconButton
         v-if="canManageContent && !showAddForm"
-        variant="neutral"
+        variant="primary"
         :disabled="submitting"
         aria-label="Tagesordnungspunkt hinzufügen"
         @click="startAdd"
@@ -80,7 +80,6 @@
           <div v-if="canManageContent" class="meal-manage-actions">
             <AppIconButton
               variant="primary"
-              size="small"
               :disabled="submitting"
               aria-label="Tagesordnungspunkt bearbeiten"
               @click="startEdit(point)"
@@ -89,7 +88,6 @@
             </AppIconButton>
             <AppIconButton
               variant="danger"
-              size="small"
               :disabled="submitting"
               aria-label="Tagesordnungspunkt löschen"
               @click="deletePoint(point.ID)"

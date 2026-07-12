@@ -105,7 +105,7 @@
 
                 <!-- ICS Link + Termin eintragen -->
                 <div class="add-container">
-                    <AppIconButton variant="neutral" aria-label="Termin hinzufügen" @click="entryModalRef.open(selectedDate)">
+                    <AppIconButton variant="primary" aria-label="Termin hinzufügen" @click="entryModalRef.open(selectedDate)">
                         +
                     </AppIconButton>
                 </div>

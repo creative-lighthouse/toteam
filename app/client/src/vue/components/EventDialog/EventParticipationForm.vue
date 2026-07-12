@@ -14,26 +14,26 @@
         v-if="!showTimeInput || !showNoteInput"
         class="add-actions-row"
       >
-        <button
+        <AppButton
           v-if="!showTimeInput && (userParticipationType === 'Accept' || userParticipationType === 'Maybe')"
-          type="button"
-          class="btn-add-time"
+          size="small"
+          variant="secondary"
           @click="startAddTime"
           :disabled="submitting"
         >
-          <img :src="actionTime" alt="Zeit Icon" class="action-icon">
-          <p>{{ event.UserParticipation?.CustomTimeframe ? 'Zeit bearbeiten' : 'Zeit hinzufügen' }}</p>
-        </button>
-        <button
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          {{ event.UserParticipation?.CustomTimeframe ? 'Zeit bearbeiten' : 'Zeit hinzufügen' }}
+        </AppButton>
+        <AppButton
           v-if="!showNoteInput"
-          type="button"
-          class="btn-add-note"
+          size="small"
+          variant="secondary"
           @click="startAddNote"
           :disabled="submitting"
         >
-          <img :src="actionEdit" alt="Notiz Icon" class="action-icon">
-          <p>{{ event.UserParticipation?.Notes ? 'Notiz bearbeiten' : 'Notiz hinzufügen' }}</p>
-        </button>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          {{ event.UserParticipation?.Notes ? 'Notiz bearbeiten' : 'Notiz hinzufügen' }}
+        </AppButton>
       </div>
 
       <fieldset
@@ -102,8 +102,6 @@
 </template>
 
 <script setup>
-import actionTime from '../../../../icons/actions/action_time.svg'
-import actionEdit from '../../../../icons/actions/action_edit.svg'
 import { useEventParticipation } from './useEventParticipation'
 import AppButton from '@components/AppButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'

@@ -100,7 +100,6 @@
           <div v-if="adminOrgIDs.includes(link.OrgID)" class="link-item__actions">
             <AppIconButton
               variant="primary"
-              size="small"
               aria-label="Bearbeiten"
               @click="openEditModal(link)"
             >
@@ -108,7 +107,6 @@
             </AppIconButton>
             <AppIconButton
               variant="danger"
-              size="small"
               aria-label="Löschen"
               @click="deleteLink(link)"
             >

@@ -92,7 +92,6 @@
                     <span>{{ editLayer.title || 'Ebene ' + (i + 1) }}</span>
                     <AppIconButton
                       variant="danger"
-                      size="small"
                       :aria-label="`Ebene &quot;${editLayer.title}&quot; löschen`"
                       @click="deleteLayer(i)"
                     >

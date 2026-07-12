@@ -4,7 +4,7 @@
       <h3 class="event-meals_title">Mahlzeiten</h3>
       <AppIconButton
         v-if="canManageContent && !showAddForm"
-        variant="neutral"
+        variant="primary"
         :disabled="submitting"
         aria-label="Mahlzeit hinzufügen"
         @click="startAdd"
@@ -71,7 +71,6 @@
             <div v-if="canManageContent" class="meal-manage-actions">
               <AppIconButton
                 variant="primary"
-                size="small"
                 :disabled="submitting"
                 aria-label="Mahlzeit bearbeiten"
                 @click="startEdit(meal)"
@@ -80,7 +79,6 @@
               </AppIconButton>
               <AppIconButton
                 variant="danger"
-                size="small"
                 :disabled="submitting"
                 aria-label="Mahlzeit löschen"
                 @click="deleteMeal(meal.ID)"
@@ -167,7 +165,6 @@
             <div class="meal-product-qty">
               <AppIconButton
                 variant="neutral"
-                size="small"
                 aria-label="Menge verringern"
                 :disabled="(localOrders[meal.ID]?.[product.ID] ?? 0) <= 0"
                 @click="changeQty(meal, product, -1)"
@@ -175,7 +172,6 @@
               <span class="meal-product-qty_val">{{ localOrders[meal.ID]?.[product.ID] ?? 0 }}</span>
               <AppIconButton
                 variant="neutral"
-                size="small"
                 aria-label="Menge erhöhen"
                 :disabled="product.MaxQuantity > 0 && (localOrders[meal.ID]?.[product.ID] ?? 0) >= product.MaxQuantity"
                 @click="changeQty(meal, product, 1)"
