@@ -75,8 +75,8 @@ const rideIcon = computed(() => {
 // annimmt (die SVGs haben eine fest codierte Füllfarbe, die per <img> nicht
 // überschreibbar wäre).
 const rideIconStyle = computed(() => ({
-  maskImage: `url(${rideIcon.value})`,
-  WebkitMaskImage: `url(${rideIcon.value})`,
+  maskImage: `url("${rideIcon.value}")`,
+  WebkitMaskImage: `url("${rideIcon.value}")`,
 }))
 
 const rideSeats = computed(() => {

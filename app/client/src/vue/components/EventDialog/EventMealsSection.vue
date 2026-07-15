@@ -182,7 +182,7 @@ import AppButtonGroup from '@components/AppButtonGroup.vue'
 import MealCard from './MealCard.vue'
 import AddIcon from '../../../../icons/actions/action_add.svg'
 
-const addIconStyle = { maskImage: `url(${AddIcon})`, WebkitMaskImage: `url(${AddIcon})` }
+const addIconStyle = { maskImage: `url("${AddIcon}")`, WebkitMaskImage: `url("${AddIcon}")` }
 
 const props = defineProps({
   event: { type: Object, required: true },
