@@ -176,7 +176,7 @@ import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AddIcon from '../../../../icons/actions/action_add.svg'
 
-const addIconStyle = { maskImage: `url(${AddIcon})`, WebkitMaskImage: `url(${AddIcon})` }
+const addIconStyle = { maskImage: `url("${AddIcon}")`, WebkitMaskImage: `url("${AddIcon}")` }
 
 const props = defineProps({
   event: { type: Object, required: true },
