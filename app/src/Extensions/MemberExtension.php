@@ -260,4 +260,29 @@ class MemberExtension extends Extension
             ])
             ->column('OrganizationID');
     }
+
+    /**
+     * Returns which Totems (feature modules) should be visible to this member,
+     * i.e. enabled in at least one of the organizations they are an active member of.
+     * Members without any organization see every Totem, since no org has restricted anything yet.
+     *
+     * @return array<string, bool>
+     */
+    public function getEnabledTotems(): array
+    {
+        $organizationIDs = $this->owner->getOrganizationIDs();
+
+        if (empty($organizationIDs)) {
+            return array_fill_keys(array_keys(Organization::config()->get('totem_fields')), true);
+        }
+
+        $enabled = [];
+        foreach (Organization::get()->filter('ID', $organizationIDs) as $organization) {
+            foreach ($organization->getEnabledTotems() as $totemKey => $isEnabled) {
+                $enabled[$totemKey] = ($enabled[$totemKey] ?? false) || $isEnabled;
+            }
+        }
+
+        return $enabled;
+    }
 }

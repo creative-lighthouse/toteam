@@ -6,6 +6,8 @@ use App\Teams\OrganizationMembership;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Core\Validation\ValidationResult;
+use SilverStripe\Forms\CheckboxField;
+use SilverStripe\Forms\Tab;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 
@@ -16,6 +18,12 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $Description
  * @property ?string $JoinMode
  * @property ?string $Username
+ * @property bool $EnableAnnouncements
+ * @property bool $EnableCalendar
+ * @property bool $EnableFood
+ * @property bool $EnableLinks
+ * @property bool $EnableMap
+ * @property bool $EnableTasks
  * @property int $LogoID
  * @property int $CoverImageID
  * @method \SilverStripe\Assets\Image Logo()
@@ -29,11 +37,39 @@ use SilverStripe\Security\PermissionProvider;
  */
 class Organization extends DataObject implements PermissionProvider
 {
+    /**
+     * Maps the frontend Totem key to the DB field that enables it for this organization.
+     */
+    private static $totem_fields = [
+        'announcements' => 'EnableAnnouncements',
+        'calendar'      => 'EnableCalendar',
+        'food'          => 'EnableFood',
+        'links'         => 'EnableLinks',
+        'map'           => 'EnableMap',
+        'tasks'         => 'EnableTasks',
+    ];
+
     private static $db = [
         "Title"       => "Varchar(255)",
         "Description" => "Text",
         "JoinMode"    => "Enum('open,application,invite_only,hidden','invite_only')",
         "Username"    => "Varchar(100)",
+
+        "EnableAnnouncements" => "Boolean(1)",
+        "EnableCalendar"      => "Boolean(1)",
+        "EnableFood"          => "Boolean(1)",
+        "EnableLinks"         => "Boolean(1)",
+        "EnableMap"           => "Boolean(1)",
+        "EnableTasks"         => "Boolean(1)",
+    ];
+
+    private static $defaults = [
+        "EnableAnnouncements" => true,
+        "EnableCalendar"      => true,
+        "EnableFood"          => true,
+        "EnableLinks"         => true,
+        "EnableMap"           => true,
+        "EnableTasks"         => true,
     ];
 
     private static $has_one = [
@@ -65,6 +101,13 @@ class Organization extends DataObject implements PermissionProvider
         "JoinMode"    => "Beitrittsmodus",
         "CoverImage"  => "Coverbild",
         "Memberships" => "Mitgliedschaften",
+
+        "EnableAnnouncements" => "Ankündigungen",
+        "EnableCalendar"      => "Kalender",
+        "EnableFood"          => "Essensplanung",
+        "EnableLinks"         => "Links & Downloads",
+        "EnableMap"           => "Lagepläne",
+        "EnableTasks"         => "Aufgaben",
     ];
 
     private static $table_name = 'Organization';
@@ -89,7 +132,31 @@ class Organization extends DataObject implements PermissionProvider
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
+
+        $fields->addFieldToTab('Root', Tab::create('Totems', 'Totems'));
+        foreach (self::$totem_fields as $fieldName) {
+            $fields->addFieldToTab(
+                'Root.Totems',
+                CheckboxField::create($fieldName, $this->fieldLabel($fieldName))
+            );
+        }
+
         return $fields;
+    }
+
+    /**
+     * Returns which Totems (feature modules) are enabled for this organization,
+     * keyed by the frontend Totem key (e.g. 'calendar', 'food').
+     *
+     * @return array<string, bool>
+     */
+    public function getEnabledTotems(): array
+    {
+        $enabled = [];
+        foreach (self::$totem_fields as $totemKey => $fieldName) {
+            $enabled[$totemKey] = (bool) $this->$fieldName;
+        }
+        return $enabled;
     }
 
     public function providePermissions()

@@ -15,7 +15,15 @@ export const useAuthStore = defineStore('auth', () => {
     if (!user.value) return ''
     return `${user.value.FirstName} ${user.value.Surname}`
   })
-  
+
+  // Whether a given Totem (feature module, e.g. 'calendar', 'food') is enabled
+  // for the current user's organization(s). Defaults to visible when unknown.
+  function hasTotem(totemKey) {
+    const enabledTotems = user.value?.EnabledTotems
+    if (!enabledTotems || !(totemKey in enabledTotems)) return true
+    return !!enabledTotems[totemKey]
+  }
+
   // Actions
   async function checkAuth() {
     try {
@@ -97,6 +105,7 @@ export const useAuthStore = defineStore('auth', () => {
     checkAuth,
     login,
     logout,
-    updateUser
+    updateUser,
+    hasTotem
   }
 })
