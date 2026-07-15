@@ -44,31 +44,31 @@ const routes = [
     path: '/calendar',
     name: 'Calendar',
     component: Calendar,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'calendar' }
   },
   {
     path: '/food/meal/:id',
     name: 'MealDetail',
     component: MealDetail,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'food' }
   },
   {
     path: '/food',
     name: 'Food',
     component: Food,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'food' }
   },
   {
     path: '/announcements',
     name: 'Announcements',
     component: Announcements,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'announcements' }
   },
   {
     path: '/announcements/:id',
     name: 'AnnouncementDetail',
     component: AnnouncementDetail,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'announcements' }
   },
   {
     path: '/profile',
@@ -86,31 +86,31 @@ const routes = [
     path: '/map',
     name: 'Map',
     component: Map,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'map' }
   },
   {
     path: '/map/new',
     name: 'MapCreate',
     component: MapCreate,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'map' }
   },
   {
     path: '/map/:mapId/layer/:layerId/edit',
     name: 'MapLayerEdit',
     component: MapLayerEdit,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'map' }
   },
   {
     path: '/map/:id',
     name: 'MapDetail',
     component: MapDetail,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'map' }
   },
   {
     path: '/links',
     name: 'Links',
     component: Links,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'links' }
   },
   {
     path: '/organizations',
@@ -134,13 +134,13 @@ const routes = [
     path: '/tasks',
     name: 'Tasks',
     component: Tasks,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'tasks' }
   },
   {
     path: '/tasks/:hash',
     name: 'TaskDetail',
     component: TaskDetail,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, totem: 'tasks' }
   },
   {
     path: '/money',
@@ -193,7 +193,13 @@ router.beforeEach(async (to, from, next) => {
     next({ name: 'Dashboard' })
     return
   }
-  
+
+  // Redirect away from Totems (feature modules) that are disabled for the user's organization(s)
+  if (to.meta.totem && !authStore.hasTotem(to.meta.totem)) {
+    next({ name: 'Dashboard' })
+    return
+  }
+
   next()
 })
 

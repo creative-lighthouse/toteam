@@ -114,6 +114,7 @@ class AuthApiController extends ApiController
             'FoodPreference'  => $member->FoodPreference ?: 'None',
             'DateOfBirth'    => $member->DateOfBirth,
             'Joindate'       => $member->Joindate,
+            'EnabledTotems'  => $member->getEnabledTotems(),
         ];
 
         // Add profile image if exists
