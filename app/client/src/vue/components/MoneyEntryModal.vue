@@ -4,7 +4,7 @@
       <div class="money-entry-modal_content" @click.stop>
 
         <div class="money-entry-modal_header">
-          <h2 class="hl2 money-entry-modal_title">Buchung erfassen</h2>
+          <h2 class="hl2 money-entry-modal_title">{{ isEdit ? 'Buchung bearbeiten' : 'Buchung erfassen' }}</h2>
           <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
@@ -49,10 +49,10 @@
 
           <div class="form-field">
             <label class="form-label">
-              Beleg{{ requiresReceipt ? ' *' : '' }}
+              Beleg{{ requiresReceipt && !existingReceiptURL ? ' *' : '' }}
             </label>
             <label class="button button--secondary money-entry-modal_file-label">
-              {{ receiptFile ? 'Anderen Beleg wählen' : 'Beleg fotografieren / auswählen' }}
+              {{ receiptFile || existingReceiptURL ? 'Anderen Beleg wählen' : 'Beleg fotografieren / auswählen' }}
               <input
                 type="file"
                 accept="image/*,application/pdf"
@@ -63,6 +63,7 @@
             </label>
             <img v-if="receiptPreview" :src="receiptPreview" alt="Beleg-Vorschau" class="money-entry-modal_preview" />
             <p v-else-if="receiptFile" class="money-entry-modal_filename">{{ receiptFile.name }}</p>
+            <p v-else-if="existingReceiptURL" class="money-entry-modal_filename">Aktueller Beleg bleibt erhalten, falls kein neuer gewählt wird.</p>
           </div>
 
           <div v-if="error" class="money-entry-modal_error">{{ error }}</div>
@@ -70,7 +71,7 @@
           <div class="money-entry-modal_actions">
             <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
             <AppButton type="submit" variant="primary" :disabled="saving || !canSubmit">
-              {{ saving ? 'Speichern…' : 'Erfassen' }}
+              {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erfassen') }}
             </AppButton>
           </div>
 
@@ -94,14 +95,23 @@ const props = defineProps({
   canEnterDeposit: { type: Boolean, default: true },
   canEnterWithdrawal: { type: Boolean, default: true },
 })
-const emit = defineEmits(['created'])
+const emit = defineEmits(['saved'])
 const store = useMoneyStore()
+
+// Wird direkt über das Argument von open() gesetzt statt über einen Prop:
+// ein Prop, der von einer Klick-Handler-Funktion im selben Tick gesetzt wird,
+// ist im Kind beim synchronen open()-Aufruf noch nicht aktualisiert (Vue
+// patched Props erst beim nächsten Render), sonst greifen beim ersten Öffnen
+// noch alte Werte.
+const currentEntry = ref(null)
+const isEdit = computed(() => !!currentEntry.value)
 
 const dialogEl = ref(null)
 const saving = ref(false)
 const error = ref(null)
 const receiptFile = ref(null)
 const receiptPreview = ref(null)
+const existingReceiptURL = ref(null)
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -121,14 +131,26 @@ const requiresReceipt = computed(() =>
 
 const canSubmit = computed(() => {
   if (!form.ChangeAmount || !form.ChangeReason.trim()) return false
-  if (requiresReceipt.value && !receiptFile.value) return false
+  if (requiresReceipt.value && !receiptFile.value && !existingReceiptURL.value) return false
   return true
 })
 
-function open() {
+function fillFromEntry(entry) {
+  if (!entry) return
+  form.ChangeType = entry.ChangeType
+  form.ChangeAmount = entry.ChangeAmount
+  form.ChangeReason = entry.ChangeReason
+  form.ChangeDate = entry.ChangeDate ? entry.ChangeDate.slice(0, 10) : today()
+  form.BudgetID = entry.Budget?.ID ?? ''
+  existingReceiptURL.value = entry.ReceiptURL || null
+}
+
+function open(entryToEdit = null) {
+  currentEntry.value = entryToEdit
   Object.assign(form, defaultForm())
   error.value = null
   resetFile()
+  if (entryToEdit) fillFromEntry(entryToEdit)
   dialogEl.value?.showModal()
 }
 
@@ -140,6 +162,7 @@ function resetFile() {
   if (receiptPreview.value) URL.revokeObjectURL(receiptPreview.value)
   receiptFile.value = null
   receiptPreview.value = null
+  existingReceiptURL.value = null
 }
 
 function onFileSelected(e) {
@@ -177,13 +200,15 @@ async function submit() {
     if (form.BudgetID) fd.append('BudgetID', form.BudgetID)
     if (receiptFile.value) fd.append('receipt', receiptFile.value)
 
-    const response = await store.createEntry(fd)
+    const response = isEdit.value
+      ? await store.updateEntry(currentEntry.value.ID, fd)
+      : await store.createEntry(fd)
 
     if (response.success) {
-      emit('created', response.data.entry)
+      emit('saved', response.data.entry)
       close()
     } else {
-      error.value = response.error || 'Fehler beim Erfassen der Buchung.'
+      error.value = response.error || 'Fehler beim Speichern der Buchung.'
     }
   } catch (err) {
     error.value = err.message || 'Unbekannter Fehler.'

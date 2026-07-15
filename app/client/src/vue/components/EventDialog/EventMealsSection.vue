@@ -8,7 +8,9 @@
         :disabled="submitting"
         aria-label="Mahlzeit hinzufügen"
         @click="startAdd"
-      >+</AppIconButton>
+      >
+        <span class="icon-mask" :style="addIconStyle"></span>
+      </AppIconButton>
     </div>
 
     <!-- Inline add form -->
@@ -146,50 +148,22 @@
           />
         </form>
 
-        <!-- Product orders (only when accepted and products exist) -->
-        <div
-          v-if="meal.UserResponse === 'Accept' && meal.Products?.length"
-          class="meal-product-orders"
-        >
-          <div
-            v-for="product in meal.Products"
-            :key="product.ID"
-            class="meal-product-order-row"
-          >
-            <span class="meal-product-order-label">
-              {{ product.Title }}
-              <span v-if="product.MaxQuantity > 0" class="meal-product-order-max">
-                (max. {{ product.MaxQuantity }})
-              </span>
-            </span>
-            <div class="meal-product-qty">
-              <AppIconButton
-                variant="neutral"
-                aria-label="Menge verringern"
-                :disabled="(localOrders[meal.ID]?.[product.ID] ?? 0) <= 0"
-                @click="changeQty(meal, product, -1)"
-              >−</AppIconButton>
-              <span class="meal-product-qty_val">{{ localOrders[meal.ID]?.[product.ID] ?? 0 }}</span>
-              <AppIconButton
-                variant="neutral"
-                aria-label="Menge erhöhen"
-                :disabled="product.MaxQuantity > 0 && (localOrders[meal.ID]?.[product.ID] ?? 0) >= product.MaxQuantity"
-                @click="changeQty(meal, product, 1)"
-              >+</AppIconButton>
-            </div>
-          </div>
+        <!-- Bestellbare + feste Gerichte (nur nach Zusage zur Mahlzeit) -->
+        <div v-if="meal.UserResponse === 'Accept' && mealEntries(meal).length" class="meal-entries">
+          <MealCard
+            v-for="entry in mealEntries(meal)"
+            :key="`${entry.Orderable ? 'p' : 'f'}-${entry.ID}`"
+            :title="entry.Title"
+            :preference="entry.Preference"
+            :supplier="entry.Supplier"
+            :max-quantity="entry.MaxQuantity"
+            :orderable="entry.Orderable"
+            :quantity="entry.Orderable ? (localOrders[meal.ID]?.[entry.ID] ?? 0) : 0"
+            :disabled="submitting"
+            @increment="changeQty(meal, entry, 1)"
+            @decrement="changeQty(meal, entry, -1)"
+          />
         </div>
-
-        <!-- Feste/mitgebrachte Gerichte (bereits bestätigt) -->
-        <ul v-if="meal.Foods?.length" class="meal-fixed-foods">
-          <li v-for="food in meal.Foods" :key="food.ID" class="meal-fixed-food">
-            <span class="meal-fixed-food_title">{{ food.Title }}</span>
-            <span v-if="food.Preference !== 'None'" class="meal-fixed-food_pref">
-              {{ food.Preference === 'Vegetarian' ? '🥗 Vegetarisch' : '🌱 Vegan' }}
-            </span>
-            <span v-if="food.Supplier" class="meal-fixed-food_supplier">von {{ food.Supplier }}</span>
-          </li>
-        </ul>
       </div>
     </div>
 
@@ -205,6 +179,10 @@ import { useEventsStore } from '@stores/events'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
+import MealCard from './MealCard.vue'
+import AddIcon from '../../../../icons/actions/action_add.svg'
+
+const addIconStyle = { maskImage: `url(${AddIcon})`, WebkitMaskImage: `url(${AddIcon})` }
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -212,8 +190,8 @@ const props = defineProps({
 })
 
 const foodParticipationOptions = [
-  { value: 'Accept', label: 'Dabei', tone: 'positive' },
   { value: 'Decline', label: 'Nicht dabei', tone: 'negative' },
+  { value: 'Accept', label: 'Dabei', tone: 'positive' },
 ]
 
 const emit = defineEmits(['food-changed', 'show-status'])
@@ -324,6 +302,16 @@ async function changeFoodParticipation(mealId, type) {
   } finally {
     submitting.value = false
   }
+}
+
+// Bestellbare und feste Gerichte kommen vom Backend getrennt (Products/Foods),
+// stammen aber beide vom selben Food-Model — für die einheitliche MealCard-Darstellung
+// werden sie hier zu einer Liste zusammengeführt und nur per `Orderable`-Flag unterschieden.
+function mealEntries(meal) {
+  return [
+    ...(meal.Products || []).map(p => ({ ...p, Orderable: true })),
+    ...(meal.Foods || []).map(f => ({ ...f, Orderable: false })),
+  ]
 }
 
 // Product orders

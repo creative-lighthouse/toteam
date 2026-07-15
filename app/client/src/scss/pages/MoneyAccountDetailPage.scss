@@ -135,6 +135,13 @@
         min-width: 0;
     }
 
+    .money-entry_actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
     .money-entry_top {
         display: flex;
         align-items: center;

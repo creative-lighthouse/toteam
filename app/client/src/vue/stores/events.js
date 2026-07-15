@@ -121,31 +121,39 @@ export const useEventsStore = defineStore('events', () => {
       // Update local state
       const event = getEventById(eventId)
       if (event) {
-        event.updateUserParticipation(response.data)
+        if (!type) {
+          // Zurück auf "Ohne Antwort"
+          event.UserParticipation = null
+          if (event.Participations) {
+            event.Participations = event.Participations.filter(p => !p.IsCurrentUser)
+          }
+        } else {
+          event.updateUserParticipation(response.data)
 
-        // Update in participations list
-        if (event.Participations) {
-          const existing = event.Participations.find(p => p.IsCurrentUser)
-          if (existing) {
-            existing.Type = response.data.Type
-            existing.TimeStart = response.data.TimeStart
-            existing.TimeEnd = response.data.TimeEnd
-            existing.CustomTimeframe = response.data.CustomTimeframe ?? false
-          } else {
-            // First RSVP — add a new entry so avatars + counts update immediately
-            const authStore = useAuthStore()
-            const u = authStore.user
-            event.Participations.push({
-              ID: response.data.ID,
-              MemberID: u?.ID ?? null,
-              MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
-              ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
-              Type: response.data.Type,
-              TimeStart: response.data.TimeStart,
-              TimeEnd: response.data.TimeEnd,
-              CustomTimeframe: response.data.CustomTimeframe ?? false,
-              IsCurrentUser: true,
-            })
+          // Update in participations list
+          if (event.Participations) {
+            const existing = event.Participations.find(p => p.IsCurrentUser)
+            if (existing) {
+              existing.Type = response.data.Type
+              existing.TimeStart = response.data.TimeStart
+              existing.TimeEnd = response.data.TimeEnd
+              existing.CustomTimeframe = response.data.CustomTimeframe ?? false
+            } else {
+              // First RSVP — add a new entry so avatars + counts update immediately
+              const authStore = useAuthStore()
+              const u = authStore.user
+              event.Participations.push({
+                ID: response.data.ID,
+                MemberID: u?.ID ?? null,
+                MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
+                ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
+                Type: response.data.Type,
+                TimeStart: response.data.TimeStart,
+                TimeEnd: response.data.TimeEnd,
+                CustomTimeframe: response.data.CustomTimeframe ?? false,
+                IsCurrentUser: true,
+              })
+            }
           }
         }
       }
@@ -195,6 +203,42 @@ export const useEventsStore = defineStore('events', () => {
       return response.data
     } catch (err) {
       console.error('Failed to change participation time:', err)
+      throw err
+    }
+  }
+
+  /**
+   * Ändert die Anfahrt (Mitfahrgelegenheit) der Teilnahme
+   * @param {number} eventId
+   * @param {'Need'|'Offer'|null} rideType
+   * @param {number} seats
+   */
+  async function changeParticipationRide(eventId, rideType, seats) {
+    try {
+      const response = await apiPost(`/calendar/participationRide/${eventId}`, {
+        rideType: rideType ?? null,
+        seats: seats ?? null,
+      })
+
+      const event = getEventById(eventId)
+      if (event && event.UserParticipation) {
+        event.UserParticipation.RideType = response.data.RideType
+        event.UserParticipation.RideSeats = response.data.RideSeats
+
+        if (event.Participations) {
+          const userParticipation = event.Participations.find(p => p.IsCurrentUser)
+          if (userParticipation) {
+            userParticipation.RideType = response.data.RideType
+            userParticipation.RideSeats = response.data.RideSeats
+          }
+        }
+      }
+
+      await clearCacheForEndpoint('/calendar')
+
+      return response.data
+    } catch (err) {
+      console.error('Failed to change participation ride:', err)
       throw err
     }
   }
@@ -444,32 +488,30 @@ export const useEventsStore = defineStore('events', () => {
       const u = authStore.user
 
       function patchParticipations(participations) {
-        if (!participations) return
-        const existing = participations.find(p => p.IsCurrentUser)
-        if (existing) {
-          existing.Type = response.data.Type
-        } else {
-          participations.push({
-            ID: response.data.ID,
-            MemberID: u?.ID ?? null,
-            MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
-            ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
-            Type: response.data.Type,
-            IsCurrentUser: true,
-          })
-        }
+        if (!participations) return participations
+        const withoutCurrentUser = participations.filter(p => !p.IsCurrentUser)
+        if (!response.data.Type) return withoutCurrentUser
+        withoutCurrentUser.push({
+          ID: response.data.ID,
+          MemberID: u?.ID ?? null,
+          MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
+          ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
+          Type: response.data.Type,
+          IsCurrentUser: true,
+        })
+        return withoutCurrentUser
       }
 
       events.value.forEach(event => {
         if (event.OptionID === optionId) {
-          event.updateUserParticipation(response.data)
-          patchParticipations(event.Participations)
+          event.UserParticipation = response.data.Type ? response.data : null
+          event.Participations = patchParticipations(event.Participations)
         }
         if (event.PollOptions) {
           const sibling = event.PollOptions.find(o => o.OptionID === optionId)
           if (sibling) {
             sibling.UserVote = response.data.Type
-            patchParticipations(sibling.Participations)
+            sibling.Participations = patchParticipations(sibling.Participations)
           }
         }
       })
@@ -533,6 +575,7 @@ export const useEventsStore = defineStore('events', () => {
     getEventById,
     changeParticipation,
     changeParticipationTime,
+    changeParticipationRide,
     changeParticipationNotes,
     changeFoodParticipation,
     addMeal,

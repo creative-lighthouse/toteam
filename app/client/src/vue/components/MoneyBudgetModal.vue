@@ -34,7 +34,13 @@
 
           <div class="money-budget-modal_actions">
             <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || !form.Title.trim()">
+            <AppButton
+              v-if="isEdit"
+              variant="danger"
+              :disabled="saving || deleting"
+              @click="remove"
+            >{{ deleting ? 'Wird gelöscht…' : 'Löschen' }}</AppButton>
+            <AppButton type="submit" variant="primary" :disabled="saving || deleting || !form.Title.trim()">
               {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
             </AppButton>
           </div>
@@ -46,23 +52,29 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useMoneyStore } from '@stores/money'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 
 const props = defineProps({
   accountId: { type: Number, required: true },
-  budget: { type: Object, default: null },
 })
 const emit = defineEmits(['saved'])
 const store = useMoneyStore()
 
 const dialogEl = ref(null)
 const saving = ref(false)
+const deleting = ref(false)
 const error = ref(null)
 
-const isEdit = computed(() => !!props.budget)
+// Wird direkt über das Argument von open() gesetzt statt über einen Prop:
+// ein Prop, der von einer Klick-Handler-Funktion im selben Tick gesetzt wird,
+// ist im Kind beim synchronen open()-Aufruf noch nicht aktualisiert (Vue
+// patched Props erst beim nächsten Render), sonst greifen beim ersten Öffnen
+// noch alte Werte.
+const currentBudget = ref(null)
+const isEdit = computed(() => !!currentBudget.value)
 
 const defaultForm = () => ({
   Title: '',
@@ -81,11 +93,10 @@ function fillFromBudget(budget) {
   form.CanBeOverBudget = budget.CanBeOverBudget
 }
 
-watch(() => props.budget, fillFromBudget)
-
-function open() {
+function open(budgetToEdit = null) {
+  currentBudget.value = budgetToEdit
   Object.assign(form, defaultForm())
-  fillFromBudget(props.budget)
+  if (budgetToEdit) fillFromBudget(budgetToEdit)
   error.value = null
   dialogEl.value?.showModal()
 }
@@ -109,7 +120,7 @@ async function submit() {
 
   try {
     const response = isEdit.value
-      ? await store.updateBudget(props.budget.ID, payload)
+      ? await store.updateBudget(currentBudget.value.ID, payload)
       : await store.createBudget({ ...payload, AccountID: props.accountId })
 
     if (response.success) {
@@ -122,6 +133,28 @@ async function submit() {
     error.value = err.message || 'Unbekannter Fehler.'
   } finally {
     saving.value = false
+  }
+}
+
+async function remove() {
+  if (!isEdit.value || deleting.value) return
+  if (!confirm(`Budget "${currentBudget.value.Title}" wirklich löschen? Buchungen bleiben erhalten, verlieren aber die Budget-Zuordnung.`)) return
+
+  deleting.value = true
+  error.value = null
+
+  try {
+    const response = await store.removeBudget(currentBudget.value.ID)
+    if (response.success) {
+      emit('saved', null)
+      close()
+    } else {
+      error.value = response.error || 'Fehler beim Löschen des Budgets.'
+    }
+  } catch (err) {
+    error.value = err.message || 'Unbekannter Fehler.'
+  } finally {
+    deleting.value = false
   }
 }
 

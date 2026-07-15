@@ -16,6 +16,8 @@ use SilverStripe\Security\PermissionProvider;
  * @property bool $CustomTimeframe
  * @property ?string $Type
  * @property ?string $Notes
+ * @property ?string $RideType
+ * @property int $RideSeats
  * @property int $ParentID
  * @property int $MemberID
  * @method \App\Calendar\Appointment Parent()
@@ -34,6 +36,8 @@ class AppointmentParticipation extends DataObject implements PermissionProvider
         "CustomTimeframe" => "Boolean(0)",
         "Type"           => "Enum('Accept, Maybe, Decline')",
         "Notes"          => "Varchar(512)",
+        "RideType"       => "Enum('None,Need,Offer','None')",
+        "RideSeats"      => "Int",
     ];
 
     private static $has_one = [
@@ -48,6 +52,8 @@ class AppointmentParticipation extends DataObject implements PermissionProvider
         "CustomTimeframe" => "Eigene Uhrzeit",
         "Type"            => "Teilnahme",
         "Notes"           => "Notizen",
+        "RideType"        => "Anfahrt-Typ",
+        "RideSeats"       => "Freie Plätze",
     ];
 
     private static $summary_fields = [

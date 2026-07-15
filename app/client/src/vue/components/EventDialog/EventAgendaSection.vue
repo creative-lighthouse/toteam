@@ -8,7 +8,9 @@
         :disabled="submitting"
         aria-label="Tagesordnungspunkt hinzufügen"
         @click="startAdd"
-      >+</AppIconButton>
+      >
+        <span class="icon-mask" :style="addIconStyle"></span>
+      </AppIconButton>
     </div>
 
     <!-- Inline add form -->
@@ -172,6 +174,9 @@ import { ref, computed } from 'vue'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AddIcon from '../../../../icons/actions/action_add.svg'
+
+const addIconStyle = { maskImage: `url(${AddIcon})`, WebkitMaskImage: `url(${AddIcon})` }
 
 const props = defineProps({
   event: { type: Object, required: true },

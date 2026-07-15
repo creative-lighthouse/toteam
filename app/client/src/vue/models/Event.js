@@ -29,6 +29,8 @@ export class Event {
       TimeStart: data.UserParticipation.TimeStart,
       TimeEnd: data.UserParticipation.TimeEnd,
       CustomTimeframe: data.UserParticipation.CustomTimeframe ?? false,
+      RideType: data.UserParticipation.RideType ?? 'None',
+      RideSeats: data.UserParticipation.RideSeats ?? 0,
     } : null
 
     // Alle Teilnahmen

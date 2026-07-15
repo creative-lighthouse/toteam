@@ -30,7 +30,9 @@ class MoneyApiController extends ApiController
         'accountRemove',
         'budgetStore',
         'budgetUpdate',
+        'budgetRemove',
         'entryStore',
+        'entryUpdate',
         'entryApprove',
         'entry',
     ];
@@ -255,6 +257,41 @@ class MoneyApiController extends ApiController
         return $this->successResponse(['budget' => $this->formatBudget($budget)], 'Budget aktualisiert');
     }
 
+    /** DELETE /api/v1/money/budgetRemove/$ID */
+    public function budgetRemove(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'DELETE') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $budget = MoneyBudget::get()->byID((int) $request->param('ID'));
+        if (!$budget || !$budget->exists()) {
+            return $this->errorResponse('Budget nicht gefunden', 404);
+        }
+
+        $account = $budget->Parent();
+        if (!$account || !$account->exists() || !$account->canManageBudgetsInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        // Buchungen bleiben erhalten, verlieren nur die Budget-Zuordnung
+        foreach (MoneyHistory::get()->filter('BudgetID', $budget->ID) as $entry) {
+            $entry->BudgetID = 0;
+            $entry->write();
+        }
+
+        $budget->delete();
+
+        return $this->successResponse([
+            'account' => $this->formatAccount($account, $member, true),
+        ], 'Budget gelöscht');
+    }
+
     /** POST /api/v1/money/entryStore (multipart/form-data) */
     public function entryStore(HTTPRequest $request): HTTPResponse
     {
@@ -345,6 +382,95 @@ class MoneyApiController extends ApiController
             'entry' => $this->formatEntry($entry),
             'account' => $this->formatAccount($account, $member, true),
         ], 'Buchung erfasst');
+    }
+
+    /**
+     * POST /api/v1/money/entryUpdate/$ID
+     * (POST statt PUT, da PHP multipart-Bodies nur bei POST in $_POST/$_FILES parst —
+     * wird für den optionalen Beleg-Austausch benötigt.)
+     */
+    public function entryUpdate(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $entry = MoneyHistory::get()->byID((int) $request->param('ID'));
+        if (!$entry || !$entry->exists()) {
+            return $this->errorResponse('Buchung nicht gefunden', 404);
+        }
+
+        $account = $entry->Parent();
+        if (!$account || !$account->exists()) {
+            return $this->errorResponse('Kasse nicht gefunden', 404);
+        }
+
+        $isOwner = (int) $entry->UserID === (int) $member->ID;
+        $canManage = $account->canApproveEntriesInApp($member);
+        if (!$canManage && !($isOwner && !$entry->Approved)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $changeType = ($_POST['ChangeType'] ?? '') === 'Deposit' ? 'Deposit' : 'Withdrawal';
+
+        $amount = (float) str_replace(',', '.', (string) ($_POST['ChangeAmount'] ?? '0'));
+        if ($amount <= 0) {
+            return $this->errorResponse('Der Betrag muss größer als 0 sein', 400);
+        }
+
+        $reason = trim($_POST['ChangeReason'] ?? '');
+        if (!$reason) {
+            return $this->errorResponse('Grund ist erforderlich', 400);
+        }
+
+        $changeDate = trim($_POST['ChangeDate'] ?? '') ?: $entry->ChangeDate;
+
+        $budget = null;
+        $budgetID = (int) ($_POST['BudgetID'] ?? 0);
+        if ($budgetID) {
+            $budget = MoneyBudget::get()->byID($budgetID);
+            if (!$budget || !$budget->exists() || (int) $budget->ParentID !== $account->ID) {
+                return $this->errorResponse('Budget gehört nicht zu dieser Kasse', 400);
+            }
+        }
+
+        $file = $_FILES['receipt'] ?? null;
+        $hasFile = $file && $file['error'] === UPLOAD_ERR_OK;
+        if ($hasFile) {
+            $result = $this->storeReceipt($file, $account, $changeDate);
+            if (!$result['success']) {
+                return $this->errorResponse($result['error'], 400);
+            }
+            $oldReceipt = $entry->Receipt();
+            if ($oldReceipt && $oldReceipt->exists()) {
+                $oldReceipt->deleteFile();
+                $oldReceipt->delete();
+            }
+            $entry->ReceiptID = $result['fileID'];
+        }
+
+        $wasApproved = (bool) $entry->Approved;
+
+        $entry->ChangeReason = $reason;
+        $entry->ChangeAmount = $amount;
+        $entry->ChangeType = $changeType;
+        $entry->ChangeDate = $changeDate;
+        $entry->BudgetID = $budget?->ID ?: 0;
+        $entry->write();
+
+        if ($wasApproved) {
+            $this->recalculateBalances($account);
+        }
+
+        return $this->successResponse([
+            'entry' => $this->formatEntry($entry),
+            'account' => $this->formatAccount($account, $member, true),
+        ], 'Buchung aktualisiert');
     }
 
     /** PUT /api/v1/money/entryApprove/$ID */

@@ -70,3 +70,45 @@ export const Pending = {
     },
   },
 }
+
+export const OffersRide = {
+  args: {
+    participation: {
+      ID: 6,
+      MemberName: 'Frida Weber',
+      ProfileImageURL: null,
+      Type: 'Accept',
+      IsCurrentUser: false,
+      RideType: 'Offer',
+      RideSeats: 3,
+    },
+  },
+}
+
+export const OffersRideNoSeats = {
+  args: {
+    participation: {
+      ID: 7,
+      MemberName: 'Georg Fischer',
+      ProfileImageURL: null,
+      Type: 'Accept',
+      IsCurrentUser: false,
+      RideType: 'Offer',
+      RideSeats: 0,
+    },
+  },
+}
+
+export const NeedsRide = {
+  args: {
+    participation: {
+      ID: 8,
+      MemberName: 'Hanna Klein',
+      ProfileImageURL: null,
+      Type: 'Maybe',
+      IsCurrentUser: false,
+      RideType: 'Need',
+      RideSeats: 0,
+    },
+  },
+}

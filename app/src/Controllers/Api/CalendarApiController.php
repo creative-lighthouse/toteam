@@ -33,6 +33,7 @@ class CalendarApiController extends ApiController
         'participationTime',
         'participationFood',
         'participationNotes',
+        'participationRide',
         'absence',
         'absences',
         'appointment',
@@ -104,9 +105,14 @@ class CalendarApiController extends ApiController
                         'MealID'   => $meal->ID,
                         'MemberID' => $member->ID,
                     ])->first();
+                    $productSupplier = $food->Supplier();
                     $products[] = [
                         'ID'           => $food->ID,
                         'Title'        => $food->Title,
+                        'Preference'   => $food->FoodPreference ?: 'None',
+                        'Supplier'     => ($productSupplier && $productSupplier->exists())
+                            ? trim($productSupplier->FirstName . ' ' . $productSupplier->Surname)
+                            : null,
                         'MaxQuantity'  => (int) $food->MaxQuantity,
                         'UserQuantity' => $userOrder ? (int) $userOrder->Quantity : 0,
                     ];
@@ -166,6 +172,8 @@ class CalendarApiController extends ApiController
                     'CustomTimeframe' => (bool) $p->CustomTimeframe,
                     'IsCurrentUser'   => $p->MemberID == $member->ID,
                     'Notes'           => $p->Notes ?: null,
+                    'RideType'        => $p->RideType ?: 'None',
+                    'RideSeats'       => (int) $p->RideSeats,
                 ];
             }
 
@@ -218,6 +226,8 @@ class CalendarApiController extends ApiController
                     'TimeEnd'         => $participation->TimeEnd,
                     'CustomTimeframe' => (bool) $participation->CustomTimeframe,
                     'Notes'           => $participation->Notes ?: null,
+                    'RideType'        => $participation->RideType ?: 'None',
+                    'RideSeats'       => (int) $participation->RideSeats,
                 ] : null,
                 'EnableMeals'   => (bool)$appointment->EnableMeals,
                 'EnableAgenda'  => (bool)$appointment->EnableAgenda,
@@ -372,13 +382,30 @@ class CalendarApiController extends ApiController
         $body = json_decode($request->getBody(), true);
         $type = $body['response'] ?? null;
 
-        if (!$type || !in_array($type, ['Accept', 'Maybe', 'Decline'])) {
+        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
+
+        if (!$type) {
+            // Zurück auf "Ohne Antwort": komplette Teilnahme entfernen
+            if ($participation) {
+                $participation->delete();
+            }
+            return $this->successResponse([
+                'ID'              => null,
+                'Type'            => null,
+                'TimeStart'       => null,
+                'TimeEnd'         => null,
+                'CustomTimeframe' => false,
+                'Notes'           => null,
+                'RideType'        => 'None',
+                'RideSeats'       => 0,
+            ], 'Participation removed');
+        }
+
+        if (!in_array($type, ['Accept', 'Maybe', 'Decline'])) {
             return $this->errorResponse('Invalid participation type', 400);
         }
 
         // Find or create participation
-        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
-
         if (!$participation) {
             $participation = AppointmentParticipation::create();
             $participation->ParentID        = $appointment->ID;
@@ -396,6 +423,8 @@ class CalendarApiController extends ApiController
             'TimeEnd'         => $participation->TimeEnd,
             'CustomTimeframe' => (bool) $participation->CustomTimeframe,
             'Notes'           => $participation->Notes ?: null,
+            'RideType'        => $participation->RideType ?: 'None',
+            'RideSeats'       => (int) $participation->RideSeats,
         ], 'Participation updated');
     }
 
@@ -494,11 +523,22 @@ class CalendarApiController extends ApiController
         $body = json_decode($request->getBody(), true);
         $type = $body['response'] ?? null;
 
-        if (!$type || !in_array($type, ['Accept', 'Decline'])) {
-            return $this->errorResponse('Invalid food response type', 400);
+        $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
+
+        if (!$type) {
+            // Zurück auf "Ohne Antwort": komplette Teilnahme entfernen
+            if ($mealEater) {
+                $mealEater->delete();
+            }
+            return $this->successResponse([
+                'ID'   => null,
+                'Type' => null,
+            ], 'Food participation removed');
         }
 
-        $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
+        if (!in_array($type, ['Accept', 'Decline'])) {
+            return $this->errorResponse('Invalid food response type', 400);
+        }
 
         if (!$mealEater) {
             $mealEater = MealEater::create();
@@ -557,6 +597,59 @@ class CalendarApiController extends ApiController
         return $this->successResponse([
             'Notes' => $participation->Notes ?: null,
         ], 'Notes updated');
+    }
+
+    /**
+     * Change participation ride-sharing (Anfahrt)
+     * POST /api/v1/calendar/participationRide/:id
+     * Body: { rideType: "Need"|"Offer"|null, seats: number }
+     */
+    public function participationRide(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $appointmentID = $request->param('ID');
+        $appointment = Appointment::get()->byID($appointmentID);
+
+        if (!$appointment) {
+            return $this->errorResponse('Event not found', 404);
+        }
+
+        // Security check
+        $organizationIDs = $member->getOrganizationIDs();
+        $sharedOrgs = $appointment->Organisations()->filter('ID', $organizationIDs);
+        if (!$sharedOrgs->exists()) {
+            return $this->errorResponse('Access denied', 403);
+        }
+
+        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
+
+        if (!$participation) {
+            return $this->errorResponse('No participation found', 404);
+        }
+
+        $body = json_decode($request->getBody(), true);
+        $rideType = $body['rideType'] ?? null;
+
+        if (!$rideType || !in_array($rideType, ['Need', 'Offer'])) {
+            $participation->RideType  = 'None';
+            $participation->RideSeats = 0;
+        } else {
+            $seats = (int) ($body['seats'] ?? 1);
+            $participation->RideType  = $rideType;
+            $participation->RideSeats = $rideType === 'Offer' ? max(0, min(8, $seats)) : 0;
+        }
+
+        $participation->write();
+
+        return $this->successResponse([
+            'RideType'  => $participation->RideType,
+            'RideSeats' => (int) $participation->RideSeats,
+        ], 'Ride updated');
     }
 
     /**

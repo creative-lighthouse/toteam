@@ -143,77 +143,120 @@
         height: 60%;
         object-fit: contain;
     }
+
+    // Für Icons mit fest codierter Füllfarbe (z. B. Material-Symbols-Assets):
+    // per CSS-Maske eingebunden, damit sie die Buttonfarbe (inkl. Hover/Disabled) annehmen.
+    .icon-mask {
+        width: 60%;
+        height: 60%;
+        background-color: currentColor;
+        mask-repeat: no-repeat;
+        mask-position: center;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        -webkit-mask-size: contain;
+    }
 }
 
 // ── AppButtonGroup (Participation Button) ───────────────────────────────────
 .app-button-group {
+    position: relative;
     display: flex;
     align-items: stretch;
     justify-content: stretch;
     width: 100%;
     border: none;
-    padding: 0;
+    padding: 3px;
     margin: 0;
+    gap: 2px;
+    background-color: var(--ColorLightGray);
+    border-radius: var(--BorderRadiusSmall);
+
+    &_pill {
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        border-radius: calc(var(--BorderRadiusSmall) - 2px);
+        transition: left 0.35s cubic-bezier(0.65, 0, 0.35, 1), background-color 0.35s ease, opacity 0.2s ease;
+        z-index: 0;
+    }
 
     &_item {
+        position: relative;
+        z-index: 1;
         flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         min-height: 44px;
-        padding: 10px 15px;
+        padding: 10px 12px;
         font-size: 14px;
         font-weight: bold;
         font-family: inherit;
-        border: 1px solid transparent;
-        border-radius: 0;
-        background-color: var(--ColorLightGray);
-        opacity: 0.5;
+        border: none;
+        border-radius: calc(var(--BorderRadiusSmall) - 2px);
+        background-color: transparent;
+        color: var(--ColorGray);
         cursor: pointer;
         appearance: none;
-        transition: all 0.3s ease;
+        white-space: nowrap;
+        transition: color 0.35s ease, background-color 0.2s ease;
 
-        &:first-child { border-radius: var(--BorderRadiusSmall) 0 0 var(--BorderRadiusSmall); }
-        &:last-child { border-radius: 0 var(--BorderRadiusSmall) var(--BorderRadiusSmall) 0; }
+        svg { flex-shrink: 0; }
 
-        &:disabled { cursor: not-allowed; opacity: 0.3; }
-        &:hover:not(:disabled) { opacity: 1; }
+        &:disabled { cursor: not-allowed; opacity: 0.5; }
 
-        &--positive {
+        &:hover:not(:disabled):not(.is-selected) {
+            background-color: var(--ColorVeryLightGray);
+            color: var(--ColorFont);
+        }
+
+        &.is-selected {
+            color: var(--ColorWhite);
+        }
+
+        &.is-hint {
+            &:hover:not(:disabled) { filter: brightness(0.97); }
+        }
+
+        &--positive.is-hint {
             background-color: var(--ColorStatusGoodAccent);
             color: var(--ColorStatusGood);
-
-            &.is-selected { border-color: var(--ColorStatusGood); opacity: 1; }
         }
 
-        &--warning {
+        &--warning.is-hint {
             background-color: var(--ColorStatusWarningAccent);
             color: var(--ColorStatusWarning);
-
-            &.is-selected { border-color: var(--ColorStatusWarning); opacity: 1; }
         }
 
-        &--negative {
+        &--negative.is-hint {
             background-color: var(--ColorStatusBadAccent);
             color: var(--ColorStatusBad);
-
-            &.is-selected { border-color: var(--ColorStatusBad); opacity: 1; }
         }
 
-        &--neutral {
+        &--neutral.is-hint {
             background-color: var(--ColorLightGray);
             color: var(--ColorGray);
-
-            &.is-selected { border-color: var(--ColorGray); opacity: 1; }
-        }
-
-        &.is-unselected {
-            background-color: var(--ColorGray);
-            border-color: var(--ColorLightGray);
-            color: var(--ColorWhite);
         }
     }
 
-    &--compact &_item {
-        padding: 5px 8px;
-        min-height: auto;
-        font-size: 13px;
+    &--compact {
+        padding: 2px;
+
+        .app-button-group_pill {
+            top: 2px;
+            bottom: 2px;
+        }
+
+        .app-button-group_item {
+            padding: 6px 8px;
+            min-height: auto;
+            font-size: 13px;
+            gap: 4px;
+
+            svg { width: 12px; height: 12px; }
+        }
     }
 }

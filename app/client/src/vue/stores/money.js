@@ -77,8 +77,26 @@ export const useMoneyStore = defineStore('money', () => {
     return response
   }
 
+  async function removeBudget(id) {
+    const response = await apiDelete(`/money/budgetRemove/${id}`)
+    if (response.success) {
+      if (response.data?.account) currentAccount.value = response.data.account
+      await clearCacheForEndpoint('/money')
+    }
+    return response
+  }
+
   async function createEntry(formData) {
     const response = await apiPostForm('/money/entryStore', formData)
+    if (response.success) {
+      if (response.data?.account) currentAccount.value = response.data.account
+      await clearCacheForEndpoint('/money')
+    }
+    return response
+  }
+
+  async function updateEntry(id, formData) {
+    const response = await apiPostForm(`/money/entryUpdate/${id}`, formData)
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
@@ -116,7 +134,9 @@ export const useMoneyStore = defineStore('money', () => {
     removeAccount,
     createBudget,
     updateBudget,
+    removeBudget,
     createEntry,
+    updateEntry,
     approveEntry,
     removeEntry,
   }

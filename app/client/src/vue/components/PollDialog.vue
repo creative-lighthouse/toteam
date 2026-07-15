@@ -131,9 +131,9 @@ const finalizing = ref(false)
 const expandedOptionId = ref(null)
 
 const participationOptions = [
-  { value: 'Accept', label: 'Zusagen', tone: 'positive' },
-  { value: 'Maybe', label: 'Vielleicht', tone: 'warning' },
   { value: 'Decline', label: 'Absagen', tone: 'negative' },
+  { value: 'Maybe', label: 'Vielleicht', tone: 'warning' },
+  { value: 'Accept', label: 'Zusagen', tone: 'positive' },
 ]
 
 const canManageContent = computed(() => {

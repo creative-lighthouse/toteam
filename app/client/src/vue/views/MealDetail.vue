@@ -182,60 +182,62 @@
                   <AppButton variant="secondary" :disabled="editFoodSaving" @click="cancelFoodEdit">Abbrechen</AppButton>
                 </div>
               </div>
-              <template v-else-if="item.isOrderable">
-                <span class="meal-food_title">{{ item.title }}</span>
-                <span v-if="item.maxQuantity > 0" class="meal-product-item_max">max. {{ item.maxQuantity }} pro Person</span>
-                <div class="meal-food_right">
-                  <div v-if="meal.userResponse === 'Accept'" class="meal-product-qty">
-                    <AppIconButton
-                      variant="neutral"
-                      aria-label="Menge verringern"
-                      :disabled="(userOrders[item.id] ?? 0) <= 0"
-                      @click="changeQty(item, -1)"
-                    >−</AppIconButton>
-                    <span class="meal-product-qty_val">{{ userOrders[item.id] ?? 0 }}</span>
-                    <AppIconButton
-                      variant="neutral"
-                      aria-label="Menge erhöhen"
-                      :disabled="item.maxQuantity > 0 && (userOrders[item.id] ?? 0) >= item.maxQuantity"
-                      @click="changeQty(item, 1)"
-                    >+</AppIconButton>
-                  </div>
+              <MealCard
+                v-else
+                :title="item.title"
+                :preference="item.preference"
+                :supplier="item.supplier"
+                :max-quantity="item.maxQuantity"
+                :orderable="item.isOrderable"
+                :can-order="meal.userResponse === 'Accept'"
+                :quantity="userOrders[item.id] ?? 0"
+                @increment="changeQty(item, 1)"
+                @decrement="changeQty(item, -1)"
+              >
+                <template v-if="!item.isOrderable" #leading>
+                  <span
+                    class="food-status-dot"
+                    :class="`food-status-dot--${(item.status || 'new').toLowerCase()}`"
+                    :title="statusLabel(item.status)"
+                  ></span>
+                </template>
+
+                <template v-if="item.isOrderable && meal.canManage" #trailing>
                   <AppIconButton
-                    v-if="meal.canManage"
                     variant="primary"
                     aria-label="Gericht bearbeiten"
                     @click="startFoodEdit(item)"
                   >✎</AppIconButton>
                   <AppIconButton
-                    v-if="meal.canManage"
                     variant="danger"
                     aria-label="Produkt löschen"
                     :disabled="deletingProductId === item.id"
                     @click="deleteProduct(item.id)"
                   >×</AppIconButton>
-                </div>
-                <div v-if="item.totalOrdered > 0" class="meal-product-item_summary meal-food_full-row">
+                </template>
+                <template v-else-if="!item.isOrderable && !(item.status === 'New' && meal.canApprove) && meal.canManage" #trailing>
+                  <AppIconButton
+                    variant="primary"
+                    aria-label="Gericht bearbeiten"
+                    @click="startFoodEdit(item)"
+                  >✎</AppIconButton>
+                  <AppIconButton
+                    variant="danger"
+                    aria-label="Gericht löschen"
+                    :disabled="deletingProductId === item.id"
+                    @click="deleteProduct(item.id)"
+                  >×</AppIconButton>
+                </template>
+
+                <template v-if="item.isOrderable && item.totalOrdered > 0" #footer>
                   <span class="meal-product-item_total">{{ item.totalOrdered }}× bestellt</span>
                   <span
                     v-for="o in item.orders"
                     :key="o.memberId"
                     class="meal-product-item_order"
                   >{{ o.name }} ({{ o.quantity }})</span>
-                </div>
-              </template>
-              <template v-else>
-                <span
-                  class="food-status-dot"
-                  :class="`food-status-dot--${(item.status || 'new').toLowerCase()}`"
-                  :title="statusLabel(item.status)"
-                ></span>
-                <span class="meal-food_title">{{ item.title }}</span>
-                <span v-if="item.preference !== 'None'" class="meal-food_pref">
-                  {{ item.preference === 'Vegetarian' ? '🥗 Vegetarisch' : '🌱 Vegan' }}
-                </span>
-                <span v-if="item.supplier" class="meal-food_supplier">von {{ item.supplier }}</span>
-                <div v-if="item.status === 'New' && meal.canApprove" class="meal-food_full-row meal-food_approve-actions">
+                </template>
+                <template v-else-if="!item.isOrderable && item.status === 'New' && meal.canApprove" #footer>
                   <AppButton
                     size="small"
                     variant="primary"
@@ -248,21 +250,8 @@
                     :disabled="decidingFoodId === item.id"
                     @click="decideFood(item.id, 'Rejected')"
                   >Ablehnen</AppButton>
-                </div>
-                <div v-else-if="meal.canManage" class="meal-food_right">
-                  <AppIconButton
-                    variant="primary"
-                    aria-label="Gericht bearbeiten"
-                    @click="startFoodEdit(item)"
-                  >✎</AppIconButton>
-                  <AppIconButton
-                    variant="danger"
-                    aria-label="Gericht löschen"
-                    :disabled="deletingProductId === item.id"
-                    @click="deleteProduct(item.id)"
-                  >×</AppIconButton>
-                </div>
-              </template>
+                </template>
+              </MealCard>
             </li>
           </ul>
           <p v-else class="meal-card_empty">Noch keine Gerichte geplant.</p>
@@ -330,13 +319,14 @@ import { apiGet, apiPost, apiPut, apiDelete } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
+import MealCard from '@components/EventDialog/MealCard.vue'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')
 
 const rsvpOptions = [
-  { value: 'Accept', label: 'Zusagen', tone: 'positive' },
   { value: 'Decline', label: 'Absagen', tone: 'negative' },
+  { value: 'Accept', label: 'Zusagen', tone: 'positive' },
 ]
 
 const meal      = ref(null)

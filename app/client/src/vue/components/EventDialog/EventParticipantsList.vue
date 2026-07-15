@@ -3,7 +3,7 @@
     <h3 class="event-participation_title">Teilnehmer</h3>
     <div class="participants-list">
       <template v-if="groupedParticipations.Accept.length > 0">
-        <h5 class="participant-group_title">Zugesagt ({{ groupedParticipations.Accept.length }})</h5>
+        <h5 class="participant-group_title">Zugesagt <span>({{ groupedParticipations.Accept.length }})</span></h5>
         <ParticipantCard
           v-for="p in groupedParticipations.Accept"
           :key="p.ID"
@@ -14,7 +14,7 @@
       </template>
 
       <template v-if="groupedParticipations.Maybe.length > 0">
-        <h5 class="participant-group_title">Vielleicht ({{ groupedParticipations.Maybe.length }})</h5>
+        <h5 class="participant-group_title">Vielleicht <span>({{ groupedParticipations.Maybe.length }})</span></h5>
         <ParticipantCard
           v-for="p in groupedParticipations.Maybe"
           :key="p.ID"
@@ -25,7 +25,7 @@
       </template>
 
       <template v-if="groupedParticipations.Decline.length > 0">
-        <h5 class="participant-group_title">Abgesagt ({{ groupedParticipations.Decline.length }})</h5>
+        <h5 class="participant-group_title">Abgesagt <span>({{ groupedParticipations.Decline.length }})</span></h5>
         <ParticipantCard
           v-for="p in groupedParticipations.Decline"
           :key="p.ID"
@@ -36,7 +36,7 @@
       </template>
 
       <template v-if="membersWithoutResponse.length > 0">
-        <h5 class="participant-group_title">Ohne Antwort ({{ membersWithoutResponse.length }})</h5>
+        <h5 class="participant-group_title">Ohne Antwort <span>({{ membersWithoutResponse.length }})</span></h5>
         <ParticipantCard
           v-for="p in membersWithoutResponse"
           :key="p.ID"

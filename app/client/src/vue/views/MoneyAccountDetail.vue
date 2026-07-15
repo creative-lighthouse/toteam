@@ -17,12 +17,22 @@
             {{ account.Organization?.Title }}
           </div>
           <div class="money-detail_header-actions">
-            <AppButton v-if="account.Permissions.canManageAccount" variant="secondary" @click="accountModal?.open()">
-              Kasse bearbeiten
-            </AppButton>
-            <AppButton v-if="account.Permissions.canDeleteAccount" variant="danger" @click="removeAccount">
-              Kasse löschen
-            </AppButton>
+            <AppIconButton
+              v-if="account.Permissions.canManageAccount"
+              variant="primary"
+              aria-label="Kasse bearbeiten"
+              @click="accountModal?.open()"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </AppIconButton>
+            <AppIconButton
+              v-if="account.Permissions.canDeleteAccount"
+              variant="danger"
+              aria-label="Kasse löschen"
+              @click="removeAccount"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </AppIconButton>
           </div>
         </div>
 
@@ -94,12 +104,24 @@
           <div v-else class="money-entry-list">
             <div v-for="entry in account.History" :key="entry.ID" class="money-entry">
               <MoneyEntryRow :entry="entry" />
-              <AppIconButton
-                v-if="canDeleteEntry(entry)"
-                variant="danger"
-                aria-label="Buchung löschen"
-                @click="remove(entry.ID)"
-              >✕</AppIconButton>
+              <div v-if="canEditEntry(entry) || canDeleteEntry(entry)" class="money-entry_actions">
+                <AppIconButton
+                  v-if="canEditEntry(entry)"
+                  variant="primary"
+                  aria-label="Buchung bearbeiten"
+                  @click="openEntryModal(entry)"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </AppIconButton>
+                <AppIconButton
+                  v-if="canDeleteEntry(entry)"
+                  variant="danger"
+                  aria-label="Buchung löschen"
+                  @click="remove(entry.ID)"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </AppIconButton>
+              </div>
             </div>
           </div>
         </section>
@@ -112,7 +134,7 @@
       v-if="account && (account.Permissions.canEnterDeposit || account.Permissions.canEnterWithdrawal)"
       class="money-fab"
       title="Ausgabe/Einnahme erfassen"
-      @click="entryModal?.open()"
+      @click="openEntryModal(null)"
     >+ Buchung</button>
 
     <MoneyEntryModal
@@ -124,7 +146,7 @@
       :requires-receipt-withdrawal="account.RequiresReceiptWithdrawal"
       :can-enter-deposit="account.Permissions.canEnterDeposit"
       :can-enter-withdrawal="account.Permissions.canEnterWithdrawal"
-      @created="onEntryCreated"
+      @saved="onEntrySaved"
     />
     <MoneyAccountModal
       v-if="account"
@@ -137,7 +159,6 @@
       v-if="account"
       ref="budgetModal"
       :account-id="account.ID"
-      :budget="editingBudget"
       @saved="onBudgetSaved"
     />
   </div>
@@ -169,7 +190,6 @@ const entryModal = ref(null)
 const accountModal = ref(null)
 const budgetModal = ref(null)
 const approving = ref(null)
-const editingBudget = ref(null)
 
 const targetPercent = computed(() => {
   if (!account.value?.TargetAmount) return 0
@@ -196,9 +216,17 @@ function canDeleteEntry(entry) {
   return !entry.Approved
 }
 
+// Wer eine Buchung löschen darf, darf sie auch bearbeiten (gleiche Regel wie im Backend).
+function canEditEntry(entry) {
+  return canDeleteEntry(entry)
+}
+
 function openBudgetModal(budget) {
-  editingBudget.value = budget
-  budgetModal.value?.open()
+  budgetModal.value?.open(budget)
+}
+
+function openEntryModal(entry) {
+  entryModal.value?.open(entry)
 }
 
 async function approve(id, doApprove) {
@@ -215,7 +243,7 @@ async function remove(id) {
   await store.removeEntry(id)
 }
 
-function onEntryCreated() {
+function onEntrySaved() {
   entryModal.value?.close()
 }
 
@@ -237,7 +265,6 @@ async function removeAccount() {
 
 function onBudgetSaved() {
   budgetModal.value?.close()
-  editingBudget.value = null
 }
 
 watch(account, val => {

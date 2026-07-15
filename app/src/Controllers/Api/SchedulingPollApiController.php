@@ -224,11 +224,24 @@ class SchedulingPollApiController extends ApiController
 
         $body = json_decode($request->getBody(), true);
         $type = $body['response'] ?? null;
-        if (!$type || !in_array($type, ['Accept', 'Maybe', 'Decline'])) {
+
+        $participation = $option->OptionParticipations()->filter(['MemberID' => $member->ID])->first();
+
+        if (!$type) {
+            // Zurück auf "Ohne Antwort": komplette Teilnahme entfernen
+            if ($participation) {
+                $participation->delete();
+            }
+            return $this->successResponse([
+                'ID'   => null,
+                'Type' => null,
+            ], 'Teilnahme entfernt');
+        }
+
+        if (!in_array($type, ['Accept', 'Maybe', 'Decline'])) {
             return $this->errorResponse('Invalid participation type', 400);
         }
 
-        $participation = $option->OptionParticipations()->filter(['MemberID' => $member->ID])->first();
         if (!$participation) {
             $participation = SchedulingPollOptionParticipation::create();
             $participation->ParentID = $option->ID;
