@@ -3,7 +3,7 @@
     <h3 class="event-participation_title">Teilnehmer</h3>
     <div class="participants-list">
       <template v-if="groupedParticipations.Accept.length > 0">
-        <h5 class="participant-group_title">Zugesagt</h5>
+        <h5 class="participant-group_title">Zugesagt <span>({{ groupedParticipations.Accept.length }})</span></h5>
         <ParticipantCard
           v-for="p in groupedParticipations.Accept"
           :key="p.ID"
@@ -14,7 +14,7 @@
       </template>
 
       <template v-if="groupedParticipations.Maybe.length > 0">
-        <h5 class="participant-group_title">Vielleicht</h5>
+        <h5 class="participant-group_title">Vielleicht <span>({{ groupedParticipations.Maybe.length }})</span></h5>
         <ParticipantCard
           v-for="p in groupedParticipations.Maybe"
           :key="p.ID"
@@ -25,13 +25,22 @@
       </template>
 
       <template v-if="groupedParticipations.Decline.length > 0">
-        <h5 class="participant-group_title">Abgesagt</h5>
+        <h5 class="participant-group_title">Abgesagt <span>({{ groupedParticipations.Decline.length }})</span></h5>
         <ParticipantCard
           v-for="p in groupedParticipations.Decline"
           :key="p.ID"
           :participation="p"
           :note-expanded="expandedNoteIds.has(p.ID)"
           @toggle-note="toggleNoteExpanded(p.ID)"
+        />
+      </template>
+
+      <template v-if="membersWithoutResponse.length > 0">
+        <h5 class="participant-group_title">Ohne Antwort <span>({{ membersWithoutResponse.length }})</span></h5>
+        <ParticipantCard
+          v-for="p in membersWithoutResponse"
+          :key="p.ID"
+          :participation="p"
         />
       </template>
     </div>
@@ -56,6 +65,15 @@ const groupedParticipations = computed(() => {
     Decline: props.event.Participations.filter(p => p.Type === 'Decline'),
   }
 })
+
+const membersWithoutResponse = computed(() =>
+  (props.event.MembersWithoutResponse || []).map(m => ({
+    ID: m.ID,
+    MemberName: m.MemberName,
+    ProfileImageURL: m.ProfileImageURL,
+    Type: 'Pending',
+  }))
+)
 
 function toggleNoteExpanded(participationId) {
   const next = new Set(expandedNoteIds.value)

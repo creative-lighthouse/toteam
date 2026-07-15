@@ -286,6 +286,8 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    align-items: center;
+    justify-content: stretch;
 }
 
 .meal-food {
@@ -294,12 +296,23 @@
     gap: 6px;
     flex-wrap: wrap;
     font-size: 0.875rem;
+    width: 100%;
+
+    .meal-card {
+        width: 100%;
+    }
 
     &_title { font-weight: 500; }
     &_pref { font-size: 0.75rem; }
     &_supplier { font-size: 0.75rem; color: var(--ColorTextSecondary); font-style: italic; }
     &_right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
     &_full-row { flex-basis: 100%; margin-top: 2px; }
+    &_approve-actions {
+        display: flex;
+        gap: 6px;
+
+        .button { margin: 0; }
+    }
 }
 
 .meal-detail-heading-actions {
@@ -379,6 +392,12 @@
     &--rejected { background: #fee2e2; color: #991b1b; }
 }
 
+.pending-food-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
 .meal-section_toggle--compact {
     padding: 8px 12px;
     font-size: 0.8rem;
@@ -403,20 +422,6 @@
         font-size: 0.9rem;
         white-space: pre-wrap;
         word-break: break-word;
-    }
-
-    &_edit-btn {
-        flex-shrink: 0;
-        background: transparent;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
-        color: var(--ColorTextSecondary);
-        cursor: pointer;
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        transition: border-color 0.15s, color 0.15s;
-
-        &:hover { border-color: var(--ColorPrimary); color: var(--ColorPrimary); }
     }
 
     &_textarea {
@@ -452,24 +457,6 @@
     h4 { margin: 0; }
 }
 
-.meal-suggest-btn {
-    background: transparent;
-    border: 1px solid var(--ColorPrimary);
-    border-radius: 20px;
-    color: var(--ColorPrimary);
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 2px 10px;
-    white-space: nowrap;
-    transition: background 0.2s, color 0.2s;
-
-    &:hover {
-        background: var(--ColorPrimary);
-        color: white;
-    }
-}
-
 // ── Food suggestion modal ─────────────────────────────────────────────────────
 
 .food-modal-overlay {
@@ -498,18 +485,6 @@
         border-bottom: 1px solid var(--ColorLightGray);
 
         h3 { margin: 0; font-size: 1.1rem; }
-    }
-
-    &_close {
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        color: var(--ColorTextSecondary);
-        display: flex;
-        padding: 4px;
-        border-radius: 4px;
-
-        &:hover { background: var(--ColorLightGray); }
     }
 
     &_body {
@@ -752,33 +727,6 @@
     align-items: center;
     gap: 2px;
 
-    &_btn {
-        width: 28px;
-        height: 28px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: 50%;
-        background: var(--ColorWhite);
-        cursor: pointer;
-        font-size: 1rem;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--ColorPrimary);
-        transition: background 0.15s, color 0.15s;
-
-        &:hover:not(:disabled) {
-            background: var(--ColorPrimary);
-            color: var(--ColorWhite);
-            border-color: var(--ColorPrimary);
-        }
-
-        &:disabled {
-            opacity: 0.35;
-            cursor: default;
-        }
-    }
-
     &_val {
         min-width: 24px;
         text-align: center;
@@ -787,28 +735,20 @@
     }
 }
 
-.meal-product-delete-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 1px solid var(--ColorLightGray);
-    background: transparent;
-    color: var(--ColorTextSecondary);
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
+.meal-food-edit-form {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    flex-direction: column;
+    gap: 8px;
+    flex-basis: 100%;
+    padding: 10px;
+    background: var(--ColorVeryLightGray);
+    border-radius: var(--BorderRadiusSmall);
 
-    &:hover:not(:disabled) {
-        background: #fee2e2;
-        color: #991b1b;
-        border-color: #fca5a5;
+    .form-control {
+        padding: 7px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
     }
-
-    &:disabled { opacity: 0.4; cursor: default; }
 }
 
 

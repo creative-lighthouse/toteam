@@ -10,7 +10,7 @@
       <strong>Ganztägig</strong>
     </p>
     <p v-if="event.Location">
-      <strong>Ort:</strong>
+      <strong>Ort: </strong>
       <a
         :href="`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.Location)}`"
         target="_blank"

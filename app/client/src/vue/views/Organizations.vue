@@ -7,7 +7,7 @@
 
       <div v-else-if="store.error" class="section_infobox">
         <p>Fehler beim Laden: {{ store.error }}</p>
-        <button class="button" @click="store.fetchOrganizations(true)">Erneut versuchen</button>
+        <AppButton variant="primary" @click="store.fetchOrganizations(true)">Erneut versuchen</AppButton>
       </div>
 
       <template v-else>
@@ -38,6 +38,7 @@ import { useOrganizationsStore } from '@stores/organizations'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import OrganizationCard from '@components/OrganizationCard.vue'
 import ApplicantsModal from '@components/ApplicantsModal.vue'
+import AppButton from '@components/AppButton.vue'
 
 const route = useRoute()
 const store = useOrganizationsStore()

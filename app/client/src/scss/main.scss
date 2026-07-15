@@ -6,6 +6,7 @@
 @use "normalize.scss";
 @use "typography.scss";
 @use "forms.scss";
+@use "components/buttons.scss";
 
 @use "layout/AppMenu.scss";
 @use "layout/AppHeader.scss";
@@ -28,6 +29,9 @@
 @use "pages/LoginPage.scss";
 @use "pages/TasksPage.scss";
 @use "pages/TaskDetailPage.scss";
+@use "pages/MoneyPage.scss";
+@use "pages/MoneyAccountDetailPage.scss";
+@use "pages/OrganizationManagePage.scss";
 
 
 @use "landingpage/landingpage.scss";
@@ -37,10 +41,16 @@
 @use "components/announcementcard.scss";
 @use "components/organizationcard.scss";
 @use "components/participantcard.scss";
+@use "components/mealcard.scss";
 @use "components/addappointmentmodal.scss";
 @use "components/pwainstallbanner.scss";
 @use "components/taskcard.scss";
+@use "components/taskprogressbar.scss";
 @use "components/taskcreatemodal.scss";
+@use "components/tasksupportersmodal.scss";
+@use "components/taskdeletemodal.scss";
+@use "components/moneymodals.scss";
+@use "components/orgrolesmodals.scss";
 
 
 html{

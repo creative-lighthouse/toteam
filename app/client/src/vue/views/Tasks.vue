@@ -42,12 +42,12 @@
 
         </div>
 
-        <!-- New task button + View mode toggle -->
-        <div class="tasks-toolbar_view-toggle">
-          <button class="button button--primary" @click="createModal?.open()">
+        <!-- New task button + View mode toggle (desktop/tablet only) -->
+        <div v-if="!isMobile" class="tasks-toolbar_view-toggle">
+          <AppButton variant="primary" @click="createModal?.open()">
             + Neue Aufgabe
-          </button>
-          <div class="tasks-view-toggle tasks-toolbar_kanban-btn">
+          </AppButton>
+          <div class="tasks-view-toggle">
             <button
               class="tasks-view-toggle_btn"
               :class="{ 'tasks-view-toggle_btn--active': viewMode === 'list' }"
@@ -78,7 +78,7 @@
       <!-- Error -->
       <div v-else-if="store.error" class="section_infobox error">
         <p>Fehler: {{ store.error }}</p>
-        <button class="button" @click="store.refresh()">Erneut versuchen</button>
+        <AppButton variant="primary" @click="store.refresh()">Erneut versuchen</AppButton>
       </div>
 
       <template v-else>
@@ -88,7 +88,7 @@
         </div>
 
         <!-- LIST VIEW -->
-        <div v-else-if="viewMode === 'list'" class="tasks-list">
+        <div v-else-if="effectiveViewMode === 'list'" class="tasks-list">
           <TaskCard
             v-for="task in store.filteredTasks"
             :key="task.ID"
@@ -126,17 +126,23 @@
 
     </div>
 
+    <!-- Floating action button (mobile only) -->
+    <button v-if="isMobile" class="tasks-fab" title="Neue Aufgabe" @click="createModal?.open()">
+      + Neue Aufgabe
+    </button>
+
     <TaskCreateModal ref="createModal" @created="onTaskCreated" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import TaskCard from '@components/TaskCard.vue'
 import TaskCreateModal from '@components/TaskCreateModal.vue'
+import AppButton from '@components/AppButton.vue'
 
 const router = useRouter()
 const store = useTasksStore()
@@ -145,6 +151,15 @@ usePageHeaderStore().setHeader('Aufgaben', 'Alle Aufgaben deiner Organisationen.
 const viewMode = ref('list')
 const createModal = ref(null)
 let draggedTaskId = null
+
+// Mobile only ever shows the list view — mirrors the `max-medium` (700px) CSS breakpoint
+const mobileQuery = window.matchMedia('(max-width: 700px)')
+const isMobile = ref(mobileQuery.matches)
+const effectiveViewMode = computed(() => isMobile.value ? 'list' : viewMode.value)
+
+function onMobileQueryChange(e) {
+  isMobile.value = e.matches
+}
 
 function openTask(task) {
   router.push({ name: 'TaskDetail', params: { hash: task.Hash } })
@@ -178,6 +193,11 @@ async function onDrop(event, targetState) {
 }
 
 onMounted(async () => {
+  mobileQuery.addEventListener('change', onMobileQueryChange)
   await store.fetchTasks(true)
+})
+
+onUnmounted(() => {
+  mobileQuery.removeEventListener('change', onMobileQueryChange)
 })
 </script>

@@ -8,14 +8,15 @@
             </div>
 
             <div v-else-if="profile" class="section_profilecard">
-                <button
+                <AppIconButton
                     v-if="profile.Username"
+                    variant="ghost"
                     class="profilecard-qr-btn"
                     aria-label="QR-Code anzeigen"
                     @click="qrModal?.open()"
                 >
                     <img src="/app/client/icons/actions/action_qrcode.svg" alt="">
-                </button>
+                </AppIconButton>
 
                 <div class="profile-image">
                     <img
@@ -89,6 +90,7 @@ import { useRoute, RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import QrCodeModal from '@components/QrCodeModal.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

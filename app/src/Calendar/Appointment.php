@@ -10,6 +10,7 @@ use SilverStripe\Assets\Image;
 use SilverStripe\Model\List\ArrayList;
 use SilverStripe\Model\List\GroupedList;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 use SilverStripe\Security\Security;
@@ -48,6 +49,7 @@ use SilverStripe\Forms\TimeField;
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
+ * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] InvitedMembers()
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -81,6 +83,7 @@ class Appointment extends DataObject implements PermissionProvider
 
     private static $many_many = [
         'Organisations' => Organization::class,
+        'InvitedMembers' => Member::class,
     ];
 
     private static $has_many = [
@@ -273,6 +276,20 @@ class Appointment extends DataObject implements PermissionProvider
         return AppointmentParticipation::get()->filter(['ParentID' => $this->ID, 'MemberID' => $member->ID])->first();
     }
 
+    /**
+     * Eingeladene Mitglieder, die noch keine Teilnahme (Accept/Maybe/Decline) hinterlegt haben.
+     */
+    public function getMembersWithoutResponse()
+    {
+        $invitedIDs = $this->InvitedMembers()->column('ID');
+        $respondedIDs = $this->Participations()->column('MemberID');
+        $missingIDs = array_diff($invitedIDs, $respondedIDs);
+        if (empty($missingIDs)) {
+            return ArrayList::create();
+        }
+        return Member::get()->filter('ID', $missingIDs);
+    }
+
     public function getGroupedParticipations()
     {
         // Sortiere nach fester Reihenfolge: Accept, Maybe, Decline (in PHP)
@@ -381,20 +398,6 @@ class Appointment extends DataObject implements PermissionProvider
     public function getVotedNo()
     {
         return $this->Participations()->filter('Type', 'Decline')->count();
-    }
-
-    public function getAllOfSameTitleSuggestedEvents()
-    {
-        $alloptions = Appointment::get()->filter([
-            'Title' => $this->Title,
-            'Status' => 'Suggested',
-        ]);
-        // Sortiere in PHP nach Accept-Teilnahmen
-        $alloptionsArr = $alloptions->toArray();
-        usort($alloptionsArr, function ($a, $b) {
-            return $b->Participations()->filter('Type', 'Accept')->count() <=> $a->Participations()->filter('Type', 'Accept')->count();
-        });
-        return ArrayList::create($alloptionsArr);
     }
 
     public function providePermissions()

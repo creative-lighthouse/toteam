@@ -18,6 +18,10 @@
           {{ formatTime(participation.TimeStart) }} – {{ formatTime(participation.TimeEnd) }}
         </span>
       </div>
+      <span v-if="rideIcon" class="participant-ride" :title="rideTitle">
+        <span class="participant-ride_icon" :style="rideIconStyle" aria-hidden="true"></span>
+        <span v-if="rideSeats !== null" class="participant-ride_seats">{{ rideSeats }}</span>
+      </span>
     </div>
     <p
       v-if="participation.Notes"
@@ -30,6 +34,8 @@
 
 <script setup>
 import { computed } from 'vue'
+import HasTransportIcon from '../../../icons/actions/action_hastransport.svg'
+import NeedsTransportIcon from '../../../icons/actions/action_needstransport.svg'
 
 const props = defineProps({
   participation: {
@@ -58,4 +64,28 @@ function formatTime(timeStr) {
   if (!timeStr) return ''
   return timeStr.substring(0, 5)
 }
+
+const rideIcon = computed(() => {
+  if (props.participation.RideType === 'Offer') return HasTransportIcon
+  if (props.participation.RideType === 'Need') return NeedsTransportIcon
+  return null
+})
+
+// Icon wird per CSS-Maske statt <img> gerendert, damit es die Schriftfarbe
+// annimmt (die SVGs haben eine fest codierte Füllfarbe, die per <img> nicht
+// überschreibbar wäre).
+const rideIconStyle = computed(() => ({
+  maskImage: `url(${rideIcon.value})`,
+  WebkitMaskImage: `url(${rideIcon.value})`,
+}))
+
+const rideSeats = computed(() => {
+  return props.participation.RideType === 'Offer' ? (props.participation.RideSeats ?? 0) : null
+})
+
+const rideTitle = computed(() => {
+  if (props.participation.RideType === 'Offer') return 'Fährt selbst'
+  if (props.participation.RideType === 'Need') return 'Braucht eine Mitfahrgelegenheit'
+  return ''
+})
 </script>

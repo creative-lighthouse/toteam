@@ -15,6 +15,14 @@
         border-left: 4px solid var(--ColorPrimaryDark);
     }
 
+    &.event-card--poll {
+        border: 2px dashed var(--ColorPrimary);
+
+        &.event-card--timed {
+            border-left: 2px dashed var(--ColorPrimary);
+        }
+    }
+
     &.event-card--allday {
         background-color: var(--ColorPrimary);
         color: var(--ColorWhite);
@@ -40,6 +48,14 @@
 
         .event-card_avatar {
             border-color: var(--ColorPrimary);
+        }
+
+        &.event-card--poll {
+            border-color: var(--ColorWhite);
+
+            .event-card_status--poll {
+                color: var(--ColorWhite);
+            }
         }
     }
 
@@ -74,6 +90,19 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .event-card_status {
+        margin: 0;
+        font-size: 11px;
+        color: var(--ColorGray);
+        white-space: nowrap;
+        flex-shrink: 0;
+
+        &--poll {
+            color: var(--ColorPrimary);
+            font-weight: 600;
+        }
     }
 
     .event-card_time {

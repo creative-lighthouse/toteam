@@ -7,14 +7,17 @@ use App\Calendar\Appointment;
 use App\Calendar\AppointmentAgendaPoint;
 use App\Calendar\AppointmentParticipation;
 use App\Calendar\AppointmentType;
+use App\Calendar\SchedulingPollOption;
 use App\Food\Meal;
 use App\Food\MealEater;
 use App\Food\MealProductOrder;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Security\Member;
 
 /**
  * Calendar API Controller
@@ -30,12 +33,14 @@ class CalendarApiController extends ApiController
         'participationTime',
         'participationFood',
         'participationNotes',
+        'participationRide',
         'absence',
         'absences',
         'appointment',
         'appointmentTypes',
         'meal',
         'agendaPoint',
+        'members',
     ];
 
     /**
@@ -100,20 +105,40 @@ class CalendarApiController extends ApiController
                         'MealID'   => $meal->ID,
                         'MemberID' => $member->ID,
                     ])->first();
+                    $productSupplier = $food->Supplier();
                     $products[] = [
                         'ID'           => $food->ID,
                         'Title'        => $food->Title,
+                        'Preference'   => $food->FoodPreference ?: 'None',
+                        'Supplier'     => ($productSupplier && $productSupplier->exists())
+                            ? trim($productSupplier->FirstName . ' ' . $productSupplier->Surname)
+                            : null,
                         'MaxQuantity'  => (int) $food->MaxQuantity,
                         'UserQuantity' => $userOrder ? (int) $userOrder->Quantity : 0,
                     ];
                 }
+                // Feste, bereits bestätigte Gerichte (mitgebrachte Vorschläge oder direkt fest angelegt)
+                $foods = [];
+                foreach ($meal->Foods()->filter(['IsOrderable' => false, 'Status' => 'Accepted'])->sort('ID ASC') as $food) {
+                    $supplier = $food->Supplier();
+                    $foods[] = [
+                        'ID'         => $food->ID,
+                        'Title'      => $food->Title,
+                        'Preference' => $food->FoodPreference ?: 'None',
+                        'Supplier'   => ($supplier && $supplier->exists())
+                            ? trim($supplier->FirstName . ' ' . $supplier->Surname)
+                            : null,
+                    ];
+                }
                 $meals[] = [
-                    'ID'           => $meal->ID,
-                    'Title'        => $meal->Title,
-                    'Time'         => $meal->Time,
-                    'RenderTime'   => $meal->RenderTime(),
-                    'UserResponse' => $mealEater ? $mealEater->Type : null,
-                    'Products'     => $products,
+                    'ID'                   => $meal->ID,
+                    'Title'                => $meal->Title,
+                    'Time'                 => $meal->Time,
+                    'RenderTime'           => $meal->RenderTime(),
+                    'UserResponse'         => $mealEater ? $mealEater->Type : null,
+                    'AcceptsContributions' => (bool) $meal->AcceptsContributions,
+                    'Products'             => $products,
+                    'Foods'                => $foods,
                 ];
             }
 
@@ -147,6 +172,21 @@ class CalendarApiController extends ApiController
                     'CustomTimeframe' => (bool) $p->CustomTimeframe,
                     'IsCurrentUser'   => $p->MemberID == $member->ID,
                     'Notes'           => $p->Notes ?: null,
+                    'RideType'        => $p->RideType ?: 'None',
+                    'RideSeats'       => (int) $p->RideSeats,
+                ];
+            }
+
+            // Invited members / who hasn't responded yet
+            $invitedMemberIDs = array_map('intval', $appointment->InvitedMembers()->column('ID'));
+            $membersWithoutResponse = [];
+            foreach ($appointment->getMembersWithoutResponse() as $pendingMember) {
+                $membersWithoutResponse[] = [
+                    'ID'              => $pendingMember->ID,
+                    'MemberName'      => $pendingMember->getDisplayName(),
+                    'ProfileImageURL' => $pendingMember->hasMethod('RenderProfileImage')
+                        ? $pendingMember->RenderProfileImage()
+                        : null,
                 ];
             }
 
@@ -186,12 +226,121 @@ class CalendarApiController extends ApiController
                     'TimeEnd'         => $participation->TimeEnd,
                     'CustomTimeframe' => (bool) $participation->CustomTimeframe,
                     'Notes'           => $participation->Notes ?: null,
+                    'RideType'        => $participation->RideType ?: 'None',
+                    'RideSeats'       => (int) $participation->RideSeats,
                 ] : null,
                 'EnableMeals'   => (bool)$appointment->EnableMeals,
                 'EnableAgenda'  => (bool)$appointment->EnableAgenda,
                 'Meals'         => $meals,
                 'AgendaPoints'  => $agendaPoints,
-                'Participations' => $participations
+                'Participations' => $participations,
+                'InvitedMemberIDs' => $invitedMemberIDs,
+                'IsInvited' => in_array($member->ID, $invitedMemberIDs, true),
+                'MembersWithoutResponse' => $membersWithoutResponse,
+            ];
+        }
+
+        // Get open scheduling-poll options for this month in user's organizations
+        $pollOptions = SchedulingPollOption::get()
+            ->filter([
+                'Parent.Organisations.ID' => $organizationIDs,
+                'DateStart:GreaterThanOrEqual' => $startDate,
+                'DateStart:LessThanOrEqual' => $endDate,
+            ])
+            ->distinct(true)
+            ->sort('DateStart', 'ASC');
+
+        foreach ($pollOptions as $option) {
+            $poll = $option->Parent();
+            if (!$poll || !$poll->exists() || $poll->Status !== 'Open') {
+                continue;
+            }
+
+            $userVote = $option->OptionParticipations()->filter(['MemberID' => $member->ID])->first();
+            $optionParticipations = $this->formatPollOptionParticipations($option, $member);
+
+            $pollInvitedMemberIDs = array_map('intval', $poll->InvitedMembers()->column('ID'));
+            $respondedIDs = $option->OptionParticipations()->column('MemberID');
+            $missingIDs = array_diff($pollInvitedMemberIDs, $respondedIDs);
+            $membersWithoutResponse = [];
+            if (!empty($missingIDs)) {
+                foreach (Member::get()->filter('ID', $missingIDs) as $pendingMember) {
+                    $membersWithoutResponse[] = [
+                        'ID'              => $pendingMember->ID,
+                        'MemberName'      => $pendingMember->getDisplayName(),
+                        'ProfileImageURL' => $pendingMember->hasMethod('RenderProfileImage')
+                            ? $pendingMember->RenderProfileImage()
+                            : null,
+                    ];
+                }
+            }
+
+            // Geschwister-Optionen derselben Terminfindung, für die Vergleichsansicht im Dialog
+            $siblingOptions = [];
+            foreach ($poll->Options() as $sibling) {
+                $siblingUserVote = $sibling->OptionParticipations()->filter(['MemberID' => $member->ID])->first();
+                $siblingOptions[] = [
+                    'OptionID'   => $sibling->ID,
+                    'DateStart'  => $sibling->DateStart,
+                    'DateEnd'    => $sibling->DateEnd,
+                    'TimeStart'  => $sibling->AllDay ? null : $sibling->TimeStart,
+                    'TimeEnd'    => $sibling->AllDay ? null : $sibling->TimeEnd,
+                    'AllDay'     => (bool) $sibling->AllDay,
+                    'RenderDate' => $sibling->RenderDate(),
+                    'RenderTime' => $sibling->RenderTime(),
+                    'VotedYes'   => $sibling->getVotedYes(),
+                    'VotedMaybe' => $sibling->getVotedMaybe(),
+                    'VotedNo'    => $sibling->getVotedNo(),
+                    'UserVote'   => $siblingUserVote ? $siblingUserVote->Type : null,
+                    'Participations' => $this->formatPollOptionParticipations($sibling, $member),
+                ];
+            }
+
+            $pollOrgLogos = [];
+            foreach ($poll->Organisations() as $orgItem) {
+                if ($orgItem->Logo()->exists()) {
+                    $pollOrgLogos[] = [
+                        'ID'      => $orgItem->ID,
+                        'LogoURL' => $orgItem->Logo()->ScaleWidth(40)->getURL(),
+                    ];
+                }
+            }
+            $pollOrgLogoURL = !empty($pollOrgLogos) ? $pollOrgLogos[0]['LogoURL'] : null;
+
+            $events[] = [
+                // Negative ID, damit Terminfindungs-Pseudo-Events nie mit echten Appointment-IDs kollidieren.
+                'ID' => -$option->ID,
+                'Title' => $poll->Title,
+                'DateStart' => $option->DateStart,
+                'DateEnd' => $option->DateEnd ?: $option->DateStart,
+                'TimeStart' => $option->AllDay ? null : $option->TimeStart,
+                'TimeEnd' => $option->AllDay ? null : $option->TimeEnd,
+                'AllDay' => (bool) $option->AllDay,
+                'Location' => $poll->Location,
+                'Description' => $poll->Description,
+                'Status' => 'Scheduled',
+                'EventType' => null,
+                'TypeID' => null,
+                'OrganizationIDs' => array_map('intval', $poll->Organisations()->column('ID')),
+                'ImageURL' => null,
+                'OrganizationLogoURL' => $pollOrgLogoURL,
+                'OrganizationLogos' => $pollOrgLogos,
+                'UserParticipation' => $userVote ? [
+                    'ID'   => $userVote->ID,
+                    'Type' => $userVote->Type,
+                ] : null,
+                'EnableMeals'   => false,
+                'EnableAgenda'  => false,
+                'Meals'         => [],
+                'AgendaPoints'  => [],
+                'Participations' => $optionParticipations,
+                'InvitedMemberIDs' => $pollInvitedMemberIDs,
+                'IsInvited' => in_array($member->ID, $pollInvitedMemberIDs, true),
+                'MembersWithoutResponse' => $membersWithoutResponse,
+                'IsPoll' => true,
+                'PollID' => $poll->ID,
+                'OptionID' => $option->ID,
+                'PollOptions' => $siblingOptions,
             ];
         }
 
@@ -233,13 +382,30 @@ class CalendarApiController extends ApiController
         $body = json_decode($request->getBody(), true);
         $type = $body['response'] ?? null;
 
-        if (!$type || !in_array($type, ['Accept', 'Maybe', 'Decline'])) {
+        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
+
+        if (!$type) {
+            // Zurück auf "Ohne Antwort": komplette Teilnahme entfernen
+            if ($participation) {
+                $participation->delete();
+            }
+            return $this->successResponse([
+                'ID'              => null,
+                'Type'            => null,
+                'TimeStart'       => null,
+                'TimeEnd'         => null,
+                'CustomTimeframe' => false,
+                'Notes'           => null,
+                'RideType'        => 'None',
+                'RideSeats'       => 0,
+            ], 'Participation removed');
+        }
+
+        if (!in_array($type, ['Accept', 'Maybe', 'Decline'])) {
             return $this->errorResponse('Invalid participation type', 400);
         }
 
         // Find or create participation
-        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
-
         if (!$participation) {
             $participation = AppointmentParticipation::create();
             $participation->ParentID        = $appointment->ID;
@@ -257,6 +423,8 @@ class CalendarApiController extends ApiController
             'TimeEnd'         => $participation->TimeEnd,
             'CustomTimeframe' => (bool) $participation->CustomTimeframe,
             'Notes'           => $participation->Notes ?: null,
+            'RideType'        => $participation->RideType ?: 'None',
+            'RideSeats'       => (int) $participation->RideSeats,
         ], 'Participation updated');
     }
 
@@ -355,11 +523,22 @@ class CalendarApiController extends ApiController
         $body = json_decode($request->getBody(), true);
         $type = $body['response'] ?? null;
 
-        if (!$type || !in_array($type, ['Accept', 'Decline'])) {
-            return $this->errorResponse('Invalid food response type', 400);
+        $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
+
+        if (!$type) {
+            // Zurück auf "Ohne Antwort": komplette Teilnahme entfernen
+            if ($mealEater) {
+                $mealEater->delete();
+            }
+            return $this->successResponse([
+                'ID'   => null,
+                'Type' => null,
+            ], 'Food participation removed');
         }
 
-        $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
+        if (!in_array($type, ['Accept', 'Decline'])) {
+            return $this->errorResponse('Invalid food response type', 400);
+        }
 
         if (!$mealEater) {
             $mealEater = MealEater::create();
@@ -418,6 +597,59 @@ class CalendarApiController extends ApiController
         return $this->successResponse([
             'Notes' => $participation->Notes ?: null,
         ], 'Notes updated');
+    }
+
+    /**
+     * Change participation ride-sharing (Anfahrt)
+     * POST /api/v1/calendar/participationRide/:id
+     * Body: { rideType: "Need"|"Offer"|null, seats: number }
+     */
+    public function participationRide(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $appointmentID = $request->param('ID');
+        $appointment = Appointment::get()->byID($appointmentID);
+
+        if (!$appointment) {
+            return $this->errorResponse('Event not found', 404);
+        }
+
+        // Security check
+        $organizationIDs = $member->getOrganizationIDs();
+        $sharedOrgs = $appointment->Organisations()->filter('ID', $organizationIDs);
+        if (!$sharedOrgs->exists()) {
+            return $this->errorResponse('Access denied', 403);
+        }
+
+        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
+
+        if (!$participation) {
+            return $this->errorResponse('No participation found', 404);
+        }
+
+        $body = json_decode($request->getBody(), true);
+        $rideType = $body['rideType'] ?? null;
+
+        if (!$rideType || !in_array($rideType, ['Need', 'Offer'])) {
+            $participation->RideType  = 'None';
+            $participation->RideSeats = 0;
+        } else {
+            $seats = (int) ($body['seats'] ?? 1);
+            $participation->RideType  = $rideType;
+            $participation->RideSeats = $rideType === 'Offer' ? max(0, min(8, $seats)) : 0;
+        }
+
+        $participation->write();
+
+        return $this->successResponse([
+            'RideType'  => $participation->RideType,
+            'RideSeats' => (int) $participation->RideSeats,
+        ], 'Ride updated');
     }
 
     /**
@@ -597,7 +829,7 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Create a new appointment (moderator/admin only).
+     * Create a new appointment (requires CALENDAR_MANAGE).
      * POST /api/v1/calendar/appointment
      * Body: { title, dateStart, dateEnd, timeStart, timeEnd, allDay, location, description, status, typeId, organizationIds[] }
      */
@@ -618,15 +850,12 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Nicht gefunden', 404);
             }
             $apptOrgIDs = $appt->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_DELETE);
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
             $appt->Organisations()->removeAll();
+            $appt->InvitedMembers()->removeAll();
             $appt->Participations()->removeAll();
             $appt->delete();
             return $this->successResponse([], 'Termin gelöscht');
@@ -640,11 +869,7 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Nicht gefunden', 404);
             }
             $apptOrgIDs = $appt->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
@@ -671,6 +896,18 @@ class CalendarApiController extends ApiController
             if (!empty($newOrgIDs)) {
                 $appt->Organisations()->setByIDList($newOrgIDs);
             }
+
+            $effectiveOrgIDs = !empty($newOrgIDs) ? $newOrgIDs : $apptOrgIDs;
+            $validMemberIDs = OrganizationMembership::get()->filter([
+                'OrganizationID' => $effectiveOrgIDs,
+                'Role'           => 'member',
+            ])->column('MemberID');
+            $invitedIDs = array_values(array_intersect(
+                array_map('intval', $body['invitedMemberIds'] ?? []),
+                $validMemberIDs
+            ));
+            $appt->InvitedMembers()->setByIDList($invitedIDs);
+
             return $this->successResponse(['ID' => $appt->ID], 'Termin aktualisiert');
         }
 
@@ -684,12 +921,8 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('Mindestens eine Organisation muss gewählt werden', 400);
         }
 
-        // Verify the user is moderator/admin in at least one of the chosen organisations
-        $hasPermission = OrganizationMembership::get()->filter([
-            'MemberID'       => $member->ID,
-            'OrganizationID' => $orgIDs,
-            'Role'           => ['moderator', 'admin'],
-        ])->exists();
+        // Verify the user has CALENDAR_MANAGE in at least one of the chosen organisations
+        $hasPermission = $this->hasPermissionInAnyOrg($member, $orgIDs, OrgPermissions::CALENDAR_MANAGE);
 
         if (!$hasPermission) {
             return $this->errorResponse('Keine Berechtigung', 403);
@@ -704,6 +937,15 @@ class CalendarApiController extends ApiController
         if (!$dateStart) {
             return $this->errorResponse('Startdatum ist erforderlich', 400);
         }
+
+        $validMemberIDs = OrganizationMembership::get()->filter([
+            'OrganizationID' => $orgIDs,
+            'Role'           => 'member',
+        ])->column('MemberID');
+        $invitedIDs = array_values(array_intersect(
+            array_map('intval', $body['invitedMemberIds'] ?? []),
+            $validMemberIDs
+        ));
 
         $allDay = !empty($body['allDay']);
 
@@ -726,6 +968,7 @@ class CalendarApiController extends ApiController
 
         $appt->write();
         $appt->Organisations()->addMany($orgIDs);
+        $appt->InvitedMembers()->addMany($invitedIDs);
 
         // Auto-decline members who are absent on the appointment's start date
         $absentEntries = $this->getRelevantAbsences($orgIDs);
@@ -749,7 +992,7 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Create a meal for an appointment (moderator/admin only).
+     * Create a meal for an appointment (requires CALENDAR_MANAGE).
      * POST /api/v1/calendar/meal/:appointmentId
      * Body: { title, time } (time as HH:mm)
      */
@@ -771,11 +1014,7 @@ class CalendarApiController extends ApiController
             }
 
             $apptOrgIDs = $meal->Parent()->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
 
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
@@ -797,13 +1036,15 @@ class CalendarApiController extends ApiController
 
             $meal->Title = $title;
             $meal->Time  = $time;
+            $meal->AcceptsContributions = (bool) ($body['acceptsContributions'] ?? false);
             $meal->write();
 
             return $this->successResponse([
-                'ID'         => $meal->ID,
-                'Title'      => $meal->Title,
-                'Time'       => $meal->Time,
-                'RenderTime' => $meal->RenderTime(),
+                'ID'                   => $meal->ID,
+                'Title'                => $meal->Title,
+                'Time'                 => $meal->Time,
+                'RenderTime'           => $meal->RenderTime(),
+                'AcceptsContributions' => (bool) $meal->AcceptsContributions,
             ], 'Mahlzeit aktualisiert');
         }
 
@@ -815,11 +1056,7 @@ class CalendarApiController extends ApiController
             }
 
             $apptOrgIDs = $meal->Parent()->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
 
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
@@ -842,11 +1079,7 @@ class CalendarApiController extends ApiController
         }
 
         $apptOrgIDs = $appointment->Organisations()->column('ID');
-        $hasPermission = OrganizationMembership::get()->filter([
-            'MemberID'       => $member->ID,
-            'OrganizationID' => $apptOrgIDs,
-            'Role'           => ['moderator', 'admin'],
-        ])->exists();
+        $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
 
         if (!$hasPermission) {
             return $this->errorResponse('Keine Berechtigung', 403);
@@ -872,19 +1105,23 @@ class CalendarApiController extends ApiController
         $meal->Title    = $title;
         $meal->Time     = $time;
         $meal->ParentID = $appointment->ID;
+        $meal->AcceptsContributions = (bool) ($body['acceptsContributions'] ?? false);
         $meal->write();
 
         return $this->successResponse([
-            'ID'           => $meal->ID,
-            'Title'        => $meal->Title,
-            'Time'         => $meal->Time,
-            'RenderTime'   => $meal->RenderTime(),
-            'UserResponse' => null,
+            'ID'                   => $meal->ID,
+            'Title'                => $meal->Title,
+            'Time'                 => $meal->Time,
+            'RenderTime'           => $meal->RenderTime(),
+            'AcceptsContributions' => (bool) $meal->AcceptsContributions,
+            'UserResponse'         => null,
+            'Products'             => [],
+            'Foods'                => [],
         ], 'Mahlzeit hinzugefügt');
     }
 
     /**
-     * CRUD for appointment agenda points (moderator/admin only).
+     * CRUD for appointment agenda points (requires CALENDAR_MANAGE).
      * POST   /api/v1/calendar/agendaPoint/:appointmentId  — create
      * PUT    /api/v1/calendar/agendaPoint/:agendaPointId  — update
      * DELETE /api/v1/calendar/agendaPoint/:agendaPointId  — delete
@@ -905,11 +1142,7 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Tagesordnungspunkt nicht gefunden', 404);
             }
             $apptOrgIDs = $point->Parent()->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
@@ -950,11 +1183,7 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Tagesordnungspunkt nicht gefunden', 404);
             }
             $apptOrgIDs = $point->Parent()->Organisations()->column('ID');
-            $hasPermission = OrganizationMembership::get()->filter([
-                'MemberID'       => $member->ID,
-                'OrganizationID' => $apptOrgIDs,
-                'Role'           => ['moderator', 'admin'],
-            ])->exists();
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
@@ -972,11 +1201,7 @@ class CalendarApiController extends ApiController
             return $this->errorResponse('Termin nicht gefunden', 404);
         }
         $apptOrgIDs = $appointment->Organisations()->column('ID');
-        $hasPermission = OrganizationMembership::get()->filter([
-            'MemberID'       => $member->ID,
-            'OrganizationID' => $apptOrgIDs,
-            'Role'           => ['moderator', 'admin'],
-        ])->exists();
+        $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
         if (!$hasPermission) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
@@ -1014,6 +1239,28 @@ class CalendarApiController extends ApiController
     }
 
     /**
+     * Formatiert die Teilnahmen einer Terminfindungs-Option fürs Frontend.
+     */
+    private function formatPollOptionParticipations(SchedulingPollOption $option, Member $member): array
+    {
+        $participations = [];
+        foreach ($option->OptionParticipations() as $p) {
+            $pMember = $p->Member();
+            $participations[] = [
+                'ID'              => $p->ID,
+                'MemberID'        => $p->MemberID,
+                'MemberName'      => $pMember ? $pMember->getDisplayName() : 'Unknown',
+                'ProfileImageURL' => $pMember && $pMember->hasMethod('RenderProfileImage')
+                    ? $pMember->RenderProfileImage()
+                    : null,
+                'Type'            => $p->Type,
+                'IsCurrentUser'   => $p->MemberID == $member->ID,
+            ];
+        }
+        return $participations;
+    }
+
+    /**
      * Fetch all Absence records visible to the given organisation IDs,
      * with their Organisations relation pre-filtered for the org-scope check.
      *
@@ -1023,7 +1270,7 @@ class CalendarApiController extends ApiController
     private function getRelevantAbsences(array $organizationIDs)
     {
         $memberIDsInOrgs = OrganizationMembership::get()
-            ->filter(['OrganizationID' => $organizationIDs, 'Role' => ['member', 'moderator', 'admin']])
+            ->filter(['OrganizationID' => $organizationIDs, 'Role' => 'member'])
             ->column('MemberID');
 
         $absences = Absence::get()->filter(['MemberID' => $memberIDsInOrgs]);
@@ -1039,6 +1286,48 @@ class CalendarApiController extends ApiController
         }
 
         return $filtered;
+    }
+
+    /**
+     * List members of the given organisations, for the appointment invite picker.
+     * GET /api/v1/calendar/members?organizationIds=1,2,3
+     */
+    public function members(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $orgIDsParam = (string) ($request->getVar('organizationIds') ?? '');
+        $requestedOrgIDs = array_filter(array_map('intval', explode(',', $orgIDsParam)));
+        $orgIDs = array_values(array_intersect($requestedOrgIDs, $member->getOrganizationIDs()));
+
+        if (empty($orgIDs)) {
+            return $this->jsonResponse(['members' => []]);
+        }
+
+        $memberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $orgIDs,
+            'Role'           => 'member',
+        ]);
+
+        $seen = [];
+        $members = [];
+        foreach ($memberships as $ms) {
+            $m = $ms->Member();
+            if (!$m || !$m->exists() || isset($seen[$m->ID])) {
+                continue;
+            }
+            $seen[$m->ID] = true;
+            $members[] = [
+                'ID'     => $m->ID,
+                'Name'   => $m->getDisplayName(),
+                'Avatar' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+            ];
+        }
+
+        return $this->jsonResponse(['members' => $members]);
     }
 
     /**

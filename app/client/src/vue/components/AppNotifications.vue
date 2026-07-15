@@ -2,9 +2,9 @@
     <Transition name="notifications-panel">
         <aside v-if="open" class="AppNotifications" @click.stop>
             <div class="AppNotifications_header">
-                <button class="AppNotifications_close" @click="$emit('close')">
-                    <img :src="actionBack" alt="Schließen">
-                </button>
+                <AppIconButton variant="ghost" class="AppNotifications_close" aria-label="Schließen" @click="$emit('close')">
+                    <img :src="actionBack" alt="">
+                </AppIconButton>
                 <h2 class="AppNotifications_title">Benachrichtigungen</h2>
                 <button
                     v-if="store.unreadCount > 0"
@@ -41,12 +41,13 @@
                             <span class="AppNotifications_item_body">{{ notification.body }}</span>
                             <span class="AppNotifications_item_date">{{ formatDate(notification.created) }}</span>
                         </div>
-                        <button
+                        <AppIconButton
                             v-if="!notification.isRead"
+                            variant="ghost"
                             class="AppNotifications_item_close"
-                            @click.stop="store.markAsRead(notification.id)"
                             aria-label="Als gelesen markieren"
-                        >×</button>
+                            @click.stop="store.markAsRead(notification.id)"
+                        >×</AppIconButton>
                     </li>
 
                     <!-- Infinite scroll sentinel -->
@@ -64,6 +65,7 @@
     import { useRouter } from 'vue-router'
     import { useNotificationsStore } from '../stores/notifications'
     import actionBack from '../../../icons/actions/action_back.svg'
+    import AppIconButton from '@components/AppIconButton.vue'
 
     const props = defineProps({
         open: {

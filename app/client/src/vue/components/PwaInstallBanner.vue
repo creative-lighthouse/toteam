@@ -24,7 +24,7 @@
             <div class="pwa-banner_actions">
                 <a v-if="mode === 'open'" :href="appUrl" target="_blank" rel="noopener" class="button pwa-banner_btn">Öffnen</a>
                 <button v-else-if="mode === 'install'" class="button pwa-banner_btn" @click="install">Installieren</button>
-                <button class="pwa-banner_close" @click="dismiss" aria-label="Schließen">&#x2715;</button>
+                <AppIconButton variant="ghost" class="pwa-banner_close" aria-label="Schließen" @click="dismiss">&#x2715;</AppIconButton>
             </div>
         </div>
     </Transition>
@@ -32,6 +32,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const STORAGE_KEY = 'pwa_banner_dismissed_date'
 

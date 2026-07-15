@@ -67,13 +67,14 @@
                         >
                     </div>
 
-                    <button
+                    <AppButton
                         type="submit"
-                        class="button button--primary"
+                        variant="primary"
+                        class="button--primary"
                         :disabled="loading"
                     >
                         {{ loading ? 'Registrieren...' : 'Registrieren' }}
-                    </button>
+                    </AppButton>
 
                     <p class="login-register-link">
                         Bereits ein Konto?
@@ -91,6 +92,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiPost } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

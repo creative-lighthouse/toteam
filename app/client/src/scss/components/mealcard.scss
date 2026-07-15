@@ -1,0 +1,80 @@
+@use "../variables" as *;
+
+.meal-entries {
+    flex-basis: 100%;
+    margin-top: 8px;
+    padding: 0;
+    background: var(--ColorVeryLightGray);
+    border-radius: var(--BorderRadiusSmall);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.meal-card {
+    display: grid;
+    align-items: center;
+    justify-content: flex-start;
+    grid-template-columns: 20% 1fr 150px;
+    gap: 0px 8px;
+    font-size: 0.85rem;
+    min-height: 32px;
+    text-align: left;
+    padding: 4px 8px;
+
+    &_title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+    }
+
+    &_pref,
+    &_supplier,
+    &_max {
+        font-size: 0.75rem;
+        color: var(--ColorTextSecondary);
+        font-weight: normal;
+    }
+
+    &_trailing {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 4px;
+        height: 100%;
+    }
+
+    &_footer {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        padding-top: 6px;
+        margin-top: 2px;
+        border-top: 1px solid var(--ColorLightGray);
+    }
+
+    .meal-product-qty {
+        margin-left: 4px;
+    }
+
+    @include media(max-medium) {
+        grid-template-columns: 1fr 150px;
+
+        &_trailing {
+            grid-column: 2 / -1;
+            grid-row: 1 / 3;
+        }
+
+        &_supplier {
+            grid-column: 1 / -1;
+            grid-row: 2 / 3;
+        }
+
+        &_footer {
+            grid-row: 3;
+        }
+    }
+}

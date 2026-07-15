@@ -29,10 +29,23 @@ export class Event {
       TimeStart: data.UserParticipation.TimeStart,
       TimeEnd: data.UserParticipation.TimeEnd,
       CustomTimeframe: data.UserParticipation.CustomTimeframe ?? false,
+      RideType: data.UserParticipation.RideType ?? 'None',
+      RideSeats: data.UserParticipation.RideSeats ?? 0,
     } : null
 
     // Alle Teilnahmen
     this.Participations = data.Participations || []
+
+    // Eingeladene Personen
+    this.InvitedMemberIDs = data.InvitedMemberIDs || []
+    this.IsInvited = data.IsInvited ?? true
+    this.MembersWithoutResponse = data.MembersWithoutResponse || []
+
+    // Terminfindung (Scheduling-Poll)
+    this.IsPoll = data.IsPoll ?? false
+    this.PollID = data.PollID ?? null
+    this.OptionID = data.OptionID ?? null
+    this.PollOptions = data.PollOptions || []
 
     // Feature-Flags
     this.EnableMeals = data.EnableMeals ?? true
@@ -164,6 +177,13 @@ export class Event {
       OrganizationIDs: this.OrganizationIDs,
       UserParticipation: this.UserParticipation,
       Participations: this.Participations,
+      InvitedMemberIDs: this.InvitedMemberIDs,
+      IsInvited: this.IsInvited,
+      MembersWithoutResponse: this.MembersWithoutResponse,
+      IsPoll: this.IsPoll,
+      PollID: this.PollID,
+      OptionID: this.OptionID,
+      PollOptions: this.PollOptions,
       EnableMeals: this.EnableMeals,
       EnableAgenda: this.EnableAgenda,
       Meals: this.Meals,

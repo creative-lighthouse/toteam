@@ -1,0 +1,6 @@
+#!/bin/bash
+
+## Description: Start the Storybook dev server
+## Usage: storybook
+
+yarn storybook

@@ -29,7 +29,7 @@
       <!-- Error State -->
       <div v-if="announcementsStore.error" class="section_infobox error">
         <p>Fehler beim Laden: {{ announcementsStore.error }}</p>
-        <button @click="announcementsStore.refresh()" class="button">Erneut versuchen</button>
+        <AppButton variant="primary" @click="announcementsStore.refresh()">Erneut versuchen</AppButton>
       </div>
 
       <!-- Announcements List -->
@@ -56,6 +56,7 @@ import { useRouter } from 'vue-router'
 import { useAnnouncementsStore } from '@stores/announcements'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import AnnouncementCard from '@components/AnnouncementCard.vue'
+import AppButton from '@components/AppButton.vue'
 
 const router = useRouter()
 const announcementsStore = useAnnouncementsStore()

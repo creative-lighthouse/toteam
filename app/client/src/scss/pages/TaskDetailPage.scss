@@ -38,11 +38,10 @@
         border-radius: 4px;
     }
 
-    .task-detail_share-btn {
+    .task-detail_header-actions {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 13px;
+        gap: 8px;
         flex-shrink: 0;
     }
 
@@ -75,10 +74,10 @@
         }
     }
 
-    // People row (owner + supporters)
+    // People list (owner + supporters), stacked
     .task-detail_people {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
         gap: 10px;
     }
 
@@ -90,8 +89,46 @@
         border-radius: var(--BorderRadiusMedium);
         padding: 10px 14px;
         box-shadow: var(--BoxShadowLight);
-        flex: 1;
-        min-width: 160px;
+    }
+
+    // Editable person card (owner or supporter): the whole card is clickable —
+    // an invisible <select> is stretched over it, the visible avatar/name below are purely decorative
+    .task-detail_person--editable {
+        position: relative;
+        transition: box-shadow 0.15s ease;
+
+        &:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-detail_person-name::after {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            margin-left: 6px;
+            vertical-align: middle;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 16 16'%3E%3Cpath fill='%238B7F86' d='M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    }
+
+    // Qualified with the element type so `opacity: 0` reliably wins over the
+    // shared `.task-detail_person-select:disabled { opacity: 0.7 }` rule below
+    select.task-detail_person-select--overlay {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        opacity: 0;
+
+        &:disabled {
+            cursor: wait;
+            opacity: 0;
+        }
     }
 
     .task-detail_avatar {
@@ -118,6 +155,43 @@
         font-weight: 600;
     }
 
+    // Inline-editable status badge / owner select
+    .task-detail_status-select,
+    .task-detail_person-select {
+        cursor: pointer;
+        border: none;
+        font: inherit;
+        appearance: none;
+
+        &:disabled {
+            cursor: wait;
+            opacity: 0.7;
+        }
+    }
+
+    // Qualified with the element type so this reliably wins over the single-class
+    // `.task-card_state-badge` padding shorthand from taskcard.scss, regardless of import order
+    select.task-detail_status-select {
+        padding-right: 24px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 16 16'%3E%3Cpath fill='%233f567c' d='M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+    }
+
+    .task-detail_person-select {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ColorPrimary);
+        background-color: transparent;
+        padding: 0;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
+        }
+    }
+
     // Subtasks
     .task-detail_subtasks {
         display: flex;
@@ -133,6 +207,12 @@
             flex-direction: column;
             gap: 10px;
         }
+    }
+
+    .task-detail_subtasks-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
 
     // Back to parent

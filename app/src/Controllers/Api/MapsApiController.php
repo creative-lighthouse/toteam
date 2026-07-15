@@ -6,7 +6,7 @@ use App\Maps\Map;
 use App\Maps\MapLayer;
 use App\Maps\MapPOI;
 use App\Teams\Organization;
-use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
 use SilverStripe\Assets\Image;
 use SilverStripe\Assets\Upload;
@@ -45,10 +45,17 @@ class MapsApiController extends ApiController
         try {
             $organizationIDs = $member->getOrganizationIDs();
 
-            $canManageAny = OrganizationMembership::get()->filter([
-                'MemberID' => $member->ID,
-                'Role'     => ['moderator', 'admin'],
-            ])->count() > 0;
+            $canManageAny = false;
+            foreach ($organizationIDs as $orgID) {
+                $orgCheck = Organization::get()->byID($orgID);
+                if ($orgCheck && $orgCheck->exists() && (
+                    $member->hasOrgPermission($orgCheck, OrgPermissions::MAPS_MANAGE_MAPS)
+                    || $member->hasOrgPermission($orgCheck, OrgPermissions::MAPS_MANAGE_LAYERS)
+                )) {
+                    $canManageAny = true;
+                    break;
+                }
+            }
 
             if (empty($organizationIDs)) {
                 return $this->jsonResponse(['maps' => [], 'canManageAny' => $canManageAny]);
@@ -102,7 +109,7 @@ class MapsApiController extends ApiController
             }
 
             $org = $map->Parent();
-            $canEdit = $member->canManageOrg($org);
+            $canEdit = $member->hasOrgPermission($org, OrgPermissions::MAPS_MANAGE_MAPS);
 
             $layersData = [];
             foreach ($map->MapLayers() as $layer) {
@@ -157,12 +164,15 @@ class MapsApiController extends ApiController
         }
 
         try {
-            $managedOrgIDs = OrganizationMembership::get()->filter([
-                'MemberID' => $member->ID,
-                'Role'     => ['moderator', 'admin'],
-            ])->column('OrganizationID');
+            $managedOrgIDs = [];
+            foreach ($member->getOrganizationIDs() as $orgID) {
+                $orgCheck = Organization::get()->byID($orgID);
+                if ($orgCheck && $orgCheck->exists() && $member->hasOrgPermission($orgCheck, OrgPermissions::MAPS_MANAGE_MAPS)) {
+                    $managedOrgIDs[] = $orgID;
+                }
+            }
 
-            $orgs = Organization::get()->filter('ID', $managedOrgIDs)->sort('Title ASC');
+            $orgs = Organization::get()->filter('ID', $managedOrgIDs ?: [0])->sort('Title ASC');
             $data = [];
             foreach ($orgs as $org) {
                 $data[] = ['id' => $org->ID, 'title' => $org->Title];
@@ -193,7 +203,7 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Lageplan nicht gefunden', 404);
             }
 
-            if (!$member->canManageOrg($map->Parent())) {
+            if (!$member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_MAPS)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -229,7 +239,7 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Organisation nicht gefunden', 404);
             }
 
-            if (!$member->canManageOrg($org)) {
+            if (!$member->hasOrgPermission($org, OrgPermissions::MAPS_MANAGE_MAPS)) {
                 return $this->errorResponse('Keine Berechtigung für diese Organisation', 403);
             }
 
@@ -266,7 +276,7 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Lageplan nicht gefunden', 404);
             }
 
-            if (!$member->canManageOrg($map->Parent())) {
+            if (!$member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_MAPS)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -319,7 +329,9 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Ebene nicht gefunden', 404);
             }
 
-            if (!$member->canManageOrg($layer->Parent()->Parent())) {
+            $layerMap = $layer->Parent();
+            $layerOrg = ($layerMap && $layerMap->exists()) ? $layerMap->Parent() : null;
+            if (!$layerOrg || !$layerOrg->exists() || !$member->hasOrgPermission($layerOrg, OrgPermissions::MAPS_MANAGE_LAYERS)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -353,7 +365,9 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Ebene nicht gefunden', 404);
             }
 
-            if (!$member->canManageOrg($layer->Parent()->Parent())) {
+            $layerMap = $layer->Parent();
+            $layerOrg = ($layerMap && $layerMap->exists()) ? $layerMap->Parent() : null;
+            if (!$layerOrg || !$layerOrg->exists() || !$member->hasOrgPermission($layerOrg, OrgPermissions::MAPS_MANAGE_LAYERS)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -445,7 +459,9 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Ebene nicht gefunden', 404);
             }
 
-            if (!$member->canManageOrg($layer->Parent()->Parent())) {
+            $layerMap = $layer->Parent();
+            $layerOrg = ($layerMap && $layerMap->exists()) ? $layerMap->Parent() : null;
+            if (!$layerOrg || !$layerOrg->exists() || !$member->hasOrgPermission($layerOrg, OrgPermissions::MAPS_MANAGE_LAYERS)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -498,7 +514,7 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Lageplan nicht gefunden', 404);
             }
 
-            if (!$member->canManageOrg($map->Parent())) {
+            if (!$member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_LAYERS)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 

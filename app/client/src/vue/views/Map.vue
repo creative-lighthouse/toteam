@@ -7,12 +7,12 @@
 
       <div v-else-if="error" class="section_infobox error">
         <p>Fehler beim Laden: {{ error }}</p>
-        <button class="button" @click="loadMaps">Erneut versuchen</button>
+        <AppButton variant="primary" @click="loadMaps">Erneut versuchen</AppButton>
       </div>
 
       <template v-else>
         <div v-if="canManageAny" class="map-list_actions">
-          <router-link to="/map/new" class="button">+ Neuen Lageplan erstellen</router-link>
+          <AppButton to="/map/new" variant="primary">+ Neuen Lageplan erstellen</AppButton>
         </div>
 
         <ul v-if="maps.length" class="map-list">
@@ -46,6 +46,7 @@
 import { ref, onMounted } from 'vue'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
 
 usePageHeaderStore().setHeader('Lagepläne', 'Finde Orte und POIs auf der Karte.')
 

@@ -5,6 +5,7 @@
 /.idea
 /app/client/dist
 /node_modules
+/storybook-static
 /firebase-service-account.json
 
 public/_graphql/

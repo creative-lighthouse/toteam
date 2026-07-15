@@ -4,7 +4,7 @@
       <div class="applicants-modal_content" @click.stop>
         <div class="applicants-modal_header">
           <h2 class="hl2 applicants-modal_title">Bewerber – {{ org?.Title }}</h2>
-          <button class="button button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <div class="applicants-modal_body">
@@ -32,20 +32,22 @@
               </div>
 
               <div class="applicant-actions">
-                <button
-                  class="button button--primary applicant-btn"
+                <AppButton
+                  size="small"
+                  variant="primary"
                   :disabled="processingID === a.MembershipID"
                   @click="accept(a.MembershipID)"
                 >
                   Annehmen
-                </button>
-                <button
-                  class="button applicant-btn applicant-btn--reject"
+                </AppButton>
+                <AppButton
+                  size="small"
+                  variant="secondary"
                   :disabled="processingID === a.MembershipID"
                   @click="reject(a.MembershipID)"
                 >
                   Ablehnen
-                </button>
+                </AppButton>
               </div>
             </li>
           </ul>
@@ -58,6 +60,8 @@
 <script setup>
 import { ref } from 'vue'
 import { apiGet, apiPost } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const emit = defineEmits(['accepted'])
 

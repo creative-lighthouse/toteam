@@ -121,31 +121,39 @@ export const useEventsStore = defineStore('events', () => {
       // Update local state
       const event = getEventById(eventId)
       if (event) {
-        event.updateUserParticipation(response.data)
+        if (!type) {
+          // Zurück auf "Ohne Antwort"
+          event.UserParticipation = null
+          if (event.Participations) {
+            event.Participations = event.Participations.filter(p => !p.IsCurrentUser)
+          }
+        } else {
+          event.updateUserParticipation(response.data)
 
-        // Update in participations list
-        if (event.Participations) {
-          const existing = event.Participations.find(p => p.IsCurrentUser)
-          if (existing) {
-            existing.Type = response.data.Type
-            existing.TimeStart = response.data.TimeStart
-            existing.TimeEnd = response.data.TimeEnd
-            existing.CustomTimeframe = response.data.CustomTimeframe ?? false
-          } else {
-            // First RSVP — add a new entry so avatars + counts update immediately
-            const authStore = useAuthStore()
-            const u = authStore.user
-            event.Participations.push({
-              ID: response.data.ID,
-              MemberID: u?.ID ?? null,
-              MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
-              ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
-              Type: response.data.Type,
-              TimeStart: response.data.TimeStart,
-              TimeEnd: response.data.TimeEnd,
-              CustomTimeframe: response.data.CustomTimeframe ?? false,
-              IsCurrentUser: true,
-            })
+          // Update in participations list
+          if (event.Participations) {
+            const existing = event.Participations.find(p => p.IsCurrentUser)
+            if (existing) {
+              existing.Type = response.data.Type
+              existing.TimeStart = response.data.TimeStart
+              existing.TimeEnd = response.data.TimeEnd
+              existing.CustomTimeframe = response.data.CustomTimeframe ?? false
+            } else {
+              // First RSVP — add a new entry so avatars + counts update immediately
+              const authStore = useAuthStore()
+              const u = authStore.user
+              event.Participations.push({
+                ID: response.data.ID,
+                MemberID: u?.ID ?? null,
+                MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
+                ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
+                Type: response.data.Type,
+                TimeStart: response.data.TimeStart,
+                TimeEnd: response.data.TimeEnd,
+                CustomTimeframe: response.data.CustomTimeframe ?? false,
+                IsCurrentUser: true,
+              })
+            }
           }
         }
       }
@@ -195,6 +203,42 @@ export const useEventsStore = defineStore('events', () => {
       return response.data
     } catch (err) {
       console.error('Failed to change participation time:', err)
+      throw err
+    }
+  }
+
+  /**
+   * Ändert die Anfahrt (Mitfahrgelegenheit) der Teilnahme
+   * @param {number} eventId
+   * @param {'Need'|'Offer'|null} rideType
+   * @param {number} seats
+   */
+  async function changeParticipationRide(eventId, rideType, seats) {
+    try {
+      const response = await apiPost(`/calendar/participationRide/${eventId}`, {
+        rideType: rideType ?? null,
+        seats: seats ?? null,
+      })
+
+      const event = getEventById(eventId)
+      if (event && event.UserParticipation) {
+        event.UserParticipation.RideType = response.data.RideType
+        event.UserParticipation.RideSeats = response.data.RideSeats
+
+        if (event.Participations) {
+          const userParticipation = event.Participations.find(p => p.IsCurrentUser)
+          if (userParticipation) {
+            userParticipation.RideType = response.data.RideType
+            userParticipation.RideSeats = response.data.RideSeats
+          }
+        }
+      }
+
+      await clearCacheForEndpoint('/calendar')
+
+      return response.data
+    } catch (err) {
+      console.error('Failed to change participation ride:', err)
       throw err
     }
   }
@@ -269,9 +313,9 @@ export const useEventsStore = defineStore('events', () => {
    * @param {string} title
    * @param {string} time - Format: HH:mm
    */
-  async function updateMeal(mealId, title, time) {
+  async function updateMeal(mealId, title, time, acceptsContributions) {
     try {
-      const response = await apiPut(`/calendar/meal/${mealId}`, { title, time })
+      const response = await apiPut(`/calendar/meal/${mealId}`, { title, time, acceptsContributions })
 
       for (const event of events.value) {
         if (event.Meals) {
@@ -280,6 +324,7 @@ export const useEventsStore = defineStore('events', () => {
             meal.Title = response.data.Title
             meal.Time = response.data.Time
             meal.RenderTime = response.data.RenderTime
+            meal.AcceptsContributions = response.data.AcceptsContributions
             break
           }
         }
@@ -314,9 +359,9 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
-  async function addMeal(appointmentId, title, time) {
+  async function addMeal(appointmentId, title, time, acceptsContributions) {
     try {
-      const response = await apiPost(`/calendar/meal/${appointmentId}`, { title, time })
+      const response = await apiPost(`/calendar/meal/${appointmentId}`, { title, time, acceptsContributions })
 
       const event = getEventById(appointmentId)
       if (event) {
@@ -414,6 +459,83 @@ export const useEventsStore = defineStore('events', () => {
     return response.absences ?? []
   }
 
+  async function createSchedulingPoll(data) {
+    const response = await apiPost('/scheduling-poll/poll', data)
+    return response
+  }
+
+  async function updateSchedulingPoll(id, data) {
+    return apiPut('/scheduling-poll/poll', { id, ...data })
+  }
+
+  async function deleteSchedulingPoll(id) {
+    return apiDelete('/scheduling-poll/poll?id=' + id)
+  }
+
+  async function finalizePoll(pollId, optionId) {
+    const response = await apiPost(`/scheduling-poll/finalize/${pollId}`, { optionId })
+    await clearCacheForEndpoint('/calendar')
+    return response
+  }
+
+  async function voteOnPollOption(optionId, type) {
+    try {
+      const response = await apiPost(`/scheduling-poll/pollOptionParticipation/${optionId}`, {
+        response: type
+      })
+
+      const authStore = useAuthStore()
+      const u = authStore.user
+
+      function patchParticipations(participations) {
+        if (!participations) return participations
+        const withoutCurrentUser = participations.filter(p => !p.IsCurrentUser)
+        if (!response.data.Type) return withoutCurrentUser
+        withoutCurrentUser.push({
+          ID: response.data.ID,
+          MemberID: u?.ID ?? null,
+          MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
+          ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
+          Type: response.data.Type,
+          IsCurrentUser: true,
+        })
+        return withoutCurrentUser
+      }
+
+      events.value.forEach(event => {
+        if (event.OptionID === optionId) {
+          event.UserParticipation = response.data.Type ? response.data : null
+          event.Participations = patchParticipations(event.Participations)
+        }
+        if (event.PollOptions) {
+          const sibling = event.PollOptions.find(o => o.OptionID === optionId)
+          if (sibling) {
+            sibling.UserVote = response.data.Type
+            sibling.Participations = patchParticipations(sibling.Participations)
+          }
+        }
+      })
+
+      await clearCacheForEndpoint('/calendar')
+
+      return response.data
+    } catch (err) {
+      console.error('Failed to vote on poll option:', err)
+      throw err
+    }
+  }
+
+  async function fetchCalendarMembers(orgIds) {
+    if (!orgIds?.length) return []
+    try {
+      const response = await apiGet(`/calendar/members?organizationIds=${orgIds.join(',')}`, false)
+      return response.members ?? []
+    } catch (err) {
+      console.error('Failed to fetch calendar members:', err)
+      return []
+    }
+  }
+
   async function saveMealProductOrders(mealId, orders) {
     try {
       await apiPut(`/food/mealProductOrder/${mealId}`, { orders })
@@ -453,6 +575,7 @@ export const useEventsStore = defineStore('events', () => {
     getEventById,
     changeParticipation,
     changeParticipationTime,
+    changeParticipationRide,
     changeParticipationNotes,
     changeFoodParticipation,
     addMeal,
@@ -468,7 +591,13 @@ export const useEventsStore = defineStore('events', () => {
     createAppointment,
     updateAppointment,
     deleteAppointment,
+    createSchedulingPoll,
+    updateSchedulingPoll,
+    deleteSchedulingPoll,
+    finalizePoll,
+    voteOnPollOption,
     fetchAbsencesForDate,
+    fetchCalendarMembers,
     fetchAbsenceCountsForMonth,
     saveMealProductOrders,
   }

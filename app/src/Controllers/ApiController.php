@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Teams\Organization;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
@@ -89,6 +90,21 @@ class ApiController extends Controller
         return $this->jsonResponse($response);
     }
     
+    /**
+     * Ob der Nutzer die granulare Berechtigung $code in mindestens einer der
+     * angegebenen Organisationen hat (Termine/Terminfindungen können mehreren Orgs zugeordnet sein).
+     */
+    protected function hasPermissionInAnyOrg(Member $member, array $orgIDs, string $code): bool
+    {
+        foreach ($orgIDs as $orgID) {
+            $org = Organization::get()->byID($orgID);
+            if ($org && $org->exists() && $member->hasOrgPermission($org, $code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Get JSON body from request
      */

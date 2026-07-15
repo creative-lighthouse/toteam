@@ -1,0 +1,64 @@
+@use "../variables" as *;
+
+.task-delete-modal {
+    text-align: left;
+    max-width: 440px;
+
+    .task-delete-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .task-delete-modal_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+
+        .task-delete-modal_title {
+            margin: 0;
+            color: var(--ColorWhite);
+            font-size: 18px;
+        }
+    }
+
+    .task-delete-modal_body {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+
+        p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    }
+
+    .task-delete-modal_subtask-note {
+        color: var(--ColorGray);
+    }
+
+    .task-delete-modal_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    .task-delete-modal_actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-top: 4px;
+
+        .button {
+            width: 100%;
+            margin: 0;
+        }
+    }
+}

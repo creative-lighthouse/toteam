@@ -21,7 +21,7 @@
                 </div>
             </li>
 
-            <li>
+            <li v-if="authStore.hasTotem('announcements')">
                 <router-link to="/announcements" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Announcements' }" @click="closeAllMenus">
                     <div class="nav_icon">
                         <img
@@ -46,7 +46,7 @@
                 </router-link>
             </li>
 
-            <li>
+            <li v-if="authStore.hasTotem('calendar')">
                 <router-link to="/calendar" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Calendar' }" @click="closeAllMenus">
                     <div class="nav_icon">
                         <img
@@ -73,7 +73,7 @@
         <!-- Secondary Menu -->
         <div class="secondarynav">
             <ul class="secondary_menu">
-                <li>
+                <li v-if="authStore.hasTotem('food')">
                     <router-link to="/food" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Food' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="essenTotem" alt="Essen Icon" class="nav_image">
@@ -82,7 +82,7 @@
                     </router-link>
                 </li>
 
-                <li>
+                <li v-if="authStore.hasTotem('links')">
                     <router-link to="/links" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Links' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="downloadsTotem" alt="Links Icon" class="nav_image">
@@ -91,7 +91,7 @@
                     </router-link>
                 </li>
 
-                <li>
+                <li v-if="authStore.hasTotem('map')">
                     <router-link to="/map" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Map' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="kartenTotem" alt="Karte Icon" class="nav_image">
@@ -100,12 +100,21 @@
                     </router-link>
                 </li>
 
-                <li>
+                <li v-if="authStore.hasTotem('tasks')">
                     <router-link to="/tasks" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Tasks' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="todosTotem" alt="Aufgaben Icon" class="nav_image">
                         </div>
                         <p class="nav_title">Aufgaben <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
+                <li>
+                    <router-link to="/money" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="geldTotem" alt="Geld Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Geld <span class="nav_alpha">Alpha</span></p>
                     </router-link>
                 </li>
 
@@ -179,6 +188,7 @@ import kalenderTotemInactive from '../../../icons/totems/kalender_totem_inactive
 import essenTotem from '../../../icons/totems/essen_totem.png'
 import downloadsTotem from '../../../icons/totems/downloads_totem.png'
 import todosTotem from '../../../icons/totems/todos_totem.png'
+import geldTotem from '../../../icons/totems/geld_totem.png'
 import kartenTotem from '../../../icons/totems/karten_totem.png'
 import organizationsTotem from '../../../icons/totems/organizations_totem.png'
 import actionLogout from '../../../icons/actions/action_logout.svg'

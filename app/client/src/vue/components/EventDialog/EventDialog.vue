@@ -9,6 +9,12 @@
         <EventDialogHeader :event="event" @close="$emit('close')" />
 
         <div class="dialog-infobox">
+          <EventAdminSection
+            :event="event"
+            :can-manage-content="canManageContent"
+            @edit-appointment="$emit('edit-appointment', event)"
+          />
+
           <EventInfo :event="event" />
 
           <div v-if="event.ImageURL" class="event-image">
@@ -20,6 +26,7 @@
             @participation-changed="$emit('participation-changed', ...arguments)"
             @time-changed="$emit('time-changed', ...arguments)"
             @notes-changed="$emit('notes-changed', ...arguments)"
+            @ride-changed="$emit('ride-changed', ...arguments)"
             @show-status="({ text, type }) => showStatusMessage(text, type)"
           />
 
@@ -37,12 +44,6 @@
           />
 
           <EventParticipantsList :event="event" />
-
-          <EventAdminSection
-            :event="event"
-            :can-manage-content="canManageContent"
-            @edit-appointment="$emit('edit-appointment', event)"
-          />
         </div>
 
         <Transition name="fade">
@@ -70,7 +71,7 @@ const props = defineProps({
   event: { type: Object, required: true }
 })
 
-const emit = defineEmits(['close', 'participation-changed', 'time-changed', 'notes-changed', 'food-changed', 'edit-appointment'])
+const emit = defineEmits(['close', 'participation-changed', 'time-changed', 'notes-changed', 'ride-changed', 'food-changed', 'edit-appointment'])
 
 const orgsStore = useOrganizationsStore()
 const dialogEl = ref(null)
@@ -79,7 +80,7 @@ const statusMessage = ref(null)
 const canManageContent = computed(() => {
   const eventOrgIds = props.event.OrganizationIDs ?? []
   return orgsStore.organizations.some(o =>
-    eventOrgIds.includes(o.ID) && ['moderator', 'admin'].includes(o.MembershipStatus)
+    eventOrgIds.includes(o.ID) && o.Permissions?.includes('CALENDAR_MANAGE')
   )
 })
 

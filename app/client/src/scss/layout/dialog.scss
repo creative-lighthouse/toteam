@@ -130,16 +130,6 @@ dialog{
             margin: 0;
             color: var(--ColorWhite);
         }
-
-        .button--close {
-            background: none;
-            border: none;
-            color: var(--ColorWhite);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 4px 8px;
-            line-height: 1;
-        }
     }
 
     .applicants-modal_body {
@@ -220,23 +210,6 @@ dialog{
         display: flex;
         gap: 8px;
         flex-shrink: 0;
-
-        .applicant-btn {
-            padding: 6px 12px;
-            font-size: 13px;
-
-            &--reject {
-                background-color: transparent;
-                border: 1px solid var(--ColorGray, #ccc);
-                color: var(--ColorDark);
-
-                &:hover {
-                    background-color: #fee;
-                    border-color: #c33;
-                    color: #c33;
-                }
-            }
-        }
     }
 }
 
@@ -261,16 +234,6 @@ dialog{
             margin: 0;
             color: var(--ColorWhite);
             font-size: 18px;
-        }
-
-        .button--close {
-            background: none;
-            border: none;
-            color: var(--ColorWhite);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 4px 8px;
-            line-height: 1;
         }
     }
 
@@ -324,16 +287,6 @@ dialog{
             margin: 0;
             color: var(--ColorWhite);
             font-size: 18px;
-        }
-
-        .button--close {
-            background: none;
-            border: none;
-            color: var(--ColorWhite);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 4px 8px;
-            line-height: 1;
         }
     }
 
@@ -436,24 +389,6 @@ dialog{
             gap: 8px;
             width: 100%;
             max-width: 280px;
-
-            .zoom-btn {
-                background: var(--ColorLightGray);
-                border: none;
-                border-radius: var(--BorderRadiusSmall);
-                width: 32px;
-                height: 32px;
-                font-size: 18px;
-                line-height: 1;
-                cursor: pointer;
-                flex-shrink: 0;
-                color: var(--ColorPrimary);
-                font-weight: 700;
-
-                &:hover {
-                    background: var(--ColorPrimaryLight);
-                }
-            }
 
             .zoom-slider {
                 flex: 1;
@@ -614,12 +549,6 @@ dialog{
         }
     }
 
-    .button--small {
-        padding: 6px 12px;
-        font-size: 13px;
-        margin: 0;
-    }
-
     // Leave-org confirmation
     .leave-confirm {
         width: 100%;
@@ -665,16 +594,6 @@ dialog{
         .settings-modal_title {
             margin: 0;
             color: var(--ColorWhite);
-        }
-
-        .button--close {
-            background: none;
-            border: none;
-            color: var(--ColorWhite);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 4px 8px;
-            line-height: 1;
         }
     }
 

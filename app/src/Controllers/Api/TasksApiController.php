@@ -6,6 +6,7 @@ use App\Controllers\ApiController;
 use App\Tasks\Task;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Security\Member;
@@ -25,6 +26,7 @@ class TasksApiController extends ApiController
         'update',
         'remove',
         'updateState',
+        'orgMembers',
     ];
 
     protected function getDefaultAction()
@@ -49,6 +51,7 @@ class TasksApiController extends ApiController
     {
         $org = $task->Organization();
         $owner = $task->Owner();
+        $parent = $task->Parent();
         $supporters = [];
         foreach ($task->Supporters() as $s) {
             $supporters[] = $this->formatMember($s);
@@ -56,7 +59,7 @@ class TasksApiController extends ApiController
 
         $subTasks = [];
         if ($withSubTasks) {
-            foreach ($task->SubTasks() as $sub) {
+            foreach (Task::get()->filter('ParentID', $task->ID)->sort('Created ASC') as $sub) {
                 $subTasks[] = $this->formatTask($sub, false);
             }
         }
@@ -70,6 +73,11 @@ class TasksApiController extends ApiController
             'DeadlineNice'   => $task->Deadline ? $task->dbObject('Deadline')->Nice() : null,
             'State'          => $task->State ?: 'open',
             'ParentID'       => $task->ParentID ?: null,
+            'Parent'         => ($parent && $parent->exists()) ? [
+                'ID'    => $parent->ID,
+                'Hash'  => $parent->Hash,
+                'Title' => $parent->Title,
+            ] : null,
             'Organization'   => $org && $org->exists() ? [
                 'ID'      => $org->ID,
                 'Title'   => $org->Title,
@@ -159,11 +167,52 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Aufgabe nicht gefunden', 404);
         }
 
-        if (!$task->canView($member)) {
+        if (!$task->isViewableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
         return $this->jsonResponse(['task' => $this->formatTask($task)]);
+    }
+
+    /** GET /api/v1/tasks/orgMembers/$ID */
+    public function orgMembers(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $orgID = (int) $request->param('ID');
+        if (!$orgID || !in_array($orgID, $member->getOrganizationIDs(), true)) {
+            return $this->errorResponse('Keine Berechtigung für diese Organisation', 403);
+        }
+
+        $memberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $orgID,
+            'Role'           => 'member',
+        ]);
+
+        $members = [];
+        foreach ($memberships as $ms) {
+            $formatted = $this->formatMember($ms->Member());
+            if ($formatted) {
+                $members[] = $formatted;
+            }
+        }
+
+        return $this->jsonResponse(['members' => $members]);
+    }
+
+    /**
+     * Ob $ownerID ein aktives Mitglied der Organisation $orgID ist.
+     */
+    private function isOrgMember(int $ownerID, int $orgID): bool
+    {
+        return OrganizationMembership::get()->filter([
+            'OrganizationID' => $orgID,
+            'MemberID'       => $ownerID,
+            'Role'           => 'member',
+        ])->exists();
     }
 
     /** POST /api/v1/tasks/store */
@@ -184,16 +233,24 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Titel ist erforderlich', 400);
         }
 
-        $orgID = (int) ($body['OrganizationID'] ?? 0);
+        $parentID = (int) ($body['ParentID'] ?? 0);
+        $parentTask = $parentID ? Task::get()->byID($parentID) : null;
+        if ($parentID && (!$parentTask || !$parentTask->exists() || !$parentTask->isViewableBy($member))) {
+            return $this->errorResponse('Übergeordnete Aufgabe nicht gefunden', 404);
+        }
+
+        // Unteraufgaben übernehmen immer die Organisation der übergeordneten Aufgabe
+        $orgID = $parentTask ? (int) $parentTask->OrganizationID : (int) ($body['OrganizationID'] ?? 0);
         if ($orgID) {
-            $membership = OrganizationMembership::get()->filter([
-                'OrganizationID' => $orgID,
-                'MemberID'       => $member->ID,
-                'Role'           => ['member', 'moderator', 'admin'],
-            ])->first();
-            if (!$membership) {
+            $org = Organization::get()->byID($orgID);
+            if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::TASKS_CREATE)) {
                 return $this->errorResponse('Keine Berechtigung für diese Organisation', 403);
             }
+        }
+
+        $ownerID = (int) ($body['OwnerID'] ?? $member->ID);
+        if ($orgID && !$this->isOrgMember($ownerID, $orgID)) {
+            return $this->errorResponse('Der Verantwortliche muss Mitglied der Organisation sein', 400);
         }
 
         try {
@@ -203,8 +260,8 @@ class TasksApiController extends ApiController
             $task->Deadline       = $body['Deadline'] ?? null;
             $task->State          = $body['State'] ?? 'open';
             $task->OrganizationID = $orgID;
-            $task->OwnerID        = (int) ($body['OwnerID'] ?? $member->ID);
-            $task->ParentID       = (int) ($body['ParentID'] ?? 0);
+            $task->OwnerID        = $ownerID;
+            $task->ParentID       = $parentID;
             $task->write();
 
             if (!empty($body['SupporterIDs']) && is_array($body['SupporterIDs'])) {
@@ -238,11 +295,17 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Aufgabe nicht gefunden', 404);
         }
 
-        if (!$task->canEdit($member)) {
+        if (!$task->isEditableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
         $body = $this->getJsonBody();
+
+        $resultingOrgID = isset($body['OrganizationID']) ? (int) $body['OrganizationID'] : $task->OrganizationID;
+        $resultingOwnerID = isset($body['OwnerID']) ? (int) $body['OwnerID'] : $task->OwnerID;
+        if ($resultingOrgID && $resultingOwnerID && !$this->isOrgMember($resultingOwnerID, $resultingOrgID)) {
+            return $this->errorResponse('Der Verantwortliche muss Mitglied der Organisation sein', 400);
+        }
 
         try {
             if (isset($body['Title']))          $task->Title          = trim($body['Title']);
@@ -285,7 +348,7 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Aufgabe nicht gefunden', 404);
         }
 
-        if (!$task->canEdit($member)) {
+        if (!$task->isEditableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
@@ -320,16 +383,43 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Aufgabe nicht gefunden', 404);
         }
 
-        if (!$task->canDelete($member)) {
+        if (!$task->isDeletableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
+        // 'delete' = Unteraufgaben (rekursiv) mitlöschen, 'promote' = zu eigenständigen Aufgaben machen (Standard)
+        $subtasksMode = $request->getVar('subtasks');
+        $subtasksMode = in_array($subtasksMode, ['delete', 'promote'], true) ? $subtasksMode : 'promote';
+
         try {
+            $subtasks = Task::get()->filter('ParentID', $task->ID);
+            if ($subtasksMode === 'delete') {
+                foreach ($subtasks as $sub) {
+                    $this->deleteWithSubtasks($sub);
+                }
+            } else {
+                foreach ($subtasks as $sub) {
+                    $sub->ParentID = 0;
+                    $sub->write();
+                }
+            }
+
             $task->delete();
             return $this->successResponse([], 'Aufgabe gelöscht');
         } catch (\Exception $e) {
             error_log('TasksApiController::delete error: ' . $e->getMessage());
             return $this->errorResponse('Fehler beim Löschen der Aufgabe', 500);
         }
+    }
+
+    /**
+     * Löscht eine Aufgabe inklusive aller (verschachtelten) Unteraufgaben.
+     */
+    private function deleteWithSubtasks(Task $task): void
+    {
+        foreach (Task::get()->filter('ParentID', $task->ID) as $sub) {
+            $this->deleteWithSubtasks($sub);
+        }
+        $task->delete();
     }
 }

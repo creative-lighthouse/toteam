@@ -6,7 +6,7 @@
         <!-- Header -->
         <div class="edit-profile-modal_header">
           <h2 class="hl2 edit-profile-modal_title">Profil bearbeiten</h2>
-          <button class="button--close" aria-label="Schließen" @click="close">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
         </div>
 
         <div v-if="loading" class="edit-profile-modal_loading">Profil wird geladen …</div>
@@ -53,7 +53,7 @@
               ></canvas>
 
               <div class="zoom-controls">
-                <button type="button" class="zoom-btn" @click="adjustZoom(-0.15)" aria-label="Verkleinern">−</button>
+                <AppIconButton variant="neutral" aria-label="Verkleinern" @click="adjustZoom(-0.15)">−</AppIconButton>
                 <input
                   type="range"
                   class="zoom-slider"
@@ -63,17 +63,16 @@
                   :value="zoom"
                   @input="onZoomSlider"
                 >
-                <button type="button" class="zoom-btn" @click="adjustZoom(0.15)" aria-label="Vergrößern">+</button>
+                <AppIconButton variant="neutral" aria-label="Vergrößern" @click="adjustZoom(0.15)">+</AppIconButton>
               </div>
 
-              <button
-                type="button"
-                class="button"
+              <AppButton
+                variant="primary"
                 :disabled="savingImage"
                 @click="saveCroppedImage"
               >
                 {{ savingImage ? 'Wird gespeichert …' : 'Bild speichern' }}
-              </button>
+              </AppButton>
             </div>
           </section>
 
@@ -114,9 +113,9 @@
               <p v-if="saveError" class="status-text status-text--error">{{ saveError }}</p>
               <p v-if="saveSuccess" class="status-text status-text--success">{{ saveSuccess }}</p>
 
-              <button type="submit" class="button" :disabled="saving">
+              <AppButton type="submit" variant="primary" :disabled="saving">
                 {{ saving ? 'Wird gespeichert …' : 'Speichern' }}
-              </button>
+              </AppButton>
             </form>
           </section>
 
@@ -160,33 +159,33 @@
 
               <div class="org-item_actions">
                 <template v-if="leaveConfirmId !== org.MembershipID">
-                  <button
-                    type="button"
-                    class="button button--danger button--small"
+                  <AppButton
+                    size="small"
+                    variant="danger"
                     @click="leaveConfirmId = org.MembershipID"
                   >
                     Organisation verlassen
-                  </button>
+                  </AppButton>
                 </template>
                 <template v-else>
                   <div class="leave-confirm">
                     <p class="leave-confirm_text">Mitgliedschaft in <strong>{{ org.Title }}</strong> wirklich auflösen?</p>
                     <div class="leave-confirm_btns">
-                      <button
-                        type="button"
-                        class="button button--danger button--small"
+                      <AppButton
+                        size="small"
+                        variant="danger"
                         :disabled="leavingOrg"
                         @click="confirmLeaveOrg(org)"
                       >
                         {{ leavingOrg ? '…' : 'Ja, auflösen' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="button button--small"
+                      </AppButton>
+                      <AppButton
+                        size="small"
+                        variant="secondary"
                         @click="leaveConfirmId = null"
                       >
                         Abbrechen
-                      </button>
+                      </AppButton>
                     </div>
                   </div>
                 </template>
@@ -204,6 +203,8 @@
 import { ref, reactive, computed, nextTick } from 'vue'
 import { apiGet, apiPost, apiPostForm, apiPut } from '@utils/api'
 import { useAuthStore } from '@stores/auth'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 const emit = defineEmits(['updated'])
 

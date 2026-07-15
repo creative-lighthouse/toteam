@@ -31,13 +31,14 @@
             placeholder="Links durchsuchen…"
           />
         </div>
-        <button
+        <AppButton
           v-if="adminOrgIDs.length > 0"
-          class="button button--addlink"
+          size="small"
+          variant="primary"
           @click="openAddModal"
         >
           + Link hinzufügen
-        </button>
+        </AppButton>
       </div>
 
       <!-- Loading -->
@@ -48,7 +49,7 @@
       <!-- Error -->
       <div v-else-if="loadError" class="section_infobox error">
         <p>Fehler beim Laden: {{ loadError }}</p>
-        <button class="button" @click="fetchLinks">Erneut versuchen</button>
+        <AppButton variant="primary" @click="fetchLinks">Erneut versuchen</AppButton>
       </div>
 
       <!-- Links list -->
@@ -97,20 +98,20 @@
 
           <!-- Edit / Delete actions (only for admins/mods) -->
           <div v-if="adminOrgIDs.includes(link.OrgID)" class="link-item__actions">
-            <button
-              class="link-item__action-btn"
-              title="Bearbeiten"
+            <AppIconButton
+              variant="primary"
+              aria-label="Bearbeiten"
               @click="openEditModal(link)"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <button
-              class="link-item__action-btn link-item__action-btn--delete"
-              title="Löschen"
+            </AppIconButton>
+            <AppIconButton
+              variant="danger"
+              aria-label="Löschen"
               @click="deleteLink(link)"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            </button>
+            </AppIconButton>
           </div>
         </div>
 
@@ -129,7 +130,7 @@
           <h3 class="link-modal__title">
             {{ editingLink ? 'Link bearbeiten' : 'Link hinzufügen' }}
           </h3>
-          <button class="button--close" @click="closeModal">✕</button>
+          <AppIconButton variant="ghost" aria-label="Schließen" @click="closeModal">✕</AppIconButton>
         </div>
 
         <form class="link-modal__body" @submit.prevent="submitModal">
@@ -235,17 +236,16 @@
         </form>
 
         <div class="link-modal__footer">
-          <button type="button" class="button" style="background: transparent; color: var(--ColorPrimary); border: 1px solid var(--ColorPrimary);" @click="closeModal">
+          <AppButton variant="secondary" @click="closeModal">
             Abbrechen
-          </button>
-          <button
-            type="button"
-            class="button"
+          </AppButton>
+          <AppButton
+            variant="primary"
             :disabled="submitting"
             @click="submitModal"
           >
             {{ submitting ? 'Speichern…' : 'Speichern' }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </dialog>
@@ -257,6 +257,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete, apiPostForm, clearCacheForEndpoint } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 
 usePageHeaderStore().setHeader('Links', 'Wichtige Links und Ressourcen für dein Team.')
 

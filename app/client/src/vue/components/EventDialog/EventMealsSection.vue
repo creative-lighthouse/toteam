@@ -2,14 +2,15 @@
   <div v-if="visible" class="meals-section">
     <div class="section-feature-header">
       <h3 class="event-meals_title">Mahlzeiten</h3>
-      <button
+      <AppIconButton
         v-if="canManageContent && !showAddForm"
-        type="button"
-        class="btn-feature-add"
-        @click="startAdd"
+        variant="primary"
         :disabled="submitting"
         aria-label="Mahlzeit hinzufügen"
-      >+</button>
+        @click="startAdd"
+      >
+        <span class="icon-mask" :style="addIconStyle"></span>
+      </AppIconButton>
     </div>
 
     <!-- Inline add form -->
@@ -36,13 +37,22 @@
           aria-label="Uhrzeit der neuen Mahlzeit"
         >
       </div>
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          v-model="addAcceptsContributions"
+          :disabled="submitting"
+          aria-label="Mitglieder dürfen Gerichte vorschlagen"
+        >
+        Mitglieder dürfen Gerichte vorschlagen
+      </label>
       <div class="time-button-row">
-        <button
-          type="button"
-          class="button button--primary button--small"
-          @click="saveAdd"
+        <AppButton
+          size="small"
+          variant="primary"
           :disabled="submitting || !addTitle || !addTime"
-        >Speichern</button>
+          @click="saveAdd"
+        >Speichern</AppButton>
         <button
           type="button"
           class="btn-remove-time"
@@ -61,24 +71,22 @@
               <span v-if="meal.RenderTime"> ({{ meal.RenderTime }})</span>
             </span>
             <div v-if="canManageContent" class="meal-manage-actions">
-              <button
-                type="button"
-                class="button event-manage-button"
-                @click="startEdit(meal)"
+              <AppIconButton
+                variant="primary"
                 :disabled="submitting"
                 aria-label="Mahlzeit bearbeiten"
+                @click="startEdit(meal)"
               >
-                <img :src="EditIcon" alt="Bearbeiten">
-              </button>
-              <button
-                type="button"
-                class="button event-manage-button"
-                @click="deleteMeal(meal.ID)"
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </AppIconButton>
+              <AppIconButton
+                variant="danger"
                 :disabled="submitting"
                 aria-label="Mahlzeit löschen"
+                @click="deleteMeal(meal.ID)"
               >
-                <img :src="TrashIcon" alt="Löschen">
-              </button>
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </AppIconButton>
             </div>
           </div>
 
@@ -104,13 +112,22 @@
                 aria-label="Uhrzeit der Mahlzeit"
               >
             </div>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                v-model="editAcceptsContributions"
+                :disabled="submitting"
+                aria-label="Mitglieder dürfen Gerichte vorschlagen"
+              >
+              Mitglieder dürfen Gerichte vorschlagen
+            </label>
             <div class="time-button-row">
-              <button
-                type="button"
-                class="button button--primary button--small"
-                @click="saveEdit(meal.ID)"
+              <AppButton
+                size="small"
+                variant="primary"
                 :disabled="submitting || !editTitle || !editTime"
-              >Speichern</button>
+                @click="saveEdit(meal.ID)"
+              >Speichern</AppButton>
               <button
                 type="button"
                 class="btn-remove-time"
@@ -122,62 +139,30 @@
         </div>
 
         <form class="event-response-actions" @submit.prevent>
-          <fieldset class="fieldset-availability">
-            <button
-              type="button"
-              class="event-response-button event-response-accept"
-              :class="{
-                'selected': meal.UserResponse === 'Accept',
-                'unselected': meal.UserResponse && meal.UserResponse !== 'Accept'
-              }"
-              @click="changeFoodParticipation(meal.ID, 'Accept')"
-              :disabled="submitting"
-            >Dabei</button>
-            <button
-              type="button"
-              class="event-response-button event-response-decline"
-              :class="{
-                'selected': meal.UserResponse === 'Decline',
-                'unselected': meal.UserResponse && meal.UserResponse !== 'Decline'
-              }"
-              @click="changeFoodParticipation(meal.ID, 'Decline')"
-              :disabled="submitting"
-            >Nicht dabei</button>
-          </fieldset>
+          <AppButtonGroup
+            :options="foodParticipationOptions"
+            :model-value="meal.UserResponse"
+            size="compact"
+            :disabled="submitting"
+            @select="type => changeFoodParticipation(meal.ID, type)"
+          />
         </form>
 
-        <!-- Product orders (only when accepted and products exist) -->
-        <div
-          v-if="meal.UserResponse === 'Accept' && meal.Products?.length"
-          class="meal-product-orders"
-        >
-          <div
-            v-for="product in meal.Products"
-            :key="product.ID"
-            class="meal-product-order-row"
-          >
-            <span class="meal-product-order-label">
-              {{ product.Title }}
-              <span v-if="product.MaxQuantity > 0" class="meal-product-order-max">
-                (max. {{ product.MaxQuantity }})
-              </span>
-            </span>
-            <div class="meal-product-qty">
-              <button
-                type="button"
-                class="meal-product-qty_btn"
-                :disabled="(localOrders[meal.ID]?.[product.ID] ?? 0) <= 0"
-                @click="changeQty(meal, product, -1)"
-              >−</button>
-              <span class="meal-product-qty_val">{{ localOrders[meal.ID]?.[product.ID] ?? 0 }}</span>
-              <button
-                type="button"
-                class="meal-product-qty_btn"
-                :disabled="product.MaxQuantity > 0 && (localOrders[meal.ID]?.[product.ID] ?? 0) >= product.MaxQuantity"
-                @click="changeQty(meal, product, 1)"
-              >+</button>
-            </div>
-          </div>
+        <!-- Bestellbare + feste Gerichte (nur nach Zusage zur Mahlzeit) -->
+        <div v-if="meal.UserResponse === 'Accept' && mealEntries(meal).length" class="meal-entries">
+          <MealCard
+            v-for="entry in mealEntries(meal)"
+            :key="`${entry.Orderable ? 'p' : 'f'}-${entry.ID}`"
+            :title="entry.Title"
+            :preference="entry.Preference"
+            :supplier="entry.Supplier"
+            :max-quantity="entry.MaxQuantity"
+            :orderable="entry.Orderable"
+            :quantity="entry.Orderable ? (localOrders[meal.ID]?.[entry.ID] ?? 0) : 0"
+            :disabled="submitting"
+            @increment="changeQty(meal, entry, 1)"
+            @decrement="changeQty(meal, entry, -1)"
+          />
         </div>
       </div>
     </div>
@@ -191,13 +176,23 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useEventsStore } from '@stores/events'
-import EditIcon from '../../../../icons/actions/action_edit.svg'
-import TrashIcon from '../../../../icons/actions/action_trash_blue.svg'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
+import AppButtonGroup from '@components/AppButtonGroup.vue'
+import MealCard from './MealCard.vue'
+import AddIcon from '../../../../icons/actions/action_add.svg'
+
+const addIconStyle = { maskImage: `url(${AddIcon})`, WebkitMaskImage: `url(${AddIcon})` }
 
 const props = defineProps({
   event: { type: Object, required: true },
   canManageContent: { type: Boolean, default: false }
 })
+
+const foodParticipationOptions = [
+  { value: 'Decline', label: 'Nicht dabei', tone: 'negative' },
+  { value: 'Accept', label: 'Dabei', tone: 'positive' },
+]
 
 const emit = defineEmits(['food-changed', 'show-status'])
 
@@ -215,10 +210,12 @@ const visible = computed(() => {
 const showAddForm = ref(false)
 const addTitle = ref('')
 const addTime = ref('')
+const addAcceptsContributions = ref(false)
 
 function startAdd() {
   addTitle.value = ''
   addTime.value = ''
+  addAcceptsContributions.value = false
   showAddForm.value = true
 }
 
@@ -230,10 +227,11 @@ async function saveAdd() {
   if (!addTitle.value || !addTime.value || submitting.value) return
   submitting.value = true
   try {
-    await eventsStore.addMeal(props.event.ID, addTitle.value, addTime.value)
+    await eventsStore.addMeal(props.event.ID, addTitle.value, addTime.value, addAcceptsContributions.value)
     showAddForm.value = false
     addTitle.value = ''
     addTime.value = ''
+    addAcceptsContributions.value = false
     emit('show-status', { text: 'Mahlzeit hinzugefügt', type: 'success' })
   } catch (err) {
     console.error('Error adding meal:', err)
@@ -247,11 +245,13 @@ async function saveAdd() {
 const editingMealId = ref(null)
 const editTitle = ref('')
 const editTime = ref('')
+const editAcceptsContributions = ref(false)
 
 function startEdit(meal) {
   editingMealId.value = meal.ID
   editTitle.value = meal.Title
   editTime.value = meal.RenderTime ?? ''
+  editAcceptsContributions.value = !!meal.AcceptsContributions
 }
 
 function cancelEdit() {
@@ -264,7 +264,7 @@ async function saveEdit(mealId) {
   if (!editTitle.value || !editTime.value || submitting.value) return
   submitting.value = true
   try {
-    await eventsStore.updateMeal(mealId, editTitle.value, editTime.value)
+    await eventsStore.updateMeal(mealId, editTitle.value, editTime.value, editAcceptsContributions.value)
     editingMealId.value = null
     emit('show-status', { text: 'Mahlzeit aktualisiert', type: 'success' })
   } catch (err) {
@@ -302,6 +302,16 @@ async function changeFoodParticipation(mealId, type) {
   } finally {
     submitting.value = false
   }
+}
+
+// Bestellbare und feste Gerichte kommen vom Backend getrennt (Products/Foods),
+// stammen aber beide vom selben Food-Model — für die einheitliche MealCard-Darstellung
+// werden sie hier zu einer Liste zusammengeführt und nur per `Orderable`-Flag unterschieden.
+function mealEntries(meal) {
+  return [
+    ...(meal.Products || []).map(p => ({ ...p, Orderable: true })),
+    ...(meal.Foods || []).map(f => ({ ...f, Orderable: false })),
+  ]
 }
 
 // Product orders

@@ -26,6 +26,8 @@
 
     <p v-if="task.Description" class="task-card_description">{{ truncatedDescription }}</p>
 
+    <TaskProgressBar v-if="task.SubTasks?.length" class="task-card_progress" :subtasks="task.SubTasks" :show-legend="false" />
+
     <div class="task-card_footer">
       <div class="task-card_meta">
         <span v-if="task.DeadlineNice" class="task-card_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
@@ -62,6 +64,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import TaskProgressBar from '@components/TaskProgressBar.vue'
 
 const props = defineProps({
   task: {

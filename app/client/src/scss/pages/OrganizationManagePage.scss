@@ -1,0 +1,144 @@
+@use "../variables" as *;
+
+.section.section--OrganizationManagePage {
+    .org-manage_header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .org-manage_logo {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--BorderRadiusMedium);
+        object-fit: cover;
+    }
+
+    .org-manage_title {
+        margin: 0;
+    }
+
+    .org-manage_subtitle {
+        margin: 2px 0 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-manage_section {
+        margin-top: 32px;
+
+        .hl3 {
+            margin: 0 0 12px;
+        }
+    }
+
+    .org-manage_section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+
+        .hl3 {
+            margin: 0;
+        }
+
+        .button {
+            margin: 0;
+        }
+    }
+
+    .org-manage_roles {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .org-manage_role-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 16px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: var(--BoxShadowLight);
+        flex-wrap: wrap;
+    }
+
+    .org-manage_role-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .org-manage_role-title {
+        font-weight: 600;
+    }
+
+    .org-manage_role-meta {
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .org-manage_role-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .org-manage_members {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .org-manage_member {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: var(--BoxShadowLight);
+    }
+
+    .org-manage_member-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .org-manage_member-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .org-manage_member-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .org-manage_member-roles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .org-manage_role-chip {
+        font-size: 11px;
+        background-color: var(--ColorLightGray);
+        color: var(--ColorGray);
+        padding: 2px 8px;
+        border-radius: 50px;
+
+        &--empty {
+            font-style: italic;
+        }
+    }
+}

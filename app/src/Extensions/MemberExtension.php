@@ -16,6 +16,7 @@ use SilverStripe\Forms\DropdownField;
 use App\Controllers\AnnouncementsController;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 
 /**
  * Class \App\Extensions\MemberExtension
@@ -236,19 +237,57 @@ class MemberExtension extends Extension
         return $this->getMembershipInOrg($org)?->Role;
     }
 
-    public function isAdminOfOrg(Organization $org): bool
+    /**
+     * Ob der Nutzer in dieser Organisation eine Rolle mit der angegebenen granularen
+     * Berechtigung (App\Teams\OrgPermissions) hat. ORG_ADMIN wirkt dabei als Wildcard.
+     */
+    public function hasOrgPermission(Organization $org, string $code): bool
     {
-        return $this->getMembershipInOrg($org)?->isAdmin() ?? false;
+        $membership = $this->getMembershipInOrg($org);
+        if (!$membership || $membership->Role !== 'member') {
+            return false;
+        }
+
+        foreach ($membership->Roles() as $role) {
+            if ($role->hasPermission($code)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public function canManageOrg(Organization $org): bool
+    public function isAdminOfOrg(Organization $org): bool
     {
-        return $this->getMembershipInOrg($org)?->canManageContent() ?? false;
+        return $this->hasOrgPermission($org, OrgPermissions::ORG_ADMIN);
+    }
+
+    /**
+     * Alle Berechtigungs-Codes, die der Nutzer in dieser Organisation effektiv hat
+     * (Vereinigung aller zugewiesenen Rollen). Bei ORG_ADMIN werden alle Codes
+     * zurückgegeben, da ORG_ADMIN als Wildcard wirkt. Fürs Frontend gedacht, damit
+     * dort einfache `Permissions.includes('CODE')`-Prüfungen möglich sind.
+     * @return string[]
+     */
+    public function getOrgPermissionCodes(Organization $org): array
+    {
+        $membership = $this->getMembershipInOrg($org);
+        if (!$membership || $membership->Role !== 'member') {
+            return [];
+        }
+
+        $codes = [];
+        foreach ($membership->Roles() as $role) {
+            if ($role->hasPermission(OrgPermissions::ORG_ADMIN)) {
+                return OrgPermissions::allCodes();
+            }
+            $codes = [...$codes, ...$role->getPermissionCodes()];
+        }
+        return array_values(array_unique($codes));
     }
 
     public function isActiveMemberOfOrg(Organization $org): bool
     {
-        return $this->getMembershipInOrg($org)?->isActiveMember() ?? false;
+        return $this->getMembershipInOrg($org)?->Role === 'member';
     }
 
     public function getOrganizationIDs(): array
@@ -256,8 +295,33 @@ class MemberExtension extends Extension
         return OrganizationMembership::get()
             ->filter([
                 'MemberID' => $this->owner->ID,
-                'Role'     => ['member', 'moderator', 'admin'],
+                'Role'     => 'member',
             ])
             ->column('OrganizationID');
+    }
+
+    /**
+     * Returns which Totems (feature modules) should be visible to this member,
+     * i.e. enabled in at least one of the organizations they are an active member of.
+     * Members without any organization see every Totem, since no org has restricted anything yet.
+     *
+     * @return array<string, bool>
+     */
+    public function getEnabledTotems(): array
+    {
+        $organizationIDs = $this->owner->getOrganizationIDs();
+
+        if (empty($organizationIDs)) {
+            return array_fill_keys(array_keys(Organization::config()->get('totem_fields')), true);
+        }
+
+        $enabled = [];
+        foreach (Organization::get()->filter('ID', $organizationIDs) as $organization) {
+            foreach ($organization->getEnabledTotems() as $totemKey => $isEnabled) {
+                $enabled[$totemKey] = ($enabled[$totemKey] ?? false) || $isEnabled;
+            }
+        }
+
+        return $enabled;
     }
 }

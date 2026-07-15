@@ -1,0 +1,147 @@
+@use "../variables" as *;
+
+.role-edit-modal,
+.member-roles-modal {
+    text-align: left;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    &_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &_header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+
+        h2 {
+            margin: 0;
+            color: var(--ColorWhite);
+            font-size: 18px;
+        }
+    }
+
+    &_body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        max-width: none;
+        margin: 0;
+        align-items: stretch;
+    }
+
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ColorGray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .form-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .input {
+        padding: 9px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 15px;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: var(--ColorWhite);
+        height: auto;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+    }
+
+    &_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    &_actions {
+        display: flex;
+        gap: 10px;
+        padding-top: 4px;
+
+        .button {
+            flex: 1;
+            margin: 0;
+        }
+    }
+}
+
+.role-edit-modal_category {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--ColorLightGray);
+
+    &:first-of-type {
+        border-top: none;
+        padding-top: 0;
+    }
+}
+
+.role-edit-modal_category-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ColorGray);
+}
+
+.role-edit-modal_permissions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.member-roles-modal_list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.member-roles-modal_empty {
+    font-size: 14px;
+    color: var(--ColorGray);
+    text-align: center;
+    padding: 12px 0;
+}

@@ -23,7 +23,7 @@
       <!-- Error -->
       <div v-if="hasError && !isLoading" class="section_infobox">
         <p>Fehler beim Laden der Daten.</p>
-        <button @click="refresh()" class="button">Erneut versuchen</button>
+        <AppButton variant="primary" @click="refresh()">Erneut versuchen</AppButton>
       </div>
 
       <!-- Aktuelle Ankündigungen -->
@@ -169,6 +169,7 @@ import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/EventCard.vue'
 import AnnouncementCard from '@components/AnnouncementCard.vue'
+import AppButton from '@components/AppButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -196,7 +197,7 @@ const upcomingAccepted = computed(() =>
 
 const pendingFeedback = computed(() =>
   eventsStore.upcomingEvents
-    .filter(e => !e.getUserParticipationType())
+    .filter(e => e.IsInvited && !e.getUserParticipationType())
     .slice(0, 5)
 )
 

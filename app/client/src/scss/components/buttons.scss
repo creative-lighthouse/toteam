@@ -1,0 +1,262 @@
+@use "../variables" as *;
+
+// ── AppButton (Default / Small) ─────────────────────────────────────────────
+.app-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+    font-weight: bold;
+    text-decoration: none;
+    text-wrap: nowrap;
+    cursor: pointer;
+    appearance: none;
+    box-shadow: none;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+
+    &--default {
+        font-size: 16px;
+        padding: 9px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        border: 1px solid transparent;
+    }
+
+    &--small {
+        font-size: 13px;
+        padding: 6px 14px;
+        border-radius: var(--BorderRadiusLarge);
+        border: 1px solid transparent;
+    }
+
+    &--primary {
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+        border-color: var(--ColorPrimary);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorPrimaryDark);
+            border-color: var(--ColorPrimaryDark);
+        }
+    }
+
+    &--secondary {
+        background-color: transparent;
+        color: var(--ColorPrimary);
+        border-color: var(--ColorPrimary);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--danger {
+        background-color: var(--ColorStatusBad);
+        color: var(--ColorWhite);
+        border-color: var(--ColorStatusBad);
+
+        &:hover:not(:disabled) {
+            background-color: color-mix(in srgb, var(--ColorStatusBad) 85%, black);
+            border-color: color-mix(in srgb, var(--ColorStatusBad) 85%, black);
+        }
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    @include media(max-desktop) {
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+}
+
+// ── AppIconButton (Icon Button) ─────────────────────────────────────────────
+.app-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    appearance: none;
+    background: transparent;
+    line-height: 1;
+    padding: 0;
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
+    border-radius: 50%;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+
+    &--primary {
+        border: 1px solid var(--ColorPrimary);
+        color: var(--ColorPrimary);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--danger {
+        border: 1px solid var(--ColorStatusBad);
+        color: var(--ColorStatusBad);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorStatusBad);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--neutral {
+        background-color: var(--ColorLightGray);
+        border: 1px solid var(--ColorLightGray);
+        color: var(--ColorGray);
+
+        &:hover:not(:disabled) {
+            background-color: var(--ColorPrimary);
+            border-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--ghost {
+        border: 1px solid transparent;
+        color: inherit;
+
+        &:hover:not(:disabled) {
+            opacity: 0.7;
+        }
+    }
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    img {
+        width: 60%;
+        height: 60%;
+        object-fit: contain;
+    }
+
+    // Für Icons mit fest codierter Füllfarbe (z. B. Material-Symbols-Assets):
+    // per CSS-Maske eingebunden, damit sie die Buttonfarbe (inkl. Hover/Disabled) annehmen.
+    .icon-mask {
+        width: 60%;
+        height: 60%;
+        background-color: currentColor;
+        mask-repeat: no-repeat;
+        mask-position: center;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        -webkit-mask-size: contain;
+    }
+}
+
+// ── AppButtonGroup (Participation Button) ───────────────────────────────────
+.app-button-group {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100%;
+    border: none;
+    padding: 3px;
+    margin: 0;
+    gap: 2px;
+    background-color: var(--ColorLightGray);
+    border-radius: var(--BorderRadiusSmall);
+
+    &_pill {
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        border-radius: calc(var(--BorderRadiusSmall) - 2px);
+        transition: left 0.35s cubic-bezier(0.65, 0, 0.35, 1), background-color 0.35s ease, opacity 0.2s ease;
+        z-index: 0;
+    }
+
+    &_item {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 44px;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-weight: bold;
+        font-family: inherit;
+        border: none;
+        border-radius: calc(var(--BorderRadiusSmall) - 2px);
+        background-color: transparent;
+        color: var(--ColorGray);
+        cursor: pointer;
+        appearance: none;
+        white-space: nowrap;
+        transition: color 0.35s ease, background-color 0.2s ease;
+
+        svg { flex-shrink: 0; }
+
+        &:disabled { cursor: not-allowed; opacity: 0.5; }
+
+        &:hover:not(:disabled):not(.is-selected) {
+            background-color: var(--ColorVeryLightGray);
+            color: var(--ColorFont);
+        }
+
+        &.is-selected {
+            color: var(--ColorWhite);
+        }
+
+        &.is-hint {
+            &:hover:not(:disabled) { filter: brightness(0.97); }
+        }
+
+        &--positive.is-hint {
+            background-color: var(--ColorStatusGoodAccent);
+            color: var(--ColorStatusGood);
+        }
+
+        &--warning.is-hint {
+            background-color: var(--ColorStatusWarningAccent);
+            color: var(--ColorStatusWarning);
+        }
+
+        &--negative.is-hint {
+            background-color: var(--ColorStatusBadAccent);
+            color: var(--ColorStatusBad);
+        }
+
+        &--neutral.is-hint {
+            background-color: var(--ColorLightGray);
+            color: var(--ColorGray);
+        }
+    }
+
+    &--compact {
+        padding: 2px;
+
+        .app-button-group_pill {
+            top: 2px;
+            bottom: 2px;
+        }
+
+        .app-button-group_item {
+            padding: 6px 8px;
+            min-height: auto;
+            font-size: 13px;
+            gap: 4px;
+
+            svg { width: 12px; height: 12px; }
+        }
+    }
+}

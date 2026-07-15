@@ -1,7 +1,7 @@
 .participant {
     display: flex;
     flex-direction: column;
-    padding: 8px;
+    padding: 3px 8px 3px 3px;
     border-radius: var(--BorderRadiusSmall);
     background-color: var(--ColorLightGray);
     position: relative;
@@ -18,9 +18,14 @@
         border-left: 4px solid var(--ColorStatusBad);
     }
 
+    &.participant--status-Pending {
+        border-left: 4px solid var(--ColorGray);
+        opacity: 0.8;
+    }
+
     .participant-main {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto 1fr auto;
         justify-content: space-between;
         align-items: center;
         gap: 10px;
@@ -45,6 +50,32 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+    }
+
+    .participant-ride {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+        color: var(--ColorGray);
+
+        .participant-ride_icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background-color: currentColor;
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: contain;
+        }
+
+        .participant-ride_seats {
+            font-size: 12px;
+            font-weight: 600;
         }
     }
 

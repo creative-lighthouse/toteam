@@ -3,12 +3,15 @@
 namespace App\Notifications;
 
 use App\Maps\Map;
+use App\Food\Food;
 use App\Food\Meal;
 use App\Announcements\Announcement;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgPermissions;
 use App\Events\EventDay;
 use App\Calendar\Appointment;
+use App\Calendar\SchedulingPoll;
 use SilverStripe\Security\Member;
 use SilverStripe\Core\Environment;
 
@@ -54,6 +57,24 @@ class PushNotificationService
     private static function saveNotification($memberID, $type, $title, $body, $url = null)
     {
         SavedNotification::createNotification($memberID, $type, $title, $body, $url);
+    }
+
+    /**
+     * Send notification to a specific, pre-scoped list of member IDs (e.g. invited members
+     * of an appointment), still respecting each member's Notify{Type} preference.
+     */
+    private static function sendToMemberList(array $memberIDs, $type, $title, $body, $url = null)
+    {
+        $field = 'Notify' . ucfirst($type);
+
+        foreach ($memberIDs as $memberID) {
+            self::saveNotification($memberID, $type, $title, $body, $url);
+
+            $member = Member::get()->byID($memberID);
+            if ($member && $member->$field) {
+                self::sendToMember($member, $title, $body, $url);
+            }
+        }
     }    /**
      * Send notification for suggested event
      */
@@ -99,7 +120,7 @@ class PushNotificationService
         $body = $appointment->Title . ' am ' . $appointment->RenderDate();
         $url = $appointment->getLink();
 
-        self::sendToUsers('events', $title, $body, $url);
+        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
     }
 
     /**
@@ -111,7 +132,7 @@ class PushNotificationService
         $body = $appointment->Title . ' am ' . $appointment->RenderDate();
         $url = $appointment->getLink();
 
-        self::sendToUsers('events', $title, $body, $url);
+        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
     }
 
     /**
@@ -123,7 +144,19 @@ class PushNotificationService
         $body = $appointment->Title . ' am ' . $appointment->RenderDate() . ' wurde abgesagt.';
         $url = $appointment->getLink();
 
-        self::sendToUsers('events', $title, $body, $url);
+        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
+    }
+
+    /**
+     * Send notification for a new scheduling poll (Terminfindung)
+     */
+    public static function notifyPollCreated(SchedulingPoll $poll)
+    {
+        $title = '🗳️ Neue Terminfindung';
+        $body = $poll->Title;
+        $url = $poll->getLink();
+
+        self::sendToMemberList($poll->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
     }
 
     /**
@@ -145,7 +178,7 @@ class PushNotificationService
         foreach ($organisations as $organisation) {
             $activeMembers = OrganizationMembership::get()->filter([
                 'OrganizationID' => $organisation->ID,
-                'Role'           => ['member', 'moderator', 'admin'],
+                'Role'           => 'member',
             ]);
             foreach ($activeMembers as $membership) {
                 $memberIDs[$membership->MemberID] = $membership->MemberID;
@@ -175,14 +208,14 @@ class PushNotificationService
         $body  = $applicant->FirstName . ' ' . $applicant->Surname . ' möchte "' . $org->Title . '" beitreten.';
         $url   = '/app/organizations?applicants=' . $org->ID;
 
-        $adminMemberships = OrganizationMembership::get()->filter([
+        $candidateMemberships = OrganizationMembership::get()->filter([
             'OrganizationID' => $org->ID,
-            'Role'           => 'admin',
+            'Role'           => 'member',
         ]);
 
-        foreach ($adminMemberships as $adminMembership) {
-            $admin = $adminMembership->Member();
-            if (!$admin) {
+        foreach ($candidateMemberships as $candidateMembership) {
+            $admin = $candidateMembership->Member();
+            if (!$admin || !$admin->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
                 continue;
             }
 
@@ -213,6 +246,65 @@ class PushNotificationService
         $url = '/app/food';
 
         self::sendToUsers('meals', $title, $body, $url);
+    }
+
+    /**
+     * Benachrichtigt alle Mitglieder mit FOOD_APPROVE_SUGGESTIONS in der Organisation
+     * über einen neuen, noch offenen Essens-Vorschlag.
+     */
+    public static function notifyFoodSuggestionPending(Food $food, Meal $meal): void
+    {
+        $appointment = $meal->Parent();
+        $org = ($appointment && $appointment->exists()) ? $appointment->Organisations()->first() : null;
+        if (!$org || !$org->exists()) {
+            return;
+        }
+
+        $supplier = $food->Supplier();
+        $title    = '🍽️ Neuer Essens-Vorschlag';
+        $body     = ($supplier && $supplier->exists() ? trim($supplier->FirstName . ' ' . $supplier->Surname) . ' schlägt "' : 'Vorschlag: "')
+            . $food->Title . '" für "' . $meal->Title . '" vor.';
+        $url      = '/app/food/meal/' . $meal->ID;
+
+        $candidateMemberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'Role'           => 'member',
+        ]);
+
+        foreach ($candidateMemberships as $candidateMembership) {
+            $approver = $candidateMembership->Member();
+            if (!$approver || !$approver->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
+                continue;
+            }
+
+            self::saveNotification($approver->ID, 'meals', $title, $body, $url);
+
+            if ($approver->NotifyMeals) {
+                self::sendToMember($approver, $title, $body, $url);
+            }
+        }
+    }
+
+    /**
+     * Benachrichtigt den Vorschlagenden über die Entscheidung des Essensorganisators.
+     */
+    public static function notifyFoodSuggestionDecision(Food $food): void
+    {
+        $supplier = $food->Supplier();
+        if (!$supplier || !$supplier->exists()) {
+            return;
+        }
+
+        $accepted = $food->Status === 'Accepted';
+        $title    = $accepted ? '✅ Vorschlag bestätigt' : '❌ Vorschlag abgelehnt';
+        $body     = 'Dein Vorschlag "' . $food->Title . '" wurde ' . ($accepted ? 'bestätigt' : 'abgelehnt') . '.';
+        $url      = '/app/food';
+
+        self::saveNotification($supplier->ID, 'meals', $title, $body, $url);
+
+        if ($supplier->NotifyMeals) {
+            self::sendToMember($supplier, $title, $body, $url);
+        }
     }
 
     /**

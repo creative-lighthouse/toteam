@@ -6,7 +6,7 @@
 
       <div v-else-if="error" class="section_infobox error">
         <p>Fehler: {{ error }}</p>
-        <button class="button" @click="load">Erneut versuchen</button>
+        <AppButton variant="primary" @click="load">Erneut versuchen</AppButton>
       </div>
 
       <template v-else>
@@ -98,9 +98,42 @@
 
         </template>
 
-        <!-- ── Essen planen (Platzhalter) ───────────────────────────────── -->
+        <!-- ── Essen planen: offene Vorschläge bestätigen ──────────────────── -->
         <template v-else>
-          <div class="section_infobox"><p>Essen planen – wird hier implementiert.</p></div>
+          <section class="meal-section">
+            <h2 class="meal-section_title">Offene Vorschläge</h2>
+
+            <div v-if="pendingLoading" class="section_infobox"><p>Lade Vorschläge…</p></div>
+
+            <div v-else-if="pendingFoods.length" class="my-food-list">
+              <div v-for="f in pendingFoods" :key="f.id" class="my-food-item">
+                <span class="food-status-dot food-status-dot--new" title="Neu vorgeschlagen"></span>
+                <div class="my-food-info">
+                  <span class="my-food-title">{{ f.title }}</span>
+                  <span class="my-food-context">
+                    {{ f.mealTitle }} · {{ formatDate(f.date) }}, {{ f.mealTime }} Uhr · {{ f.organizationTitle }}
+                    <template v-if="f.supplier"> · von {{ f.supplier }}</template>
+                  </span>
+                </div>
+                <div class="pending-food-actions">
+                  <AppButton
+                    size="small"
+                    variant="primary"
+                    :disabled="decidingFoodId === f.id"
+                    @click="decidePending(f.id, 'Accepted')"
+                  >Bestätigen</AppButton>
+                  <AppButton
+                    size="small"
+                    variant="secondary"
+                    :disabled="decidingFoodId === f.id"
+                    @click="decidePending(f.id, 'Rejected')"
+                  >Ablehnen</AppButton>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="section_infobox"><p>Keine offenen Vorschläge.</p></div>
+          </section>
         </template>
 
       </template>
@@ -112,11 +145,11 @@
         <div class="food-modal" role="dialog" aria-modal="true">
           <div class="food-modal_header">
             <h3>Gericht vorschlagen</h3>
-            <button class="food-modal_close" aria-label="Schließen" @click="closeModal">
+            <AppIconButton variant="ghost" aria-label="Schließen" @click="closeModal">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
               </svg>
-            </button>
+            </AppIconButton>
           </div>
           <div class="food-modal_body">
             <div class="edit-field">
@@ -134,24 +167,24 @@
             </div>
           </div>
           <div class="food-modal_actions">
-            <button class="button button--secondary" @click="closeModal">Abbrechen</button>
-            <button class="button" :disabled="!modalForm.title.trim() || modalForm.submitting" @click="submitModal">
+            <AppButton variant="secondary" @click="closeModal">Abbrechen</AppButton>
+            <AppButton variant="primary" :disabled="!modalForm.title.trim() || modalForm.submitting" @click="submitModal">
               {{ modalForm.submitting ? 'Wird eingereicht…' : 'Vorschlagen' }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
     </Transition>
 
     <!-- ── Sticky bottom tab nav ─────────────────────────────────────── -->
-    <nav v-if="canManage" class="food-tab-nav">
+    <nav v-if="canManage || canApprove" class="food-tab-nav">
       <button class="food-tab-nav_item" :class="{ 'is-active': activeTab === 'info' }" @click="activeTab = 'info'">
         <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 1a2 2 0 110 4 2 2 0 010-4zm0 6a5 5 0 100 10A5 5 0 008 7zm0 1.5a3.5 3.5 0 110 7 3.5 3.5 0 010-7z"/>
         </svg>
         Essensinfos
       </button>
-      <button class="food-tab-nav_item" :class="{ 'is-active': activeTab === 'plan' }" @click="activeTab = 'plan'">
+      <button class="food-tab-nav_item" :class="{ 'is-active': activeTab === 'plan' }" @click="selectPlanTab">
         <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
           <path d="M1 2.75A.75.75 0 011.75 2h12.5a.75.75 0 010 1.5H1.75A.75.75 0 011 2.75zm0 5A.75.75 0 011.75 7h12.5a.75.75 0 010 1.5H1.75A.75.75 0 011 7.75zM1.75 12a.75.75 0 000 1.5h12.5a.75.75 0 000-1.5H1.75z"/>
         </svg>
@@ -163,8 +196,13 @@
 
 <script setup>
 import { ref, computed, onMounted, defineComponent, h } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import { apiGet, apiPost } from '@utils/api'
+import { apiGet, apiPost, apiPut } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
+
+const router = useRouter()
 
 usePageHeaderStore().setHeader('Essensplan', '')
 
@@ -175,6 +213,11 @@ const otherMeals    = ref([])
 const pastMeals     = ref([])
 const myFoods       = ref([])
 const canManage     = ref(false)
+const canApprove      = ref(false)
+const pendingFoods    = ref([])
+const pendingLoading  = ref(false)
+const pendingLoaded   = ref(false)
+const decidingFoodId  = ref(null)
 const loading       = ref(true)
 const error         = ref(null)
 const activeTab     = ref('info')
@@ -221,10 +264,42 @@ async function load() {
     pastMeals.value     = data.pastMeals     || []
     myFoods.value       = data.myFoods       || []
     canManage.value     = data.canManage     || false
+    canApprove.value    = data.canApprove    || false
   } catch (e) {
     error.value = e.message
   } finally {
     loading.value = false
+  }
+}
+
+function selectPlanTab() {
+  activeTab.value = 'plan'
+  if (!pendingLoaded.value) loadPending()
+}
+
+async function loadPending() {
+  pendingLoading.value = true
+  try {
+    const data = await apiGet('/food/pending', false)
+    pendingFoods.value = data.pending || []
+    pendingLoaded.value = true
+  } catch (e) {
+    console.error('Failed to load pending foods:', e)
+  } finally {
+    pendingLoading.value = false
+  }
+}
+
+async function decidePending(foodId, status) {
+  if (decidingFoodId.value) return
+  decidingFoodId.value = foodId
+  try {
+    await apiPut(`/food/foodStatus/${foodId}`, { status })
+    pendingFoods.value = pendingFoods.value.filter(f => f.id !== foodId)
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  } finally {
+    decidingFoodId.value = null
   }
 }
 
@@ -346,12 +421,20 @@ const MealCard = defineComponent({
 
       const foodsHeadingRow = h('div', { class: 'meal-detail-block_heading-row' }, [
         h('h4', `Geplante Gerichte (${m.foods.length})`),
-        m.acceptsContributions
-          ? h('button', {
-              class: 'meal-suggest-btn',
-              onClick: e => { e.stopPropagation(); emit('open-suggest-modal') },
-            }, '+ Vorschlagen')
-          : null,
+        h('div', { class: 'meal-detail-heading-actions' }, [
+          h(AppButton, {
+            size: 'small',
+            variant: 'secondary',
+            onClick: e => { e.stopPropagation(); router.push(`/food/meal/${m.id}`) },
+          }, () => 'Details'),
+          m.acceptsContributions
+            ? h(AppButton, {
+                size: 'small',
+                variant: 'secondary',
+                onClick: e => { e.stopPropagation(); emit('open-suggest-modal') },
+              }, () => '+ Vorschlagen')
+            : null,
+        ]),
       ])
 
       const foodsBlock = h('div', { class: 'meal-detail-block' }, [foodsHeadingRow, foodsList])

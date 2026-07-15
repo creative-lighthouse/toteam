@@ -31,14 +31,22 @@
                     <div class="org-detail-header_actions">
                         <span class="org-detail-count">{{ org.MemberCount }} {{ org.MemberCount === 1 ? 'Mitglied' : 'Mitglieder' }}</span>
 
-                        <button
+                        <AppButton
+                        v-if="org.CanManageMembers || org.CanManageRoles"
+                        :to="`/organizations/${org.Username}/manage`"
+                        variant="secondary"
+                        >
+                        Organisation verwalten
+                        </AppButton>
+
+                        <AppButton
                         v-if="!org.MembershipStatus && org.JoinMode !== 'invite_only'"
-                        class="button"
+                        variant="primary"
                         :disabled="joining"
                         @click="handleJoin"
                         >
                         {{ joining ? '…' : (org.JoinMode === 'open' ? 'Beitreten' : 'Bewerben') }}
-                        </button>
+                        </AppButton>
 
                         <span v-else-if="org.MembershipStatus" class="org-detail-membership-badge" :class="`org-detail-membership-badge--${org.MembershipStatus}`">
                         {{ membershipLabel }}
@@ -60,7 +68,10 @@
                         >
                             <img :src="m.Avatar" :alt="m.Name" class="org-detail-member_avatar">
                             <span class="org-detail-member_name">{{ m.Name }}</span>
-                            <span class="org-detail-member_role" :class="`org-detail-member_role--${m.Role}`">{{ roleLabel(m.Role) }}</span>
+                            <span class="org-detail-member_role">
+                                <span v-if="m.Roles?.length">{{ m.Roles.map(r => r.Title).join(', ') }}</span>
+                                <span v-else>Mitglied</span>
+                            </span>
                         </RouterLink>
                     </div>
                 </section>
@@ -75,6 +86,7 @@ import { useRoute } from 'vue-router'
 import { RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost } from '@utils/api'
+import AppButton from '@components/AppButton.vue'
 
 const route    = useRoute()
 const loading  = ref(true)
@@ -83,13 +95,9 @@ const joining  = ref(false)
 const org      = ref(null)
 
 const membershipLabel = computed(() => {
-  const labels = { member: 'Mitglied', moderator: 'Moderator', admin: 'Admin', applicant: 'Bewerbung ausstehend' }
+  const labels = { member: 'Mitglied', applicant: 'Bewerbung ausstehend' }
   return labels[org.value?.MembershipStatus] ?? ''
 })
-
-function roleLabel(role) {
-  return { member: 'Mitglied', moderator: 'Moderator', admin: 'Administrator' }[role] ?? role
-}
 
 onMounted(async () => {
   usePageHeaderStore().setHeader('Organisation', '')

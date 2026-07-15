@@ -1,6 +1,10 @@
 @use "../variables" as *;
 
 .section.section--TasksPage {
+    @include media(max-medium) {
+        padding-bottom: 80px; // room for floating action button
+    }
+
     .tasks-toolbar {
         display: flex;
         align-items: center;
@@ -17,6 +21,18 @@
         flex-wrap: wrap;
         flex: 1;
         min-width: 0;
+
+        // Stack filters full-width on mobile instead of wrapping inline
+        @include media(max-medium) {
+            flex-direction: column;
+            align-items: stretch;
+            width: 100%;
+
+            .tasks-toolbar_search,
+            .tasks-toolbar_select {
+                width: 100%;
+            }
+        }
     }
 
     .tasks-toolbar_search {
@@ -51,13 +67,6 @@
         align-items: center;
         gap: 6px;
         flex-shrink: 0;
-    }
-
-    // Hide kanban toggle on small screens
-    .tasks-toolbar_kanban-btn {
-        @include media(max-medium) {
-            display: none;
-        }
     }
 
     // Segmented view toggle
@@ -169,5 +178,25 @@
                 display: none; // Too compact for kanban
             }
         }
+    }
+}
+
+// ── Floating action button (mobile only) ──────────────────────
+.tasks-fab {
+    position: fixed;
+    right: 20px;
+    bottom: 90px;
+    z-index: 50;
+    background-color: var(--ColorPrimary);
+    color: var(--ColorWhite);
+    border: none;
+    border-radius: 50px;
+    padding: 14px 20px;
+    font-weight: 700;
+    box-shadow: var(--BoxShadowMenu);
+    cursor: pointer;
+
+    &:hover {
+        background-color: var(--ColorPrimaryDark);
     }
 }

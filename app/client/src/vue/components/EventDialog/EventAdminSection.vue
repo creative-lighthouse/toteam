@@ -1,16 +1,13 @@
 <template>
-  <div v-if="canManageContent" class="event-admin-section">
-    <hr>
-    <div class="event-manage-actions">
-      <button type="button" class="button event-manage-button" @click="$emit('edit-appointment', event)">
-        <img :src="EditIcon" alt="Bearbeiten" />
-      </button>
-    </div>
+  <div v-if="canManageContent" class="event-manage-actions">
+    <AppIconButton variant="primary" aria-label="Termin bearbeiten" @click="$emit('edit-appointment', event)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </AppIconButton>
   </div>
 </template>
 
 <script setup>
-import EditIcon from '../../../../icons/actions/action_edit.svg'
+import AppIconButton from '@components/AppIconButton.vue'
 
 defineProps({
   event: { type: Object, required: true },
