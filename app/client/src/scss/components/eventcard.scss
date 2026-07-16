@@ -100,9 +100,23 @@
         flex-shrink: 0;
 
         &--poll {
+            display: inline-flex;
+            align-items: center;
             color: var(--ColorPrimary);
-            font-weight: 600;
         }
+    }
+
+    .event-card_status-icon {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        background-color: currentColor;
+        mask-repeat: no-repeat;
+        mask-position: center;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        -webkit-mask-size: contain;
     }
 
     .event-card_time {

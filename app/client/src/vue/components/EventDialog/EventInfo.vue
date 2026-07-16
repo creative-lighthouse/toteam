@@ -34,7 +34,7 @@ function formatDate(dateStr) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return new Intl.DateTimeFormat('de-DE', {
-    weekday: 'long',
+    weekday: 'short',
     year: 'numeric',
     month: 'long',
     day: 'numeric'

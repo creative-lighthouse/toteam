@@ -27,6 +27,11 @@
             &:hover:not(.tab-btn--active) {
                 color: var(--ColorPrimary);
             }
+
+            @include media(max-medium) {
+                font-size: 12px;
+                padding: 8px 5px;
+            }
         }
     }
 
@@ -57,6 +62,7 @@
                 font-size: 0.9rem;
                 width: 100%;
                 box-sizing: border-box;
+                font-weight: 400;
 
                 &:focus {
                     outline: 2px solid var(--ColorPrimary);
@@ -74,16 +80,19 @@
                 }
             }
 
+            .form-actions {
+                @include modal-actions;
+                grid-column: span 6;
+                margin: 0 -15px -15px;
+                border-radius: 0 0 var(--BorderRadiusSmall) var(--BorderRadiusSmall);
+
+                .button {
+                    margin-top: 0;
+                }
+            }
+
             &.form--appointment, &.form--poll {
                 .field {
-                    margin: 0;
-                    grid-column: span 6;
-
-                    input, select, textarea {
-                        border: 1px solid var(--ColorLightGray);
-                        border-radius: var(--BorderRadiusSmall);
-                    }
-
                     &.field--organizations {
                         grid-column: span 6;
                     }
@@ -322,17 +331,6 @@
                         }
                     }
                 }
-
-                .form-actions {
-                    display: flex;
-                    gap: 10px;
-                    grid-column: span 6;
-
-                    .button {
-                        flex: 1;
-                        margin-top: 0;
-                    }
-                }
             }
 
             &.form--absence {
@@ -360,17 +358,6 @@
                         &.field--recurrence {
                             grid-column: span 2;
                         }
-                    }
-                }
-
-                .form-actions {
-                    display: flex;
-                    gap: 10px;
-                    grid-column: span 6;
-
-                    .button {
-                        flex: 1;
-                        margin-top: 0;
                     }
                 }
             }

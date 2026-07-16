@@ -12,12 +12,33 @@
           >
           <div class="event_title">
             <h2 class="hl2">{{ event.Title }}</h2>
-            <p class="poll-badge">🗳️ Terminfindung</p>
+            <p class="poll-badge" title="Terminfindung">
+              <span class="poll-badge_icon" :style="scheduleIconStyle" aria-hidden="true"></span>
+            </p>
           </div>
           <AppIconButton variant="ghost" aria-label="Schließen" @click="$emit('close')">✕</AppIconButton>
         </div>
 
         <div class="dialog-infobox">
+          <div v-if="canManageContent" class="event-manage-actions">
+            <AppIconButton
+              variant="primary"
+              :disabled="finalizing"
+              aria-label="Terminfindung bearbeiten"
+              @click="$emit('edit-poll', event)"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </AppIconButton>
+            <AppIconButton
+              variant="danger"
+              :disabled="finalizing"
+              aria-label="Terminfindung löschen"
+              @click="deletePoll"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </AppIconButton>
+          </div>
+
           <div v-if="event.Location || event.Description" class="event-info">
             <p v-if="event.Location">
               <strong>Ort: </strong>
@@ -83,18 +104,6 @@
             </div>
           </div>
 
-          <div v-if="canManageContent" class="event-admin-section">
-            <div class="add-actions-row">
-              <button type="button" :disabled="finalizing" @click="$emit('edit-poll', event)">
-                <svg xmlns="http://www.w3.org/2000/svg" class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                <p>Terminfindung bearbeiten</p>
-              </button>
-              <button type="button" :disabled="finalizing" @click="deletePoll">
-                <svg xmlns="http://www.w3.org/2000/svg" class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                <p>Terminfindung löschen</p>
-              </button>
-            </div>
-          </div>
         </div>
 
         <Transition name="fade">
@@ -115,6 +124,12 @@ import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
 import ParticipantCard from '@components/ParticipantCard.vue'
+import ScheduleIcon from '../../../icons/actions/action_schedule.svg'
+
+const scheduleIconStyle = {
+  maskImage: `url("${ScheduleIcon}")`,
+  WebkitMaskImage: `url("${ScheduleIcon}")`,
+}
 
 const props = defineProps({
   event: { type: Object, required: true }

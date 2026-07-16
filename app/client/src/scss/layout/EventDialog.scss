@@ -22,13 +22,34 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 0;
-        padding: 30px 20px;
-        position: relative;
+        position: sticky;
+        top: 0;
+        z-index: 2;
         flex-direction: row;
 
         .event-dialog_org-logo {
             border-radius: 5px;
             top: 50%;
+        }
+
+        .poll-badge {
+            display: inline-flex;
+            align-items: center;
+            margin: 2px 0 0;
+            color: var(--ColorWhite);
+
+            &_icon {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                background-color: currentColor;
+                mask-repeat: no-repeat;
+                mask-position: center;
+                mask-size: contain;
+                -webkit-mask-repeat: no-repeat;
+                -webkit-mask-position: center;
+                -webkit-mask-size: contain;
+            }
         }
 
     }
@@ -40,8 +61,8 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            width: 32px;
-            height: 32px;
+            display: flex;
+            gap: 6px;
         }
     }
 
@@ -130,6 +151,16 @@
                             border-color: var(--ColorPrimary);
                             background: var(--ColorPrimary);
                             color: var(--ColorWhite);
+                        }
+
+                        @include media(max-medium) {
+                            padding: 5px 10px;
+                            font-size: 12px;
+                        }
+
+                        @include media(max-380px) {
+                            padding: 3px 8px;
+                            font-size: 10px;
                         }
                     }
 
@@ -222,66 +253,6 @@
                 padding: 6px 0;
             }
 
-            // ── Shared: add / edit inline forms in feature sections ──────────────
-            .meals-section,
-            .agenda-section {
-                .fieldset-update-time {
-                    border: none;
-                    padding: 0;
-                    margin-top: 10px;
-                    display: block;
-
-                    .time-input-row {
-                        display: grid;
-                        grid-template-columns: 90px 1fr;
-                        align-items: center;
-                        gap: 6px;
-                        margin-bottom: 8px;
-
-                        label {
-                            font-size: 13px;
-                            font-weight: 500;
-                            white-space: nowrap;
-                        }
-
-                        input,
-                        textarea {
-                            border: 1px solid var(--ColorLightGray);
-                            border-radius: var(--BorderRadiusSmall);
-                            padding: 7px 8px;
-                            font-size: 14px;
-                            width: 100%;
-                            box-sizing: border-box;
-                            font-family: inherit;
-                        }
-
-                        textarea {
-                            resize: vertical;
-                            min-height: 56px;
-                        }
-                    }
-
-                    .time-button-row {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        margin-top: 4px;
-
-                        .btn-remove-time {
-                            background: none;
-                            border: none;
-                            color: var(--ColorGray);
-                            font-size: 13px;
-                            cursor: pointer;
-                            padding: 4px 0;
-
-                            &:hover { color: #c33; text-decoration: underline; }
-                            &:disabled { opacity: 0.5; cursor: default; }
-                        }
-                    }
-                }
-            }
-
             // ── Meals section ────────────────────────────────────────────────────
             .meals-section {
                 border-bottom: 1px solid var(--ColorLightGray);
@@ -292,37 +263,41 @@
             // ── Agenda section ───────────────────────────────────────────────────
             .agenda-section {
                 border-bottom: 1px solid var(--ColorLightGray);
-                padding: 15px 0;
+                padding: 15px 0 15px 0;
 
                 .agenda-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
+                    display: grid;
+                    grid-template-columns: auto 1fr;
+                    column-gap: 14px;
+                    row-gap: 12px;
+                    text-align: left;
 
                     .agenda-point {
-                        .agenda-point-row {
+                        display: contents;
+
+                        .agenda-point_time {
+                            font-size: 13px;
+                            color: var(--ColorGray);
+                            font-weight: 600;
+                            white-space: nowrap;
+                            padding-top: 2px;
+                        }
+
+                        .agenda-point_content {
                             display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            gap: 8px;
+                            flex-direction: column;
+                            gap: 2px;
+                            min-width: 0;
+                        }
 
-                            .agenda-point_time {
-                                font-size: 13px;
-                                color: var(--ColorGray);
-                                font-weight: normal;
-                            }
-
-                            .meal-manage-actions {
-                                display: flex;
-                                flex-shrink: 0;
-                                gap: 5px;
-                            }
+                        .agenda-point_title {
+                            font-weight: 600;
                         }
 
                         .agenda-point_desc {
                             font-size: 13px;
                             color: var(--ColorGray);
-                            margin: 4px 0 0 0;
+                            margin: 0;
                             line-height: 1.4;
                             text-align: left;
 
@@ -363,49 +338,17 @@
                 }
             }
 
-            .event-admin-section {
-                .add-actions-row {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin-top: 20px;
-
-                    button {
-                        background: none;
-                        border: none;
-                        color: var(--ColorPrimary);
-                        font-size: 13px;
-                        font-weight: 500;
-                        cursor: pointer;
-                        padding: 5px 10px;
-                        border-radius: var(--BorderRadiusSmall);
-                        display: flex;
-                        align-items: center;
-                        background-color: var(--ColorLightGray);
-                        gap: 6px;
-
-                        .action-icon {
-                            width: 20px;
-                            height: 20px;
-                        }
-
-                        p { margin: 0; }
-
-                        &:hover { text-decoration: underline; }
-                        &:disabled { opacity: 0.5; cursor: default; }
-                    }
-                }
-            }
-
             .status--Scheduled { color: var(--ColorStatusGood); font-weight: bold; }
             .status--Suggested { color: var(--ColorStatusWarning); font-weight: bold; }
             .status--Cancelled { color: var(--ColorStatusBad); font-weight: bold; }
 
-            .participants-section,
             .meals-section,
-            .agenda-section,
-            .event-admin-section {
-                padding: 10px 0 10px 0;
+            .agenda-section {
+                padding: 10px 0 15px 0;
+            }
+
+            .participants-section {
+                padding: 15px 0 0 0;
             }
 
             form {
@@ -429,15 +372,6 @@
                 width: 100%;
 
                 fieldset {
-
-                    .add-actions-row {
-                        margin-top: 10px;
-                        display: flex;
-                        justify-content: center;
-                        gap: 20px;
-                    }
-
-
 
                     &.fieldset-update-time {
                         border: none;
@@ -615,16 +549,10 @@
 
             }
 
-            .poll-badge {
-                margin: 2px 0 0;
-                font-size: 13px;
-                font-weight: 600;
-                color: var(--ColorPrimary);
-            }
-
             .poll-options-section {
-                padding: 15px 0;
-                border-top: 1px solid var(--ColorLightGray);
+                .event-participation_title {
+                    margin-bottom: 10px;
+                }
             }
 
             .poll-option {

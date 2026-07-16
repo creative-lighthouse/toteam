@@ -28,7 +28,9 @@
           alt=""
         >
         <h4 class="event-card_title">{{ event.Title }}</h4>
-        <p v-if="event.IsPoll" class="event-card_status event-card_status--poll">🗳️ Terminfindung</p>
+        <p v-if="event.IsPoll" class="event-card_status event-card_status--poll" title="Terminfindung">
+          <span class="event-card_status-icon" :style="scheduleIconStyle" aria-hidden="true"></span>
+        </p>
         <p v-else-if="event.Status=='Suggested'" class="event-card_status">(Vorschlag)</p>
         <p v-else-if="event.Status=='Cancelled'" class="event-card_status">(Abgesagt)</p>
       </div>
@@ -64,6 +66,12 @@
 <script setup>
 import { computed } from 'vue'
 import ParticipationIcon from './ParticipationIcon.vue'
+import ScheduleIcon from '../../../icons/actions/action_schedule.svg'
+
+const scheduleIconStyle = {
+  maskImage: `url("${ScheduleIcon}")`,
+  WebkitMaskImage: `url("${ScheduleIcon}")`,
+}
 
 const props = defineProps({
   event: {
