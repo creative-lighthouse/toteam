@@ -10,18 +10,7 @@
     }
 
     .task-delete-modal_header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        background-color: var(--ColorPrimary);
-        color: var(--ColorWhite);
-
-        .task-delete-modal_title {
-            margin: 0;
-            color: var(--ColorWhite);
-            font-size: 18px;
-        }
+        @include modal-header;
     }
 
     .task-delete-modal_body {

@@ -1,0 +1,97 @@
+@use "../variables" as *;
+
+.event-agenda-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    &_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &_header {
+        @include modal-header;
+    }
+
+    &_body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+    }
+
+    &_row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        background-color: var(--ColorVeryLightGray);
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    &_row-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        input {
+            flex: 1;
+        }
+    }
+
+    &_row-times {
+        display: flex;
+        gap: 12px;
+
+        label {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ColorGray);
+        }
+    }
+
+    &_row-error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+
+    &_empty {
+        font-size: 13px;
+        color: var(--ColorGray);
+        margin: 0;
+    }
+
+    .input {
+        padding: 9px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 15px;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: var(--ColorWhite);
+        font-family: inherit;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+    }
+
+    textarea.input {
+        resize: vertical;
+        min-height: 48px;
+    }
+
+    &_actions {
+        @include modal-actions;
+    }
+}

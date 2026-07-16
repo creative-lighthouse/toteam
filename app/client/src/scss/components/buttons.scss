@@ -259,4 +259,21 @@
             svg { width: 12px; height: 12px; }
         }
     }
+
+    @include media(max-medium) {
+        &_item {
+            padding: 5px 6px;
+            font-size: 14px;
+            font-weight: 400;
+        }
+    }
+
+    //Under 380px, the button group will be displayed as a vertical stack instead of a horizontal row
+    @include media(max-380px) {
+        &_item {
+            flex-direction: column;
+            font-size: 10px;
+            font-weight: 400;
+        }
+    }
 }

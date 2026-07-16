@@ -1,9 +1,8 @@
 @use "../variables" as *;
 
-.role-edit-modal,
-.member-roles-modal {
+.event-meal-modal {
     text-align: left;
-    max-width: 480px;
+    max-width: 420px;
     max-height: 90vh;
     overflow-y: auto;
 
@@ -80,47 +79,4 @@
     &_actions {
         @include modal-actions;
     }
-}
-
-.role-edit-modal_category {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--ColorLightGray);
-
-    &:first-of-type {
-        border-top: none;
-        padding-top: 0;
-    }
-}
-
-.role-edit-modal_category-title {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--ColorGray);
-}
-
-.role-edit-modal_permissions {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.member-roles-modal_list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 50vh;
-    overflow-y: auto;
-}
-
-.member-roles-modal_empty {
-    font-size: 14px;
-    color: var(--ColorGray);
-    text-align: center;
-    padding: 12px 0;
 }

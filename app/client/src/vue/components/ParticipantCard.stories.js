@@ -45,6 +45,26 @@ export const Declined = {
   },
 }
 
+export const DeclinedWithLeftoverData = {
+  args: {
+    participation: {
+      ID: 9,
+      MemberName: 'Ida Winter',
+      ProfileImageURL: null,
+      Type: 'Decline',
+      IsCurrentUser: false,
+      // Zeit/Anfahrt wurden gesetzt, bevor abgesagt wurde — dürfen nach dem
+      // Absagen nicht mehr angezeigt werden, obwohl die Daten im Hintergrund
+      // erhalten bleiben.
+      CustomTimeframe: true,
+      TimeStart: '18:00:00',
+      TimeEnd: '20:00:00',
+      RideType: 'Offer',
+      RideSeats: 2,
+    },
+  },
+}
+
 export const WithNote = {
   args: {
     participation: {

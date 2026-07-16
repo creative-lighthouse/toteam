@@ -1,3 +1,5 @@
+@use "../variables" as *;
+
 dialog{
     border: none;
     max-width: 400px;
@@ -32,6 +34,18 @@ dialog{
             margin: 0;
             font-size: 20px;
             padding: 0 25px;
+        }
+
+        h2 {
+            font-size: 22px;
+
+            @include media(max-medium) {
+                font-size: 18px;
+            }
+
+            @include media(max-smartphone) {
+                font-size: 14px;
+            }
         }
 
         .dialog-date{
@@ -119,17 +133,7 @@ dialog{
     }
 
     .applicants-modal_header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        background-color: var(--ColorPrimary);
-        color: var(--ColorWhite);
-
-        .applicants-modal_title {
-            margin: 0;
-            color: var(--ColorWhite);
-        }
+        @include modal-header;
     }
 
     .applicants-modal_body {
@@ -223,18 +227,7 @@ dialog{
     }
 
     .qrcode-modal_header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        background-color: var(--ColorPrimary);
-        color: var(--ColorWhite);
-
-        .qrcode-modal_title {
-            margin: 0;
-            color: var(--ColorWhite);
-            font-size: 18px;
-        }
+        @include modal-header;
     }
 
     .qrcode-modal_body {
@@ -273,21 +266,7 @@ dialog{
     }
 
     .edit-profile-modal_header {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        background-color: var(--ColorPrimary);
-        color: var(--ColorWhite);
-
-        .edit-profile-modal_title {
-            margin: 0;
-            color: var(--ColorWhite);
-            font-size: 18px;
-        }
+        @include modal-header;
     }
 
     .edit-profile-modal_loading {
@@ -584,17 +563,7 @@ dialog{
     }
 
     .settings-modal_header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        background-color: var(--ColorPrimary);
-        color: var(--ColorWhite);
-
-        .settings-modal_title {
-            margin: 0;
-            color: var(--ColorWhite);
-        }
+        @include modal-header;
     }
 
     .settings-modal_body {

@@ -1,27 +1,25 @@
 <template>
-  <div :class="['participant', `participant--status-${participation.Type}`]">
-    <div class="participant-main">
-      <div class="participant-avatar">
+  <div :class="['participant', `participant--status-${participation.Type}`, { 'participant--has-note': !!participation.Notes }]">
+    <div class="participant-avatar">
         <img
-          v-if="participation.ProfileImageURL"
-          :src="participation.ProfileImageURL"
-          :alt="participation.MemberName"
-          class="participant-avatar_img"
+            v-if="participation.ProfileImageURL"
+            :src="participation.ProfileImageURL"
+            :alt="participation.MemberName"
+            class="participant-avatar_img"
         >
         <span v-else class="participant-avatar_initials">{{ initials }}</span>
-      </div>
-      <div class="participant-info">
-        <span class="participant-name" :data-me="participation.IsCurrentUser ? 'true' : null">
-          {{ participation.MemberName }}
+    </div>
+    <span class="participant-name" :data-me="participation.IsCurrentUser ? 'true' : null">
+        {{ participation.MemberName }}
+    </span>
+    <div class="participant-timeandride">
+        <span v-if="rideIcon" class="participant-ride" :class="{ 'participant-ride--needed': participation.RideType === 'Need' }" :title="rideTitle">
+            <span class="participant-ride_icon" :style="rideIconStyle" aria-hidden="true"></span>
+            <span v-if="rideSeats !== null" class="participant-ride_seats">{{ rideSeats }}</span>
         </span>
-        <span class="participant-status" v-if="participation.CustomTimeframe && participation.TimeStart && participation.TimeEnd">
-          {{ formatTime(participation.TimeStart) }} – {{ formatTime(participation.TimeEnd) }}
+        <span class="participant-status" v-if="participation.Type !== 'Decline' && participation.CustomTimeframe && participation.TimeStart && participation.TimeEnd">
+            {{ formatTime(participation.TimeStart) }} – {{ formatTime(participation.TimeEnd) }}
         </span>
-      </div>
-      <span v-if="rideIcon" class="participant-ride" :title="rideTitle">
-        <span class="participant-ride_icon" :style="rideIconStyle" aria-hidden="true"></span>
-        <span v-if="rideSeats !== null" class="participant-ride_seats">{{ rideSeats }}</span>
-      </span>
     </div>
     <p
       v-if="participation.Notes"
@@ -66,6 +64,7 @@ function formatTime(timeStr) {
 }
 
 const rideIcon = computed(() => {
+  if (props.participation.Type === 'Decline') return null
   if (props.participation.RideType === 'Offer') return HasTransportIcon
   if (props.participation.RideType === 'Need') return NeedsTransportIcon
   return null

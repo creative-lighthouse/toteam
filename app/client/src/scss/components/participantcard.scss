@@ -1,10 +1,26 @@
 .participant {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    grid-template-rows: auto;
+    align-items: center;
+    justify-content: center;
+    /* flex-direction: column; */
     padding: 3px 8px 3px 3px;
     border-radius: var(--BorderRadiusSmall);
     background-color: var(--ColorLightGray);
     position: relative;
+
+    // Nur wenn ein Hinweis existiert (und damit eine zweite Zeile gerendert wird),
+    // sollen Avatar/Timeandride über beide Zeilen spannen — ein grid-row: 1/3
+    // reserviert sonst immer die Höhe der zweiten Zeile, auch ohne Inhalt darin.
+    &.participant--has-note {
+        grid-template-rows: auto auto;
+
+        .participant-avatar,
+        .participant-timeandride {
+            grid-row: 1 / 3;
+        }
+    }
 
     &.participant--status-Accept {
         border-left: 4px solid var(--ColorStatusGood);
@@ -23,34 +39,37 @@
         opacity: 0.8;
     }
 
-    .participant-main {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        justify-content: space-between;
+    .participant-avatar {
+        display: flex;
+        grid-column: 1;
+        grid-row: 1;
+        height: 100%;
         align-items: center;
-        gap: 10px;
+        justify-content: center;
 
-        .participant-avatar {
-            display: block;
+        .participant-avatar_img {
             width: 28px;
             height: 28px;
-
-            .participant-avatar_img {
-                height: 100%;
-                width: 100%;
-                border-radius: 50%;
-                object-fit: cover;
-                margin-right: 10px;
-                left: 2px;
-                aspect-ratio: 1;
-            }
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+            left: 2px;
+            aspect-ratio: 1;
         }
+    }
 
-        .participant-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .participant-name {
+        grid-column: 2 / 3;
+        grid-row: 1;
+        text-align: left;
+    }
+
+    .participant-timeandride {
+        grid-column: 3 / 4;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .participant-ride {
@@ -59,6 +78,10 @@
         gap: 2px;
         flex-shrink: 0;
         color: var(--ColorGray);
+
+        &--needed {
+            color: var(--ColorStatusBad);
+        }
 
         .participant-ride_icon {
             display: inline-block;
@@ -88,8 +111,10 @@
         -webkit-line-clamp: 2;
         line-clamp: 2;
         -webkit-box-orient: vertical;
-        cursor: pointer;
         line-height: 1.4;
+        text-align: left;
+        grid-column: 2 / 3;
+        grid-row: 2 / 3;
 
         &.participant-note--expanded {
             display: block;

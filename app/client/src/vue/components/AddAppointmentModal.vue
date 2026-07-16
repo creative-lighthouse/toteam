@@ -16,19 +16,19 @@
             class="tab-btn"
             :class="{ 'tab-btn--active': activeTab === 'absence' }"
             @click="activeTab = 'absence'"
-          >Abwesenheit eintragen</button>
+          >+ Abwesenheit</button>
           <button
             type="button"
             class="tab-btn"
             :class="{ 'tab-btn--active': activeTab === 'appointment' }"
             @click="activeTab = 'appointment'"
-          >Termin hinzufügen</button>
+          >+ Termin</button>
           <button
             type="button"
             class="tab-btn"
             :class="{ 'tab-btn--active': activeTab === 'poll' }"
             @click="activeTab = 'poll'"
-          >Terminfindung</button>
+          >+ Terminfindung</button>
         </div>
 
         <!-- Tab: Abwesenheit -->

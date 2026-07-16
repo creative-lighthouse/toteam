@@ -35,6 +35,12 @@
         }
     }
 
+    @else if $size ==max-380px {
+        @media (max-width: 380px) {
+            @content;
+        }
+    }
+
     @else if $size ==max-desktop {
         @media (max-width: 1000px) {
             @content;
@@ -49,6 +55,54 @@
 
     @else {
         @error "Unknown media size: #{$size}. Please use one of the defined breakpoints: smartphone, medium, desktop, large, maxwidth, max-medium, max-smartphone, max-desktop, max-large, max-maxwidth.";
+    }
+}
+
+// Gemeinsames Modal-Grundgerüst: feststehender Titel-Header oben (Schließen-Button
+// bleibt beim Scrollen sichtbar) und feststehende, rechtsbündige Aktionsleiste unten
+// (nur der Inhaltsbereich dazwischen scrollt). Wird von allen Formular-Modals per
+// `@include` eingebunden, damit Header/Actions überall gleich aussehen und sich
+// zentral anpassen lassen.
+@mixin modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background-color: var(--ColorPrimary);
+    color: var(--ColorWhite);
+
+    h2 {
+        margin: 0;
+        color: var(--ColorWhite);
+        font-size: 22px;
+
+        @include media(max-medium) {
+            font-size: 18px;
+        }
+
+        @include media(max-smartphone) {
+            font-size: 14px;
+        }
+    }
+}
+
+@mixin modal-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 10px 10px;
+    background-color: var(--ColorLightGray);
+    border-top: 1px solid var(--ColorLightGray);
+
+    .button {
+        flex: none;
+        margin: 0;
     }
 }
 
