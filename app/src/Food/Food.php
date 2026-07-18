@@ -33,8 +33,8 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @method \SilverStripe\ORM\DataList|\App\Food\MealProductOrder[] Orders()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Meal[] Meals()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

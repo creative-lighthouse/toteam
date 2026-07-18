@@ -22,10 +22,11 @@
         "silverstripe/linkfield": "^5.0",
         "ryanpotter/silverstripe-cms-theme": "dev-master",
         "colymba/gridfield-bulk-editing-tools": "^5.0",
-        "stevenpaw/stevens-silverstripe-icons": "dev-main"
+        "stevenpaw/stevens-silverstripe-icons": "dev-main",
+        "symfony/var-exporter": "^7.4"
     },
     "require-dev": {
-        "silverleague/ideannotator": "4.0",
+        "silverleague/ideannotator": "4.0.1",
         "wernerkrauss/silverstripe-rector": "^1",
         "cambis/silverstan": "^2",
         "squizlabs/php_codesniffer": "^3",

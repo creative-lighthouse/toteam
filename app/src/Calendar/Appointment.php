@@ -50,8 +50,8 @@ use SilverStripe\Forms\TimeField;
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] InvitedMembers()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

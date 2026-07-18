@@ -25,8 +25,8 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Security\Member User()
  * @method \SilverStripe\Assets\File Receipt()
  * @method \App\Money\MoneyBudget Budget()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
