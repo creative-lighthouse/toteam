@@ -157,6 +157,11 @@
                         <img :src="actionLogout" alt="Abmelden Icon" class="logout_image">
                     </div>
                 </button>
+                <button @click="openFeedback" class="nav_feedback" title="Feedback geben">
+                    <div class="nav_icon nav_icon--settings">
+                        <img :src="actionFeedback" alt="Feedback Icon" class="settings_image">
+                    </div>
+                </button>
                 <button @click="openSettings" class="nav_settings" title="Einstellungen">
                     <div class="nav_icon nav_icon--settings">
                         <img :src="actionSettings" alt="Einstellungen Icon" class="settings_image">
@@ -168,6 +173,7 @@
     </header>
 
     <SettingsModal ref="settingsModal" />
+    <FeedbackModal ref="feedbackModal" />
 </template>
 
 <script setup>
@@ -177,6 +183,7 @@ import { useAuthStore } from '@stores/auth'
 import { useAnnouncementsStore } from '@stores/announcements'
 import { useUiStore } from '@stores/ui'
 import SettingsModal from '@components/SettingsModal.vue'
+import FeedbackModal from '@components/FeedbackModal.vue'
 
 // Import totem icons
 import dashboardTotem from '../../../icons/totems/dashboard_totem.png'
@@ -193,6 +200,7 @@ import kartenTotem from '../../../icons/totems/karten_totem.png'
 import organizationsTotem from '../../../icons/totems/organizations_totem.png'
 import actionLogout from '../../../icons/actions/action_logout.svg'
 import actionSettings from '../../../icons/actions/action_settings.svg'
+import actionFeedback from '../../../icons/feedback_admin.svg'
 const router = useRouter()
 const authStore = useAuthStore()
 const announcementsStore = useAnnouncementsStore()
@@ -200,6 +208,7 @@ const uiStore = useUiStore()
 const isSecondaryMenuOpen = ref(false)
 const isProfileMenuOpen = ref(false)
 const settingsModal = ref(null)
+const feedbackModal = ref(null)
 
 function toggleSecondaryMenu() {
     // Toggle body class like the original JavaScript does
@@ -233,6 +242,11 @@ function closeAllMenus() {
 function openSettings() {
     closeAllMenus()
     settingsModal.value?.open()
+}
+
+function openFeedback() {
+    closeAllMenus()
+    feedbackModal.value?.open()
 }
 
 async function handleLogout() {
