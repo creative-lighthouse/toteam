@@ -22,8 +22,8 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $MemberID
  * @method \App\Calendar\Appointment Parent()
  * @method \SilverStripe\Security\Member Member()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

@@ -26,8 +26,8 @@ use SilverStripe\Security\PermissionProvider;
  * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\ORM\DataList|\App\Money\MoneyHistory[] MoneyHistory()
  * @method \SilverStripe\ORM\DataList|\App\Money\MoneyBudget[] MoneyBudget()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

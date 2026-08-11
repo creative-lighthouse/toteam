@@ -26,3 +26,4 @@ SilverStripe\Control\Director:
     'api/v1/tasks//$Action/$ID': 'App\Controllers\Api\TasksApiController'
     'api/v1/money//$Action/$ID': 'App\Controllers\Api\MoneyApiController'
     'api/v1/orgroles//$Action/$ID': 'App\Controllers\Api\OrgRolesApiController'
+    'api/v1/feedback//$Action/$ID': 'App\Controllers\Api\FeedbackApiController'

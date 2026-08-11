@@ -688,3 +688,115 @@ dialog{
         }
     }
 }
+
+// Feedback modal
+.feedback-modal {
+    text-align: left;
+    max-width: 420px;
+
+    .feedback-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .feedback-modal_header {
+        @include modal-header;
+    }
+
+    .feedback-modal_body {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 16px 20px 20px;
+    }
+
+    .feedback-type_group {
+        display: flex;
+        gap: 8px;
+    }
+
+    .feedback-type_option {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 8px;
+        border: 2px solid var(--ColorGray, #aaa);
+        border-radius: var(--BorderRadiusMedium);
+        background-color: var(--ColorWhite);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ColorDark);
+
+        .feedback-type_icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        &.feedback-type_option--active {
+            border-color: var(--ColorPrimary);
+            background-color: var(--ColorPrimaryLight);
+        }
+    }
+
+    .feedback-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .feedback-field_label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ColorGray);
+        }
+
+        .feedback-field_input,
+        .feedback-field_textarea {
+            font-size: 15px;
+            font-family: inherit;
+            padding: 10px 12px;
+            border: 1px solid var(--ColorGray, #aaa);
+            border-radius: var(--BorderRadiusSmall, 6px);
+            background-color: var(--ColorWhite);
+            color: var(--ColorDark);
+            resize: vertical;
+
+            &:focus {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: 1px;
+            }
+        }
+    }
+
+    .feedback-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .feedback-error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+
+    .feedback-success {
+        text-align: center;
+        padding: 20px 0;
+
+        .feedback-success_title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 6px;
+        }
+
+        .feedback-success_text {
+            margin: 0;
+            color: var(--ColorGray);
+        }
+    }
+}

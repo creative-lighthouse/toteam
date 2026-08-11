@@ -16,8 +16,8 @@ use SilverStripe\Security\Permission;
  * @method \App\Food\Food Food()
  * @method \App\Food\Meal Meal()
  * @method \SilverStripe\Security\Member Member()
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\Assets\AssetControlExtension
+ * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension

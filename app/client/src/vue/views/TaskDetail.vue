@@ -48,8 +48,14 @@
               {{ copied ? 'Kopiert!' : 'Teilen' }}
             </AppButton>
 
+            <!-- Edit button -->
+            <AppButton v-if="task.CanEdit" variant="secondary" title="Aufgabe bearbeiten" @click="editModal?.open()">
+              <img :src="actionEdit" alt="" width="16" height="16" />
+              Bearbeiten
+            </AppButton>
+
             <!-- Delete button -->
-            <AppButton variant="danger" title="Aufgabe löschen" @click="deleteModal?.open()">
+            <AppButton v-if="task.CanDelete" variant="danger" title="Aufgabe löschen" @click="deleteModal?.open()">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               Löschen
             </AppButton>
@@ -153,6 +159,12 @@
       :task="task"
       @deleted="onTaskDeleted"
     />
+    <TaskEditModal
+      v-if="task"
+      ref="editModal"
+      :task="task"
+      @saved="onTaskSaved"
+    />
   </div>
 </template>
 
@@ -166,7 +178,9 @@ import TaskSupportersModal from '@components/TaskSupportersModal.vue'
 import TaskCreateModal from '@components/TaskCreateModal.vue'
 import TaskProgressBar from '@components/TaskProgressBar.vue'
 import TaskDeleteModal from '@components/TaskDeleteModal.vue'
+import TaskEditModal from '@components/TaskEditModal.vue'
 import AppButton from '@components/AppButton.vue'
+import actionEdit from '../../../icons/actions/action_edit.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -186,6 +200,7 @@ const loadingOrgMembers = ref(false)
 const supportersModal = ref(null)
 const subtaskModal = ref(null)
 const deleteModal = ref(null)
+const editModal = ref(null)
 
 const isOverdue = computed(() => {
   if (!task.value?.Deadline) return false
@@ -273,6 +288,10 @@ async function changeSupporter(oldSupporterId, newValue) {
 }
 
 function onSupportersSaved(updatedTask) {
+  task.value = updatedTask
+}
+
+function onTaskSaved(updatedTask) {
   task.value = updatedTask
 }
 
