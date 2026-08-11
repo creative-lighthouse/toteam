@@ -47,7 +47,7 @@ class TasksApiController extends ApiController
         ];
     }
 
-    private function formatTask(Task $task, bool $withSubTasks = true): array
+    private function formatTask(Task $task, Member $member, bool $withSubTasks = true): array
     {
         $org = $task->Organization();
         $owner = $task->Owner();
@@ -60,7 +60,7 @@ class TasksApiController extends ApiController
         $subTasks = [];
         if ($withSubTasks) {
             foreach (Task::get()->filter('ParentID', $task->ID)->sort('Created ASC') as $sub) {
-                $subTasks[] = $this->formatTask($sub, false);
+                $subTasks[] = $this->formatTask($sub, $member, false);
             }
         }
 
@@ -86,6 +86,8 @@ class TasksApiController extends ApiController
             'Owner'          => $this->formatMember($owner->exists() ? $owner : null),
             'Supporters'     => $supporters,
             'SubTasks'       => $subTasks,
+            'CanEdit'        => $task->isEditableBy($member),
+            'CanDelete'      => $task->isDeletableBy($member),
         ];
     }
 
@@ -126,7 +128,7 @@ class TasksApiController extends ApiController
 
             $data = [];
             foreach ($tasks as $task) {
-                $data[] = $this->formatTask($task);
+                $data[] = $this->formatTask($task, $member);
             }
 
             $orgData = [];
@@ -171,7 +173,7 @@ class TasksApiController extends ApiController
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
-        return $this->jsonResponse(['task' => $this->formatTask($task)]);
+        return $this->jsonResponse(['task' => $this->formatTask($task, $member)]);
     }
 
     /** GET /api/v1/tasks/orgMembers/$ID */
@@ -270,7 +272,7 @@ class TasksApiController extends ApiController
                 }
             }
 
-            return $this->successResponse(['task' => $this->formatTask($task)], 'Aufgabe erstellt');
+            return $this->successResponse(['task' => $this->formatTask($task, $member)], 'Aufgabe erstellt');
         } catch (\Exception $e) {
             error_log('TasksApiController::create error: ' . $e->getMessage());
             return $this->errorResponse('Fehler beim Erstellen der Aufgabe', 500);
@@ -323,7 +325,7 @@ class TasksApiController extends ApiController
                 }
             }
 
-            return $this->successResponse(['task' => $this->formatTask($task)], 'Aufgabe aktualisiert');
+            return $this->successResponse(['task' => $this->formatTask($task, $member)], 'Aufgabe aktualisiert');
         } catch (\Exception $e) {
             error_log('TasksApiController::update error: ' . $e->getMessage());
             return $this->errorResponse('Fehler beim Aktualisieren der Aufgabe', 500);
@@ -362,7 +364,7 @@ class TasksApiController extends ApiController
         $task->State = $state;
         $task->write();
 
-        return $this->successResponse(['task' => $this->formatTask($task)], 'Status aktualisiert');
+        return $this->successResponse(['task' => $this->formatTask($task, $member)], 'Status aktualisiert');
     }
 
     /** DELETE /api/v1/tasks/remove/$ID */
