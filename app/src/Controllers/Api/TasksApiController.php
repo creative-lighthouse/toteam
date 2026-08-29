@@ -27,6 +27,7 @@ class TasksApiController extends ApiController
         'remove',
         'updateState',
         'orgMembers',
+        'assignableMembers',
     ];
 
     protected function getDefaultAction()
@@ -47,7 +48,12 @@ class TasksApiController extends ApiController
         ];
     }
 
-    private function formatTask(Task $task, Member $member, bool $withSubTasks = true): array
+    /**
+     * @param array<int, Task[]>|null $subtasksByParent Preloaded subtasks grouped by
+     *     ParentID (see {@see loadSubtasksByParent}). When null, subtasks are queried
+     *     individually for this task — only acceptable when formatting a single task.
+     */
+    private function formatTask(Task $task, Member $member, bool $withSubTasks = true, ?array $subtasksByParent = null): array
     {
         $org = $task->Organization();
         $owner = $task->Owner();
@@ -59,7 +65,11 @@ class TasksApiController extends ApiController
 
         $subTasks = [];
         if ($withSubTasks) {
-            foreach (Task::get()->filter('ParentID', $task->ID)->sort('Created ASC') as $sub) {
+            $subtaskRecords = $subtasksByParent !== null
+                ? ($subtasksByParent[$task->ID] ?? [])
+                : Task::get()->filter('ParentID', $task->ID)->sort('Created ASC');
+
+            foreach ($subtaskRecords as $sub) {
                 $subTasks[] = $this->formatTask($sub, $member, false);
             }
         }
@@ -89,6 +99,27 @@ class TasksApiController extends ApiController
             'CanEdit'        => $task->isEditableBy($member),
             'CanDelete'      => $task->isDeletableBy($member),
         ];
+    }
+
+    /**
+     * Loads all subtasks for the given parent task IDs in a single query and
+     * groups them by ParentID, avoiding one query per parent task.
+     *
+     * @param int[] $parentIDs
+     * @return array<int, Task[]>
+     */
+    private function loadSubtasksByParent(array $parentIDs): array
+    {
+        $byParent = [];
+        if (!$parentIDs) {
+            return $byParent;
+        }
+
+        foreach (Task::get()->filter('ParentID', $parentIDs)->sort('Created ASC') as $sub) {
+            $byParent[$sub->ParentID][] = $sub;
+        }
+
+        return $byParent;
     }
 
     /** GET /api/v1/tasks */
@@ -126,9 +157,11 @@ class TasksApiController extends ApiController
                 $tasks = $tasks->filter('Deadline:LessThanOrEqual', $deadline . ' 23:59:59');
             }
 
+            $subtasksByParent = $this->loadSubtasksByParent($tasks->column('ID'));
+
             $data = [];
             foreach ($tasks as $task) {
-                $data[] = $this->formatTask($task, $member);
+                $data[] = $this->formatTask($task, $member, true, $subtasksByParent);
             }
 
             $orgData = [];
@@ -203,6 +236,34 @@ class TasksApiController extends ApiController
         }
 
         return $this->jsonResponse(['members' => $members]);
+    }
+
+    /**
+     * GET /api/v1/tasks/assignableMembers — every member across all of the current
+     * user's organizations, for filtering the task list by assignee. Unlike the
+     * task list itself, this includes members who aren't assigned to any task yet.
+     */
+    public function assignableMembers(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $memberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $member->getOrganizationIDs() ?: [0],
+            'Role'           => 'member',
+        ]);
+
+        $members = [];
+        foreach ($memberships as $ms) {
+            $m = $ms->Member();
+            if ($m && $m->exists()) {
+                $members[$m->ID] = $this->formatMember($m);
+            }
+        }
+
+        return $this->jsonResponse(['members' => array_values($members)]);
     }
 
     /**

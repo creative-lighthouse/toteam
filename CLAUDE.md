@@ -15,7 +15,7 @@ ddev start          # Start containers; auto-runs yarn install, yarn build, comp
 ddev stop           # Stop containers
 ```
 
-The app is served at `https://silverstripe-toteam.ddev.site`.
+The app is served at `https://toteam.ddev.site`.
 
 ### Frontend Development
 
