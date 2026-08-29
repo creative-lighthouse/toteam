@@ -10,8 +10,9 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     flex-shrink: 0;
+    background-color: var(--ColorWhite);
 
-    &--open        { background-color: var(--ColorLightGray); color: var(--ColorGray); }
+    &--open        { background-color: var(--ColorWhite); color: var(--ColorGray); }
     &--in_progress { background-color: var(--ColorPrimaryLight); color: var(--ColorPrimary); }
     &--feedback    { background-color: var(--ColorStatusWarningAccent); color: #b07800; }
     &--finished    { background-color: var(--ColorStatusGoodAccent); color: #2e7d32; }

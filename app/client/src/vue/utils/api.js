@@ -89,6 +89,55 @@ export function apiGet(endpoint, useCache = true, cacheDuration = CACHE_DURATION
 }
 
 /**
+ * Stale-while-revalidate GET request.
+ *
+ * If a cached value exists (even if expired), it is returned immediately and a
+ * background request is fired to refresh it — `onRevalidated` is called with the
+ * fresh data once that completes, letting the caller update its state without the
+ * user staring at a loading spinner. Only when there is no cached value at all do
+ * we fall back to waiting on the network before resolving.
+ *
+ * @param {string} endpoint
+ * @param {(data: any) => void} [onRevalidated] Called with fresh data once the background refresh completes
+ * @param {number} cacheDuration How old the cache may be before a background refresh is triggered
+ * @returns {Promise<{data: any, stale: boolean}>}
+ */
+export async function apiGetSWR(endpoint, onRevalidated = () => {}, cacheDuration = CACHE_DURATION) {
+  const url = `${API_BASE}${endpoint}`
+  const cacheKey = `${url}_${JSON.stringify({ method: 'GET' })}`
+  const cached = await localforage.getItem(cacheKey)
+
+  const revalidate = async () => {
+    const response = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      credentials: 'same-origin'
+    })
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`)
+    }
+    const data = await response.json()
+    await localforage.setItem(cacheKey, { data, timestamp: Date.now() })
+    return data
+  }
+
+  if (cached && cached.data) {
+    const isStale = !cached.timestamp || Date.now() - cached.timestamp >= cacheDuration
+    if (isStale) {
+      console.log(`[API] Serving stale cache for ${endpoint}, revalidating in background`)
+      revalidate()
+        .then(onRevalidated)
+        .catch(err => console.error(`[API] Background revalidation failed for ${endpoint}:`, err))
+    } else {
+      console.log(`[API] Using cached data for ${endpoint}`)
+    }
+    return { data: cached.data, stale: isStale }
+  }
+
+  console.log(`[API] No cache for ${endpoint}, waiting on network`)
+  return { data: await revalidate(), stale: false }
+}
+
+/**
  * POST request
  */
 export function apiPost(endpoint, data) {

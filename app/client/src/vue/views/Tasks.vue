@@ -40,14 +40,11 @@
             </option>
           </select>
 
-        </div>
+          <!-- Filter by person (owner or supporter) -->
+          <TaskPersonFilter />
 
-        <!-- New task button + View mode toggle (desktop/tablet only) -->
-        <div v-if="!isMobile" class="tasks-toolbar_view-toggle">
-          <AppButton variant="primary" @click="createModal?.open()">
-            + Neue Aufgabe
-          </AppButton>
-          <div class="tasks-view-toggle">
+          <!-- View mode toggle (desktop/tablet only) -->
+          <div v-if="!isMobile" class="tasks-view-toggle">
             <button
               class="tasks-view-toggle_btn"
               :class="{ 'tasks-view-toggle_btn--active': viewMode === 'list' }"
@@ -68,6 +65,12 @@
             </button>
           </div>
         </div>
+
+        <!-- Add task (desktop/tablet only — mobile uses the floating action button) -->
+        <AppButton v-if="!isMobile" variant="primary" class="tasks-toolbar_actions" @click="createModal?.open()">
+          <span class="icon-mask" :style="addTaskIconStyle"></span>
+          Neue Aufgabe
+        </AppButton>
       </div>
 
       <!-- Loading -->
@@ -87,14 +90,28 @@
           <p>Keine Aufgaben gefunden.</p>
         </div>
 
-        <!-- LIST VIEW -->
+        <!-- LIST VIEW — grouped by status, each group collapsible -->
         <div v-else-if="effectiveViewMode === 'list'" class="tasks-list">
-          <TaskCard
-            v-for="task in store.filteredTasks"
-            :key="task.ID"
-            :task="task"
-            @click="openTask"
-          />
+          <div v-for="col in store.STATES" :key="col.value" class="tasks-list-group">
+            <button
+              type="button"
+              class="tasks-list-group_header"
+              :aria-expanded="!store.collapsedGroups.has(col.value)"
+              @click="store.toggleGroupCollapsed(col.value)"
+            >
+              <svg class="tasks-list-group_chevron" :class="{ 'tasks-list-group_chevron--collapsed': store.collapsedGroups.has(col.value) }" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <span class="tasks-list-group_title">{{ col.label }}</span>
+              <span class="tasks-list-group_count">{{ store.tasksByState[col.value].length }}</span>
+            </button>
+            <div v-show="!store.collapsedGroups.has(col.value)" class="tasks-list-group_body">
+              <TaskCard
+                v-for="task in store.tasksByState[col.value]"
+                :key="task.ID"
+                :task="task"
+                @click="openTask"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- KANBAN VIEW -->
@@ -136,19 +153,26 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
+import { getCookie, setCookie } from '@utils/cookies'
 import TaskCard from '@components/TaskCard.vue'
 import TaskCreateModal from '@components/TaskCreateModal.vue'
+import TaskPersonFilter from '@components/TaskPersonFilter.vue'
 import AppButton from '@components/AppButton.vue'
+import AddTaskIcon from '../../../icons/actions/action_addtask.svg'
+
+const addTaskIconStyle = { maskImage: `url("${AddTaskIcon}")`, WebkitMaskImage: `url("${AddTaskIcon}")` }
+const VIEW_MODE_COOKIE = 'toteam_tasks_view_mode'
 
 const router = useRouter()
 const store = useTasksStore()
 usePageHeaderStore().setHeader('Aufgaben', 'Alle Aufgaben deiner Organisationen.')
 
-const viewMode = ref('list')
+const viewMode = ref(getCookie(VIEW_MODE_COOKIE) === 'kanban' ? 'kanban' : 'list')
+watch(viewMode, (mode) => setCookie(VIEW_MODE_COOKIE, mode))
 const createModal = ref(null)
 let draggedTaskId = null
 
@@ -194,7 +218,7 @@ async function onDrop(event, targetState) {
 
 onMounted(async () => {
   mobileQuery.addEventListener('change', onMobileQueryChange)
-  await store.fetchTasks(true)
+  await store.fetchTasks()
 })
 
 onUnmounted(() => {

@@ -1,18 +1,53 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { apiGet, apiPost, apiPut, apiDelete, clearCacheForEndpoint } from '@utils/api'
+import { ref, computed, watch } from 'vue'
+import { apiGet, apiGetSWR, apiPost, apiPut, apiDelete, clearCacheForEndpoint } from '@utils/api'
+import { getJSONCookie, setJSONCookie } from '@utils/cookies'
+
+const FILTERS_COOKIE = 'toteam_tasks_filters'
 
 export const useTasksStore = defineStore('tasks', () => {
   const tasks = ref([])
   const organizations = ref([])
+  const assignableMembers = ref([])
   const loading = ref(false)
   const error = ref(null)
 
+  // Restore filters from the last session. The organization filter needs the
+  // organizations list (loaded async with the tasks), so we only remember its
+  // ID here and resolve it once organizations.value is populated (see below).
+  const savedFilters = getJSONCookie(FILTERS_COOKIE) || {}
+  let pendingOrganizationId = savedFilters.organizationId ?? null
+
   // Filters
   const filterOrganization = ref(null)
-  const filterDeadline = ref(null)
-  const filterSearch = ref('')
-  const filterState = ref(null)
+  const filterDeadline = ref(savedFilters.deadline ?? null)
+  const filterSearch = ref(savedFilters.search ?? '')
+  const filterState = ref(savedFilters.state ?? null)
+  const filterPersonId = ref(savedFilters.personId ?? null)
+
+  // Which status groups are collapsed in the list view (state values, e.g. "open")
+  const collapsedGroups = ref(new Set(savedFilters.collapsedGroups ?? []))
+
+  watch([filterOrganization, filterDeadline, filterSearch, filterState, filterPersonId, collapsedGroups], () => {
+    setJSONCookie(FILTERS_COOKIE, {
+      organizationId: filterOrganization.value?.ID ?? null,
+      deadline: filterDeadline.value,
+      search: filterSearch.value,
+      state: filterState.value,
+      personId: filterPersonId.value,
+      collapsedGroups: Array.from(collapsedGroups.value),
+    })
+  })
+
+  function toggleGroupCollapsed(stateValue) {
+    const next = new Set(collapsedGroups.value)
+    if (next.has(stateValue)) {
+      next.delete(stateValue)
+    } else {
+      next.add(stateValue)
+    }
+    collapsedGroups.value = next
+  }
 
   const STATES = [
     { value: 'open',        label: 'Offen' },
@@ -21,11 +56,29 @@ export const useTasksStore = defineStore('tasks', () => {
     { value: 'finished',    label: 'Abgeschlossen' },
   ]
 
+  // A task is "mine" if I'm its owner/supporter, or if I'm assigned to one of
+  // its subtasks — a subtask-only assignment should still surface the parent
+  // card, since subtasks aren't shown as their own entries in the list/kanban.
+  function isTaskAssignedToMember(task, memberId) {
+    if (task.Owner?.ID === memberId) return true
+    if (task.Supporters?.some(s => s.ID === memberId)) return true
+    return false
+  }
+
+  function isTaskMine(task, memberId) {
+    if (isTaskAssignedToMember(task, memberId)) return true
+    return task.SubTasks?.some(sub => isTaskAssignedToMember(sub, memberId)) ?? false
+  }
+
   const filteredTasks = computed(() => {
     let result = tasks.value
 
     if (filterOrganization.value) {
       result = result.filter(t => t.Organization?.ID === filterOrganization.value.ID)
+    }
+
+    if (filterPersonId.value) {
+      result = result.filter(t => isTaskMine(t, filterPersonId.value))
     }
 
     if (filterState.value) {
@@ -56,18 +109,33 @@ export const useTasksStore = defineStore('tasks', () => {
     return grouped
   })
 
+  function applyTasksResponse(response) {
+    tasks.value = response.tasks || []
+    organizations.value = response.organizations || []
+
+    if (pendingOrganizationId !== null) {
+      const org = organizations.value.find(o => o.ID === pendingOrganizationId)
+      if (org) filterOrganization.value = org
+      pendingOrganizationId = null
+    }
+  }
+
   async function fetchTasks(forceRefresh = false) {
     try {
-      loading.value = true
       error.value = null
 
       if (forceRefresh) {
         await clearCacheForEndpoint('/tasks')
+        loading.value = tasks.value.length === 0
+        applyTasksResponse(await apiGet('/tasks', false))
+        return
       }
 
-      const response = await apiGet('/tasks', !forceRefresh, 2 * 60 * 1000)
-      tasks.value = response.tasks || []
-      organizations.value = response.organizations || []
+      // Show cached tasks instantly (if any) and quietly refresh them in the
+      // background — only block with a spinner when there's nothing to show yet.
+      loading.value = tasks.value.length === 0
+      const { data } = await apiGetSWR('/tasks', applyTasksResponse, 2 * 60 * 1000)
+      applyTasksResponse(data)
     } catch (err) {
       console.error('Failed to fetch tasks:', err)
       error.value = err.message
@@ -93,6 +161,17 @@ export const useTasksStore = defineStore('tasks', () => {
     } catch (err) {
       console.error('Failed to fetch organization members:', err)
       return []
+    }
+  }
+
+  // Every member across all of the user's organizations, incl. members without
+  // any tasks yet — used to populate the "filter by person" dropdown.
+  async function fetchAssignableMembers() {
+    try {
+      const response = await apiGet('/tasks/assignableMembers')
+      assignableMembers.value = response.members || []
+    } catch (err) {
+      console.error('Failed to fetch assignable members:', err)
     }
   }
 
@@ -149,6 +228,7 @@ export const useTasksStore = defineStore('tasks', () => {
   function setDeadlineFilter(date) { filterDeadline.value = date }
   function setSearchFilter(q) { filterSearch.value = q }
   function setStateFilter(state) { filterState.value = state }
+  function setPersonFilter(memberId) { filterPersonId.value = memberId }
 
   async function refresh() {
     await fetchTasks(true)
@@ -157,18 +237,22 @@ export const useTasksStore = defineStore('tasks', () => {
   return {
     tasks,
     organizations,
+    assignableMembers,
     loading,
     error,
     filterOrganization,
     filterDeadline,
     filterSearch,
     filterState,
+    filterPersonId,
+    collapsedGroups,
     filteredTasks,
     tasksByState,
     STATES,
     fetchTasks,
     fetchTaskByHash,
     fetchOrgMembers,
+    fetchAssignableMembers,
     createTask,
     updateTask,
     updateTaskState,
@@ -178,6 +262,8 @@ export const useTasksStore = defineStore('tasks', () => {
     setDeadlineFilter,
     setSearchFilter,
     setStateFilter,
+    setPersonFilter,
+    toggleGroupCollapsed,
     refresh,
   }
 })
