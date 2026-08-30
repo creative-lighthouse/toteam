@@ -115,6 +115,19 @@
           </AppButton>
         </div>
 
+        <!-- Rooms -->
+        <div class="task-detail_rooms">
+          <div class="task-detail_rooms-header">
+            <h3 class="hl3">Räume</h3>
+            <AppButton size="small" variant="secondary" @click="roomsModal?.open()">+ Raum hinzufügen</AppButton>
+          </div>
+
+          <div v-if="task.Rooms?.length" class="task-detail_room-chips">
+            <span v-for="r in task.Rooms" :key="r.ID" class="task-detail_room-chip">{{ r.Title }}</span>
+          </div>
+          <div v-else class="section_infobox"><p>Diese Aufgabe ist noch keinem Raum zugeordnet.</p></div>
+        </div>
+
         <!-- Subtasks -->
         <div class="task-detail_subtasks">
           <div class="task-detail_subtasks-header">
@@ -147,6 +160,14 @@
       :current-supporter-ids="(task.Supporters || []).map(s => s.ID)"
       @saved="onSupportersSaved"
     />
+    <TaskRoomsModal
+      v-if="task"
+      ref="roomsModal"
+      :task-id="task.ID"
+      :organization-id="task.Organization?.ID"
+      :current-room-ids="(task.Rooms || []).map(r => r.ID)"
+      @saved="onRoomsSaved"
+    />
     <TaskCreateModal
       v-if="task"
       ref="subtaskModal"
@@ -175,6 +196,7 @@ import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import TaskCard from '@components/TaskCard.vue'
 import TaskSupportersModal from '@components/TaskSupportersModal.vue'
+import TaskRoomsModal from '@components/TaskRoomsModal.vue'
 import TaskCreateModal from '@components/TaskCreateModal.vue'
 import TaskProgressBar from '@components/TaskProgressBar.vue'
 import TaskDeleteModal from '@components/TaskDeleteModal.vue'
@@ -198,6 +220,7 @@ const changingSupporterId = ref(null)
 const orgMembers = ref([])
 const loadingOrgMembers = ref(false)
 const supportersModal = ref(null)
+const roomsModal = ref(null)
 const subtaskModal = ref(null)
 const deleteModal = ref(null)
 const editModal = ref(null)
@@ -288,6 +311,10 @@ async function changeSupporter(oldSupporterId, newValue) {
 }
 
 function onSupportersSaved(updatedTask) {
+  task.value = updatedTask
+}
+
+function onRoomsSaved(updatedTask) {
   task.value = updatedTask
 }
 

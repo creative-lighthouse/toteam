@@ -39,6 +39,11 @@ class OrgPermissions
     public const MAPS_MANAGE_MAPS = 'MAPS_MANAGE_MAPS';
     public const MAPS_MANAGE_LAYERS = 'MAPS_MANAGE_LAYERS';
 
+    public const ROOMS_CREATE = 'ROOMS_CREATE';
+    public const ROOMS_EDIT = 'ROOMS_EDIT';
+    public const ROOMS_VIEW = 'ROOMS_VIEW';
+    public const ROOMS_DELETE = 'ROOMS_DELETE';
+
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
      * @return array<string, array<string, string>> Kategorie => [Code => Label]
@@ -79,6 +84,12 @@ class OrgPermissions
             'Lagepläne' => [
                 self::MAPS_MANAGE_MAPS => 'Karten verwalten',
                 self::MAPS_MANAGE_LAYERS => 'Ebenen verwalten',
+            ],
+            'Räume' => [
+                self::ROOMS_CREATE => 'Räume erstellen',
+                self::ROOMS_EDIT => 'Räume bearbeiten',
+                self::ROOMS_VIEW => 'Räume ansehen',
+                self::ROOMS_DELETE => 'Räume löschen',
             ],
         ];
     }

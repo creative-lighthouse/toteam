@@ -1,0 +1,304 @@
+@use "../variables" as *;
+
+.room-form-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    .room-form-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .room-form-modal_header {
+        @include modal-header;
+    }
+
+    .room-form-modal_body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+
+        // Override global form styles
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        max-width: none;
+        margin: 0;
+        align-items: stretch;
+    }
+
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ColorGray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .input {
+        padding: 9px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 15px;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: var(--ColorWhite);
+        height: auto;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+    }
+
+    textarea.input {
+        resize: vertical;
+        min-height: 72px;
+    }
+
+    .multiselect-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        .checkbox-label {
+            input[type="radio"],
+            input[type="checkbox"] {
+                display: none;
+            }
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 14px;
+            border: 2px solid var(--ColorGray);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            user-select: none;
+
+            &:has(input:checked) {
+                background-color: var(--ColorPrimary);
+                border-color: var(--ColorPrimary);
+                color: var(--ColorWhite);
+            }
+
+            &:hover:not(:has(input:checked)) {
+                border-color: var(--ColorPrimary);
+            }
+        }
+    }
+
+    .room-form-modal_tasks {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .room-form-modal_tasks-loading {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .room-form-modal_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    .room-form-modal_actions {
+        @include modal-actions;
+    }
+}
+
+.room-detail-modal {
+    text-align: left;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    .room-detail-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .room-detail-modal_header {
+        @include modal-header;
+    }
+
+    .room-detail-modal_loading {
+        padding: 32px 20px;
+        text-align: center;
+        color: var(--ColorGray);
+    }
+
+    .room-detail-modal_body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+    }
+
+    .room-detail-modal_org {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .room-detail-modal_description {
+        margin: 0;
+        color: var(--ColorFont);
+    }
+
+    .room-detail-modal_tasks-title {
+        margin: 8px 0 0;
+    }
+
+    .room-detail-modal_tasks {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .room-detail-modal_task {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        font-size: 14px;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: var(--ColorVeryLightGray);
+        }
+    }
+
+    .room-detail-modal_task-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .room-detail-modal_task-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .room-detail-modal_no-tasks {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+
+    .room-detail-modal_actions {
+        @include modal-actions;
+    }
+}
+
+// "Räume verwalten" — attach/detach a task to rooms in its organization
+.task-rooms-modal {
+    text-align: left;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    .task-rooms-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .task-rooms-modal_header {
+        @include modal-header;
+    }
+
+    .task-rooms-modal_body {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        max-width: none;
+        margin: 0;
+        align-items: stretch;
+    }
+
+    .task-rooms-modal_loading {
+        font-size: 14px;
+        color: var(--ColorGray);
+        text-align: center;
+        padding: 12px 0;
+    }
+
+    .task-rooms-modal_list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 45vh;
+        overflow-y: auto;
+    }
+
+    .task-rooms-modal_option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--BorderRadiusSmall);
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--ColorLightGray);
+        }
+
+        input[type="checkbox"] {
+            flex-shrink: 0;
+        }
+    }
+
+    .task-rooms-modal_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    .task-rooms-modal_actions {
+        @include modal-actions;
+    }
+}

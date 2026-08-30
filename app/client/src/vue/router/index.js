@@ -14,6 +14,7 @@ import Map from '@views/Map.vue'
 import MapDetail from '@views/MapDetail.vue'
 import MapCreate from '@views/MapCreate.vue'
 import MapLayerEdit from '@views/MapLayerEdit.vue'
+import Rooms from '@views/Rooms.vue'
 import Links from '@views/Links.vue'
 import Organizations from '@views/Organizations.vue'
 import OrganizationDetail from '@views/OrganizationDetail.vue'
@@ -104,6 +105,12 @@ const routes = [
     path: '/map/:id',
     name: 'MapDetail',
     component: MapDetail,
+    meta: { requiresAuth: true, totem: 'map' }
+  },
+  {
+    path: '/rooms',
+    name: 'Rooms',
+    component: Rooms,
     meta: { requiresAuth: true, totem: 'map' }
   },
   {

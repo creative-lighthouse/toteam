@@ -5,6 +5,7 @@ namespace App\Controllers\Api;
 use App\Maps\Map;
 use App\Maps\MapLayer;
 use App\Maps\MapPOI;
+use App\Rooms\Room;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
@@ -33,6 +34,7 @@ class MapsApiController extends ApiController
         'deletelayer',
         'uploadlayerimage',
         'createlayer',
+        'reorderlayers',
     ];
 
     public function index(HTTPRequest $request): HTTPResponse
@@ -115,6 +117,7 @@ class MapsApiController extends ApiController
             foreach ($map->MapLayers() as $layer) {
                 $poisData = [];
                 foreach ($layer->POIs() as $poi) {
+                    $poiRoom = $poi->Room();
                     $poisData[] = [
                         'id'          => $poi->ID,
                         'title'       => $poi->Title,
@@ -123,6 +126,12 @@ class MapsApiController extends ApiController
                         'position'    => $poi->Coordinates,
                         'markerColor' => $poi->getMarkerColor(),
                         'markerText'  => $poi->getMarkerText(),
+                        'type'        => $poi->Type ?: 'marker',
+                        'roomId'      => ($poiRoom && $poiRoom->exists()) ? $poiRoom->ID : null,
+                        'room'        => ($poiRoom && $poiRoom->exists()) ? [
+                            'id'    => $poiRoom->ID,
+                            'title' => $poiRoom->Title,
+                        ] : null,
                     ];
                 }
                 $layersData[] = [
@@ -138,6 +147,7 @@ class MapsApiController extends ApiController
             return $this->jsonResponse([
                 'map' => [
                     'id'                    => $map->ID,
+                    'organizationId'        => $map->ParentID,
                     'title'                 => $map->Title,
                     'shortText'             => $map->ShortText,
                     'backgroundImage'       => $map->BackgroundImage()->exists()
@@ -385,6 +395,9 @@ class MapsApiController extends ApiController
             if (isset($data['layerColor'])) {
                 $layer->LayerColor = $data['layerColor'];
             }
+            if (isset($data['active'])) {
+                $layer->Active = (bool) $data['active'];
+            }
 
             $sentPoiIds = [];
 
@@ -423,6 +436,20 @@ class MapsApiController extends ApiController
                     }
                     if (isset($poiData['active'])) {
                         $poi->Active = (bool) $poiData['active'];
+                    }
+
+                    $type = $poiData['type'] ?? 'marker';
+                    if ($type === 'room') {
+                        $roomID = (int) ($poiData['roomId'] ?? 0);
+                        $room   = $roomID ? Room::get()->byID($roomID) : null;
+                        if (!$room || !$room->exists() || (int) $room->OrganizationID !== (int) $layerOrg->ID) {
+                            return $this->errorResponse('Ungültiger oder fremder Raum für Raummarker', 400);
+                        }
+                        $poi->Type   = 'room';
+                        $poi->RoomID = $roomID;
+                    } else {
+                        $poi->Type   = 'marker';
+                        $poi->RoomID = 0;
                     }
 
                     $poi->write();
@@ -526,6 +553,7 @@ class MapsApiController extends ApiController
             $layer->LayerColor = $data['layerColor'] ?? '#999999';
             $layer->ParentID   = $map->ID;
             $layer->Active     = true;
+            $layer->SortOrder  = $map->MapLayers()->count();
             $layer->write();
 
             return $this->successResponse([
@@ -541,6 +569,51 @@ class MapsApiController extends ApiController
             ], 'Ebene erstellt');
         } catch (\Exception $e) {
             return $this->errorResponse('Fehler: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /** POST /api/v1/maps/reorderlayers/$ID — body: { layerIds: [id, id, ...] } in the new display order */
+    public function reorderlayers(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        try {
+            $mapID = $request->param('ID');
+            $map   = Map::get()->byID($mapID);
+
+            if (!$map || !$map->exists()) {
+                return $this->errorResponse('Lageplan nicht gefunden', 404);
+            }
+
+            if (!$member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_LAYERS)) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+
+            $data = $this->getJsonBody();
+            $layerIDs = $data['layerIds'] ?? null;
+            if (!is_array($layerIDs)) {
+                return $this->errorResponse('Ungültige Daten', 400);
+            }
+
+            foreach ($layerIDs as $sortOrder => $layerID) {
+                $layer = MapLayer::get()->byID((int) $layerID);
+                if (!$layer || $layer->ParentID != $map->ID) {
+                    continue; // ignore stray/foreign IDs rather than failing the whole reorder
+                }
+                $layer->SortOrder = $sortOrder;
+                $layer->write();
+            }
+
+            return $this->successResponse([], 'Reihenfolge gespeichert');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Fehler beim Speichern der Reihenfolge: ' . $e->getMessage(), 500);
         }
     }
 }

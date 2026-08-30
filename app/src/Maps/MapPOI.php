@@ -3,6 +3,7 @@
 namespace App\Maps;
 
 use App\Maps\MapLayer;
+use App\Rooms\Room;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Permission;
 
@@ -14,8 +15,11 @@ use SilverStripe\Security\Permission;
  * @property ?string $Description
  * @property bool $Active
  * @property ?string $Coordinates
+ * @property ?string $Type
  * @property int $ParentID
+ * @property int $RoomID
  * @method \App\Maps\MapLayer Parent()
+ * @method \App\Rooms\Room Room()
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -30,10 +34,12 @@ class MapPOI extends DataObject
         "Description" => "Text",
         "Active" => "Boolean",
         "Coordinates" => "Varchar(100)",
+        "Type" => "Enum('marker,room', 'marker')",
     ];
 
     private static $has_one = [
         "Parent" => MapLayer::class,
+        "Room" => Room::class,
     ];
 
     private static $field_labels = [
@@ -41,6 +47,8 @@ class MapPOI extends DataObject
         "Description" => "Beschreibung",
         "Active" => "Aktiv",
         "Coordinates" => "Koordinaten",
+        "Type" => "Markertyp",
+        "Room" => "Raum",
     ];
 
     private static $defaults = [
@@ -74,6 +82,14 @@ class MapPOI extends DataObject
         if(!empty($markerText)) {
             return $markerText;
         }
+
+        if ($this->Type === 'room') {
+            $room = $this->Room();
+            if ($room && $room->exists() && $room->Title) {
+                return mb_strtoupper(mb_substr($room->Title, 0, 1));
+            }
+        }
+
         return "42";
     }
 

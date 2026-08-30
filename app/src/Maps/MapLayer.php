@@ -37,6 +37,7 @@ class MapLayer extends DataObject implements PermissionProvider
         "Description" => "Text",
         "Active" => "Boolean",
         "LayerColor" => "Varchar(7)",
+        "SortOrder" => "Int",
     ];
 
     private static $has_one = [
@@ -56,6 +57,10 @@ class MapLayer extends DataObject implements PermissionProvider
     private static $defaults = [
         "Active" => true,
     ];
+
+    // Existing rows all default to SortOrder=0; the ID tiebreaker keeps their
+    // current (insertion) order stable until someone actually reorders them.
+    private static $default_sort = 'SortOrder ASC, ID ASC';
 
     private static $field_labels = [
         "Title" => "Titel",
@@ -79,6 +84,7 @@ class MapLayer extends DataObject implements PermissionProvider
     {
         $fields = parent::getCMSFields();
         $fields->removeByName('ParentID');
+        $fields->removeByName('SortOrder'); // managed via drag/reorder in the Vue app instead
 
         //Move gridfield for pois in main tab
         $poisField = $fields->dataFieldByName('POIs');

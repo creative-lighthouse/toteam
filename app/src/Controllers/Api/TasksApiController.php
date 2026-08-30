@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
+use App\Rooms\Room;
 use App\Tasks\Task;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
@@ -63,6 +64,11 @@ class TasksApiController extends ApiController
             $supporters[] = $this->formatMember($s);
         }
 
+        $rooms = [];
+        foreach ($task->Rooms() as $room) {
+            $rooms[] = ['ID' => $room->ID, 'Title' => $room->Title];
+        }
+
         $subTasks = [];
         if ($withSubTasks) {
             $subtaskRecords = $subtasksByParent !== null
@@ -95,6 +101,7 @@ class TasksApiController extends ApiController
             ] : null,
             'Owner'          => $this->formatMember($owner->exists() ? $owner : null),
             'Supporters'     => $supporters,
+            'Rooms'          => $rooms,
             'SubTasks'       => $subTasks,
             'CanEdit'        => $task->isEditableBy($member),
             'CanDelete'      => $task->isDeletableBy($member),
@@ -383,6 +390,18 @@ class TasksApiController extends ApiController
                 $task->Supporters()->removeAll();
                 foreach ($body['SupporterIDs'] as $sid) {
                     $task->Supporters()->add((int) $sid);
+                }
+            }
+
+            if (isset($body['RoomIDs']) && is_array($body['RoomIDs'])) {
+                // Only attach rooms that actually belong to this task's organization
+                $validRoomIDs = Room::get()
+                    ->filter(['ID' => $body['RoomIDs'], 'OrganizationID' => $task->OrganizationID])
+                    ->column('ID');
+
+                $task->Rooms()->removeAll();
+                foreach ($validRoomIDs as $rid) {
+                    $task->Rooms()->add($rid);
                 }
             }
 

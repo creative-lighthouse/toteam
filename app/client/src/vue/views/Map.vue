@@ -13,6 +13,7 @@
       <template v-else>
         <div v-if="canManageAny" class="map-list_actions">
           <AppButton to="/map/new" variant="primary">+ Neuen Lageplan erstellen</AppButton>
+          <AppButton to="/rooms" variant="secondary">Räume verwalten</AppButton>
         </div>
 
         <ul v-if="maps.length" class="map-list">

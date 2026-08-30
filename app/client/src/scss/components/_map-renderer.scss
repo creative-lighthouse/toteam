@@ -503,6 +503,66 @@
                     gap: 8px;
                 }
 
+                &_header-left,
+                &_header-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    min-width: 0;
+                }
+
+                &_title {
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                &_reorder {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1px;
+                    flex-shrink: 0;
+                }
+
+                &_reorder-btn {
+                    background: rgba(0,0,0,0.2);
+                    border: none;
+                    border-radius: 3px;
+                    color: #fff;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 18px;
+                    height: 12px;
+                    padding: 0;
+                    transition: background 0.2s;
+
+                    &:hover:not(:disabled) {
+                        background: rgba(0,0,0,0.4);
+                    }
+
+                    &:disabled {
+                        opacity: 0.35;
+                        cursor: default;
+                    }
+                }
+
+                // Eye + delete buttons: always white so they stay legible against
+                // the layer's own (arbitrary, user-chosen) header color.
+                &_header-icon {
+                    border: 1px solid rgba(255, 255, 255, 0.85);
+
+                    &:hover:not(:disabled) {
+                        background-color: rgba(255, 255, 255, 0.25);
+                        opacity: 1;
+                    }
+
+                    &--dimmed {
+                        opacity: 0.55;
+                    }
+                }
+
                 &_delete {
                     background: rgba(0,0,0,0.2);
                     border: none;
@@ -529,6 +589,16 @@
                     flex-direction: column;
                     gap: 10px;
                     background: #fafafa;
+                }
+            }
+
+            .room-marker-picker {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+
+                select.form-control {
+                    flex: 1;
                 }
             }
 
