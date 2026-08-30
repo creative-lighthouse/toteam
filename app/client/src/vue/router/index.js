@@ -25,6 +25,7 @@ import Tasks from '@views/Tasks.vue'
 import TaskDetail from '@views/TaskDetail.vue'
 import Money from '@views/Money.vue'
 import MoneyAccountDetail from '@views/MoneyAccountDetail.vue'
+import Test from '@views/Test.vue'
 
 const routes = [
   {
@@ -171,6 +172,12 @@ const routes = [
     path: '/register',
     name: 'Register',
     component: Register,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/test',
+    name: 'Test',
+    component: Test,
     meta: { requiresAuth: false }
   }
 ]

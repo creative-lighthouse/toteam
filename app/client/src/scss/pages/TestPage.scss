@@ -1,0 +1,70 @@
+@use "../variables" as *;
+
+.section.section--TestPage {
+    .test-border-box {
+        // border-image-source is set inline in Test.vue (imported as a JS module) —
+        // see the comment there for why a static url() here breaks under `yarn dev`.
+        border-image-slice: 33%;
+        border-image-width: 40px;
+        border-color: red;
+        border-style: solid;
+        box-sizing: border-box;
+    }
+
+    .test-border-box--main {
+        margin: 20px 0 30px;
+        padding: 24px;
+        min-height: 150px;
+    }
+
+    .test-border-variants {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .test-border-variant {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .test-border-box--compare {
+        width: 160px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--ColorGray);
+    }
+
+    .test-border-box--stretch {
+        border-image-repeat: stretch;
+    }
+
+    .test-border-box--round {
+        border-image-repeat: round;
+    }
+
+    .test-border-box--repeat {
+        border-image-repeat: repeat;
+    }
+
+    .test-color-picker {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        margin-bottom: 10px;
+
+        input[type="color"] {
+            width: 40px;
+            height: 30px;
+            padding: 0;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusSmall);
+            cursor: pointer;
+        }
+    }
+}
