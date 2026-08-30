@@ -377,6 +377,38 @@ class MapRenderer {
     }
 
     /**
+     * Add a new "Raummarker" (teardrop pin linked to an existing Room) to a
+     * layer — same center-then-drag flow as addNewPOIToLayer(), but its title
+     * comes from the room itself instead of a free-text prompt.
+     */
+    addNewRoomPOIToLayer(room, layerIndex = 0) {
+        if (!this.layers[layerIndex]) return null
+
+        const ul = this.parseCoordinates(this.config.coordinatesUpperLeft)
+        const lr = this.parseCoordinates(this.config.coordinatesLowerRight)
+        const centerLat = ul && lr ? (ul.lat + lr.lat) / 2 : 0
+        const centerLng = ul && lr ? (ul.lng + lr.lng) / 2 : 0
+
+        const poi = {
+            id: Date.now(),
+            title: room.Title,
+            description: '',
+            active: true,
+            position: `${centerLat},${centerLng}`,
+            markerColor: this.layers[layerIndex].layerColor || '#e74c3c',
+            markerText: (room.Title || '').charAt(0).toUpperCase(),
+            type: 'room',
+            roomId: room.ID,
+            isNew: true,
+        }
+
+        if (!this.layers[layerIndex].pois) this.layers[layerIndex].pois = []
+        this.layers[layerIndex].pois.push(poi)
+        this.render()
+        return poi
+    }
+
+    /**
      * Toggle layer visibility
      */
     toggleLayer(layerId) {
@@ -509,12 +541,20 @@ class MapRenderer {
                 this.lastY = e.clientY;
                 this.render();
             } else {
-                // Check for POI hover
+                // Check for POI hover. getPOIAtPosition() returns a fresh object
+                // literal every call, so comparing by reference would re-render
+                // (and cause visible flicker/jitter) on every single mousemove
+                // tick while the mouse sits still over a marker — compare by
+                // poiId instead and only redraw on an actual enter/leave.
                 const prevHovered = this.hoveredPOI;
-                this.hoveredPOI = this.getPOIAtPosition(this.mouseCanvasX, this.mouseCanvasY);
+                const nextHovered = this.getPOIAtPosition(this.mouseCanvasX, this.mouseCanvasY);
+                const prevId = prevHovered ? prevHovered.poiId : null;
+                const nextId = nextHovered ? nextHovered.poiId : null;
 
-                if (this.hoveredPOI !== prevHovered) {
-                    this.canvas.style.cursor = this.hoveredPOI ? 'pointer' : 'grab';
+                this.hoveredPOI = nextHovered;
+
+                if (prevId !== nextId) {
+                    this.canvas.style.cursor = nextHovered ? 'pointer' : 'grab';
                     this.render();
                 }
             }
@@ -801,6 +841,28 @@ class MapRenderer {
     }
 
     /**
+     * Center of a room-marker pin's round "bulb" (used for its text/label and
+     * for hit-testing), given the tip's canvas position — the tip itself stays
+     * anchored exactly at the POI's geo coordinate, with the bulb above it.
+     */
+    getPinBulbCenter(tipX, tipY, radius) {
+        return { x: tipX, y: tipY - radius * 2 };
+    }
+
+    /**
+     * Traces a classic map-pin ("teardrop") path on `ctx`: a round dome above
+     * a point that converges to a single tip at (tipX, tipY).
+     */
+    tracePinPath(ctx, tipX, tipY, radius) {
+        const { y: bulbCenterY } = this.getPinBulbCenter(tipX, tipY, radius);
+        ctx.moveTo(tipX, tipY);
+        ctx.quadraticCurveTo(tipX - radius, tipY - radius * 0.6, tipX - radius, bulbCenterY);
+        ctx.arc(tipX, bulbCenterY, radius, Math.PI, 0, false);
+        ctx.quadraticCurveTo(tipX + radius, tipY - radius * 0.6, tipX, tipY);
+        ctx.closePath();
+    }
+
+    /**
      * Draw POIs from active layers
      */
     drawPOIs(ctx) {
@@ -820,6 +882,7 @@ class MapRenderer {
                 }
 
                 const { x, y } = this.geoToCanvas(coords.lat, coords.lng);
+                const isRoom = poi.type === 'room';
 
                 // Draw POI marker with custom color and text
                 const markerSize = 24 / this.scale; // Adjust size based on zoom
@@ -829,6 +892,13 @@ class MapRenderer {
                 // Darken the marker color for the border
                 const darkerColor = this.darkenColor(markerColor, 0.2);
 
+                // Room markers are teardrop pins anchored at the tip (the geo
+                // coordinate); their "content center" (bulb) sits above it —
+                // getPOIAtPosition() below hit-tests against this same point.
+                const contentCenter = isRoom
+                    ? this.getPinBulbCenter(x, y, markerSize / 2)
+                    : { x, y };
+
                 ctx.save();
 
                 // Shadow
@@ -836,13 +906,17 @@ class MapRenderer {
                 ctx.shadowBlur = 4 / this.scale;
                 ctx.shadowOffsetY = 2 / this.scale;
 
-                // Marker circle
+                // Marker shape
                 ctx.fillStyle = markerColor;
                 ctx.strokeStyle = darkerColor;
                 ctx.lineWidth = 2 / this.scale;
 
                 ctx.beginPath();
-                ctx.arc(x, y, markerSize / 2, 0, Math.PI * 2);
+                if (isRoom) {
+                    this.tracePinPath(ctx, x, y, markerSize / 2);
+                } else {
+                    ctx.arc(x, y, markerSize / 2, 0, Math.PI * 2);
+                }
                 ctx.fill();
                 ctx.stroke();
 
@@ -859,7 +933,7 @@ class MapRenderer {
                     ctx.font = `bold ${10 / this.scale}px Arial`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(markerText, x, y);
+                    ctx.fillText(markerText, contentCenter.x, contentCenter.y);
                 }
 
                 ctx.restore();
@@ -881,8 +955,8 @@ class MapRenderer {
                     // Highlight if hovered
                     ctx.fillStyle = isHovered ? 'rgba(231, 76, 60, 0.95)' : 'rgba(0, 0, 0, 0.8)';
                     ctx.fillRect(
-                        x + markerSize,
-                        y - bgHeight / 2,
+                        contentCenter.x + markerSize,
+                        contentCenter.y - bgHeight / 2,
                         textWidth + padding * 2,
                         bgHeight
                     );
@@ -890,7 +964,7 @@ class MapRenderer {
                     ctx.fillStyle = 'white';
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(poi.title, x + markerSize + padding, y);
+                    ctx.fillText(poi.title, contentCenter.x + markerSize + padding, contentCenter.y);
                     ctx.restore();
                 }
             });
@@ -905,6 +979,7 @@ class MapRenderer {
      */
     getPOIAtPosition(x, y) {
         const hitRadius = 15 / this.scale; // Hit detection radius
+        const markerRadius = 12 / this.scale; // Half of drawPOIs()'s markerSize — must match for the bulb offset below
 
         for (const layer of this.layers) {
             if (!this.activeLayers.has(layer.id) || !layer.pois) {
@@ -922,11 +997,19 @@ class MapRenderer {
                 }
 
                 const poiPos = this.geoToCanvas(coords.lat, coords.lng);
-                const dx = x - poiPos.x;
-                const dy = y - poiPos.y;
+                // Room markers are teardrops spanning from the tip (poiPos,
+                // the actual geo anchor) up to the bulb — hit-test against the
+                // bulb center but widen the radius so the tip (and the body
+                // connecting the two) stays clickable too.
+                const hitCenter = poi.type === 'room'
+                    ? this.getPinBulbCenter(poiPos.x, poiPos.y, markerRadius)
+                    : poiPos;
+                const effectiveHitRadius = poi.type === 'room' ? hitRadius + markerRadius : hitRadius;
+                const dx = x - hitCenter.x;
+                const dy = y - hitCenter.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
-                if (distance <= hitRadius) {
+                if (distance <= effectiveHitRadius) {
                     return {
                         layerId: layer.id,
                         poiId: poi.id,
@@ -944,6 +1027,18 @@ class MapRenderer {
      */
     showPOIPopup(poiData) {
         const poi = poiData.poi;
+
+        // Room markers don't use the vanilla-DOM popup at all — hand off to
+        // the host app (Vue) via a callback so it can show its own modal with
+        // the room's properties and task list. Passes the full poiData
+        // (layerId/poiId/poi) so the callback can also call deletePOI() itself
+        // in edit mode.
+        if (poi.type === 'room') {
+            if (typeof this.config.onRoomPOIClick === 'function') {
+                this.config.onRoomPOIClick(poiData);
+            }
+            return;
+        }
 
         // Remove existing popup
         const existingPopup = document.querySelector('.map-poi-popup');

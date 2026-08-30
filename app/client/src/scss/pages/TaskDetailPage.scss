@@ -215,6 +215,38 @@
         justify-content: space-between;
     }
 
+    // Rooms
+    .task-detail_rooms {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        .hl3 {
+            margin: 0;
+        }
+    }
+
+    .task-detail_rooms-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .task-detail_room-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .task-detail_room-chip {
+        padding: 4px 12px;
+        border-radius: 20px;
+        background-color: var(--ColorPrimaryLight);
+        color: var(--ColorPrimary);
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
     // Back to parent
     .task-detail_parent {
         padding-top: 4px;

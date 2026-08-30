@@ -2,6 +2,7 @@
 
 namespace App\Tasks;
 
+use App\Rooms\Room;
 use App\Tasks\TaskGroup;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
@@ -26,6 +27,7 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Security\Member Owner()
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\TaskGroup[] TaskGroups()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Supporters()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Rooms\Room[] Rooms()
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -51,6 +53,10 @@ class Task extends DataObject implements PermissionProvider
     private static $many_many = [
         'TaskGroups' => TaskGroup::class,
         'Supporters' => Member::class,
+    ];
+
+    private static $belongs_many_many = [
+        'Rooms' => Room::class,
     ];
 
     private static $field_labels = [

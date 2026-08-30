@@ -32,6 +32,7 @@
 @use "pages/MoneyPage.scss";
 @use "pages/MoneyAccountDetailPage.scss";
 @use "pages/OrganizationManagePage.scss";
+@use "pages/RoomsPage.scss";
 
 
 @use "landingpage/landingpage.scss";
@@ -51,6 +52,7 @@
 @use "components/taskcreatemodal.scss";
 @use "components/tasksupportersmodal.scss";
 @use "components/taskdeletemodal.scss";
+@use "components/roommodals.scss";
 @use "components/moneymodals.scss";
 @use "components/orgrolesmodals.scss";
 

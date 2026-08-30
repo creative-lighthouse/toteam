@@ -3,6 +3,7 @@
 namespace App\Admins;
 
 use App\Maps\Map;
+use App\Rooms\Room;
 use SilverStripe\Admin\ModelAdmin;
 
 /**
@@ -18,5 +19,6 @@ class MapAdmin extends ModelAdmin
 
     private static $managed_models = [
         Map::class,
+        Room::class,
     ];
 }

@@ -89,16 +89,59 @@
                   class="edit-layer-card"
                 >
                   <div class="edit-layer-card_header" :style="{ backgroundColor: editLayer.color }">
-                    <span>{{ editLayer.title || 'Ebene ' + (i + 1) }}</span>
-                    <AppIconButton
-                      variant="danger"
-                      :aria-label="`Ebene &quot;${editLayer.title}&quot; löschen`"
-                      @click="deleteLayer(i)"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M11 1.75V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM6.5 1.75v1.25h3V1.75a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25zM4.997 6.5a.75.75 0 00-1.498.076l.492 7.5a.75.75 0 001.498-.076L4.997 6.5zm6.006.076a.75.75 0 10-1.498-.076l-.492 7.5a.75.75 0 001.498.076l.492-7.5z"/>
-                      </svg>
-                    </AppIconButton>
+                    <div class="edit-layer-card_header-left">
+                      <div class="edit-layer-card_reorder">
+                        <button
+                          type="button"
+                          class="edit-layer-card_reorder-btn"
+                          :disabled="i === 0"
+                          :aria-label="`Ebene &quot;${editLayer.title}&quot; nach oben verschieben`"
+                          @click="moveLayer(i, -1)"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4l5 6H3l5-6z"/></svg>
+                        </button>
+                        <button
+                          type="button"
+                          class="edit-layer-card_reorder-btn"
+                          :disabled="i === editLayers.length - 1"
+                          :aria-label="`Ebene &quot;${editLayer.title}&quot; nach unten verschieben`"
+                          @click="moveLayer(i, 1)"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12L3 6h10l-5 6z"/></svg>
+                        </button>
+                      </div>
+
+                      <span class="edit-layer-card_title">{{ editLayer.title || 'Ebene ' + (i + 1) }}</span>
+                    </div>
+
+                    <div class="edit-layer-card_header-right">
+                      <AppIconButton
+                        variant="ghost"
+                        class="edit-layer-card_header-icon"
+                        :class="{ 'edit-layer-card_header-icon--dimmed': !editLayer.active }"
+                        :aria-label="editLayer.active ? `Ebene &quot;${editLayer.title}&quot; standardmäßig ausblenden` : `Ebene &quot;${editLayer.title}&quot; standardmäßig einblenden`"
+                        :title="editLayer.active ? 'Standardmäßig sichtbar' : 'Standardmäßig ausgeblendet'"
+                        @click="editLayer.active = !editLayer.active"
+                      >
+                        <svg v-if="editLayer.active" width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M8 2.5c-4.2 0-6.8 3.5-7.4 5.2A.9.9 0 000.6 8c0 .1.1.2.1.3.6 1.7 3.2 5.2 7.3 5.2s6.8-3.5 7.4-5.2c0-.1.1-.2.1-.3s0-.2-.1-.3C14.8 6 12.2 2.5 8 2.5zM8 12c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4zm0-6.5A2.5 2.5 0 1010.5 8 2.5 2.5 0 008 5.5z"/>
+                        </svg>
+                        <svg v-else width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M13.4 2.6a.5.5 0 00-.8-.6L10.9 4a7.6 7.6 0 00-2.9-.5C4 3.5 1.4 7 .8 8.7a.9.9 0 000 .6c.3.9 1.3 2.6 3 4L2.6 15a.5.5 0 10.8.6l10-10 .6-.6 2.4-2.4zM8 6a2 2 0 011.9 2.7l-2.6 2.6A2 2 0 018 6zM3.4 12.4C2 11.2 1.1 9.7.8 9c.5-1.5 2.8-4.5 6.2-4.5.6 0 1.2.1 1.7.2L6.9 6.5A2.5 2.5 0 006 8a2.5 2.5 0 002.9 2.5l-1.2 1.2A4 4 0 016 12c0 .1 0 .3.1.4l-1 1a2 2 0 01-1.7-1zM8 13.5c-.3 0-.6 0-.9-.1l1.2-1.2h.1c1.4 0 2.5-1.1 2.5-2.5v-.1l2.1-2.1c.9.9 1.5 1.9 1.8 2.5-.5 1.5-2.8 4.5-6.2 4.5h-.6z"/>
+                        </svg>
+                      </AppIconButton>
+
+                      <AppIconButton
+                        variant="ghost"
+                        class="edit-layer-card_header-icon"
+                        :aria-label="`Ebene &quot;${editLayer.title}&quot; löschen`"
+                        @click="deleteLayer(i)"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M11 1.75V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM6.5 1.75v1.25h3V1.75a.25.25 0 00-.25-.25h-2.5a.25.25 0 00-.25.25zM4.997 6.5a.75.75 0 00-1.498.076l.492 7.5a.75.75 0 001.498-.076L4.997 6.5zm6.006.076a.75.75 0 10-1.498-.076l-.492 7.5a.75.75 0 001.498.076l.492-7.5z"/>
+                        </svg>
+                      </AppIconButton>
+                    </div>
                   </div>
                   <div class="edit-layer-card_body">
                     <div class="edit-field">
@@ -143,6 +186,24 @@
                     <AppButton size="small" variant="secondary" @click="addPOIToLayer(i)">
                       + Marker hinzufügen
                     </AppButton>
+
+                    <div v-if="rooms.length" class="edit-field edit-field--room-marker">
+                      <label :for="`rm-${editLayer.id}`">Raummarker</label>
+                      <div class="room-marker-picker">
+                        <select :id="`rm-${editLayer.id}`" v-model="selectedRoomId[editLayer.id]" class="form-control">
+                          <option value="">Raum wählen…</option>
+                          <option v-for="room in rooms" :key="room.ID" :value="room.ID">{{ room.Title }}</option>
+                        </select>
+                        <AppButton
+                          size="small"
+                          variant="secondary"
+                          :disabled="!selectedRoomId[editLayer.id]"
+                          @click="addRoomPOIToLayer(i, editLayer.id)"
+                        >
+                          + Raummarker
+                        </AppButton>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -185,13 +246,17 @@
         </div>
       </div>
     </div>
+
+    <RoomDetailModal ref="roomDetailModal" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
+import { useRoomsStore } from '@stores/rooms'
+import RoomDetailModal from '@components/RoomDetailModal.vue'
 import { apiGet, apiPost, apiPostForm } from '@utils/api'
 import MapRenderer from '../../js/maprenderer.js'
 import AppButton from '@components/AppButton.vue'
@@ -201,13 +266,19 @@ const route = useRoute()
 const router = useRouter()
 usePageHeaderStore().setHeader('Lageplan', '')
 
+const roomsStore = useRoomsStore()
 const map = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const sidebarHidden = ref(false)
 const canvasEl = ref(null)
 const rendererEl = ref(null)
+const roomDetailModal = ref(null)
 let renderer = null
+
+// Rooms available for "Raummarker" in this map's organization
+const rooms = ref([])
+const selectedRoomId = reactive({})
 
 // Edit mode state
 const isEditMode = ref(false)
@@ -225,10 +296,30 @@ async function loadMap() {
     loading.value = false
     await nextTick()
     initRenderer()
+    loadRooms()
   } catch (e) {
     error.value = e.message
     loading.value = false
   }
+}
+
+async function loadRooms() {
+  if (!map.value?.organizationId) return
+  await roomsStore.fetchRooms()
+  rooms.value = roomsStore.rooms.filter(r => r.Organization?.ID === map.value.organizationId)
+}
+
+// Room-marker click: in edit mode, offer to remove the marker; otherwise show
+// the room's details + task list in a modal.
+function onRoomPOIClick(poiData) {
+  if (isEditMode.value) {
+    if (confirm(`Raummarker "${poiData.poi.title}" entfernen?`)) {
+      renderer?.deletePOI(poiData)
+      renderer?.render()
+    }
+    return
+  }
+  roomDetailModal.value?.open(poiData.poi.roomId)
 }
 
 function initRenderer() {
@@ -242,6 +333,7 @@ function initRenderer() {
     coordinatesLowerRight: map.value.coordinatesLowerRight,
     layers: map.value.layers,
     editMode: false,
+    onRoomPOIClick,
   })
   window.mapRenderer = renderer
 }
@@ -278,6 +370,7 @@ function enterEditMode() {
     title: l.title,
     description: l.description || '',
     color: l.layerColor || '#999999',
+    active: l.active !== false,
   }))
   pendingImages.value = {}
   pendingBgImage.value = null
@@ -339,6 +432,23 @@ async function deleteLayer(layerIndex) {
   }
 }
 
+// Swaps a layer with its neighbor (direction: -1 up, +1 down) in both the edit
+// form list and the renderer's live layer array (map.value.layers is the same
+// reference as renderer.layers — see deleteLayer() above), so the canvas
+// draw order and the eventual saved order stay in sync with what's shown here.
+function moveLayer(layerIndex, direction) {
+  const targetIndex = layerIndex + direction
+  if (targetIndex < 0 || targetIndex >= editLayers.value.length) return
+
+  const layers = editLayers.value
+  ;[layers[layerIndex], layers[targetIndex]] = [layers[targetIndex], layers[layerIndex]]
+
+  const rendererLayers = map.value.layers
+  ;[rendererLayers[layerIndex], rendererLayers[targetIndex]] = [rendererLayers[targetIndex], rendererLayers[layerIndex]]
+
+  renderer?.render()
+}
+
 function onLayerColorChange(layerIndex) {
   if (!renderer?.layers?.[layerIndex]) return
   const color = editLayers.value[layerIndex].color
@@ -368,6 +478,14 @@ function addPOIToLayer(layerIndex) {
   renderer?.addNewPOIToLayer(title, editLayers.value[layerIndex]?.color, layerIndex)
 }
 
+function addRoomPOIToLayer(layerIndex, editLayerId) {
+  const roomId = parseInt(selectedRoomId[editLayerId])
+  const room = rooms.value.find(r => r.ID === roomId)
+  if (!room) return
+  renderer?.addNewRoomPOIToLayer(room, layerIndex)
+  selectedRoomId[editLayerId] = ''
+}
+
 async function addLayer() {
   const title = prompt('Titel der neuen Ebene:')
   if (!title) return
@@ -382,6 +500,7 @@ async function addLayer() {
       title: newLayer.title,
       description: '',
       color: newLayer.layerColor || '#999999',
+      active: newLayer.active !== false,
     })
     renderer?.render()
   } catch (e) {
@@ -416,6 +535,8 @@ async function saveAll() {
         position: p.position,
         markerColor: p.markerColor,
         markerText: p.markerText,
+        type: p.type || 'marker',
+        roomId: p.roomId ?? null,
         isNew: p.isNew || false,
       }))
 
@@ -423,9 +544,14 @@ async function saveAll() {
         title: editLayer.title,
         description: editLayer.description,
         layerColor: editLayer.color,
+        active: editLayer.active,
         pois,
       })
     }
+
+    await apiPost(`/maps/reorderlayers/${map.value.id}`, {
+      layerIds: editLayers.value.map(l => l.id),
+    })
 
     isEditMode.value = false
     editLayers.value = []
