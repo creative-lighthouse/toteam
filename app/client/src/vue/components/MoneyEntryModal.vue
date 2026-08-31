@@ -145,12 +145,16 @@ function fillFromEntry(entry) {
   existingReceiptURL.value = entry.ReceiptURL || null
 }
 
-function open(entryToEdit = null) {
+function open(entryToEdit = null, defaultBudgetId = null) {
   currentEntry.value = entryToEdit
   Object.assign(form, defaultForm())
   error.value = null
   resetFile()
-  if (entryToEdit) fillFromEntry(entryToEdit)
+  if (entryToEdit) {
+    fillFromEntry(entryToEdit)
+  } else if (defaultBudgetId) {
+    form.BudgetID = defaultBudgetId
+  }
   dialogEl.value?.showModal()
 }
 

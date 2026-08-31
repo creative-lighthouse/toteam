@@ -6,6 +6,7 @@ use App\Controllers\ApiController;
 use App\Money\MoneyAccount;
 use App\Money\MoneyBudget;
 use App\Money\MoneyHistory;
+use App\Money\MoneySettlement;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use SilverStripe\Assets\File;
@@ -31,9 +32,11 @@ class MoneyApiController extends ApiController
         'budgetStore',
         'budgetUpdate',
         'budgetRemove',
+        'budgetEntries',
         'entryStore',
         'entryUpdate',
         'entryApprove',
+        'entrySettle',
         'entry',
     ];
 
@@ -181,6 +184,9 @@ class MoneyApiController extends ApiController
                 $receipt->deleteFile();
                 $receipt->delete();
             }
+            foreach ($entry->Settlements() as $settlement) {
+                $settlement->delete();
+            }
             $entry->delete();
         }
 
@@ -290,6 +296,53 @@ class MoneyApiController extends ApiController
         return $this->successResponse([
             'account' => $this->formatAccount($account, $member, true),
         ], 'Budget gelöscht');
+    }
+
+    /** GET /api/v1/money/budgetEntries/$ID */
+    public function budgetEntries(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $budget = MoneyBudget::get()->byID((int) $request->param('ID'));
+        if (!$budget || !$budget->exists()) {
+            return $this->errorResponse('Budget nicht gefunden', 404);
+        }
+
+        $account = $budget->Parent();
+        if (!$account || !$account->exists() || !$account->canViewInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $budgets = [];
+        foreach ($account->MoneyBudget() as $b) {
+            $budgets[] = $this->formatBudget($b);
+        }
+
+        $entries = [];
+        foreach (MoneyHistory::get()->filter('BudgetID', $budget->ID)->sort('ChangeDate DESC') as $entry) {
+            $entries[] = $this->formatEntry($entry);
+        }
+
+        return $this->jsonResponse([
+            'budget' => $this->formatBudget($budget),
+            'account' => [
+                'ID' => $account->ID,
+                'Title' => $account->Title,
+                'RequiresReceiptDeposit' => (bool) $account->RequiresReceiptDeposit,
+                'RequiresReceiptWithdrawal' => (bool) $account->RequiresReceiptWithdrawal,
+                'Budgets' => $budgets,
+                'Permissions' => [
+                    'canEnterDeposit' => $account->canEnterDepositInApp($member),
+                    'canEnterWithdrawal' => $account->canEnterWithdrawalInApp($member),
+                    'canManageBudgets' => $account->canManageBudgetsInApp($member),
+                    'canApprove' => $account->canApproveEntriesInApp($member),
+                ],
+            ],
+            'entries' => $entries,
+        ]);
     }
 
     /** POST /api/v1/money/entryStore (multipart/form-data) */
@@ -473,6 +526,59 @@ class MoneyApiController extends ApiController
         ], 'Buchung aktualisiert');
     }
 
+    /** POST /api/v1/money/entrySettle/$ID */
+    public function entrySettle(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $entry = MoneyHistory::get()->byID((int) $request->param('ID'));
+        if (!$entry || !$entry->exists()) {
+            return $this->errorResponse('Buchung nicht gefunden', 404);
+        }
+
+        $account = $entry->Parent();
+        if (!$account || !$account->exists() || !$account->canApproveEntriesInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        if ($entry->ChangeType !== 'Withdrawal') {
+            return $this->errorResponse('Nur Ausgaben können beglichen werden', 400);
+        }
+
+        $body = $this->getJsonBody();
+        $amount = (float) ($body['Amount'] ?? 0);
+        if ($amount <= 0) {
+            return $this->errorResponse('Der Betrag muss größer als 0 sein', 400);
+        }
+
+        $date = trim($body['Date'] ?? '') ?: date('Y-m-d');
+
+        $paymentMethod = trim($body['PaymentMethod'] ?? '');
+        if (!in_array($paymentMethod, ['Bar', 'EC'], true)) {
+            return $this->errorResponse('Zahlungsart muss "Bar" oder "EC" sein', 400);
+        }
+
+        $settlement = MoneySettlement::create();
+        $settlement->Amount = $amount;
+        $settlement->Date = $date;
+        $settlement->PaymentMethod = $paymentMethod;
+        $settlement->EntryID = $entry->ID;
+        $settlement->UserID = $member->ID;
+        $settlement->write();
+
+        return $this->successResponse([
+            'entry' => $this->formatEntry($entry),
+            'account' => $this->formatAccount($account, $member, true),
+        ], 'Zahlung erfasst');
+    }
+
     /** PUT /api/v1/money/entryApprove/$ID */
     public function entryApprove(HTTPRequest $request): HTTPResponse
     {
@@ -509,6 +615,9 @@ class MoneyApiController extends ApiController
         }
 
         $receipt = $entry->Receipt();
+        foreach ($entry->Settlements() as $settlement) {
+            $settlement->delete();
+        }
         $entry->delete();
         if ($receipt && $receipt->exists()) {
             $receipt->deleteFile();
@@ -550,6 +659,9 @@ class MoneyApiController extends ApiController
 
         $wasApproved = (bool) $entry->Approved;
         $receipt = $entry->Receipt();
+        foreach ($entry->Settlements() as $settlement) {
+            $settlement->delete();
+        }
         $entry->delete();
         if ($receipt && $receipt->exists()) {
             $receipt->deleteFile();
@@ -719,11 +831,29 @@ class MoneyApiController extends ApiController
             'ChangeAmount' => (float) $entry->ChangeAmount,
             'ChangeType' => $entry->ChangeType,
             'ChangeDate' => $entry->ChangeDate,
+            'Created' => $entry->Created,
             'Approved' => (bool) $entry->Approved,
             'User' => $this->formatMember($entry->User()),
             'ReceiptURL' => ($receipt && $receipt->exists()) ? $receipt->getURL() : null,
             'Budget' => ($budget && $budget->exists()) ? ['ID' => $budget->ID, 'Title' => $budget->Title] : null,
+            'SettledAmount' => (float) $entry->Settlements()->sum('Amount'),
+            'Settlements' => $this->formatSettlements($entry),
         ];
+    }
+
+    private function formatSettlements(MoneyHistory $entry): array
+    {
+        $items = [];
+        foreach ($entry->Settlements()->sort('Date DESC') as $settlement) {
+            $items[] = [
+                'ID' => $settlement->ID,
+                'Amount' => (float) $settlement->Amount,
+                'Date' => $settlement->Date,
+                'PaymentMethod' => $settlement->PaymentMethod,
+                'User' => $this->formatMember($settlement->User()),
+            ];
+        }
+        return $items;
     }
 
     private function formatAccount(MoneyAccount $account, Member $member, bool $withDetails): array

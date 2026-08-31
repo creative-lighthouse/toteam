@@ -27,6 +27,11 @@
         gap: 8px;
         font-size: 13px;
         color: var(--ColorGray);
+        text-decoration: none;
+
+        &:hover {
+            color: var(--ColorPrimary);
+        }
     }
 
     .money-detail_org-logo {
@@ -62,8 +67,64 @@
         margin-bottom: 8px;
     }
 
+    .money-section_bottom-row{
+        margin-top: 8px;
+        text-align: right;
+    }
+
     .money-section_title {
         margin: 0 0 8px;
+    }
+
+    // ── Filter (Buchungsverlauf) ──────────────────────────────
+    .money-filter-bar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .money-filter-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        @include media(max-smartphone) {
+            .input {
+                flex: 1 1 auto;
+            }
+        }
+    }
+
+    .money-filter-search {
+        min-width: 160px;
+        flex: 1;
+    }
+
+    .money-filter-text {
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+
+    .money-filter-reset {
+        margin: 0;
+    }
+
+    .input {
+        padding: 8px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 14px;
+        background-color: var(--ColorWhite);
+        height: 38px;
+        box-sizing: border-box;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
     }
 
     // ── Budgets ──────────────────────────────────────────────
@@ -85,10 +146,6 @@
         border: none;
         cursor: pointer;
         font-family: inherit;
-
-        &:disabled {
-            cursor: default;
-        }
     }
 
     .money-budget_header {
@@ -102,9 +159,17 @@
         font-weight: 600;
     }
 
+    .money-budget_header-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
     .money-budget_amount {
         font-size: 13px;
         color: var(--ColorGray);
+        white-space: nowrap;
     }
 
     // ── Buchungsverlauf / Freigaben ──────────────────────────
@@ -150,7 +215,12 @@
     }
 
     .money-entry_reason {
+        flex: 1;
+        min-width: 0;
         font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .money-entry_amount {
@@ -179,6 +249,29 @@
         background-color: var(--ColorLightGray);
         border-radius: 50px;
         padding: 1px 8px;
+    }
+
+    .money-entry_settle-badge {
+        border: none;
+        border-radius: 50px;
+        padding: 1px 8px;
+        font: inherit;
+        cursor: pointer;
+        color: var(--ColorWhite);
+
+        &--none {
+            background-color: var(--ColorStatusBad);
+        }
+
+        &--partial {
+            background-color: var(--ColorStatusWarning);
+            color: var(--ColorBlack);
+        }
+
+        &--full {
+            background-color: var(--ColorLightGray);
+            color: var(--ColorGray);
+        }
     }
 
     .money-entry_receipt {

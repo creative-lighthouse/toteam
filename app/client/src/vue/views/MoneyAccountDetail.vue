@@ -54,7 +54,7 @@
           <h3 class="hl3 money-section_title">Offene Freigaben ({{ account.PendingEntries.length }})</h3>
           <div class="money-entry-list">
             <div v-for="entry in account.PendingEntries" :key="entry.ID" class="money-entry money-entry--pending">
-              <MoneyEntryRow :entry="entry" />
+              <MoneyEntryRow :entry="entry" :can-settle="account.Permissions.canApprove" @settle="openSettleModal" />
               <div class="money-entry_approve-actions">
                 <AppButton variant="secondary" :disabled="approving === entry.ID" @click="approve(entry.ID, false)">Ablehnen</AppButton>
                 <AppButton variant="primary" :disabled="approving === entry.ID" @click="approve(entry.ID, true)">Genehmigen</AppButton>
@@ -67,31 +67,42 @@
         <section class="money-section">
           <div class="money-section_heading-row">
             <h3 class="hl3 money-section_title">Budgets</h3>
-            <AppButton v-if="account.Permissions.canManageBudgets" size="small" variant="secondary" @click="openBudgetModal(null)">+ Budget</AppButton>
+            <AppButton v-if="account && (account.Permissions.canEnterDeposit || account.Permissions.canEnterWithdrawal)" title="Ausgabe/Einnahme erfassen" @click="openEntryModal(null)">+ Buchung</AppButton>
           </div>
 
           <div v-if="account.Budgets.length === 0" class="section_infobox"><p>Noch keine Budgets angelegt.</p></div>
 
           <div v-else class="money-budget-list">
-            <button
+            <div
               v-for="budget in account.Budgets"
               :key="budget.ID"
               class="money-budget"
-              :disabled="!account.Permissions.canManageBudgets"
-              @click="openBudgetModal(budget)"
+              role="button"
+              tabindex="0"
+              @click="openBudget(budget.ID)"
+              @keydown.enter.space.prevent="openBudget(budget.ID)"
             >
               <div class="money-budget_header">
                 <span class="money-budget_title">{{ budget.Title }}</span>
-                <span class="money-budget_amount">
-                  {{ formatCurrency(budget.Spent) }}<span v-if="budget.HasBudget"> / {{ formatCurrency(budget.Budget) }}</span>
-                </span>
-              </div>
-              <div v-if="budget.HasBudget" class="money-progress money-progress--budget">
-                <div class="money-progress_bar">
-                  <div class="money-progress_fill" :class="{ 'money-progress_fill--over': budget.Remaining < 0 }" :style="{ width: budgetPercent(budget) + '%' }"></div>
+                <div class="money-budget_header-actions">
+                  <span class="money-budget_amount">
+                    {{ formatCurrency(budget.Spent) }}<span v-if="budget.HasBudget"> / {{ formatCurrency(budget.Budget) }}</span>
+                  </span>
+                  <AppIconButton
+                    v-if="account.Permissions.canManageBudgets"
+                    variant="primary"
+                    aria-label="Budget bearbeiten"
+                    @click.stop="openBudgetModal(budget)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </AppIconButton>
                 </div>
               </div>
-            </button>
+              <MoneyBudgetProgress :budget="budget" class="money-progress--budget" />
+            </div>
+          </div>
+          <div class="money-section_bottom-row">
+            <AppButton v-if="account.Permissions.canManageBudgets" size="small" variant="secondary" @click="openBudgetModal(null)">+ Budget</AppButton>
           </div>
         </section>
 
@@ -99,11 +110,44 @@
         <section class="money-section">
           <h3 class="hl3 money-section_title">Buchungsverlauf</h3>
 
+          <div v-if="account.History.length > 0" class="money-filter-bar">
+            <div class="money-filter-row">
+              <input type="search" class="input money-filter-search" v-model="filters.search" placeholder="Nach Titel suchen…" aria-label="Suche nach Titel">
+
+              <select class="input" v-model="filters.userId" aria-label="Nutzer">
+                <option value="">Alle Nutzer</option>
+                <option v-for="u in historyUsers" :key="u.ID" :value="String(u.ID)">{{ u.Name }}</option>
+              </select>
+
+              <select class="input" v-model="filters.budgetId" aria-label="Kategorie">
+                <option value="">Alle Budgets</option>
+                <option value="none">Ohne Budget</option>
+                <option v-for="b in account.Budgets" :key="b.ID" :value="String(b.ID)">{{ b.Title }}</option>
+              </select>
+
+              <select class="input" v-model="filters.status" aria-label="Status">
+                <option value="">Alle Status</option>
+                <option value="approved">Freigegeben</option>
+                <option value="pending">Ausstehend</option>
+              </select>
+
+              <AppButton v-if="hasActiveFilters" variant="secondary" size="small" class="money-filter-reset" @click="resetFilters">Filter zurücksetzen</AppButton>
+            </div>
+
+            <div class="money-filter-row">
+              <span class="money-filter-text">Reihenfolge</span>
+              <select class="input" v-model="sortOrder" aria-label="Reihenfolge">
+                <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+          </div>
+
           <div v-if="account.History.length === 0" class="section_infobox"><p>Noch keine Buchungen erfasst.</p></div>
+          <div v-else-if="filteredHistory.length === 0" class="section_infobox"><p>Keine Buchungen entsprechen den gewählten Filtern.</p></div>
 
           <div v-else class="money-entry-list">
-            <div v-for="entry in account.History" :key="entry.ID" class="money-entry">
-              <MoneyEntryRow :entry="entry" />
+            <div v-for="entry in filteredHistory" :key="entry.ID" class="money-entry">
+              <MoneyEntryRow :entry="entry" :can-settle="account.Permissions.canApprove" @settle="openSettleModal" />
               <div v-if="canEditEntry(entry) || canDeleteEntry(entry)" class="money-entry_actions">
                 <AppIconButton
                   v-if="canEditEntry(entry)"
@@ -161,11 +205,15 @@
       :account-id="account.ID"
       @saved="onBudgetSaved"
     />
+    <MoneySettleModal
+      ref="settleModal"
+      @saved="onSettleSaved"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, defineComponent, h, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import GLightbox from 'glightbox'
 import { useMoneyStore } from '@stores/money'
@@ -173,6 +221,9 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import MoneyEntryModal from '@components/MoneyEntryModal.vue'
 import MoneyAccountModal from '@components/MoneyAccountModal.vue'
 import MoneyBudgetModal from '@components/MoneyBudgetModal.vue'
+import MoneyEntryRow from '@components/MoneyEntryRow.vue'
+import MoneyBudgetProgress from '@components/MoneyBudgetProgress.vue'
+import MoneySettleModal from '@components/MoneySettleModal.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 
@@ -189,6 +240,7 @@ const account = computed(() => store.currentAccount)
 const entryModal = ref(null)
 const accountModal = ref(null)
 const budgetModal = ref(null)
+const settleModal = ref(null)
 const approving = ref(null)
 
 const targetPercent = computed(() => {
@@ -196,18 +248,64 @@ const targetPercent = computed(() => {
   return Math.max(0, Math.min(100, (account.value.CachedCurrentBalance / account.value.TargetAmount) * 100))
 })
 
+const filters = reactive({
+  search: '',
+  userId: '',
+  budgetId: '',
+  status: '',
+})
+
+const hasActiveFilters = computed(() => Object.values(filters).some(v => v !== ''))
+
+function resetFilters() {
+  filters.search = ''
+  filters.userId = ''
+  filters.budgetId = ''
+  filters.status = ''
+}
+
+const SORT_OPTIONS = [
+  { value: 'invoice', label: 'Rechnungsdatum' },
+  { value: 'submission', label: 'Einreichung' },
+  { value: 'alphabetical', label: 'Alphabetisch' },
+]
+const sortOrder = ref('invoice')
+
+const historyUsers = computed(() => {
+  const map = new Map()
+  for (const entry of account.value?.History ?? []) {
+    if (entry.User) map.set(entry.User.ID, entry.User.Name)
+  }
+  return [...map.entries()]
+    .map(([ID, Name]) => ({ ID, Name }))
+    .sort((a, b) => a.Name.localeCompare(b.Name))
+})
+
+const filteredHistory = computed(() => {
+  const history = account.value?.History ?? []
+  const filtered = history.filter(entry => {
+    if (filters.search && !entry.ChangeReason.toLowerCase().includes(filters.search.toLowerCase())) return false
+    if (filters.userId && String(entry.User?.ID) !== filters.userId) return false
+    if (filters.budgetId === 'none' && entry.Budget) return false
+    if (filters.budgetId && filters.budgetId !== 'none' && String(entry.Budget?.ID) !== filters.budgetId) return false
+    if (filters.status === 'approved' && !entry.Approved) return false
+    if (filters.status === 'pending' && entry.Approved) return false
+    return true
+  })
+
+  const sorted = [...filtered]
+  if (sortOrder.value === 'alphabetical') {
+    sorted.sort((a, b) => a.ChangeReason.localeCompare(b.ChangeReason))
+  } else if (sortOrder.value === 'submission') {
+    sorted.sort((a, b) => (b.Created ?? '').localeCompare(a.Created ?? ''))
+  } else {
+    sorted.sort((a, b) => (b.ChangeDate ?? '').localeCompare(a.ChangeDate ?? ''))
+  }
+  return sorted
+})
+
 function formatCurrency(value) {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0)
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(dateStr))
-}
-
-function budgetPercent(budget) {
-  if (!budget.Budget) return 0
-  return Math.max(0, Math.min(100, (budget.Spent / budget.Budget) * 100))
 }
 
 function canDeleteEntry(entry) {
@@ -223,6 +321,10 @@ function canEditEntry(entry) {
 
 function openBudgetModal(budget) {
   budgetModal.value?.open(budget)
+}
+
+function openBudget(id) {
+  router.push({ name: 'MoneyBudgetDetail', params: { id } })
 }
 
 function openEntryModal(entry) {
@@ -267,6 +369,14 @@ function onBudgetSaved() {
   budgetModal.value?.close()
 }
 
+function openSettleModal(entry) {
+  settleModal.value?.open(entry)
+}
+
+function onSettleSaved() {
+  settleModal.value?.close()
+}
+
 watch(account, val => {
   pageHeaderStore.setTitle(val?.Title ?? 'Kasse')
 })
@@ -288,37 +398,4 @@ watch(() => route.params.id, id => { if (id) store.fetchAccount(id) })
 watch(account, () => {
   nextTick(() => lightbox?.reload())
 }, { deep: true })
-
-// ── MoneyEntryRow sub-component ─────────────────────────────────────────
-const MoneyEntryRow = defineComponent({
-  name: 'MoneyEntryRow',
-  props: { entry: { type: Object, required: true } },
-  setup(props) {
-    return () => {
-      const e = props.entry
-      const sign = e.ChangeType === 'Deposit' ? '+' : '-'
-      const amountClass = e.ChangeType === 'Deposit' ? 'money-entry_amount--deposit' : 'money-entry_amount--withdrawal'
-
-      return h('div', { class: 'money-entry_row' }, [
-        h('div', { class: 'money-entry_main' }, [
-          h('div', { class: 'money-entry_top' }, [
-            h('span', { class: 'money-entry_reason' }, e.ChangeReason),
-            h('span', { class: ['money-entry_amount', amountClass] }, `${sign} ${formatCurrency(e.ChangeAmount)}`),
-          ]),
-          h('div', { class: 'money-entry_meta' }, [
-            h('span', formatDate(e.ChangeDate)),
-            e.User ? h('span', `· ${e.User.Name}`) : null,
-            e.Budget ? h('span', { class: 'money-entry_budget-tag' }, e.Budget.Title) : null,
-            e.ReceiptURL ? h('a', {
-              class: 'money-entry_receipt',
-              href: e.ReceiptURL,
-              'data-type': e.ReceiptURL.toLowerCase().endsWith('.pdf') ? 'iframe' : 'image',
-            }, 'Beleg') : null,
-            !e.Approved ? h('span', { class: 'money-entry_pending-badge' }, 'Ausstehend') : null,
-          ]),
-        ]),
-      ])
-    }
-  },
-})
 </script>

@@ -25,6 +25,7 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Security\Member User()
  * @method \SilverStripe\Assets\File Receipt()
  * @method \App\Money\MoneyBudget Budget()
+ * @method \SilverStripe\ORM\DataList|\App\Money\MoneySettlement[] Settlements()
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -46,6 +47,10 @@ class MoneyHistory extends DataObject implements PermissionProvider
         "User" => Member::class,
         "Receipt" => File::class,
         "Budget" => MoneyBudget::class,
+    ];
+
+    private static $has_many = [
+        "Settlements" => MoneySettlement::class,
     ];
 
     private static $owns = [

@@ -2,7 +2,8 @@
 
 .money-entry-modal,
 .money-account-modal,
-.money-budget-modal {
+.money-budget-modal,
+.money-settle-modal {
     text-align: left;
     max-width: 520px;
     max-height: 90vh;
@@ -137,6 +138,26 @@
 
     &_actions {
         @include modal-actions;
+    }
+}
+
+// ── Zahlungshistorie (nur money-settle-modal) ────────────────
+.money-settle-modal {
+    &_summary {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+
+    &_history-list {
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 13px;
+        color: var(--ColorGray);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
     }
 }
 
