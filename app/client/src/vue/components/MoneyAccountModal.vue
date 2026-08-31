@@ -34,10 +34,12 @@
             <div class="form-field">
               <label class="form-label" for="account-start">Startbetrag (€)</label>
               <input id="account-start" v-model="form.StartingAmount" type="number" step="0.01" class="input" />
+              <p v-if="startingAmountError" class="money-field-error">{{ startingAmountError }}</p>
             </div>
             <div class="form-field">
               <label class="form-label" for="account-target">Zielbetrag (€)</label>
               <input id="account-target" v-model="form.TargetAmount" type="number" step="0.01" class="input" />
+              <p v-if="targetAmountError" class="money-field-error">{{ targetAmountError }}</p>
             </div>
           </div>
 
@@ -89,6 +91,17 @@ const dialogEl = ref(null)
 const saving = ref(false)
 const error = ref(null)
 
+// Deckt sich mit MAX_AMOUNT in MoneyApiController — Feedback direkt im Formular statt
+// erst nach einem fehlschlagenden Server-Roundtrip.
+const MAX_AMOUNT = 999999999.99
+
+function amountFieldError(value) {
+  const parsed = parseFloat(value)
+  if (value === '' || value === null || Number.isNaN(parsed)) return null
+  if (Math.abs(parsed) > MAX_AMOUNT) return `Der Betrag darf maximal ${formatCurrency(MAX_AMOUNT)} betragen`
+  return null
+}
+
 const defaultForm = () => ({
   OrganizationID: props.adminOrgs.length === 1 ? props.adminOrgs[0].ID : 0,
   Title: '',
@@ -102,9 +115,16 @@ const defaultForm = () => ({
 
 const form = reactive(defaultForm())
 
+const serverAmountError = ref(null)
+const clientStartingAmountError = computed(() => amountFieldError(form.StartingAmount))
+const clientTargetAmountError = computed(() => amountFieldError(form.TargetAmount))
+const startingAmountError = computed(() => clientStartingAmountError.value || serverAmountError.value)
+const targetAmountError = computed(() => clientTargetAmountError.value || serverAmountError.value)
+
 const canSubmit = computed(() => {
   if (!form.Title.trim()) return false
   if (props.mode === 'create' && !form.OrganizationID) return false
+  if (clientStartingAmountError.value || clientTargetAmountError.value) return false
   return true
 })
 
@@ -125,6 +145,7 @@ function open() {
   Object.assign(form, defaultForm())
   if (props.mode === 'edit') fillFromAccount(props.account)
   error.value = null
+  serverAmountError.value = null
   dialogEl.value?.showModal()
 }
 
@@ -132,11 +153,16 @@ function close() {
   dialogEl.value?.close()
 }
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0)
+}
+
 async function submit() {
   if (!canSubmit.value) return
 
   saving.value = true
   error.value = null
+  serverAmountError.value = null
 
   const payload = {
     Title: form.Title.trim(),
@@ -160,7 +186,12 @@ async function submit() {
       emit('saved', response.data.account)
       close()
     } else {
-      error.value = response.error || 'Fehler beim Speichern der Kasse.'
+      const msg = response.error || 'Fehler beim Speichern der Kasse.'
+      if (msg.startsWith('Der Betrag')) {
+        serverAmountError.value = msg
+      } else {
+        error.value = msg
+      }
     }
   } catch (err) {
     error.value = err.message || 'Unbekannter Fehler.'

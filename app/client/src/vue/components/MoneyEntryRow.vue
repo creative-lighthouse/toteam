@@ -14,7 +14,6 @@
           type="button"
           class="money-entry_settle-badge"
           :class="`money-entry_settle-badge--${settleStatus}`"
-          :disabled="!canSettle"
           :title="settleTitle"
           @click.stop="$emit('settle', entry)"
         >{{ settleLabel }}</button>
@@ -23,6 +22,7 @@
           class="money-entry_receipt"
           :href="entry.ReceiptURL"
           :data-type="entry.ReceiptURL.toLowerCase().endsWith('.pdf') ? 'external' : 'image'"
+          @click.stop
         >Beleg</a>
         <span v-if="!entry.Approved" class="money-entry_pending-badge">Ausstehend</span>
       </div>
@@ -50,8 +50,8 @@ const amountClass = computed(() =>
 
 // Begleichen ist nur für freigegebene Ausgaben relevant — bei Einnahmen gibt es
 // nichts zu begleichen, bei noch nicht freigegebenen Buchungen ist der Betrag noch nicht final.
-// Freigeber dürfen begleichen (Badge klickbar); Buchende sehen den Status ihrer eigenen
-// Buchungen zusätzlich rein informativ (Badge deaktiviert, siehe :disabled oben).
+// Freigeber dürfen begleichen, Buchende dürfen den Status/die Historie ihrer eigenen
+// Buchungen einsehen (das Modal öffnet dann nur lesend, siehe MoneySettleModal).
 const showSettleBadge = computed(() =>
   (props.canSettle || isOwnEntry.value) && props.entry.ChangeType === 'Withdrawal' && props.entry.Approved
 )
@@ -72,7 +72,7 @@ const settleLabel = computed(() => {
 
 const settleTitle = computed(() => {
   const base = `${formatCurrency(settledAmount.value)} von ${formatCurrency(props.entry.ChangeAmount)} beglichen`
-  return props.canSettle ? `${base} – Zahlung erfassen` : base
+  return props.canSettle ? `${base} – Zahlung erfassen` : `${base} – Details ansehen`
 })
 
 function formatCurrency(value) {

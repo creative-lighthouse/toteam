@@ -33,6 +33,7 @@ class MoneyApiController extends ApiController
         'budgetUpdate',
         'budgetRemove',
         'budgetEntries',
+        'entryDetail',
         'entryStore',
         'entryUpdate',
         'entryApprove',
@@ -43,6 +44,11 @@ class MoneyApiController extends ApiController
     private const RECEIPT_MAX_SIZE = 5 * 1024 * 1024;
     private const RECEIPT_ALLOWED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
     private const RECEIPT_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'pdf'];
+
+    // Deutlich unter dem, was das Decimal(19,2)-Feld noch speichern kann (max. 17
+    // Vorkommastellen) — verhindert eine ValidationException (→ API 500) bei versehentlich
+    // sehr hoch eingegebenen Beträgen und gibt stattdessen eine verständliche Fehlermeldung.
+    private const MAX_AMOUNT = 999999999.99;
 
     protected function getDefaultAction()
     {
@@ -119,6 +125,10 @@ class MoneyApiController extends ApiController
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
+        if ($this->bodyAmountTooHigh($body, ['StartingAmount', 'TargetAmount'])) {
+            return $this->amountTooHighError();
+        }
+
         $account = MoneyAccount::create();
         $this->applyAccountFields($account, $body);
         $account->ParentID = $org->ID;
@@ -150,6 +160,9 @@ class MoneyApiController extends ApiController
         }
 
         $body = $this->getJsonBody();
+        if ($this->bodyAmountTooHigh($body, ['StartingAmount', 'TargetAmount'])) {
+            return $this->amountTooHighError();
+        }
         $this->applyAccountFields($account, $body, false);
         $account->write();
         $this->recalculateBalances($account);
@@ -226,6 +239,10 @@ class MoneyApiController extends ApiController
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
+        if ($this->bodyAmountTooHigh($body, ['Budget'])) {
+            return $this->amountTooHighError();
+        }
+
         $budget = MoneyBudget::create();
         $this->applyBudgetFields($budget, $body);
         $budget->ParentID = $account->ID;
@@ -257,6 +274,9 @@ class MoneyApiController extends ApiController
         }
 
         $body = $this->getJsonBody();
+        if ($this->bodyAmountTooHigh($body, ['Budget'])) {
+            return $this->amountTooHighError();
+        }
         $this->applyBudgetFields($budget, $body, false);
         $budget->write();
 
@@ -345,6 +365,33 @@ class MoneyApiController extends ApiController
         ]);
     }
 
+    /** GET /api/v1/money/entryDetail/$ID */
+    public function entryDetail(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $entry = MoneyHistory::get()->byID((int) $request->param('ID'));
+        if (!$entry || !$entry->exists()) {
+            return $this->errorResponse('Buchung nicht gefunden', 404);
+        }
+
+        $account = $entry->Parent();
+        if (!$account || !$account->exists() || !$account->canViewInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        return $this->jsonResponse([
+            'entry' => $this->formatEntry($entry),
+            'account' => [
+                'ID' => $account->ID,
+                'Title' => $account->Title,
+            ],
+        ]);
+    }
+
     /** POST /api/v1/money/entryStore (multipart/form-data) */
     public function entryStore(HTTPRequest $request): HTTPResponse
     {
@@ -374,6 +421,9 @@ class MoneyApiController extends ApiController
         $amount = (float) str_replace(',', '.', (string) ($_POST['ChangeAmount'] ?? '0'));
         if ($amount <= 0) {
             return $this->errorResponse('Der Betrag muss größer als 0 sein', 400);
+        }
+        if ($amount > self::MAX_AMOUNT) {
+            return $this->amountTooHighError();
         }
 
         $reason = trim($_POST['ChangeReason'] ?? '');
@@ -420,6 +470,7 @@ class MoneyApiController extends ApiController
         $entry->ChangeAmount = $amount;
         $entry->ChangeType = $changeType;
         $entry->ChangeDate = $changeDate;
+        $entry->Notes = trim($_POST['Notes'] ?? '');
         $entry->Approved = !$account->RequiresApproval;
         $entry->ParentID = $account->ID;
         $entry->UserID = $member->ID;
@@ -475,6 +526,9 @@ class MoneyApiController extends ApiController
         if ($amount <= 0) {
             return $this->errorResponse('Der Betrag muss größer als 0 sein', 400);
         }
+        if ($amount > self::MAX_AMOUNT) {
+            return $this->amountTooHighError();
+        }
 
         $reason = trim($_POST['ChangeReason'] ?? '');
         if (!$reason) {
@@ -513,6 +567,7 @@ class MoneyApiController extends ApiController
         $entry->ChangeAmount = $amount;
         $entry->ChangeType = $changeType;
         $entry->ChangeDate = $changeDate;
+        $entry->Notes = trim($_POST['Notes'] ?? '');
         $entry->BudgetID = $budget?->ID ?: 0;
         $entry->write();
 
@@ -556,6 +611,9 @@ class MoneyApiController extends ApiController
         $amount = (float) ($body['Amount'] ?? 0);
         if ($amount <= 0) {
             return $this->errorResponse('Der Betrag muss größer als 0 sein', 400);
+        }
+        if ($amount > self::MAX_AMOUNT) {
+            return $this->amountTooHighError();
         }
 
         $date = trim($body['Date'] ?? '') ?: date('Y-m-d');
@@ -678,6 +736,28 @@ class MoneyApiController extends ApiController
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
+
+    /**
+     * Prüft, ob eine der angegebenen Betrags-Keys im Body den erlaubten Maximalwert
+     * überschreitet (siehe MAX_AMOUNT-Kommentar).
+     */
+    private function bodyAmountTooHigh(array $body, array $keys): bool
+    {
+        foreach ($keys as $key) {
+            if (isset($body[$key]) && abs((float) $body[$key]) > self::MAX_AMOUNT) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function amountTooHighError(): HTTPResponse
+    {
+        return $this->errorResponse(
+            'Der Betrag darf maximal ' . number_format(self::MAX_AMOUNT, 2, ',', '.') . ' € betragen',
+            400
+        );
+    }
 
     private function applyAccountFields(MoneyAccount $account, array $body, bool $isCreate = true): void
     {
@@ -839,6 +919,7 @@ class MoneyApiController extends ApiController
             'ChangeType' => $entry->ChangeType,
             'ChangeDate' => $entry->ChangeDate,
             'Created' => $entry->Created,
+            'Notes' => $entry->Notes,
             'Approved' => (bool) $entry->Approved,
             'User' => $this->formatMember($entry->User()),
             'ReceiptURL' => ($receipt && $receipt->exists()) ? $receipt->getURL() : null,

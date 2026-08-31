@@ -38,6 +38,12 @@
         gap: 6px;
     }
 
+    .money-field-error {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ColorStatusBad);
+    }
+
     .form-field-row {
         display: grid;
         grid-template-columns: 1fr 1fr;

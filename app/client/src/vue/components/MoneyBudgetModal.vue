@@ -23,6 +23,7 @@
           <div v-if="form.HasBudget" class="form-field">
             <label class="form-label" for="budget-amount">Budget (€)</label>
             <input id="budget-amount" v-model="form.Budget" type="number" step="0.01" min="0" class="input" />
+            <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
           </div>
 
           <label v-if="form.HasBudget" class="form-checkbox">
@@ -40,7 +41,7 @@
               :disabled="saving || deleting"
               @click="remove"
             >{{ deleting ? 'Wird gelöscht…' : 'Löschen' }}</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || deleting || !form.Title.trim()">
+            <AppButton type="submit" variant="primary" :disabled="saving || deleting || !form.Title.trim() || !!amountError">
               {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
             </AppButton>
           </div>
@@ -67,6 +68,11 @@ const dialogEl = ref(null)
 const saving = ref(false)
 const deleting = ref(false)
 const error = ref(null)
+const serverAmountError = ref(null)
+
+// Deckt sich mit MAX_AMOUNT in MoneyApiController — Feedback direkt im Formular statt
+// erst nach einem fehlschlagenden Server-Roundtrip.
+const MAX_AMOUNT = 999999999.99
 
 // Wird direkt über das Argument von open() gesetzt statt über einen Prop:
 // ein Prop, der von einer Klick-Handler-Funktion im selben Tick gesetzt wird,
@@ -85,6 +91,15 @@ const defaultForm = () => ({
 
 const form = reactive(defaultForm())
 
+const clientAmountError = computed(() => {
+  const value = parseFloat(form.Budget)
+  if (!form.HasBudget || form.Budget === '' || Number.isNaN(value)) return null
+  if (value > MAX_AMOUNT) return `Der Betrag darf maximal ${formatCurrency(MAX_AMOUNT)} betragen`
+  return null
+})
+
+const amountError = computed(() => clientAmountError.value || serverAmountError.value)
+
 function fillFromBudget(budget) {
   if (!budget) return
   form.Title = budget.Title
@@ -98,6 +113,7 @@ function open(budgetToEdit = null) {
   Object.assign(form, defaultForm())
   if (budgetToEdit) fillFromBudget(budgetToEdit)
   error.value = null
+  serverAmountError.value = null
   dialogEl.value?.showModal()
 }
 
@@ -105,11 +121,16 @@ function close() {
   dialogEl.value?.close()
 }
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0)
+}
+
 async function submit() {
-  if (!form.Title.trim()) return
+  if (!form.Title.trim() || amountError.value) return
 
   saving.value = true
   error.value = null
+  serverAmountError.value = null
 
   const payload = {
     Title: form.Title.trim(),
@@ -127,7 +148,12 @@ async function submit() {
       emit('saved', response.data.budget)
       close()
     } else {
-      error.value = response.error || 'Fehler beim Speichern des Budgets.'
+      const msg = response.error || 'Fehler beim Speichern des Budgets.'
+      if (msg.startsWith('Der Betrag')) {
+        serverAmountError.value = msg
+      } else {
+        error.value = msg
+      }
     }
   } catch (err) {
     error.value = err.message || 'Unbekannter Fehler.'
