@@ -117,6 +117,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import GLightbox from 'glightbox'
 import { useMoneyStore } from '@stores/money'
+import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import MoneyEntryModal from '@components/MoneyEntryModal.vue'
 import MoneyBudgetModal from '@components/MoneyBudgetModal.vue'
@@ -129,6 +130,7 @@ import AppIconButton from '@components/AppIconButton.vue'
 const route = useRoute()
 const router = useRouter()
 const store = useMoneyStore()
+const authStore = useAuthStore()
 const pageHeaderStore = usePageHeaderStore()
 
 pageHeaderStore.setHeader('Budget')
@@ -150,13 +152,15 @@ function formatCurrency(value) {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0)
 }
 
+// Deckt sich mit der Backend-Regel in entryUpdate/entry (MoneyApiController):
+// Freigeber dürfen jede Buchung bearbeiten/löschen, alle anderen nur ihre eigenen,
+// solange diese noch nicht freigegeben sind.
 function canDeleteEntry(entry) {
   if (!account.value) return false
-  if (account.value.Permissions.canManageBudgets) return true
-  return !entry.Approved
+  if (account.value.Permissions.canApprove) return true
+  return !entry.Approved && entry.User?.ID === authStore.user?.ID
 }
 
-// Wer eine Buchung löschen darf, darf sie auch bearbeiten (gleiche Regel wie im Backend).
 function canEditEntry(entry) {
   return canDeleteEntry(entry)
 }

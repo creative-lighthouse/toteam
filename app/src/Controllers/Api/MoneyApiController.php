@@ -809,6 +809,12 @@ class MoneyApiController extends ApiController
 
     private function formatBudget(MoneyBudget $budget): array
     {
+        $pending = (float) MoneyHistory::get()->filter([
+            'BudgetID' => $budget->ID,
+            'Approved' => false,
+            'ChangeType' => 'Withdrawal',
+        ])->sum('ChangeAmount');
+
         return [
             'ID' => $budget->ID,
             'Title' => $budget->Title,
@@ -816,6 +822,7 @@ class MoneyApiController extends ApiController
             'HasBudget' => (bool) $budget->HasBudget,
             'CanBeOverBudget' => (bool) $budget->CanBeOverBudget,
             'Spent' => (float) $budget->CachedCurrentBalance,
+            'PendingAmount' => $pending,
             'Remaining' => $budget->HasBudget ? (float) $budget->Budget - (float) $budget->CachedCurrentBalance : null,
         ];
     }
