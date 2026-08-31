@@ -135,6 +135,10 @@
         &--over {
             background-color: var(--ColorStatusBad);
         }
+
+        &--pending {
+            background-color: var(--ColorGray); // dunkelgrau — noch nicht genehmigte Buchungen
+        }
     }
 
     &_marker {

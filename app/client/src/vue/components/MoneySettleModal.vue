@@ -91,7 +91,8 @@ const settledAmount = computed(() => entry.value?.SettledAmount || 0)
 
 function open(entryToSettle) {
   entry.value = entryToSettle
-  form.Amount = ''
+  const remaining = entryToSettle ? entryToSettle.ChangeAmount - (entryToSettle.SettledAmount || 0) : 0
+  form.Amount = remaining > 0 ? remaining.toFixed(2) : ''
   form.Date = today()
   form.PaymentMethod = 'Bar'
   error.value = null

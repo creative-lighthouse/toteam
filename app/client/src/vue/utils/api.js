@@ -49,13 +49,19 @@ export async function apiRequest(endpoint, options = {}, useCache = true, cacheD
       },
       credentials: 'same-origin'
     })
-    
+
+    // The backend always returns a structured { success, error } body for
+    // validation failures (400/403/404/...), so parse it and hand it back to
+    // the caller instead of throwing — throwing here discarded that message
+    // and left callers with a generic "API Error: 400 Bad Request" instead of
+    // e.g. "Diese Buchung würde das Budget überschreiten".
+    const data = await response.json().catch(() => null)
+
     if (!response.ok) {
+      if (data) return data
       throw new Error(`API Error: ${response.status} ${response.statusText}`)
     }
-    
-    const data = await response.json()
-    
+
     // Cache successful GET requests
     if (useCache && (!options.method || options.method === 'GET')) {
       await localforage.setItem(cacheKey, {
@@ -63,7 +69,7 @@ export async function apiRequest(endpoint, options = {}, useCache = true, cacheD
         timestamp: Date.now()
       })
     }
-    
+
     return data
   } catch (error) {
     console.error(`[API] Error fetching ${endpoint}:`, error)
@@ -167,10 +173,12 @@ export async function apiPostForm(endpoint, formData) {
     body: formData,
     credentials: 'same-origin',
   })
+  const data = await response.json().catch(() => null)
   if (!response.ok) {
+    if (data) return data
     throw new Error(`API Error: ${response.status} ${response.statusText}`)
   }
-  return response.json()
+  return data
 }
 
 /**

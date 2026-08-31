@@ -14,6 +14,7 @@
           type="button"
           class="money-entry_settle-badge"
           :class="`money-entry_settle-badge--${settleStatus}`"
+          :disabled="!canSettle"
           :title="settleTitle"
           @click.stop="$emit('settle', entry)"
         >{{ settleLabel }}</button>
@@ -31,12 +32,16 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useAuthStore } from '@stores/auth'
 
 const props = defineProps({
   entry: { type: Object, required: true },
   canSettle: { type: Boolean, default: false },
 })
 defineEmits(['settle'])
+
+const authStore = useAuthStore()
+const isOwnEntry = computed(() => !!props.entry.User && props.entry.User.ID === authStore.user?.ID)
 
 const sign = computed(() => (props.entry.ChangeType === 'Deposit' ? '+' : '-'))
 const amountClass = computed(() =>
@@ -45,7 +50,11 @@ const amountClass = computed(() =>
 
 // Begleichen ist nur für freigegebene Ausgaben relevant — bei Einnahmen gibt es
 // nichts zu begleichen, bei noch nicht freigegebenen Buchungen ist der Betrag noch nicht final.
-const showSettleBadge = computed(() => props.canSettle && props.entry.ChangeType === 'Withdrawal' && props.entry.Approved)
+// Freigeber dürfen begleichen (Badge klickbar); Buchende sehen den Status ihrer eigenen
+// Buchungen zusätzlich rein informativ (Badge deaktiviert, siehe :disabled oben).
+const showSettleBadge = computed(() =>
+  (props.canSettle || isOwnEntry.value) && props.entry.ChangeType === 'Withdrawal' && props.entry.Approved
+)
 
 const settledAmount = computed(() => props.entry.SettledAmount || 0)
 
@@ -61,9 +70,10 @@ const settleLabel = computed(() => {
   return `${formatCurrency(settledAmount.value)} beglichen`
 })
 
-const settleTitle = computed(() =>
-  `${formatCurrency(settledAmount.value)} von ${formatCurrency(props.entry.ChangeAmount)} beglichen – Zahlung erfassen`
-)
+const settleTitle = computed(() => {
+  const base = `${formatCurrency(settledAmount.value)} von ${formatCurrency(props.entry.ChangeAmount)} beglichen`
+  return props.canSettle ? `${base} – Zahlung erfassen` : base
+})
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0)

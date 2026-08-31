@@ -259,6 +259,10 @@
         cursor: pointer;
         color: var(--ColorWhite);
 
+        &:disabled {
+            cursor: default;
+        }
+
         &--none {
             background-color: var(--ColorStatusBad);
         }
