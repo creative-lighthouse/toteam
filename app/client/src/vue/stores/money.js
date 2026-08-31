@@ -5,6 +5,7 @@ import { apiGet, apiPost, apiPut, apiDelete, apiPostForm, clearCacheForEndpoint 
 export const useMoneyStore = defineStore('money', () => {
   const accounts = ref([])
   const currentAccount = ref(null)
+  const currentBudget = ref(null)
   const loading = ref(false)
   const error = ref(null)
 
@@ -31,6 +32,20 @@ export const useMoneyStore = defineStore('money', () => {
     } catch (err) {
       error.value = err.message
       currentAccount.value = null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchBudgetEntries(id) {
+    try {
+      loading.value = true
+      error.value = null
+      const response = await apiGet(`/money/budgetEntries/${id}`, false)
+      currentBudget.value = response.budget ? response : null
+    } catch (err) {
+      error.value = err.message
+      currentBudget.value = null
     } finally {
       loading.value = false
     }
@@ -122,13 +137,24 @@ export const useMoneyStore = defineStore('money', () => {
     return response
   }
 
+  async function settleEntry(id, data) {
+    const response = await apiPost(`/money/entrySettle/${id}`, data)
+    if (response.success) {
+      if (response.data?.account) currentAccount.value = response.data.account
+      await clearCacheForEndpoint('/money')
+    }
+    return response
+  }
+
   return {
     accounts,
     currentAccount,
+    currentBudget,
     loading,
     error,
     fetchOverview,
     fetchAccount,
+    fetchBudgetEntries,
     createAccount,
     updateAccount,
     removeAccount,
@@ -139,5 +165,6 @@ export const useMoneyStore = defineStore('money', () => {
     updateEntry,
     approveEntry,
     removeEntry,
+    settleEntry,
   }
 })

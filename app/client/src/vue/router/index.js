@@ -25,6 +25,7 @@ import Tasks from '@views/Tasks.vue'
 import TaskDetail from '@views/TaskDetail.vue'
 import Money from '@views/Money.vue'
 import MoneyAccountDetail from '@views/MoneyAccountDetail.vue'
+import MoneyBudgetDetail from '@views/MoneyBudgetDetail.vue'
 import Test from '@views/Test.vue'
 
 const routes = [
@@ -160,6 +161,12 @@ const routes = [
     path: '/money/:id',
     name: 'MoneyAccountDetail',
     component: MoneyAccountDetail,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/money/budget/:id',
+    name: 'MoneyBudgetDetail',
+    component: MoneyBudgetDetail,
     meta: { requiresAuth: true }
   },
   {
