@@ -16,6 +16,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property float $ChangeAmount
  * @property ?string $ChangeType
  * @property ?string $ChangeDate
+ * @property ?string $Notes
  * @property bool $Approved
  * @property int $ParentID
  * @property int $UserID
@@ -39,6 +40,7 @@ class MoneyHistory extends DataObject implements PermissionProvider
         "ChangeAmount" => "Decimal(19,2)",
         "ChangeType" => "Enum('Deposit,Withdrawal','Deposit')",
         "ChangeDate" => "Datetime",
+        "Notes" => "Text",
         "Approved" => "Boolean",
     ];
 
@@ -62,6 +64,7 @@ class MoneyHistory extends DataObject implements PermissionProvider
         "ChangeAmount" => "Änderungsbetrag",
         "ChangeType" => "Änderungstyp",
         "ChangeDate" => "Änderungsdatum",
+        "Notes" => "Anmerkungen",
         "Parent" => "Konto",
         "User" => "Benutzer",
         "Receipt" => "Beleg",

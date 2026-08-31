@@ -56,6 +56,74 @@
         }
     }
 
+    // ── Buchungsdetails (MoneyEntryDetail-Seite) ───────────────
+    .money-entry-detail_table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+
+        th,
+        td {
+            padding: 8px 0;
+            text-align: left;
+            vertical-align: baseline;
+        }
+
+        th {
+            color: var(--ColorGray);
+            font-weight: 400;
+            padding-right: 16px;
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        td {
+            font-weight: 600;
+        }
+
+        tr:not(:last-child) th,
+        tr:not(:last-child) td {
+            border-bottom: 1px solid var(--ColorLightGray);
+        }
+    }
+
+    .money-entry-detail_notes {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--ColorLightGray);
+    }
+
+    .money-entry-detail_notes-label {
+        margin: 0 0 4px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ColorGray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .money-entry-detail_notes-text {
+        margin: 0;
+        font-size: 14px;
+        white-space: pre-wrap;
+    }
+
+    .money-entry-detail_settle-summary {
+        margin: 0 0 10px;
+        font-size: 14px;
+    }
+
+    .money-entry-detail_settle-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 13px;
+        color: var(--ColorGray);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
     .money-section {
         margin-top: 32px;
     }
@@ -193,6 +261,10 @@
             align-items: stretch;
             border-left: 3px solid var(--ColorStatusWarning);
         }
+
+        &--clickable {
+            cursor: pointer;
+        }
     }
 
     .money-entry_row {
@@ -258,10 +330,6 @@
         font: inherit;
         cursor: pointer;
         color: var(--ColorWhite);
-
-        &:disabled {
-            cursor: default;
-        }
 
         &--none {
             background-color: var(--ColorStatusBad);

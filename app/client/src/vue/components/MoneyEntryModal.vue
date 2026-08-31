@@ -27,6 +27,7 @@
           <div class="form-field">
             <label class="form-label" for="entry-amount">Betrag (€) *</label>
             <input id="entry-amount" v-model="form.ChangeAmount" type="number" step="0.01" min="0.01" class="input" placeholder="0,00" required />
+            <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
           </div>
 
           <div class="form-field">
@@ -45,6 +46,11 @@
               <option value="">Kein Budget</option>
               <option v-for="b in budgets" :key="b.ID" :value="b.ID">{{ b.Title }}</option>
             </select>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="entry-notes">Anmerkungen</label>
+            <textarea id="entry-notes" v-model="form.Notes" class="input" rows="3" placeholder="Weitere Details zu dieser Buchung…"></textarea>
           </div>
 
           <div class="form-field">
@@ -113,6 +119,10 @@ const receiptFile = ref(null)
 const receiptPreview = ref(null)
 const existingReceiptURL = ref(null)
 
+// Deckt sich mit MAX_AMOUNT in MoneyApiController — Feedback direkt im Formular statt
+// erst nach einem fehlschlagenden Server-Roundtrip.
+const MAX_AMOUNT = 999999999.99
+
 const today = () => new Date().toISOString().slice(0, 10)
 
 const defaultForm = () => ({
@@ -121,6 +131,7 @@ const defaultForm = () => ({
   ChangeReason: '',
   ChangeDate: today(),
   BudgetID: '',
+  Notes: '',
 })
 
 const form = reactive(defaultForm())
@@ -129,8 +140,20 @@ const requiresReceipt = computed(() =>
   form.ChangeType === 'Deposit' ? props.requiresReceiptDeposit : props.requiresReceiptWithdrawal
 )
 
+const serverAmountError = ref(null)
+
+const clientAmountError = computed(() => {
+  const value = parseFloat(form.ChangeAmount)
+  if (form.ChangeAmount === '' || Number.isNaN(value)) return null
+  if (value > MAX_AMOUNT) return `Der Betrag darf maximal ${formatCurrency(MAX_AMOUNT)} betragen`
+  return null
+})
+
+const amountError = computed(() => clientAmountError.value || serverAmountError.value)
+
 const canSubmit = computed(() => {
   if (!form.ChangeAmount || !form.ChangeReason.trim()) return false
+  if (amountError.value) return false
   if (requiresReceipt.value && !receiptFile.value && !existingReceiptURL.value) return false
   return true
 })
@@ -142,6 +165,7 @@ function fillFromEntry(entry) {
   form.ChangeReason = entry.ChangeReason
   form.ChangeDate = entry.ChangeDate ? entry.ChangeDate.slice(0, 10) : today()
   form.BudgetID = entry.Budget?.ID ?? ''
+  form.Notes = entry.Notes || ''
   existingReceiptURL.value = entry.ReceiptURL || null
 }
 
@@ -149,6 +173,7 @@ function open(entryToEdit = null, defaultBudgetId = null) {
   currentEntry.value = entryToEdit
   Object.assign(form, defaultForm())
   error.value = null
+  serverAmountError.value = null
   resetFile()
   if (entryToEdit) {
     fillFromEntry(entryToEdit)
@@ -160,6 +185,10 @@ function open(entryToEdit = null, defaultBudgetId = null) {
 
 function close() {
   dialogEl.value?.close()
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0)
 }
 
 function resetFile() {
@@ -193,6 +222,7 @@ async function submit() {
 
   saving.value = true
   error.value = null
+  serverAmountError.value = null
 
   try {
     const fd = new FormData()
@@ -201,6 +231,7 @@ async function submit() {
     fd.append('ChangeAmount', form.ChangeAmount)
     fd.append('ChangeReason', form.ChangeReason.trim())
     fd.append('ChangeDate', form.ChangeDate)
+    fd.append('Notes', form.Notes.trim())
     if (form.BudgetID) fd.append('BudgetID', form.BudgetID)
     if (receiptFile.value) fd.append('receipt', receiptFile.value)
 
@@ -212,7 +243,12 @@ async function submit() {
       emit('saved', response.data.entry)
       close()
     } else {
-      error.value = response.error || 'Fehler beim Speichern der Buchung.'
+      const msg = response.error || 'Fehler beim Speichern der Buchung.'
+      if (msg.startsWith('Der Betrag')) {
+        serverAmountError.value = msg
+      } else {
+        error.value = msg
+      }
     }
   } catch (err) {
     error.value = err.message || 'Unbekannter Fehler.'
