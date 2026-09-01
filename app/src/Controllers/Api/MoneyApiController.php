@@ -383,11 +383,24 @@ class MoneyApiController extends ApiController
             return $this->errorResponse('Keine Berechtigung', 403);
         }
 
+        $budgets = [];
+        foreach ($account->MoneyBudget() as $b) {
+            $budgets[] = $this->formatBudget($b);
+        }
+
         return $this->jsonResponse([
             'entry' => $this->formatEntry($entry),
             'account' => [
                 'ID' => $account->ID,
                 'Title' => $account->Title,
+                'RequiresReceiptDeposit' => (bool) $account->RequiresReceiptDeposit,
+                'RequiresReceiptWithdrawal' => (bool) $account->RequiresReceiptWithdrawal,
+                'Budgets' => $budgets,
+                'Permissions' => [
+                    'canEnterDeposit' => $account->canEnterDepositInApp($member),
+                    'canEnterWithdrawal' => $account->canEnterWithdrawalInApp($member),
+                    'canApprove' => $account->canApproveEntriesInApp($member),
+                ],
             ],
         ]);
     }

@@ -8,7 +8,6 @@
       <div class="money-entry_meta">
         <span>{{ formatDate(entry.ChangeDate) }}</span>
         <span v-if="entry.User">· {{ entry.User.Name }}</span>
-        <span v-if="entry.Budget" class="money-entry_budget-tag">{{ entry.Budget.Title }}</span>
         <button
           v-if="showSettleBadge"
           type="button"
@@ -25,6 +24,7 @@
           @click.stop
         >Beleg</a>
         <span v-if="!entry.Approved" class="money-entry_pending-badge">Ausstehend</span>
+        <span v-if="entry.Budget" class="money-entry_budget-tag">{{ entry.Budget.Title }}</span>
       </div>
     </div>
   </div>
