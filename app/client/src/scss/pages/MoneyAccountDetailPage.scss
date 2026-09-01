@@ -227,13 +227,6 @@
         font-weight: 600;
     }
 
-    .money-budget_header-actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
-    }
-
     .money-budget_amount {
         font-size: 13px;
         color: var(--ColorGray);
@@ -255,15 +248,12 @@
         background-color: var(--ColorWhite);
         border-radius: var(--BorderRadiusMedium);
         box-shadow: var(--BoxShadowLight);
+        cursor: pointer;
 
         &--pending {
             flex-direction: column;
             align-items: stretch;
             border-left: 3px solid var(--ColorStatusWarning);
-        }
-
-        &--clickable {
-            cursor: pointer;
         }
     }
 
@@ -318,6 +308,7 @@
     }
 
     .money-entry_budget-tag {
+        margin-left: auto;
         background-color: var(--ColorLightGray);
         border-radius: 50px;
         padding: 1px 8px;
