@@ -109,7 +109,7 @@
               class="org-item"
             >
               <div class="org-item_info">
-                <img v-if="org.LogoURL" :src="org.LogoURL" class="org-item_logo" alt="">
+                <AppOrgLogo :src="org.LogoURL" :alt="org.Title" :size="36" />
                 <div class="org-item_text">
                   <strong>{{ org.Title }}</strong>
                   <span class="org-item_role">{{ roleLabel(org.Role) }}</span>
@@ -157,7 +157,13 @@
     </dialog>
   </Teleport>
 
-  <ImageCropModal ref="cropModal" @saved="onImageSaved" />
+  <ImageCropModal
+    ref="cropModal"
+    upload-url="/profile/uploadImage"
+    response-field="Avatar"
+    shape="circle"
+    @saved="onImageSaved"
+  />
 </template>
 
 <script setup>
@@ -168,6 +174,7 @@ import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
 import ImageCropModal from '@components/ImageCropModal.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const emit = defineEmits(['updated'])
 

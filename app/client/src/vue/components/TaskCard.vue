@@ -9,16 +9,13 @@
         {{ stateLabel }}
       </span>
       <template v-if="task.Organization">
-        <img
-          v-if="task.Organization.LogoURL"
+        <AppOrgLogo
           :src="task.Organization.LogoURL"
           :alt="task.Organization.Title"
           :title="task.Organization.Title"
+          :size="22"
           class="task-card_org-logo"
         />
-        <span v-else class="task-card_org-name" :title="task.Organization.Title">
-          {{ task.Organization.Title }}
-        </span>
       </template>
     </div>
 
@@ -67,6 +64,7 @@
 import { computed } from 'vue'
 import TaskProgressBar from '@components/TaskProgressBar.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const props = defineProps({
   task: {

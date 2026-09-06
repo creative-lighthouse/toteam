@@ -163,14 +163,6 @@ section.section--ProfilePage {
                         border-bottom: 1px solid var(--ColorLightGray);
                     }
 
-                    .profile-org-item_logo {
-                        width: 32px;
-                        height: 32px;
-                        border-radius: var(--BorderRadiusSmall);
-                        object-fit: contain;
-                        flex-shrink: 0;
-                    }
-
                     .profile-org-item_text {
                         display: flex;
                         flex-direction: column;

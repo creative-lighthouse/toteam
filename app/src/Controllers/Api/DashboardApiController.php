@@ -45,7 +45,7 @@ class DashboardApiController extends ApiController
                     $orgs[] = [
                         'ID' => $org->ID,
                         'Title' => $org->Title,
-                        'LogoURL' => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(40)->getURL() : null,
+                        'LogoURL' => $org->RenderLogo(40),
                     ];
                 }
 
@@ -117,9 +117,7 @@ class DashboardApiController extends ApiController
                         'date'                => $date,
                         'appointmentTitle'    => $appointment->Title,
                         'organizationTitle'   => $org?->Title,
-                        'organizationLogoUrl' => ($org && $org->Logo()->exists())
-                            ? $org->Logo()->ScaleWidth(40)->getURL()
-                            : null,
+                        'organizationLogoUrl' => $org?->RenderLogo(40),
                     ];
                 }
             }

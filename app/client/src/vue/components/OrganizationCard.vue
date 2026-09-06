@@ -10,15 +10,11 @@
       <div v-else class="organization-card_cover-placeholder" />
 
       <div class="organization-card_logo-wrap">
-        <img
-          v-if="org.LogoURL"
+        <AppOrgLogo
           :src="org.LogoURL"
           :alt="`${org.Title} Logo`"
           class="organization-card_logo"
-        >
-        <div v-else class="organization-card_logo-placeholder">
-          {{ org.Title?.charAt(0) ?? '?' }}
-        </div>
+        />
       </div>
     </div>
 
@@ -68,6 +64,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppButton from '@components/AppButton.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const props = defineProps({
   org: {

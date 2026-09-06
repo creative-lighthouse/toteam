@@ -22,11 +22,10 @@
         <div class="task-detail_header">
           <div class="task-detail_meta">
             <span v-if="task.Organization" class="task-detail_org">
-              <img
-                v-if="task.Organization.LogoURL"
+              <AppOrgLogo
                 :src="task.Organization.LogoURL"
                 :alt="task.Organization.Title"
-                class="task-detail_org-logo"
+                :size="22"
               />
               {{ task.Organization.Title }}
             </span>
@@ -196,6 +195,7 @@ import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import TaskCard from '@components/TaskCard.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 import TaskSupportersModal from '@components/TaskSupportersModal.vue'
 import TaskRoomsModal from '@components/TaskRoomsModal.vue'
 import TaskCreateModal from '@components/TaskCreateModal.vue'

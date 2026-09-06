@@ -235,7 +235,7 @@ class ProfileApiController extends ApiController
                 'Title'        => $org->Title,
                 'Username'     => $org->Username ?: null,
                 'Role'         => $ms->Role,
-                'LogoURL'      => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(60)->getURL() : null,
+                'LogoURL'      => $org->RenderLogo(60),
             ];
         }
 
@@ -269,7 +269,7 @@ class ProfileApiController extends ApiController
                 'Username'     => $org->Username ?: null,
                 'Role'         => $ms->Role,
                 'JoinedDate'   => $ms->JoinedDate,
-                'LogoURL'      => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(60)->getURL() : null,
+                'LogoURL'      => $org->RenderLogo(60),
             ];
         }
 

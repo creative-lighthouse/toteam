@@ -193,10 +193,11 @@ class CalendarApiController extends ApiController
             // Organisation logos (all organisations)
             $orgLogos = [];
             foreach ($appointment->Organisations() as $orgItem) {
-                if ($orgItem->Logo()->exists()) {
+                $logoURL = $orgItem->RenderLogo(40);
+                if ($logoURL) {
                     $orgLogos[] = [
-                        'ID'     => $orgItem->ID,
-                        'LogoURL' => $orgItem->Logo()->ScaleWidth(40)->getURL(),
+                        'ID'      => $orgItem->ID,
+                        'LogoURL' => $logoURL,
                     ];
                 }
             }
@@ -298,10 +299,11 @@ class CalendarApiController extends ApiController
 
             $pollOrgLogos = [];
             foreach ($poll->Organisations() as $orgItem) {
-                if ($orgItem->Logo()->exists()) {
+                $logoURL = $orgItem->RenderLogo(40);
+                if ($logoURL) {
                     $pollOrgLogos[] = [
                         'ID'      => $orgItem->ID,
-                        'LogoURL' => $orgItem->Logo()->ScaleWidth(40)->getURL(),
+                        'LogoURL' => $logoURL,
                     ];
                 }
             }

@@ -466,13 +466,6 @@ dialog{
             gap: 10px;
         }
 
-        .org-item_logo {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--BorderRadiusSmall);
-            object-fit: contain;
-            flex-shrink: 0;
-        }
 
         .org-item_text {
             display: flex;

@@ -65,7 +65,7 @@
                         class="profile-org-item"
                         :class="{ 'profile-org-item--link': org.Username }"
                     >
-                        <img v-if="org.LogoURL" :src="org.LogoURL" class="profile-org-item_logo" alt="">
+                        <AppOrgLogo :src="org.LogoURL" :alt="org.Title" :size="32" />
                         <div class="profile-org-item_text">
                             <strong>{{ org.Title }}</strong>
                             <span class="profile-org-item_role">{{ roleLabel(org.Role) }}</span>
@@ -87,6 +87,7 @@ import { apiGet } from '@utils/api'
 import QrCodeModal from '@components/QrCodeModal.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

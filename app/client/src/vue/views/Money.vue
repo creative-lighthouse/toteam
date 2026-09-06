@@ -32,8 +32,12 @@
           >
             <div class="money-account-card_header">
               <div class="money-account-card_org">
-                <img v-if="account.Organization?.LogoURL" :src="account.Organization.LogoURL" :alt="account.Organization.Title" class="money-account-card_org-logo">
-                <span v-else class="money-account-card_org-initial">{{ (account.Organization?.Title || '?')[0] }}</span>
+                <AppOrgLogo
+                  :src="account.Organization?.LogoURL"
+                  :alt="account.Organization?.Title"
+                  :size="20"
+                  class="money-account-card_org-logo"
+                />
                 <span class="money-account-card_org-name">{{ account.Organization?.Title }}</span>
               </div>
               <span v-if="account.PendingCount" class="money-badge money-badge--pending">{{ account.PendingCount }} offen</span>
@@ -67,6 +71,7 @@ import { useOrganizationsStore } from '@stores/organizations'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import MoneyAccountModal from '@components/MoneyAccountModal.vue'
 import AppButton from '@components/AppButton.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const router = useRouter()
 const store = useMoneyStore()

@@ -202,6 +202,7 @@ import { apiGet, apiPost, apiPut } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const router = useRouter()
 
@@ -366,12 +367,8 @@ const MealCard = defineComponent({
     return () => {
       const m = props.meal
 
-      const orgLogo = m.organizationLogoUrl
-        ? h('img', { src: m.organizationLogoUrl, alt: m.organizationTitle })
-        : h('span', { class: 'meal-card_org-initial' }, (m.organizationTitle || '?')[0])
-
       const header = h('button', { class: 'meal-card_header', onClick: () => emit('toggle') }, [
-        h('div', { class: 'meal-card_org-logo' }, [orgLogo]),
+        h(AppOrgLogo, { src: m.organizationLogoUrl, alt: m.organizationTitle, size: 36, class: 'meal-card_org-logo' }),
         h('div', { class: 'meal-card_meta' }, [
           h('span', { class: 'meal-card_date' }, formatDate(m.date)),
           h('span', { class: 'meal-card_name' }, m.title),

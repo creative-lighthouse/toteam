@@ -76,11 +76,7 @@
     }
 
     .event-card_org-logo {
-        width: 25px;
-        height: 25px;
-        border-radius: var(--BorderRadiusSmall);
         object-fit: cover;
-        flex-shrink: 0;
     }
 
     .event-card_title {

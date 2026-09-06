@@ -47,23 +47,7 @@
     }
 
     .task-card_org-logo {
-        width: 22px;
-        height: 22px;
-        object-fit: contain;
-        border-radius: 3px;
         margin-left: auto;
-        flex-shrink: 0;
-    }
-
-    .task-card_org-name {
-        font-size: 12px;
-        color: var(--ColorGray);
-        margin-left: auto;
-        flex-shrink: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 120px;
     }
 
     .task-card_title {

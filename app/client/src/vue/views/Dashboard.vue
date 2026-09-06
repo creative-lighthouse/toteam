@@ -68,9 +68,12 @@
         <ul class="infobox_list infobox_list--flat">
           <li v-for="item in dashboardStore.myUpcomingContributions" :key="`${item.foodId}-${item.mealId}`">
             <router-link :to="`/food/meal/${item.mealId}`" class="contribution-item">
-              <div v-if="item.organizationLogoUrl" class="contribution-item_logo">
-                <img :src="item.organizationLogoUrl" :alt="item.organizationTitle" />
-              </div>
+              <AppOrgLogo
+                :src="item.organizationLogoUrl"
+                :alt="item.organizationTitle"
+                :size="32"
+                class="contribution-item_logo"
+              />
               <div class="contribution-item_info">
                 <span class="contribution-item_food">{{ item.foodTitle }}</span>
                 <span class="contribution-item_context">
@@ -166,6 +169,7 @@ import EventCard from '@components/EventCard.vue'
 import AnnouncementCard from '@components/AnnouncementCard.vue'
 import AppButton from '@components/AppButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

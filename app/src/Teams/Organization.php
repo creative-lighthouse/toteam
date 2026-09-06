@@ -278,6 +278,21 @@ class Organization extends DataObject implements PermissionProvider
     }
 
     /**
+     * Einzige Quelle für die Logo-URL einer Organisation — liefert das Logo in
+     * einem quadratischen Zuschnitt der gewünschten Größe, oder null, falls (noch)
+     * kein Logo hochgeladen wurde. Es gibt (anders als beim Mitglieder-Avatar mit
+     * Gravatar-Fallback) keine automatische Ersatzgrafik; das Frontend zeigt in
+     * diesem Fall stattdessen die Initialen der Organisation an.
+     */
+    public function RenderLogo(int $size = 180): ?string
+    {
+        if ($this->LogoID && $this->Logo()->exists()) {
+            return $this->Logo()->Fill($size, $size)->getURL();
+        }
+        return null;
+    }
+
+    /**
      * Returns which Totems (feature modules) are enabled for this organization,
      * keyed by the frontend Totem key (e.g. 'calendar', 'food').
      *

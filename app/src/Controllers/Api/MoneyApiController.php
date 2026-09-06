@@ -976,7 +976,7 @@ class MoneyApiController extends ApiController
             'Organization' => $org && $org->exists() ? [
                 'ID' => $org->ID,
                 'Title' => $org->Title,
-                'LogoURL' => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(80)->getURL() : null,
+                'LogoURL' => $org->RenderLogo(80),
             ] : null,
             'Permissions' => [
                 'canEnterDeposit' => $account->canEnterDepositInApp($member),

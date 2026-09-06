@@ -29,22 +29,10 @@
                     position: absolute;
                     top: 8px;
                     left: 8px;
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 6px;
                     background: white;
                     box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-                    overflow: hidden;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    box-sizing: border-box;
                     padding: 3px;
-
-                    img {
-                        width: 100%;
-                        height: 100%;
-                        object-fit: contain;
-                    }
                 }
             }
 

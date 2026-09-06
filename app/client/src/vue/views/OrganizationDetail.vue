@@ -16,8 +16,12 @@
                 </div>
 
                 <div class="org-detail-hero_logo-wrap">
-                <img v-if="org.LogoURL" :src="org.LogoURL" :alt="`${org.Title} Logo`" class="org-detail-hero_logo">
-                <div v-else class="org-detail-hero_logo-placeholder">{{ org.Title?.charAt(0) ?? '?' }}</div>
+                <AppOrgLogo
+                    :src="org.LogoURL"
+                    :alt="`${org.Title} Logo`"
+                    :name="org.Title"
+                    class="org-detail-hero_logo"
+                />
                 </div>
             </div>
 
@@ -88,6 +92,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

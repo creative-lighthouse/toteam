@@ -58,7 +58,7 @@ class AnnouncementsApiController extends ApiController
                         $orgs[] = [
                             'ID' => $org->ID,
                             'Title' => $org->Title,
-                            'LogoURL' => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(40)->getURL() : null,
+                            'LogoURL' => $org->RenderLogo(40),
                         ];
                     }
 

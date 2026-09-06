@@ -12,12 +12,23 @@
 
       <template v-else>
         <div class="org-manage_header">
-          <img v-if="org.LogoURL" :src="org.LogoURL" :alt="org.Title" class="org-manage_logo" />
-          <div>
+          <AppOrgLogo :src="org.LogoURL" :alt="org.Title" :size="56" class="org-manage_logo" />
+          <div class="org-manage_header-text">
             <h2 class="hl2 org-manage_title">{{ org.Title }}</h2>
             <p class="org-manage_subtitle">Organisation verwalten</p>
           </div>
+          <label v-if="org.Permissions?.includes('ORG_MANAGE_SETTINGS')" class="button org-manage_logo-btn">
+            Logo ändern
+            <input
+              ref="logoFileInputEl"
+              type="file"
+              accept="image/jpeg,image/png"
+              class="file-input-hidden"
+              @change="onLogoFileSelected"
+            >
+          </label>
         </div>
+        <p v-if="logoError" class="org-manage_logo-error">{{ logoError }}</p>
 
         <!-- Rollen & Berechtigungen -->
         <section v-if="org.CanManageRoles" class="org-manage_section">
@@ -82,6 +93,15 @@
       :available-roles="orgRolesStore.roles.map(r => ({ ID: r.ID, Title: r.Title }))"
       @saved="onMemberRolesSaved"
     />
+    <ImageCropModal
+      v-if="org"
+      ref="logoCropModal"
+      title="Logo zuschneiden"
+      :upload-url="`/organizations/uploadLogo/${org.ID}`"
+      response-field="LogoURL"
+      shape="square"
+      @saved="onLogoSaved"
+    />
   </div>
 </template>
 
@@ -96,6 +116,8 @@ import MemberRolesModal from '@components/MemberRolesModal.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
+import ImageCropModal from '@components/ImageCropModal.vue'
 
 const route = useRoute()
 const orgRolesStore = useOrgRolesStore()
@@ -106,6 +128,33 @@ const roleModal = ref(null)
 const memberRolesModal = ref(null)
 const editingRole = ref(null)
 const editingMember = ref(null)
+
+// ── Logo ───────────────────────────────────────────
+const logoFileInputEl = ref(null)
+const logoCropModal = ref(null)
+const logoError = ref(null)
+
+function onLogoFileSelected(e) {
+  logoError.value = null
+  const file = e.target.files[0]
+  if (logoFileInputEl.value) logoFileInputEl.value.value = ''
+  if (!file) return
+
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    logoError.value = 'Nur PNG und JPEG sind erlaubt.'
+    return
+  }
+  if (file.size > 25 * 1024 * 1024) {
+    logoError.value = 'Das Bild darf maximal 25 MB groß sein.'
+    return
+  }
+
+  logoCropModal.value?.open(file)
+}
+
+function onLogoSaved(logoUrl) {
+  if (org.value) org.value.LogoURL = logoUrl
+}
 
 async function loadOrg() {
   loading.value = true

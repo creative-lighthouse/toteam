@@ -32,7 +32,6 @@
     .image-crop-modal_canvas {
         width: 220px;
         height: 220px;
-        border-radius: 50%;
         cursor: grab;
         touch-action: none;
         background-color: var(--ColorLightGray);
@@ -40,6 +39,16 @@
 
         &:active {
             cursor: grabbing;
+        }
+
+        // Kreis für Profilbilder (AppAvatar), abgerundetes Quadrat für Organisations-Logos
+        // (AppOrgLogo) — dieselbe 20%-Rundung wie überall sonst bei Org-Icons.
+        &--circle {
+            border-radius: 50%;
+        }
+
+        &--square {
+            border-radius: 20%;
         }
     }
 

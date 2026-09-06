@@ -15,9 +15,12 @@
 
         <!-- Header -->
         <div class="meal-detail-hero">
-          <div v-if="meal.organizationLogoUrl" class="meal-detail-hero_logo">
-            <img :src="meal.organizationLogoUrl" :alt="meal.organizationTitle" />
-          </div>
+          <AppOrgLogo
+            :src="meal.organizationLogoUrl"
+            :alt="meal.organizationTitle"
+            :size="56"
+            class="meal-detail-hero_logo"
+          />
           <div class="meal-detail-hero_info">
             <p class="meal-detail-hero_date">{{ formatDate(meal.date) }} • {{ meal.time }} Uhr</p>
             <h2 class="meal-detail-hero_title">{{ meal.title }}</h2>
@@ -325,6 +328,7 @@ import AppIconButton from '@components/AppIconButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
 import MealCard from '@components/EventDialog/MealCard.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')

@@ -7,6 +7,8 @@ use App\Notifications\PushNotificationService;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
+use SilverStripe\Assets\Image;
+use SilverStripe\Assets\Upload;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 
@@ -25,6 +27,7 @@ class OrganizationsApiController extends ApiController
         'applicants',
         'accept',
         'reject',
+        'uploadLogo',
     ];
 
     protected function getDefaultAction()
@@ -74,7 +77,7 @@ class OrganizationsApiController extends ApiController
                 'Username'             => $org->Username ?: null,
                 'Title'                => $org->Title,
                 'Description'          => $org->Description,
-                'LogoURL'              => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(80)->getURL() : null,
+                'LogoURL'              => $org->RenderLogo(80),
                 'CoverURL'             => $org->CoverImage()->exists() ? $org->CoverImage()->ScaleWidth(600)->getURL() : null,
                 'JoinMode'             => $org->JoinMode,
                 'MemberCount'          => $memberCount,
@@ -159,7 +162,7 @@ class OrganizationsApiController extends ApiController
                 'Username'         => $org->Username ?: null,
                 'Title'            => $org->Title,
                 'Description'      => $org->Description,
-                'LogoURL'          => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(200)->getURL() : null,
+                'LogoURL'          => $org->RenderLogo(200),
                 'CoverURL'         => $org->CoverImage()->exists() ? $org->CoverImage()->ScaleWidth(1200)->getURL() : null,
                 'JoinMode'         => $org->JoinMode,
                 'MemberCount'      => $memberCount,
@@ -264,6 +267,84 @@ class OrganizationsApiController extends ApiController
         }
 
         return $this->jsonResponse(['applicants' => $data]);
+    }
+
+    public function uploadLogo(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $orgID = (int) $request->param('ID');
+        $org   = Organization::get()->byID($orgID);
+        if (!$org) {
+            return $this->errorResponse('Organisation nicht gefunden', 404);
+        }
+
+        if (!$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_SETTINGS)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $file = $_FILES['image'] ?? null;
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            return $this->errorResponse('Keine Datei hochgeladen');
+        }
+
+        if ($file['size'] > 2 * 1024 * 1024) {
+            return $this->errorResponse('Die Datei darf maximal 2 MB groß sein');
+        }
+
+        // Der Cropper im Frontend liefert das Ergebnis immer als JPEG (die Beschneidung
+        // auf 180×180 passiert bereits client-seitig per Canvas), daher wird hier bewusst
+        // nur JPEG akzeptiert statt beliebiger Bildformate.
+        $mime = mime_content_type($file['tmp_name']);
+        if ($mime !== 'image/jpeg') {
+            return $this->errorResponse('Nur JPEG wird akzeptiert');
+        }
+
+        // Delete old logo before saving new one
+        if ($org->LogoID && $org->Logo()->exists()) {
+            $oldImage = $org->Logo();
+            $oldImage->deleteFile();
+            $oldImage->delete();
+        }
+
+        $folder = 'OrganizationImages/' . ($org->Username ?: $org->ID);
+
+        $image  = Image::create();
+        $upload = Upload::create();
+        $upload->getValidator()->setAllowedExtensions(['jpg', 'jpeg']);
+        $upload->getValidator()->setAllowedMaxFileSize(2 * 1024 * 1024);
+
+        $result = $upload->loadIntoFile([
+            'name'     => 'OrganizationIcon.jpg',
+            'type'     => $mime,
+            'tmp_name' => $file['tmp_name'],
+            'error'    => UPLOAD_ERR_OK,
+            'size'     => $file['size'],
+        ], $image, $folder);
+
+        if (!$result) {
+            $errors = $upload->getErrors();
+            return $this->errorResponse(
+                !empty($errors) ? implode(', ', $errors) : 'Bild konnte nicht gespeichert werden'
+            );
+        }
+
+        $image->write();
+        $image->publishSingle();
+
+        $org->LogoID = $image->ID;
+        $org->write();
+
+        return $this->successResponse([
+            'LogoURL' => $org->RenderLogo(200),
+        ], 'Logo gespeichert');
     }
 
     public function accept(HTTPRequest $request): HTTPResponse

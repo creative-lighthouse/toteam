@@ -4,18 +4,19 @@
       <div class="image-crop-modal_content" @click.stop>
 
         <div class="image-crop-modal_header">
-          <h2 class="hl2 image-crop-modal_title">Profilbild zuschneiden</h2>
+          <h2 class="hl2 image-crop-modal_title">{{ title }}</h2>
           <AppIconButton variant="ghost" aria-label="Abbrechen" @click="cancel">✕</AppIconButton>
         </div>
 
         <div class="image-crop-modal_body">
           <p class="image-crop-modal_hint">Ziehen zum Verschieben · Scrollen oder Schieberegler zum Zoomen</p>
 
-          <!-- Der Kreis-Ausschnitt entspricht exakt dem finalen 180×180-Avatar, damit
+          <!-- Der Ausschnitt entspricht exakt dem finalen Bild (Größe + Form), damit
                das Endergebnis schon beim Zuschneiden sichtbar ist. -->
           <canvas
             ref="canvasEl"
             class="image-crop-modal_canvas"
+            :class="`image-crop-modal_canvas--${shape}`"
             width="280"
             height="280"
             @wheel.prevent="onWheel"
@@ -63,8 +64,18 @@ import { apiPostForm } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 
-// Muss zum `Fill(180, 180)` in MemberExtension::RenderProfileImage() passen.
-const OUTPUT_SIZE = 180
+// Generischer Zuschnitt-Editor: wird sowohl für das eigene Profilbild (Kreis,
+// RenderProfileImage) als auch für Organisations-Logos (abgerundetes Quadrat,
+// Organization::RenderLogo) verwendet — beide skalieren serverseitig auf
+// dasselbe Zielformat, daher ist auch hier ein fester Ziel-Output sinnvoll.
+const props = defineProps({
+  title: { type: String, default: 'Profilbild zuschneiden' },
+  uploadUrl: { type: String, required: true },
+  // Feldname, unter dem die neue Bild-URL in der Erfolgsantwort steht (z.B. 'Avatar' oder 'LogoURL').
+  responseField: { type: String, default: 'Avatar' },
+  shape: { type: String, default: 'circle' }, // 'circle' | 'square'
+  outputSize: { type: Number, default: 180 },
+})
 
 const emit = defineEmits(['saved'])
 
@@ -229,17 +240,18 @@ async function save() {
     const cy = Math.max(halfView, Math.min(img.height - halfView, panY.value))
 
     const out = document.createElement('canvas')
-    out.width = out.height = OUTPUT_SIZE
-    out.getContext('2d').drawImage(img, cx - halfView, cy - halfView, viewSize, viewSize, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
+    out.width = out.height = props.outputSize
+    out.getContext('2d').drawImage(img, cx - halfView, cy - halfView, viewSize, viewSize, 0, 0, props.outputSize, props.outputSize)
 
     const blob = await new Promise(resolve => out.toBlob(resolve, 'image/jpeg', 0.92))
     const fd   = new FormData()
-    fd.append('image', blob, 'profile.jpg')
+    fd.append('image', blob, 'image.jpg')
 
-    const result = await apiPostForm('/profile/uploadImage', fd)
+    const result = await apiPostForm(props.uploadUrl, fd)
+    const savedUrl = result.data?.[props.responseField]
 
-    if (result.success && result.data?.Avatar) {
-      emit('saved', result.data.Avatar)
+    if (result.success && savedUrl) {
+      emit('saved', savedUrl)
       dialogEl.value?.close()
       cleanupImage()
     } else {

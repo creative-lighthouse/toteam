@@ -15,6 +15,7 @@ class OrgPermissions
     public const ORG_ADMIN = 'ORG_ADMIN';
     public const ORG_MANAGE_MEMBERS = 'ORG_MANAGE_MEMBERS';
     public const ORG_MANAGE_ROLES = 'ORG_MANAGE_ROLES';
+    public const ORG_MANAGE_SETTINGS = 'ORG_MANAGE_SETTINGS';
 
     public const TASKS_CREATE = 'TASKS_CREATE';
     public const TASKS_EDIT = 'TASKS_EDIT';
@@ -55,6 +56,7 @@ class OrgPermissions
                 self::ORG_ADMIN => 'Administrator (darf alles)',
                 self::ORG_MANAGE_MEMBERS => 'Mitglieder verwalten',
                 self::ORG_MANAGE_ROLES => 'Rollen & Berechtigungen verwalten',
+                self::ORG_MANAGE_SETTINGS => 'Organisationsprofil (Logo etc.) bearbeiten',
             ],
             'Aufgaben' => [
                 self::TASKS_CREATE => 'Aufgaben erstellen',

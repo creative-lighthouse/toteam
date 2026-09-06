@@ -1,0 +1,24 @@
+@use "../variables" as *;
+
+// Einheitliche Basis für alle Organisations-Icons (AppOrgLogo.vue). Breite/Höhe/Radius/
+// Schriftgröße kommen als Inline-Style von der Komponente selbst (Props `size`/`radius`),
+// hier steht nur, was für alle Einsatzstellen gleich aussehen soll. Einzelne Stellen können
+// bei Bedarf zusätzliche Klassen mitgeben (Position, Hintergrund, Schatten, Abstand).
+.apporglogo {
+    display: inline-block;
+    object-fit: contain;
+    // Prozentual statt fest in px, damit der Radius bei jeder Icon-Größe (22px bis
+    // 64px, je nach Einsatzstelle) gleich proportioniert aussieht, ohne dass jede
+    // Stelle ihren eigenen Radius-Wert erraten/pflegen muss.
+    border-radius: 20%;
+    flex-shrink: 0;
+
+    &--placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--ColorPrimary);
+        color: var(--ColorWhite);
+        font-weight: 700;
+    }
+}

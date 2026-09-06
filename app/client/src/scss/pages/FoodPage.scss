@@ -119,23 +119,7 @@
     }
 
     &_org-logo {
-        width: 36px;
-        height: 36px;
-        border-radius: 6px;
-        overflow: hidden;
-        flex-shrink: 0;
         background: var(--ColorLightGray);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        img { width: 100%; height: 100%; object-fit: contain; }
-    }
-
-    &_org-initial {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--ColorTextSecondary);
     }
 
     &_meta {
@@ -551,14 +535,7 @@
     box-shadow: var(--BoxShadowLight);
 
     &_logo {
-        width: 56px;
-        height: 56px;
-        border-radius: 10px;
-        overflow: hidden;
-        flex-shrink: 0;
         background: var(--ColorLightGray);
-
-        img { width: 100%; height: 100%; object-fit: contain; }
     }
 
     &_info { flex: 1; min-width: 0; }

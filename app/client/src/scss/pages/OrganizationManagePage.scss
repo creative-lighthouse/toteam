@@ -5,14 +5,16 @@
         display: flex;
         align-items: center;
         gap: 14px;
-        margin-bottom: 24px;
+        margin-bottom: 8px;
     }
 
     .org-manage_logo {
-        width: 56px;
-        height: 56px;
-        border-radius: var(--BorderRadiusMedium);
         object-fit: cover;
+    }
+
+    .org-manage_header-text {
+        flex: 1;
+        min-width: 0;
     }
 
     .org-manage_title {
@@ -23,6 +25,26 @@
         margin: 2px 0 0;
         font-size: 13px;
         color: var(--ColorGray);
+    }
+
+    .org-manage_logo-btn {
+        flex-shrink: 0;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .org-manage_logo-error {
+        color: var(--ColorStatusBad);
+        font-size: 13px;
+        margin: 0 0 16px;
+    }
+
+    .file-input-hidden {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        overflow: hidden;
     }
 
     .org-manage_section {
