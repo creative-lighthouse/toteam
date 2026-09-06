@@ -1,0 +1,64 @@
+@use "../variables" as *;
+
+.image-crop-modal {
+    text-align: left;
+    max-width: 360px;
+
+    .image-crop-modal_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .image-crop-modal_header {
+        @include modal-header;
+    }
+
+    .image-crop-modal_body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+    }
+
+    .image-crop-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+        text-align: center;
+    }
+
+    .image-crop-modal_canvas {
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        cursor: grab;
+        touch-action: none;
+        background-color: var(--ColorLightGray);
+        box-shadow: 0 0 0 3px var(--ColorLightGray);
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    .zoom-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+
+        .zoom-slider {
+            flex: 1;
+            accent-color: var(--ColorPrimary);
+            height: 4px;
+            cursor: pointer;
+        }
+    }
+
+    .image-crop-modal_actions {
+        @include modal-actions;
+        background-color: var(--ColorWhite);
+    }
+}

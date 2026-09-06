@@ -95,9 +95,12 @@ class ProfileApiController extends ApiController
             return $this->errorResponse('Die Datei darf maximal 2 MB groß sein');
         }
 
+        // Der Cropper im Frontend liefert das Ergebnis immer als JPEG (die Beschneidung
+        // auf 180×180 passiert bereits client-seitig per Canvas), daher wird hier bewusst
+        // nur JPEG akzeptiert statt beliebiger Bildformate.
         $mime = mime_content_type($file['tmp_name']);
-        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
-            return $this->errorResponse('Nur PNG und JPEG sind erlaubt');
+        if ($mime !== 'image/jpeg') {
+            return $this->errorResponse('Nur JPEG wird akzeptiert');
         }
 
         // Delete old profile image before saving new one
@@ -107,22 +110,20 @@ class ProfileApiController extends ApiController
             $oldImage->delete();
         }
 
-        $ext      = ($mime === 'image/png') ? 'png' : 'jpg';
-        $slug     = preg_replace('/[^a-z0-9]+/', '-', strtolower($member->Email));
-        $filename = trim($slug, '-') . '.' . $ext;
+        $folder = 'ProfileImages/' . ($member->Username ?: $member->ID);
 
         $image  = Image::create();
         $upload = Upload::create();
-        $upload->getValidator()->setAllowedExtensions(['jpg', 'jpeg', 'png']);
+        $upload->getValidator()->setAllowedExtensions(['jpg', 'jpeg']);
         $upload->getValidator()->setAllowedMaxFileSize(2 * 1024 * 1024);
 
         $result = $upload->loadIntoFile([
-            'name'     => $filename,
+            'name'     => 'ProfileImage.jpg',
             'type'     => $mime,
             'tmp_name' => $file['tmp_name'],
             'error'    => UPLOAD_ERR_OK,
             'size'     => $file['size'],
-        ], $image, 'ProfileImages');
+        ], $image, $folder);
 
         if (!$result) {
             $errors = $upload->getErrors();

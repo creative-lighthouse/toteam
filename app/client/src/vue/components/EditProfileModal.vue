@@ -33,47 +33,6 @@
             </label>
             <p v-if="fileError" class="status-text status-text--error">{{ fileError }}</p>
             <p v-if="imageSaved" class="status-text status-text--success">Profilbild gespeichert.</p>
-
-            <!-- Canvas-Editor -->
-            <div v-if="editorSrc" class="image-editor">
-              <p class="image-editor_hint">Ziehen zum Verschieben · Scrollen oder Schieberegler zum Zoomen</p>
-              <canvas
-                ref="canvasEl"
-                class="image-editor_canvas"
-                width="280"
-                height="280"
-                @wheel.prevent="onWheel"
-                @mousedown.prevent="onMouseDown"
-                @mousemove="onMouseMove"
-                @mouseup="onMouseUp"
-                @mouseleave="onMouseUp"
-                @touchstart.prevent="onTouchStart"
-                @touchmove.prevent="onTouchMove"
-                @touchend="onTouchEnd"
-              ></canvas>
-
-              <div class="zoom-controls">
-                <AppIconButton variant="neutral" aria-label="Verkleinern" @click="adjustZoom(-0.15)">−</AppIconButton>
-                <input
-                  type="range"
-                  class="zoom-slider"
-                  min="1"
-                  :max="maxZoom"
-                  step="0.01"
-                  :value="zoom"
-                  @input="onZoomSlider"
-                >
-                <AppIconButton variant="neutral" aria-label="Vergrößern" @click="adjustZoom(0.15)">+</AppIconButton>
-              </div>
-
-              <AppButton
-                variant="primary"
-                :disabled="savingImage"
-                @click="saveCroppedImage"
-              >
-                {{ savingImage ? 'Wird gespeichert …' : 'Bild speichern' }}
-              </AppButton>
-            </div>
           </section>
 
           <!-- ── Section: Persönliche Daten ── -->
@@ -197,15 +156,18 @@
       </div>
     </dialog>
   </Teleport>
+
+  <ImageCropModal ref="cropModal" @saved="onImageSaved" />
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick } from 'vue'
-import { apiGet, apiPost, apiPostForm, apiPut } from '@utils/api'
+import { ref, reactive, computed } from 'vue'
+import { apiGet, apiPost, apiPut } from '@utils/api'
 import { useAuthStore } from '@stores/auth'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import ImageCropModal from '@components/ImageCropModal.vue'
 
 const emit = defineEmits(['updated'])
 
@@ -221,7 +183,8 @@ async function open() {
 
 function close() {
   dialogEl.value?.close()
-  resetEditor()
+  fileError.value  = null
+  imageSaved.value = false
 }
 
 defineExpose({ open, close })
@@ -282,28 +245,13 @@ async function toggleAllergy(allergy) {
   }
 }
 
-// ── Image editor ───────────────────────────────────
-const fileInputEl  = ref(null)
-const canvasEl     = ref(null)
-const editorSrc    = ref(null)
-const editorImg    = ref(null)
-const zoom         = ref(1)
-const maxZoom      = ref(8)
-const panX         = ref(0)
-const panY         = ref(0)
-const fileError    = ref(null)
-const savingImage  = ref(false)
-const imageSaved   = ref(false)
-
-// drag
-const isDragging     = ref(false)
-const dragStartX     = ref(0)
-const dragStartY     = ref(0)
-const dragStartPanX  = ref(0)
-const dragStartPanY  = ref(0)
-
-// pinch
-const lastPinchDist = ref(null)
+// ── Profilbild ─────────────────────────────────────
+// Die eigentliche Zuschneide-/Zoom-Logik lebt in ImageCropModal, das sich als
+// zweites Modal vor diesem öffnet — hier wird nur die Dateiauswahl validiert.
+const fileInputEl = ref(null)
+const cropModal   = ref(null)
+const fileError   = ref(null)
+const imageSaved  = ref(false)
 
 const currentAvatarUrl = computed(() => authStore.user?.Avatar ?? '')
 
@@ -311,175 +259,28 @@ function onFileSelected(e) {
   fileError.value  = null
   imageSaved.value = false
   const file = e.target.files[0]
+  if (fileInputEl.value) fileInputEl.value.value = ''
   if (!file) return
 
   if (!['image/jpeg', 'image/png'].includes(file.type)) {
     fileError.value = 'Nur PNG und JPEG sind erlaubt.'
     return
   }
-  if (file.size > 2 * 1024 * 1024) {
-    fileError.value = 'Das Bild darf maximal 2 MB groß sein.'
+  // Nur eine großzügige Notbremse gegen pathologische Dateien — der Zuschnitt
+  // passiert im Browser und das Ergebnis ist immer ein kleines 180×180-JPEG,
+  // die tatsächliche Upload-Größe hängt also nicht von der Quelldatei ab.
+  if (file.size > 25 * 1024 * 1024) {
+    fileError.value = 'Das Bild darf maximal 25 MB groß sein.'
     return
   }
 
-  if (editorSrc.value) URL.revokeObjectURL(editorSrc.value)
-  editorSrc.value = URL.createObjectURL(file)
-
-  const img = new Image()
-  img.onload = () => {
-    editorImg.value = img
-    zoom.value      = 1
-    panX.value      = img.width  / 2
-    panY.value      = img.height / 2
-    nextTick(redraw)
-  }
-  img.src = editorSrc.value
+  cropModal.value?.open(file)
 }
 
-function redraw() {
-  const canvas = canvasEl.value
-  const img    = editorImg.value
-  if (!canvas || !img) return
-
-  const ctx       = canvas.getContext('2d')
-  const size      = canvas.width
-  const shortSide = Math.min(img.width, img.height)
-  const viewSize  = shortSide / zoom.value
-  const halfView  = viewSize / 2
-
-  const cx = Math.max(halfView, Math.min(img.width  - halfView, panX.value))
-  const cy = Math.max(halfView, Math.min(img.height - halfView, panY.value))
-
-  ctx.clearRect(0, 0, size, size)
-  ctx.drawImage(img, cx - halfView, cy - halfView, viewSize, viewSize, 0, 0, size, size)
-}
-
-function adjustZoom(delta) {
-  zoom.value = Math.max(1, Math.min(maxZoom.value, zoom.value + delta * zoom.value))
-  redraw()
-}
-
-function onZoomSlider(e) {
-  zoom.value = parseFloat(e.target.value)
-  redraw()
-}
-
-function onWheel(e) {
-  adjustZoom(e.deltaY < 0 ? 0.1 : -0.1)
-}
-
-function onMouseDown(e) {
-  isDragging.value    = true
-  dragStartX.value    = e.clientX
-  dragStartY.value    = e.clientY
-  dragStartPanX.value = panX.value
-  dragStartPanY.value = panY.value
-}
-
-function onMouseMove(e) {
-  if (!isDragging.value || !editorImg.value) return
-  const shortSide = Math.min(editorImg.value.width, editorImg.value.height)
-  const viewSize  = shortSide / zoom.value
-  const scale     = viewSize / canvasEl.value.width
-  panX.value = dragStartPanX.value - (e.clientX - dragStartX.value) * scale
-  panY.value = dragStartPanY.value - (e.clientY - dragStartY.value) * scale
-  redraw()
-}
-
-function onMouseUp() {
-  isDragging.value = false
-}
-
-function pinchDist(e) {
-  const dx = e.touches[0].clientX - e.touches[1].clientX
-  const dy = e.touches[0].clientY - e.touches[1].clientY
-  return Math.sqrt(dx * dx + dy * dy)
-}
-
-function onTouchStart(e) {
-  if (e.touches.length === 2) {
-    lastPinchDist.value = pinchDist(e)
-    isDragging.value    = false
-  } else {
-    isDragging.value    = true
-    dragStartX.value    = e.touches[0].clientX
-    dragStartY.value    = e.touches[0].clientY
-    dragStartPanX.value = panX.value
-    dragStartPanY.value = panY.value
-  }
-}
-
-function onTouchMove(e) {
-  if (e.touches.length === 2 && lastPinchDist.value !== null) {
-    const dist  = pinchDist(e)
-    const ratio = dist / lastPinchDist.value
-    zoom.value  = Math.max(1, Math.min(maxZoom.value, zoom.value * ratio))
-    lastPinchDist.value = dist
-    redraw()
-  } else if (e.touches.length === 1 && isDragging.value && editorImg.value) {
-    const shortSide = Math.min(editorImg.value.width, editorImg.value.height)
-    const viewSize  = shortSide / zoom.value
-    const scale     = viewSize / canvasEl.value.width
-    panX.value = dragStartPanX.value - (e.touches[0].clientX - dragStartX.value) * scale
-    panY.value = dragStartPanY.value - (e.touches[0].clientY - dragStartY.value) * scale
-    redraw()
-  }
-}
-
-function onTouchEnd(e) {
-  if (e.touches.length < 2) lastPinchDist.value = null
-  if (e.touches.length === 0) isDragging.value   = false
-}
-
-async function saveCroppedImage() {
-  if (!editorImg.value) return
-  savingImage.value = true
-  fileError.value   = null
-
-  try {
-    const img       = editorImg.value
-    const shortSide = Math.min(img.width, img.height)
-    const viewSize  = shortSide / zoom.value
-    // Output at most 800×800; never upscale beyond source pixels
-    const outputSize = Math.min(800, Math.round(viewSize))
-    const halfView   = viewSize / 2
-    const cx = Math.max(halfView, Math.min(img.width  - halfView, panX.value))
-    const cy = Math.max(halfView, Math.min(img.height - halfView, panY.value))
-
-    const out = document.createElement('canvas')
-    out.width = out.height = outputSize
-    out.getContext('2d').drawImage(img, cx - halfView, cy - halfView, viewSize, viewSize, 0, 0, outputSize, outputSize)
-
-    const blob = await new Promise(resolve => out.toBlob(resolve, 'image/jpeg', 0.92))
-    const fd   = new FormData()
-    fd.append('image', blob, 'profile.jpg')
-
-    const result = await apiPostForm('/profile/uploadImage', fd)
-
-    if (result.success && result.data?.Avatar) {
-      authStore.updateUser({ Avatar: result.data.Avatar })
-      resetEditor()
-      imageSaved.value = true
-      emit('updated')
-    } else {
-      fileError.value = result.error ?? 'Bild konnte nicht gespeichert werden.'
-    }
-  } catch (err) {
-    console.error('Bild-Upload fehlgeschlagen:', err)
-    fileError.value = 'Hochladen fehlgeschlagen.'
-  } finally {
-    savingImage.value = false
-  }
-}
-
-function resetEditor() {
-  if (editorSrc.value) {
-    URL.revokeObjectURL(editorSrc.value)
-    editorSrc.value = null
-  }
-  editorImg.value = null
-  zoom.value      = 1
-  if (fileInputEl.value) fileInputEl.value.value = ''
+function onImageSaved(avatarUrl) {
+  authStore.updateUser({ Avatar: avatarUrl })
+  imageSaved.value = true
+  emit('updated')
 }
 
 // ── Profile form ───────────────────────────────────
