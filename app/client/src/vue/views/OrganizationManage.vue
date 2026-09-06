@@ -51,7 +51,7 @@
 
           <div class="org-manage_members">
             <div v-for="m in org.Members" :key="m.MembershipID" class="org-manage_member">
-              <img :src="m.Avatar" :alt="m.Name" class="org-manage_member-avatar" />
+              <AppAvatar :src="m.Avatar" :alt="m.Name" img-class="org-manage_member-avatar" />
               <div class="org-manage_member-info">
                 <span class="org-manage_member-name">{{ m.Name }}</span>
                 <span class="org-manage_member-roles">
@@ -95,6 +95,7 @@ import RoleEditModal from '@components/RoleEditModal.vue'
 import MemberRolesModal from '@components/MemberRolesModal.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const route = useRoute()
 const orgRolesStore = useOrgRolesStore()

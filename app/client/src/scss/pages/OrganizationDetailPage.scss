@@ -198,6 +198,16 @@ section.section--OrganizationDetailPage {
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--ColorLightGray);
+
+            &--placeholder {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--ColorPrimary);
+                color: var(--ColorWhite);
+                font-size: 1.1rem;
+                font-weight: 700;
+            }
         }
 
         .org-detail-member_name {

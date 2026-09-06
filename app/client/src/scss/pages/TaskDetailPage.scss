@@ -138,6 +138,16 @@
         object-fit: cover;
         flex-shrink: 0;
         border: 2px solid var(--ColorLightGray);
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-size: 1rem;
+            font-weight: 700;
+        }
     }
 
     .task-detail_person-role {

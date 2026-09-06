@@ -28,7 +28,7 @@
             :class="{ 'person-filter_option--selected': p.ID === store.filterPersonId }"
             @click="select(p.ID)"
           >
-            <img :src="p.Avatar" :alt="p.Name" class="person-filter_avatar" />
+            <AppAvatar :src="p.Avatar" :alt="p.Name" img-class="person-filter_avatar" />
             <span class="person-filter_name">{{ p.Name }}<template v-if="isSelf(p)"> (Du)</template></span>
           </button>
         </li>
@@ -52,6 +52,7 @@ import { ref, computed, nextTick, onMounted } from 'vue'
 import { useTasksStore } from '@stores/tasks'
 import { useAuthStore } from '@stores/auth'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 import PersonSearchIcon from '../../../icons/person_search.svg'
 
 const store = useTasksStore()

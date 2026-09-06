@@ -19,16 +19,11 @@
                 </AppIconButton>
 
                 <div class="profile-image">
-                    <img
-                        v-if="profile.ProfileImage"
-                        :src="profile.ProfileImage.URL"
+                    <AppAvatar
+                        :src="profile.Avatar"
                         :alt="`Profilbild von ${displayName}`"
-                    >
-                    <img
-                        v-else
-                        :src="profile.Gravatar"
-                        alt="Standard Profilbild"
-                    >
+                        img-class="profile-image_avatar"
+                    />
                 </div>
 
                 <p v-if="profile.Username && profile.NameVisibility !== 'username'" class="profile-username">
@@ -91,6 +86,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import QrCodeModal from '@components/QrCodeModal.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

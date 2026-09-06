@@ -138,9 +138,7 @@ class ProfileApiController extends ApiController
         $member->write();
 
         return $this->successResponse([
-            'ProfileImage' => [
-                'URL' => $image->FillMax(400, 400)->getURL(),
-            ],
+            'Avatar' => $member->RenderProfileImage(),
         ], 'Profilbild gespeichert');
     }
 
@@ -250,10 +248,7 @@ class ProfileApiController extends ApiController
             'FoodPreference' => $member->FoodPreference ?: 'None',
             'DateOfBirth'    => $member->DateOfBirth,
             'Joindate'       => $member->Joindate,
-            'Gravatar'       => $member->getGravatar(),
-            'ProfileImage'   => ($member->ProfileImageID && $member->ProfileImage()->exists())
-                ? ['URL' => $member->ProfileImage()->FillMax(400, 400)->getURL()]
-                : null,
+            'Avatar'         => $member->RenderProfileImage(),
             'Organizations'  => $orgs,
         ];
     }
@@ -287,10 +282,7 @@ class ProfileApiController extends ApiController
             'FoodPreference'  => $member->FoodPreference ?: 'None',
             'DateOfBirth'    => $member->DateOfBirth,
             'Joindate'       => $member->Joindate,
-            'Gravatar'       => $member->getGravatar(),
-            'ProfileImage'   => ($member->ProfileImageID && $member->ProfileImage()->exists())
-                ? ['URL' => $member->ProfileImage()->FillMax(400, 400)->getURL()]
-                : null,
+            'Avatar'         => $member->RenderProfileImage(),
             'Organizations'  => $orgs,
         ];
     }

@@ -7,16 +7,11 @@
           Willkommen zurück, <b>{{ authStore.user?.FirstName }} {{ authStore.user?.Surname }}!</b>
         </p>
         <div class="welcome_profileimage">
-          <img
-            v-if="authStore.user?.ProfileImage?.URL"
-            :src="authStore.user.ProfileImage.URL"
-            :alt="`Profilbild von ${authStore.user.FirstName}`"
-          >
-          <img
-            v-else
-            :src="authStore.user?.Gravatar"
-            alt="Standard Profilbild"
-          >
+          <AppAvatar
+            :src="authStore.user?.Avatar"
+            :alt="`Profilbild von ${authStore.user?.FirstName}`"
+            img-class="welcome_profileimage-avatar"
+          />
         </div>
       </div>
 
@@ -170,6 +165,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/EventCard.vue'
 import AnnouncementCard from '@components/AnnouncementCard.vue'
 import AppButton from '@components/AppButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

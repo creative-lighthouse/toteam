@@ -127,6 +127,15 @@
                     object-fit: cover;
                     border-radius: 50%;
                     display: block;
+
+                    &--placeholder {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: var(--ColorPrimary);
+                        color: var(--ColorWhite);
+                        font-weight: 700;
+                    }
                 }
 
                 .nav_image {

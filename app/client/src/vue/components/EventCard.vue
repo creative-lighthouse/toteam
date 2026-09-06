@@ -45,13 +45,13 @@
     <div class="event-card_footer">
       <div class="event-card_footer-left">
         <div v-if="visibleAvatars.length" class="event-card_avatars">
-          <img
+          <AppAvatar
             v-for="p in visibleAvatars"
             :key="p.ID"
             :src="p.ProfileImageURL"
             :alt="p.MemberName"
-            class="event-card_avatar"
-          >
+            img-class="event-card_avatar"
+          />
         </div>
         <div class="event-card_footer-info">
           <span v-if="event.Location" class="event-card_location">{{ event.Location }}</span>
@@ -66,6 +66,7 @@
 <script setup>
 import { computed } from 'vue'
 import ParticipationIcon from './ParticipationIcon.vue'
+import AppAvatar from './AppAvatar.vue'
 import ScheduleIcon from '../../../icons/actions/action_schedule.svg'
 
 const scheduleIconStyle = {

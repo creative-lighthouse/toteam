@@ -5,18 +5,11 @@
             <li>
                 <div class="nav_link" @click="toggleProfileMenu">
                     <div class="nav_icon nav_icon--profile">
-                        <img
-                            v-if="authStore.user?.ProfileImage"
-                            :src="authStore.user.ProfileImage.URL"
-                            :alt="`Profilbild von ${authStore.user.FirstName}`"
-                            class="profile_image"
-                        >
-                        <img
-                            v-else
-                            :src="authStore.user?.Gravatar"
-                            alt="Standard Profilbild"
-                            class="profile_image"
-                        >
+                        <AppAvatar
+                            :src="authStore.user?.Avatar"
+                            :alt="`Profilbild von ${authStore.user?.FirstName}`"
+                            img-class="profile_image"
+                        />
                     </div>
                 </div>
             </li>
@@ -134,18 +127,11 @@
             <div class="nav_profile_wrap">
                 <router-link to="/profile" class="nav_profile" @click="closeAllMenus">
                     <div class="nav_icon nav_icon--profile">
-                        <img
-                            v-if="authStore.user?.ProfileImage"
-                            :src="authStore.user.ProfileImage.URL"
-                            :alt="`Profilbild von ${authStore.user.FirstName}`"
-                            class="profile_image"
-                        >
-                        <img
-                            v-else
-                            :src="authStore.user?.Gravatar"
-                            alt="Standard Profilbild"
-                            class="profile_image"
-                        >
+                        <AppAvatar
+                            :src="authStore.user?.Avatar"
+                            :alt="`Profilbild von ${authStore.user?.FirstName}`"
+                            img-class="profile_image"
+                        />
                     </div>
                     <div class="nav_text">
                         <p class="nav_title">{{ authStore.user?.FirstName }}</p>
@@ -182,6 +168,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useAnnouncementsStore } from '@stores/announcements'
 import { useUiStore } from '@stores/ui'
+import AppAvatar from '@components/AppAvatar.vue'
 import SettingsModal from '@components/SettingsModal.vue'
 import FeedbackModal from '@components/FeedbackModal.vue'
 

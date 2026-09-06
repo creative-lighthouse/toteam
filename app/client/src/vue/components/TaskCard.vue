@@ -39,20 +39,21 @@
       </div>
 
       <div class="task-card_avatars">
-        <img
+        <AppAvatar
           v-if="task.Owner"
           :src="task.Owner.Avatar"
           :alt="task.Owner.Name"
           :title="task.Owner.Name"
-          class="task-card_avatar task-card_avatar--owner"
+          img-class="task-card_avatar task-card_avatar--owner"
+          placeholder-class="task-card_avatar--owner task-card_avatar--placeholder"
         />
-        <img
+        <AppAvatar
           v-for="s in task.Supporters?.slice(0, 3)"
           :key="s.ID"
           :src="s.Avatar"
           :alt="s.Name"
           :title="s.Name"
-          class="task-card_avatar"
+          img-class="task-card_avatar"
         />
         <span v-if="(task.Supporters?.length ?? 0) > 3" class="task-card_avatar-overflow">
           +{{ task.Supporters.length - 3 }}
@@ -65,6 +66,7 @@
 <script setup>
 import { computed } from 'vue'
 import TaskProgressBar from '@components/TaskProgressBar.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const props = defineProps({
   task: {

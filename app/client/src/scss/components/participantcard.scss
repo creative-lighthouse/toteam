@@ -56,6 +56,22 @@
             left: 2px;
             aspect-ratio: 1;
         }
+
+        .participant-avatar_initials {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 10px;
+            left: 2px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
     }
 
     .participant-name {

@@ -75,8 +75,12 @@
           <h3 class="hl3">Wer ist dabei ({{ meal.attendees.length }})</h3>
           <ul class="meal-attendee-list">
             <li v-for="a in meal.attendees" :key="a.id" class="meal-attendee">
-              <img v-if="a.avatarUrl" :src="a.avatarUrl" :alt="a.name" class="meal-attendee_avatar" />
-              <span v-else class="meal-attendee_avatar meal-attendee_avatar--placeholder">{{ a.name[0] }}</span>
+              <AppAvatar
+                :src="a.avatarUrl"
+                :alt="a.name"
+                :initials-length="1"
+                img-class="meal-attendee_avatar"
+              />
               <span class="meal-attendee_name">{{ a.name }}</span>
               <span
                 v-for="allergy in a.allergies"
@@ -320,6 +324,7 @@ import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
 import MealCard from '@components/EventDialog/MealCard.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')

@@ -146,7 +146,7 @@ export const useEventsStore = defineStore('events', () => {
                 ID: response.data.ID,
                 MemberID: u?.ID ?? null,
                 MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
-                ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
+                ProfileImageURL: u?.Avatar ?? null,
                 Type: response.data.Type,
                 TimeStart: response.data.TimeStart,
                 TimeEnd: response.data.TimeEnd,
@@ -495,7 +495,7 @@ export const useEventsStore = defineStore('events', () => {
           ID: response.data.ID,
           MemberID: u?.ID ?? null,
           MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
-          ProfileImageURL: u?.ProfileImage?.URL ?? u?.Gravatar ?? null,
+          ProfileImageURL: u?.Avatar ?? null,
           Type: response.data.Type,
           IsCurrentUser: true,
         })

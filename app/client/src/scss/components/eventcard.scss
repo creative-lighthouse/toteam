@@ -156,6 +156,16 @@
         border: 2px solid var(--ColorWhite);
         object-fit: cover;
 
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
         & + .event-card_avatar {
             margin-left: -10px;
         }

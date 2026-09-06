@@ -18,7 +18,7 @@
             <h3 class="edit-section_title">Profilbild</h3>
 
             <div class="current-avatar">
-              <img :src="currentAvatarUrl" alt="Aktuelles Profilbild">
+              <AppAvatar :src="currentAvatarUrl" alt="Aktuelles Profilbild" img-class="current-avatar_img" />
             </div>
 
             <label class="button file-input-label">
@@ -205,6 +205,7 @@ import { apiGet, apiPost, apiPostForm, apiPut } from '@utils/api'
 import { useAuthStore } from '@stores/auth'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const emit = defineEmits(['updated'])
 
@@ -304,9 +305,7 @@ const dragStartPanY  = ref(0)
 // pinch
 const lastPinchDist = ref(null)
 
-const currentAvatarUrl = computed(() =>
-  authStore.user?.ProfileImage?.URL ?? authStore.user?.Gravatar ?? ''
-)
+const currentAvatarUrl = computed(() => authStore.user?.Avatar ?? '')
 
 function onFileSelected(e) {
   fileError.value  = null
@@ -457,8 +456,8 @@ async function saveCroppedImage() {
 
     const result = await apiPostForm('/profile/uploadImage', fd)
 
-    if (result.success && result.data?.ProfileImage) {
-      authStore.updateUser({ ProfileImage: result.data.ProfileImage })
+    if (result.success && result.data?.Avatar) {
+      authStore.updateUser({ Avatar: result.data.Avatar })
       resetEditor()
       imageSaved.value = true
       emit('updated')

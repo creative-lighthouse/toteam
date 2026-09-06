@@ -19,7 +19,7 @@
           <div v-else class="task-supporters-modal_list">
             <label v-for="m in memberOptions" :key="m.ID" class="task-supporters-modal_option">
               <input type="checkbox" :value="m.ID" v-model="selected" />
-              <img :src="m.Avatar" :alt="m.Name" class="task-supporters-modal_avatar" />
+              <AppAvatar :src="m.Avatar" :alt="m.Name" img-class="task-supporters-modal_avatar" />
               <span>{{ m.Name }}</span>
             </label>
           </div>
@@ -44,6 +44,7 @@ import { ref } from 'vue'
 import { useTasksStore } from '@stores/tasks'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const props = defineProps({
   taskId: { type: Number, required: true },

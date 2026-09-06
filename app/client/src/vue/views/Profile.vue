@@ -13,16 +13,11 @@
                 </AppIconButton>
 
                 <div class="profile-image">
-                    <img
-                        v-if="authStore.user.ProfileImage"
-                        :src="authStore.user.ProfileImage.URL"
+                    <AppAvatar
+                        :src="authStore.user.Avatar"
                         :alt="`Profilbild von ${authStore.user.FirstName}`"
-                    >
-                    <img
-                        v-else
-                        :src="authStore.user.Gravatar"
-                        alt="Standard Profilbild"
-                    >
+                        img-class="profile-image_avatar"
+                    />
                 </div>
 
                 <h2 class="hl2">{{ authStore.userName }}</h2>
@@ -101,6 +96,7 @@ import EditProfileModal from '@components/EditProfileModal.vue'
 import QrCodeModal from '@components/QrCodeModal.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const authStore = useAuthStore()
 usePageHeaderStore().setHeader('Profil', 'Verwalte dein Profil und deine Einstellungen.')

@@ -16,15 +16,11 @@
 
           <ul v-else class="applicants-list">
             <li v-for="a in applicants" :key="a.MembershipID" class="applicant-item">
-              <img
-                v-if="a.Gravatar"
-                :src="a.Gravatar"
+              <AppAvatar
+                :src="a.Avatar"
                 :alt="`${a.FirstName} ${a.Surname}`"
-                class="applicant-avatar"
-              >
-              <div v-else class="applicant-avatar applicant-avatar--placeholder">
-                {{ a.FirstName?.charAt(0) ?? '?' }}
-              </div>
+                img-class="applicant-avatar"
+              />
 
               <div class="applicant-info">
                 <strong class="applicant-name">{{ a.FirstName }} {{ a.Surname }}</strong>
@@ -62,6 +58,7 @@ import { ref } from 'vue'
 import { apiGet, apiPost } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const emit = defineEmits(['accepted'])
 

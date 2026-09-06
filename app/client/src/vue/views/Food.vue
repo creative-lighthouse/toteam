@@ -201,6 +201,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const router = useRouter()
 
@@ -393,9 +394,7 @@ const MealCard = defineComponent({
             h('h4', `Wer ist dabei (${m.attendees.length})`),
             h('ul', { class: 'meal-attendee-list' }, m.attendees.map(a =>
               h('li', { key: a.id, class: 'meal-attendee' }, [
-                a.avatarUrl
-                  ? h('img', { src: a.avatarUrl, alt: a.name, class: 'meal-attendee_avatar' })
-                  : h('span', { class: 'meal-attendee_avatar meal-attendee_avatar--placeholder' }, a.name[0]),
+                h(AppAvatar, { src: a.avatarUrl, alt: a.name, initialsLength: 1, imgClass: 'meal-attendee_avatar' }),
                 h('span', a.name),
               ])
             )),

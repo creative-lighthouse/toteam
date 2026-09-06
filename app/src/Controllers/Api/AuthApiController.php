@@ -102,12 +102,12 @@ class AuthApiController extends ApiController
      */
     private function serializeMember(Member $member): array
     {
-        $data = [
+        return [
             'ID'             => $member->ID,
             'Email'          => $member->Email,
             'FirstName'      => $member->FirstName,
             'Surname'        => $member->Surname,
-            'Gravatar'       => $member->getGravatar(),
+            'Avatar'         => $member->RenderProfileImage(),
             'Hash'           => $member->Hash,
             'Username'        => $member->Username ?: null,
             'NameVisibility'  => $member->NameVisibility ?: 'full',
@@ -116,14 +116,5 @@ class AuthApiController extends ApiController
             'Joindate'       => $member->Joindate,
             'EnabledTotems'  => $member->getEnabledTotems(),
         ];
-
-        // Add profile image if exists
-        if ($member->ProfileImageID && $member->ProfileImage()->exists()) {
-            $data['ProfileImage'] = [
-                'URL' => $member->ProfileImage()->FillMax(300, 300)->getURL()
-            ];
-        }
-
-        return $data;
     }
 }

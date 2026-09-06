@@ -259,7 +259,7 @@ class OrganizationsApiController extends ApiController
                 'FirstName'    => $m->FirstName,
                 'Surname'      => $m->Surname,
                 'Email'        => $m->Email,
-                'Gravatar'     => $m->getGravatar(),
+                'Avatar'       => $m->RenderProfileImage(),
             ];
         }
 

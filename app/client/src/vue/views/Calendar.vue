@@ -92,11 +92,10 @@
                     :class="{ 'absence-item--own': a.MemberID === authStore.user?.ID }"
                     @click="a.MemberID === authStore.user?.ID && entryModalRef.openEditAbsence(a)"
                     >
-                    <img
-                        v-if="a.ProfileImageURL"
+                    <AppAvatar
                         :src="a.ProfileImageURL"
-                        class="absence-item__avatar"
-                        alt=""
+                        :alt="a.MemberName"
+                        img-class="absence-item__avatar"
                     />
                     <span class="absence-item__name">{{ a.MemberName }}</span>
                     <span v-if="a.Note" class="absence-item__note">{{ a.Note }}</span>
@@ -173,6 +172,7 @@ import AppMenu from '@components/AppMenu.vue'
 import AddAppointmentModal from '@components/AddAppointmentModal.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 import actionForward from '../../../icons/actions/action_forward.svg'
 import actionBack from '../../../icons/actions/action_back.svg'
 

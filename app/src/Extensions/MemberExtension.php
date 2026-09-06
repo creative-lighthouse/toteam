@@ -208,9 +208,9 @@ class MemberExtension extends Extension
     public function RenderProfileImage()
     {
         if ($this->owner->ProfileImageID && $this->owner->ProfileImage()->exists()) {
-            return $this->owner->ProfileImage()->ScaleWidth(200)->getURL();
+            return $this->owner->ProfileImage()->Fill(180, 180)->getURL();
         }
-        return $this->getGravatar(200);
+        return $this->getGravatar(180);
     }
 
     public function getTodaysParticipations()
