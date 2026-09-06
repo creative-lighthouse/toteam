@@ -28,6 +28,13 @@ ddev yarn build     # Production build → app/client/dist/ (with manifest + sou
 
 Vite dev server URL is configured via `.env` (`VITE_DEV_SERVER_URL`). `vite.config.js` aliases: `@` → `app/client/src`, plus more specific aliases into the Vue tree: `@components`, `@views`, `@stores`, `@utils`, `@models` (all under `app/client/src/vue/...`). Rollup has multiple entry points (`main.js`, `app.js`, `main.scss`, `editor.scss`).
 
+Storybook (component development/preview, config in `.storybook/`):
+
+```bash
+ddev exec yarn storybook          # Dev server on port 6006
+ddev exec yarn build-storybook    # Static build
+```
+
 ### Backend
 
 ```bash
