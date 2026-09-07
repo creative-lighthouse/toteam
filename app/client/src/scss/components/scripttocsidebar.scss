@@ -1,0 +1,87 @@
+.script-toc {
+    position: sticky;
+    top: 1rem;
+    min-width: 180px;
+    max-width: 240px;
+    flex: 0 0 auto;
+
+    &--collapsed {
+        min-width: 0;
+    }
+}
+
+.script-toc_toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.2rem 0;
+    margin-bottom: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0.7;
+    color: inherit;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.script-toc_toggle-icon {
+    flex: 0 0 auto;
+    transition: transform 0.15s ease;
+}
+
+.script-toc--collapsed .script-toc_toggle-icon {
+    transform: rotate(0deg);
+}
+
+.script-toc:not(.script-toc--collapsed) .script-toc_toggle-icon {
+    transform: rotate(90deg);
+}
+
+.script-toc--collapsed .script-toc_toggle-label {
+    display: none;
+}
+
+.script-toc_empty {
+    opacity: 0.6;
+    font-size: 0.85rem;
+}
+
+.script-toc_list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.script-toc_item {
+    &--level-3 {
+        padding-left: 0.75rem;
+    }
+
+    &--level-4 {
+        padding-left: 1.5rem;
+    }
+}
+
+.script-toc_link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 0.2rem 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: inherit;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}

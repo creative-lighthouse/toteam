@@ -57,6 +57,7 @@
                         <div class="nav_button" :class="{ active: isSecondaryMenuOpen }">
                             <span></span>
                             <span></span>
+                            <span></span>
                         </div>
                     </div>
                 </div>
@@ -99,6 +100,15 @@
                             <img :src="todosTotem" alt="Aufgaben Icon" class="nav_image">
                         </div>
                         <p class="nav_title">Aufgaben <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
+                <li v-if="authStore.hasTotem('skript')">
+                    <router-link to="/skript" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Skript' || $route.name === 'SkriptDetail' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="skriptTotem" alt="Skript Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Skript <span class="nav_alpha">Alpha</span></p>
                     </router-link>
                 </li>
 
@@ -182,6 +192,7 @@ import kalenderTotemInactive from '../../../icons/totems/kalender_totem_inactive
 import essenTotem from '../../../icons/totems/essen_totem.png'
 import downloadsTotem from '../../../icons/totems/downloads_totem.png'
 import todosTotem from '../../../icons/totems/todos_totem.png'
+import skriptTotem from '../../../icons/totems/skript_totem.png'
 import geldTotem from '../../../icons/totems/geld_totem.png'
 import kartenTotem from '../../../icons/totems/karten_totem.png'
 import organizationsTotem from '../../../icons/totems/organizations_totem.png'

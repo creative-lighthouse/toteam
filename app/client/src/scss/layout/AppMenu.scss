@@ -181,18 +181,22 @@
                     left: 50%;
                     transform: translate(-50%, -50%);
                     display: block;
-                    width: 80%;
-                    height: 3px;
+                    width: 6px;
+                    height: 6px;
                     background-color: var(--ColorGray);
                     border-radius: var(--BorderRadiusSmall);
                     transition: all 0.3s ease;
 
                     &:nth-child(1){
-                        transform: translate(-50%, -50%) rotate(0deg);
+                        transform: translateY(-50%) translateX(6px) rotate(0deg);
                     }
 
-                    &:nth-child(1){
-                        transform: translate(-50%, -50%) rotate(90deg);
+                    &:nth-child(2){
+                        transform: translateY(-50%) translateX(-50%) rotate(0deg);
+                    }
+
+                    &:nth-child(3){
+                        transform: translateY(-50%) translateX(-12px) rotate(0deg);
                     }
                 }
             }
@@ -203,6 +207,26 @@
                         transform: scale(1.1);
                         .nav_button {
                             transform: rotate(45deg);
+
+                            span{
+                                &:nth-child(1){
+                                    width: 15px;
+                                    height: 3px;
+                                    transform: translateY(-50%) translateX(0) rotate(0deg);
+                                }
+
+                                &:nth-child(2){
+                                    height: 30px;
+                                    width: 3px;
+                                    transform: translateY(-50%) translateX(-50%) rotate(0deg);
+                                }
+
+                                &:nth-child(3){
+                                    width: 15px;
+                                    height: 3px;
+                                    transform: translateY(-50%) translateX(-100%) rotate(0deg);
+                                }
+                            }
                         }
                     }
                 }

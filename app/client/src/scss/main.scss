@@ -35,6 +35,8 @@
 @use "pages/OrganizationManagePage.scss";
 @use "pages/RoomsPage.scss";
 @use "pages/TestPage.scss";
+@use "pages/SkriptPage.scss";
+@use "pages/SkriptDetailPage.scss";
 
 
 @use "landingpage/landingpage.scss";
@@ -58,6 +60,13 @@
 @use "components/moneymodals.scss";
 @use "components/orgrolesmodals.scss";
 @use "components/imagecropmodal.scss";
+@use "components/scripteditor.scss";
+@use "components/scriptblockview.scss";
+@use "components/scriptroledropdown.scss";
+@use "components/scriptparagraphrow.scss";
+@use "components/scripttocsidebar.scss";
+@use "components/scriptrolemanagermodal.scss";
+@use "components/scriptmemberpickerdropdown.scss";
 
 
 html{

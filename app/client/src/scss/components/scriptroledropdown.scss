@@ -1,0 +1,72 @@
+.script-role-dropdown {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.script-role-dropdown_summary {
+    list-style: none;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+    border: 1px solid var(--ColorLightGray);
+    border-radius: 0.3rem;
+    opacity: 0.7;
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &::-webkit-details-marker {
+        display: none;
+    }
+}
+
+.script-role-dropdown[open] .script-role-dropdown_summary,
+.script-role-dropdown_summary:hover {
+    opacity: 1;
+    border-color: var(--ColorPrimary);
+}
+
+.script-role-dropdown_menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 10;
+    background: var(--ColorWhite);
+    border: 1px solid var(--ColorLightGray);
+    border-radius: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    box-shadow: var(--BoxShadowMenu);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    white-space: nowrap;
+}
+
+.script-role-dropdown_option {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    &--direction {
+        font-style: italic;
+    }
+}
+
+.script-role-dropdown_sep {
+    height: 1px;
+    background: var(--ColorLightGray);
+    margin: 0.15rem 0;
+}
+
+.script-role-dropdown_empty {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    margin: 0;
+}

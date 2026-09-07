@@ -45,6 +45,9 @@ class OrgPermissions
     public const ROOMS_VIEW = 'ROOMS_VIEW';
     public const ROOMS_DELETE = 'ROOMS_DELETE';
 
+    public const SCRIPT_EDIT = 'SCRIPT_EDIT';
+    public const SCRIPT_MANAGE_ROLES = 'SCRIPT_MANAGE_ROLES';
+
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
      * @return array<string, array<string, string>> Kategorie => [Code => Label]
@@ -92,6 +95,10 @@ class OrgPermissions
                 self::ROOMS_EDIT => 'Räume bearbeiten',
                 self::ROOMS_VIEW => 'Räume ansehen',
                 self::ROOMS_DELETE => 'Räume löschen',
+            ],
+            'Skript' => [
+                self::SCRIPT_EDIT => 'Skripte bearbeiten',
+                self::SCRIPT_MANAGE_ROLES => 'Skript-Rollen verwalten & zuweisen',
             ],
         ];
     }

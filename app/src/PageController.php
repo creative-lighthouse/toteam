@@ -2,6 +2,7 @@
 namespace {
 
 use SilverStripe\Security\Security;
+use SilverStripe\CMS\Controllers\RootURLController;
 
     use SilverStripe\CMS\Controllers\ContentController;
 
@@ -21,6 +22,11 @@ use SilverStripe\Security\Security;
             parent::init();
             // You can include any CSS or JS required by your project here.
             // See: https://docs.silverstripe.org/en/developer_guides/templates/requirements/
+
+            $isHomepage = RootURLController::get_homepage_link() === trim($this->data()->RelativeLink(true) ?? '', '/');
+            if ($isHomepage && Security::getCurrentUser()) {
+                $this->redirect('/app/dashboard');
+            }
         }
     }
 }

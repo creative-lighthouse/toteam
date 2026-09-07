@@ -48,6 +48,7 @@ class Organization extends DataObject implements PermissionProvider
         'links'         => 'EnableLinks',
         'map'           => 'EnableMap',
         'tasks'         => 'EnableTasks',
+        'skript'        => 'EnableSkript',
     ];
 
     private static $db = [
@@ -62,6 +63,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableLinks"         => "Boolean(1)",
         "EnableMap"           => "Boolean(1)",
         "EnableTasks"         => "Boolean(1)",
+        "EnableSkript"        => "Boolean(1)",
     ];
 
     private static $defaults = [
@@ -71,6 +73,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableLinks"         => true,
         "EnableMap"           => true,
         "EnableTasks"         => true,
+        "EnableSkript"        => true,
     ];
 
     private static $has_one = [
@@ -110,6 +113,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableLinks"         => "Links & Downloads",
         "EnableMap"           => "Lagepläne",
         "EnableTasks"         => "Aufgaben",
+        "EnableSkript"        => "Skript",
     ];
 
     private static $table_name = 'Organization';
