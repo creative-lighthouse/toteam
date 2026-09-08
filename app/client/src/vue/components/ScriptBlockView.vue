@@ -1,6 +1,6 @@
 <template>
   <NodeViewWrapper class="script-block" :class="{ 'script-block--nested': !isTopLevel }">
-    <span v-if="isTopLevel" class="script-block_gutter" contenteditable="false">
+    <span v-if="isTopLevel && node.type.name !== 'heading'" class="script-block_gutter" contenteditable="false">
       <ScriptRoleDropdown
         :roles="scriptRoles"
         :model-value="node.attrs.roleIds || []"

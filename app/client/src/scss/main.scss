@@ -6,6 +6,7 @@
 @use "normalize.scss";
 @use "typography.scss";
 @use "forms.scss";
+@use "components/forminputs.scss";
 @use "components/buttons.scss";
 @use "components/apporglogo.scss";
 
@@ -65,7 +66,10 @@
 @use "components/scriptroledropdown.scss";
 @use "components/scriptparagraphrow.scss";
 @use "components/scripttocsidebar.scss";
-@use "components/scriptrolemanagermodal.scss";
+@use "components/scriptrolesview.scss";
+@use "components/scriptmembermultiselect.scss";
+@use "components/scriptroleeditmodal.scss";
+@use "components/scriptcreatemodal.scss";
 @use "components/scriptmemberpickerdropdown.scss";
 
 

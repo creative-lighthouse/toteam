@@ -113,16 +113,16 @@ export const useSkriptStore = defineStore('skript', () => {
     return response
   }
 
-  async function createRole(scriptId, title) {
-    const response = await apiPost('/skript/roleStore', { ScriptID: scriptId, Title: title })
+  async function createRole(scriptId, { Title, Description = '' }) {
+    const response = await apiPost('/skript/roleStore', { ScriptID: scriptId, Title, Description })
     if (response.success && response.data?.role && currentScript.value) {
       currentScript.value.Roles = [...(currentScript.value.Roles || []), response.data.role]
     }
     return response
   }
 
-  async function updateRole(id, title) {
-    const response = await apiPut(`/skript/roleUpdate/${id}`, { Title: title })
+  async function updateRole(id, data) {
+    const response = await apiPut(`/skript/roleUpdate/${id}`, data)
     if (response.success && response.data?.role && currentScript.value) {
       const idx = currentScript.value.Roles.findIndex(r => r.ID === id)
       if (idx !== -1) currentScript.value.Roles[idx] = response.data.role

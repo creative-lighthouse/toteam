@@ -1,8 +1,18 @@
+@use "../variables" as *;
+
 .script-block {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
     margin-bottom: 0.9rem;
+
+    // The fixed-width side gutter eats into the already-narrow text column on
+    // mobile — stack the role/line-number above the text instead of beside it.
+    @include media(max-medium) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.15rem;
+    }
 
     &--nested {
         display: contents;
@@ -20,6 +30,11 @@
     gap: 0.4rem;
     padding-top: 0.15rem;
     user-select: none;
+
+    @include media(max-medium) {
+        flex: 0 0 auto;
+        width: auto;
+    }
 }
 
 .script-block_line {
@@ -35,6 +50,7 @@
     flex: 1;
     min-width: 0;
     margin: 0.15rem 0;
+    line-height: 1.6;
 
     // Regieanweisung: centered and width-capped instead of attributed to a role.
     &--direction {
@@ -43,6 +59,15 @@
         margin-right: auto;
         text-align: center;
         font-style: italic;
+
+        // The narrower cap wastes too much of the already-tight width on
+        // mobile — go full width there, with a smaller/lighter look to keep
+        // it visually distinct from actual dialogue lines.
+        @include media(max-medium) {
+            max-width: 100%;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
     }
 }
 

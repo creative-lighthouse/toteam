@@ -26,8 +26,9 @@ use SilverStripe\Security\Member;
 class ScriptRole extends DataObject
 {
     private static $db = [
-        "Title"     => "Varchar(255)",
-        "SortOrder" => "Int",
+        "Title"       => "Varchar(255)",
+        "Description" => "Text",
+        "SortOrder"   => "Int",
     ];
 
     private static $has_one = [
@@ -41,9 +42,10 @@ class ScriptRole extends DataObject
     private static $default_sort = "SortOrder ASC";
 
     private static $field_labels = [
-        "Title"   => "Titel",
-        "Script"  => "Skript",
-        "Members" => "Zugewiesene Mitglieder",
+        "Title"       => "Titel",
+        "Description" => "Beschreibung",
+        "Script"      => "Skript",
+        "Members"     => "Zugewiesene Mitglieder",
     ];
 
     private static $summary_fields = [

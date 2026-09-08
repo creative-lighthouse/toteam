@@ -62,10 +62,11 @@ class SkriptApiController extends ApiController
         }
 
         return [
-            'ID'        => $role->ID,
-            'Title'     => $role->Title,
-            'MemberIDs' => $memberIDs,
-            'Members'   => $members,
+            'ID'          => $role->ID,
+            'Title'       => $role->Title,
+            'Description' => $role->Description,
+            'MemberIDs'   => $memberIDs,
+            'Members'     => $members,
         ];
     }
 
@@ -352,9 +353,10 @@ class SkriptApiController extends ApiController
         }
 
         $role = ScriptRole::create();
-        $role->Title      = $title;
-        $role->ScriptID   = $script->ID;
-        $role->SortOrder  = $script->Roles()->count();
+        $role->Title       = $title;
+        $role->Description = trim($body['Description'] ?? '');
+        $role->ScriptID    = $script->ID;
+        $role->SortOrder   = $script->Roles()->count();
         $role->write();
 
         return $this->successResponse(['role' => $this->formatRole($role)], 'Rolle erstellt');
@@ -382,6 +384,9 @@ class SkriptApiController extends ApiController
         $body = $this->getJsonBody();
         if (isset($body['Title'])) {
             $role->Title = trim($body['Title']);
+        }
+        if (isset($body['Description'])) {
+            $role->Description = trim($body['Description']);
         }
         $role->write();
 

@@ -7,7 +7,7 @@
       'script-paragraph--highlighted': highlighted,
     }"
   >
-    <span v-if="!paragraph.IsDirection" class="script-paragraph_gutter">
+    <span v-if="!paragraph.IsDirection && !isHeading" class="script-paragraph_gutter">
       <span
         class="script-paragraph_role-badge"
         :class="{ 'script-paragraph_role-badge--empty': roleTitles.length === 0 }"
@@ -18,19 +18,15 @@
 
     <div class="script-paragraph_body">
       <div
-        v-if="!(blurred && !revealed)"
         class="script-paragraph_content"
-        :class="{ 'script-paragraph_content--direction': paragraph.IsDirection }"
+        :class="{
+          'script-paragraph_content--direction': paragraph.IsDirection,
+          'script-paragraph_content--blurred': blurred && !revealed,
+        }"
+        :title="blurred ? (revealed ? 'Klicken zum Verbergen' : 'Klicken zum Aufdecken') : undefined"
+        @click="blurred && (revealed = !revealed)"
         v-html="paragraph.Content"
       />
-      <button
-        v-else
-        type="button"
-        class="script-paragraph_reveal"
-        @click="revealed = true"
-      >
-        Aufdecken
-      </button>
     </div>
   </div>
 </template>
@@ -52,4 +48,8 @@ watch(() => props.blurred, () => { revealed.value = false })
 const roleTitles = computed(() =>
   props.roles.filter(r => props.paragraph.RoleIDs?.includes(r.ID)).map(r => r.Title)
 )
+
+// A heading can't carry a role or a line number, so it gets no gutter at all
+// (unlike a Regieanweisung, which still needs one to be toggled off again).
+const isHeading = computed(() => /^\s*<h[234]\b/i.test(props.paragraph.Content || ''))
 </script>

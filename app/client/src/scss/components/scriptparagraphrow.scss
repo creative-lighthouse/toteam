@@ -1,10 +1,20 @@
+@use "../variables" as *;
+
 .script-paragraph {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
     padding: 0.4rem 0;
-    border-bottom: 1px solid var(--ColorLightGray);
+    border-bottom: 1px solid var(--ColorVeryLightGray);
     transition: opacity 0.15s ease;
+
+    // The fixed-width side gutter eats into the already-narrow text column on
+    // mobile — stack the role/line-number above the text instead of beside it.
+    @include media(max-medium) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.15rem;
+    }
 
     &--dimmed {
         opacity: 0.25;
@@ -26,6 +36,11 @@
     gap: 0.4rem;
     padding-top: 0.15rem;
     user-select: none;
+
+    @include media(max-medium) {
+        flex: 0 0 auto;
+        width: auto;
+    }
 }
 
 .script-paragraph_role-badge {
@@ -64,6 +79,8 @@
 }
 
 .script-paragraph_content {
+    line-height: 1.6;
+
     // Regieanweisung: centered and width-capped instead of attributed to a role.
     &--direction {
         max-width: 60%;
@@ -71,6 +88,28 @@
         margin-right: auto;
         text-align: center;
         font-style: italic;
+
+        // The narrower cap wastes too much of the already-tight width on
+        // mobile — go full width there, with a smaller/lighter look to keep
+        // it visually distinct from actual dialogue lines.
+        @include media(max-medium) {
+            max-width: 100%;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    }
+
+    // Lernmodus: blurs the actual text in place (toggle on click) instead of
+    // swapping it out for a differently-sized "reveal" element — the layout
+    // stays put either way, only the text itself gets sharp/blurry.
+    &--blurred {
+        filter: blur(6px);
+        cursor: pointer;
+        user-select: none;
+
+        &:hover {
+            filter: blur(4px);
+        }
     }
 
     h2, h3, h4 {
@@ -81,13 +120,4 @@
     p {
         margin: 0;
     }
-}
-
-.script-paragraph_reveal {
-    filter: blur(4px);
-    cursor: pointer;
-    background: none;
-    border: 1px dashed var(--ColorLightGray);
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.4rem;
 }

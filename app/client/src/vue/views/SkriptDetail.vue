@@ -15,6 +15,7 @@
         <!-- Toolbar: mode switcher (own centered row) + title/actions (hidden when printing) -->
         <div class="skript-detail_toolbar no-print">
           <div class="skript-detail_modes-row">
+            <!-- Desktop/Tablet: Button-Leiste -->
             <div class="skript-detail_modes" role="tablist">
               <button
                 type="button"
@@ -41,16 +42,34 @@
                 :class="{ 'skript-detail_mode-btn--active': store.activeMode === 'learn' }"
                 @click="switchMode('learn')"
               >Lernen</button>
+              <button
+                v-if="script.CanManageRoles"
+                type="button"
+                class="skript-detail_mode-btn"
+                :class="{ 'skript-detail_mode-btn--active': store.activeMode === 'roles' }"
+                @click="switchMode('roles')"
+              >Rollen</button>
             </div>
+
+            <!-- Mobil: die Button-Leiste wird zu breit, daher ein Dropdown -->
+            <select
+              class="skript-detail_modes-select input"
+              :value="store.activeMode"
+              aria-label="Ansicht wechseln"
+              @change="switchMode($event.target.value)"
+            >
+              <option value="view">Ansicht</option>
+              <option v-if="script.CanEdit" value="edit">Bearbeiten</option>
+              <option value="focus">Fokus</option>
+              <option value="learn">Lernen</option>
+              <option v-if="script.CanManageRoles" value="roles">Rollen</option>
+            </select>
           </div>
 
           <div class="skript-detail_header-row">
             <h2 class="hl2 skript-detail_title">{{ script.Title }}</h2>
 
             <div class="skript-detail_actions">
-              <AppButton v-if="script.CanManageRoles" variant="secondary" size="small" @click="roleModal?.open()">
-                Rollen
-              </AppButton>
               <AppIconButton variant="primary" aria-label="Skript drucken" title="Drucken" @click="printScript">
                 <span class="icon-mask" :style="printIconStyle" />
               </AppIconButton>
@@ -68,9 +87,14 @@
           </div>
         </div>
 
-        <!-- Gliederungs-Navigation: identisch in allen 4 Modi -->
+        <!-- Gliederungs-Navigation: identisch in allen Modi außer Rollen (dort
+             gibt es keine Absätze zum Navigieren, der Bereich nutzt die volle Breite) -->
         <div class="skript-detail_layout">
-          <ScriptTocSidebar class="skript-detail_toc no-print" :entries="store.tocEntries" />
+          <ScriptTocSidebar
+            v-if="store.activeMode !== 'roles'"
+            class="skript-detail_toc no-print"
+            :entries="store.tocEntries"
+          />
 
           <div class="skript-detail_main">
             <!-- Bearbeiten-Modus: ein durchgehender Editor, Absätze entstehen automatisch bei Enter -->
@@ -81,6 +105,13 @@
               :script-id="script.ID"
               :initial-paragraphs="script.Paragraphs"
               :roles="script.Roles"
+            />
+
+            <!-- Rollen: Akkordeon-Liste zum Anlegen/Bearbeiten der Skript-Rollen -->
+            <ScriptRolesView
+              v-else-if="store.activeMode === 'roles' && script.CanManageRoles"
+              :script="script"
+              :org-members="orgMembers"
             />
 
             <!-- Ansicht / Fokus / Lernen: gerenderte Absätze aus dem zuletzt gespeicherten Stand -->
@@ -100,8 +131,6 @@
 
       </div>
     </div>
-
-    <ScriptRoleManagerModal v-if="script" ref="roleModal" :script="script" :org-members="orgMembers" />
   </div>
 </template>
 
@@ -110,12 +139,11 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useSkriptStore } from '@stores/skript'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import ScriptEditor from '@components/ScriptEditor.vue'
 import ScriptParagraphRow from '@components/ScriptParagraphRow.vue'
 import ScriptTocSidebar from '@components/ScriptTocSidebar.vue'
-import ScriptRoleManagerModal from '@components/ScriptRoleManagerModal.vue'
+import ScriptRolesView from '@components/ScriptRolesView.vue'
 import ScriptMemberPickerDropdown from '@components/ScriptMemberPickerDropdown.vue'
 import actionPrint from '../../../icons/actions/action_print.svg'
 import actionTrash from '../../../icons/actions/action_trash.svg'
@@ -132,7 +160,6 @@ pageHeaderStore.setHeader('Skript')
 
 const loading = ref(true)
 const orgMembers = ref([])
-const roleModal = ref(null)
 const scriptEditorRef = ref(null)
 const script = computed(() => store.currentScript)
 
