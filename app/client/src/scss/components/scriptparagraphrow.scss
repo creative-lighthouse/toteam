@@ -44,6 +44,11 @@
 }
 
 .script-paragraph_role-badge {
+    // Reset browser <button> defaults — the badge is a button when a role is
+    // assigned (opens the character info modal) and a plain span otherwise.
+    appearance: none;
+    background: var(--ColorWhite);
+    font-family: inherit;
     display: block;
     flex: 1 1 auto;
     min-width: 0;
@@ -58,9 +63,18 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: pointer;
+
+    &:hover {
+        opacity: 1;
+        border-color: var(--ColorPrimary);
+    }
 
     &--empty {
         border-color: transparent;
+        background: transparent;
+        cursor: default;
+        min-height: 1.1rem;
     }
 }
 

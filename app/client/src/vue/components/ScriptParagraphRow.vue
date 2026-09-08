@@ -8,11 +8,14 @@
     }"
   >
     <span v-if="!paragraph.IsDirection && !isHeading" class="script-paragraph_gutter">
-      <span
+      <button
+        v-if="assignedRoles.length"
+        type="button"
         class="script-paragraph_role-badge"
-        :class="{ 'script-paragraph_role-badge--empty': roleTitles.length === 0 }"
-        :title="roleTitles.join(', ')"
-      >{{ roleTitles.join(', ') }}</span>
+        :title="`${roleTitles.join(', ')} — Klicken für Details`"
+        @click="$emit('open-roles', assignedRoles)"
+      >{{ roleTitles.join(', ') }}</button>
+      <span v-else class="script-paragraph_role-badge script-paragraph_role-badge--empty"></span>
       <span class="script-paragraph_line">{{ paragraph.LineNumber }}</span>
     </span>
 
@@ -41,13 +44,15 @@ const props = defineProps({
   highlighted: { type: Boolean, default: false },
   blurred: { type: Boolean, default: false },
 })
+defineEmits(['open-roles'])
 
 const revealed = ref(false)
 watch(() => props.blurred, () => { revealed.value = false })
 
-const roleTitles = computed(() =>
-  props.roles.filter(r => props.paragraph.RoleIDs?.includes(r.ID)).map(r => r.Title)
+const assignedRoles = computed(() =>
+  props.roles.filter(r => props.paragraph.RoleIDs?.includes(r.ID))
 )
+const roleTitles = computed(() => assignedRoles.value.map(r => r.Title))
 
 // A heading can't carry a role or a line number, so it gets no gutter at all
 // (unlike a Regieanweisung, which still needs one to be toggled off again).

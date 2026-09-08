@@ -124,6 +124,7 @@
                 :dimmed="isDimmed(paragraph)"
                 :highlighted="isHighlighted(paragraph)"
                 :blurred="isBlurred(paragraph)"
+                @open-roles="roleInfoModal?.open($event)"
               />
             </div>
           </div>
@@ -131,6 +132,8 @@
 
       </div>
     </div>
+
+    <ScriptRoleInfoModal ref="roleInfoModal" />
   </div>
 </template>
 
@@ -144,6 +147,7 @@ import ScriptEditor from '@components/ScriptEditor.vue'
 import ScriptParagraphRow from '@components/ScriptParagraphRow.vue'
 import ScriptTocSidebar from '@components/ScriptTocSidebar.vue'
 import ScriptRolesView from '@components/ScriptRolesView.vue'
+import ScriptRoleInfoModal from '@components/ScriptRoleInfoModal.vue'
 import ScriptMemberPickerDropdown from '@components/ScriptMemberPickerDropdown.vue'
 import actionPrint from '../../../icons/actions/action_print.svg'
 import actionTrash from '../../../icons/actions/action_trash.svg'
@@ -161,6 +165,7 @@ pageHeaderStore.setHeader('Skript')
 const loading = ref(true)
 const orgMembers = ref([])
 const scriptEditorRef = ref(null)
+const roleInfoModal = ref(null)
 const script = computed(() => store.currentScript)
 
 watch(script, val => pageHeaderStore.setTitle(val?.Title ?? 'Skript'))
