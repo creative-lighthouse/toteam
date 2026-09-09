@@ -7,13 +7,13 @@
       <h3 class="hl3 announcement-card_title-text">{{ announcement.Title }}</h3>
       <span class="announcement-card_date">{{ announcement.Created }}</span>
       <div v-if="announcement.Organisations?.length" class="announcement-card_orgs">
-        <img
+        <AppOrgLogo
           v-for="org in announcement.Organisations.slice(0, 3)"
           :key="org.ID"
           :src="org.LogoURL"
           :alt="org.Title"
-          class="announcement-card_org-logo"
-        >
+          :size="25"
+        />
       </div>
     </div>
 
@@ -27,6 +27,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import AppOrgLogo from './AppOrgLogo.vue'
 
 const props = defineProps({
   announcement: {

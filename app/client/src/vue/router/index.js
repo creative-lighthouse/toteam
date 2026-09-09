@@ -27,6 +27,8 @@ import Money from '@views/Money.vue'
 import MoneyAccountDetail from '@views/MoneyAccountDetail.vue'
 import MoneyBudgetDetail from '@views/MoneyBudgetDetail.vue'
 import MoneyEntryDetail from '@views/MoneyEntryDetail.vue'
+import Skript from '@views/Skript.vue'
+import SkriptDetail from '@views/SkriptDetail.vue'
 import Test from '@views/Test.vue'
 
 const routes = [
@@ -175,6 +177,18 @@ const routes = [
     name: 'MoneyEntryDetail',
     component: MoneyEntryDetail,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/skript',
+    name: 'Skript',
+    component: Skript,
+    meta: { requiresAuth: true, totem: 'skript' }
+  },
+  {
+    path: '/skript/:hash',
+    name: 'SkriptDetail',
+    component: SkriptDetail,
+    meta: { requiresAuth: true, totem: 'skript' }
   },
   {
     path: '/login',

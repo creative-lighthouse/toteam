@@ -19,16 +19,11 @@
                 </AppIconButton>
 
                 <div class="profile-image">
-                    <img
-                        v-if="profile.ProfileImage"
-                        :src="profile.ProfileImage.URL"
+                    <AppAvatar
+                        :src="profile.Avatar"
                         :alt="`Profilbild von ${displayName}`"
-                    >
-                    <img
-                        v-else
-                        :src="profile.Gravatar"
-                        alt="Standard Profilbild"
-                    >
+                        img-class="profile-image_avatar"
+                    />
                 </div>
 
                 <p v-if="profile.Username && profile.NameVisibility !== 'username'" class="profile-username">
@@ -70,7 +65,7 @@
                         class="profile-org-item"
                         :class="{ 'profile-org-item--link': org.Username }"
                     >
-                        <img v-if="org.LogoURL" :src="org.LogoURL" class="profile-org-item_logo" alt="">
+                        <AppOrgLogo :src="org.LogoURL" :alt="org.Title" :size="32" />
                         <div class="profile-org-item_text">
                             <strong>{{ org.Title }}</strong>
                             <span class="profile-org-item_role">{{ roleLabel(org.Role) }}</span>
@@ -91,6 +86,8 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import QrCodeModal from '@components/QrCodeModal.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

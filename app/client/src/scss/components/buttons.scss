@@ -139,16 +139,16 @@
     }
 
     img {
-        width: 60%;
-        height: 60%;
+        width: 72%;
+        height: 72%;
         object-fit: contain;
     }
 
     // Icon-Buttons füllen einen größeren Anteil ihrer runden Fläche als die
     // 16px-Icons in Text+Icon-Buttons (siehe generische .icon-mask-Regel unten).
     .icon-mask {
-        width: 60%;
-        height: 60%;
+        width: 72%;
+        height: 72%;
     }
 }
 

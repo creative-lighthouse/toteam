@@ -1,0 +1,37 @@
+.section.section--SkriptPage {
+    .skript-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1rem;
+    }
+
+    .skript-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+    }
+
+    .skript-list-card {
+        text-align: left;
+        background: var(--ColorWhite);
+        border: 1px solid var(--ColorLightGray);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+
+        &_main {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        &_title {
+            margin: 0;
+        }
+
+        &_org {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+    }
+}

@@ -16,8 +16,12 @@
                 </div>
 
                 <div class="org-detail-hero_logo-wrap">
-                <img v-if="org.LogoURL" :src="org.LogoURL" :alt="`${org.Title} Logo`" class="org-detail-hero_logo">
-                <div v-else class="org-detail-hero_logo-placeholder">{{ org.Title?.charAt(0) ?? '?' }}</div>
+                <AppOrgLogo
+                    :src="org.LogoURL"
+                    :alt="`${org.Title} Logo`"
+                    :name="org.Title"
+                    class="org-detail-hero_logo"
+                />
                 </div>
             </div>
 
@@ -66,7 +70,7 @@
                         class="org-detail-member"
                         :class="{ 'org-detail-member--no-link': !m.Username }"
                         >
-                            <img :src="m.Avatar" :alt="m.Name" class="org-detail-member_avatar">
+                            <AppAvatar :src="m.Avatar" :alt="m.Name" img-class="org-detail-member_avatar" />
                             <span class="org-detail-member_name">{{ m.Name }}</span>
                             <span class="org-detail-member_role">
                                 <span v-if="m.Roles?.length">{{ m.Roles.map(r => r.Title).join(', ') }}</span>
@@ -87,6 +91,8 @@ import { RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

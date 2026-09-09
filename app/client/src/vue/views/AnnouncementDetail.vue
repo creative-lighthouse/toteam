@@ -17,12 +17,11 @@
             :key="org.ID"
             class="announcement-detail_org"
           >
-            <img
-              v-if="org.LogoURL"
+            <AppOrgLogo
               :src="org.LogoURL"
               :alt="org.Title"
-              class="announcement-detail_org-logo"
-            >
+              :size="32"
+            />
             <span class="announcement-detail_org-name">{{ org.Title }}</span>
           </div>
         </div>
@@ -51,6 +50,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAnnouncementsStore } from '@stores/announcements'
 import { usePageHeaderStore } from '@stores/pageHeader'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route = useRoute()
 const announcementsStore = useAnnouncementsStore()

@@ -214,10 +214,19 @@
                     overflow: hidden;
                     z-index: 1;
 
-                    img{
+                    .welcome_profileimage-avatar {
                         width: 100%;
                         height: 100%;
                         object-fit: cover;
+
+                        &--placeholder {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            background: var(--ColorPrimary);
+                            color: var(--ColorWhite);
+                            font-weight: 700;
+                        }
                     }
                 }
 
@@ -342,14 +351,7 @@
         }
 
         .contribution-item_logo {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            overflow: hidden;
-            flex-shrink: 0;
             background: var(--ColorLightGray);
-
-            img { width: 100%; height: 100%; object-fit: contain; }
         }
 
         .contribution-item_info {

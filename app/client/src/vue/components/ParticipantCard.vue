@@ -1,13 +1,12 @@
 <template>
   <div :class="['participant', `participant--status-${participation.Type}`, { 'participant--has-note': !!participation.Notes }]">
     <div class="participant-avatar">
-        <img
-            v-if="participation.ProfileImageURL"
+        <AppAvatar
             :src="participation.ProfileImageURL"
             :alt="participation.MemberName"
-            class="participant-avatar_img"
-        >
-        <span v-else class="participant-avatar_initials">{{ initials }}</span>
+            img-class="participant-avatar_img"
+            placeholder-class="participant-avatar_initials"
+        />
     </div>
     <span class="participant-name" :data-me="participation.IsCurrentUser ? 'true' : null">
         {{ participation.MemberName }}
@@ -32,6 +31,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import AppAvatar from './AppAvatar.vue'
 import HasTransportIcon from '../../../icons/actions/action_hastransport.svg'
 import NeedsTransportIcon from '../../../icons/actions/action_needstransport.svg'
 
@@ -47,16 +47,6 @@ const props = defineProps({
 })
 
 defineEmits(['toggle-note'])
-
-const initials = computed(() => {
-  const name = props.participation.MemberName || ''
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(w => w[0].toUpperCase())
-    .join('')
-})
 
 function formatTime(timeStr) {
   if (!timeStr) return ''

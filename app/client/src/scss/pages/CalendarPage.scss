@@ -435,6 +435,16 @@
         height: 28px;
         border-radius: 50%;
         object-fit: cover;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
     }
 
     &__name {

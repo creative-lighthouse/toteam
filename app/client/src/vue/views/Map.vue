@@ -22,14 +22,17 @@
               <div class="map-entry_thumbnail">
                 <img v-if="map.thumbnailUrl" :src="map.thumbnailUrl" :alt="map.title" />
                 <div v-else class="map-entry_thumbnail--placeholder"></div>
-                <div v-if="map.organizationLogoUrl" class="map-entry_org-logo">
-                  <img :src="map.organizationLogoUrl" :alt="map.organizationTitle" />
-                </div>
+                <AppOrgLogo
+                  v-if="map.organizationTitle"
+                  :src="map.organizationLogoUrl"
+                  :alt="map.organizationTitle"
+                  :size="36"
+                  class="map-entry_org-logo"
+                />
               </div>
               <div class="map-entry_info">
                 <h3 class="map-entry_title">{{ map.title }}</h3>
                 <p v-if="map.shortText" class="map-entry_description">{{ map.shortText }}</p>
-                <small v-if="map.organizationTitle && !map.organizationLogoUrl" class="map-entry_org">{{ map.organizationTitle }}</small>
               </div>
             </router-link>
           </li>
@@ -48,6 +51,7 @@ import { ref, onMounted } from 'vue'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 usePageHeaderStore().setHeader('Lagepläne', 'Finde Orte und POIs auf der Karte.')
 

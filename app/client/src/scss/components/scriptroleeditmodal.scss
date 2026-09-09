@@ -1,0 +1,49 @@
+@use "../variables" as *;
+
+.script-role-edit-modal {
+    text-align: left;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    &_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &_header {
+        @include modal-header;
+    }
+
+    // The body is a <form> element, which forms.scss's generic (unscoped)
+    // `form {...}` selector also targets — center-aligned content, its own
+    // border/background/box-shadow, max-width: 400px. Every other modal's
+    // form body explicitly cancels those back out; this one needs to too,
+    // or fields shrink to their content width and the whole thing looks like
+    // a form nested inside the modal instead of just being the modal body.
+    &_body {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 20px;
+        max-width: none;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        background-color: var(--ColorWhite);
+    }
+
+    &_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    &_actions {
+        @include modal-actions;
+    }
+}

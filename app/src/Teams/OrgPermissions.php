@@ -15,6 +15,7 @@ class OrgPermissions
     public const ORG_ADMIN = 'ORG_ADMIN';
     public const ORG_MANAGE_MEMBERS = 'ORG_MANAGE_MEMBERS';
     public const ORG_MANAGE_ROLES = 'ORG_MANAGE_ROLES';
+    public const ORG_MANAGE_SETTINGS = 'ORG_MANAGE_SETTINGS';
 
     public const TASKS_CREATE = 'TASKS_CREATE';
     public const TASKS_EDIT = 'TASKS_EDIT';
@@ -44,6 +45,9 @@ class OrgPermissions
     public const ROOMS_VIEW = 'ROOMS_VIEW';
     public const ROOMS_DELETE = 'ROOMS_DELETE';
 
+    public const SCRIPT_EDIT = 'SCRIPT_EDIT';
+    public const SCRIPT_MANAGE_ROLES = 'SCRIPT_MANAGE_ROLES';
+
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
      * @return array<string, array<string, string>> Kategorie => [Code => Label]
@@ -55,6 +59,7 @@ class OrgPermissions
                 self::ORG_ADMIN => 'Administrator (darf alles)',
                 self::ORG_MANAGE_MEMBERS => 'Mitglieder verwalten',
                 self::ORG_MANAGE_ROLES => 'Rollen & Berechtigungen verwalten',
+                self::ORG_MANAGE_SETTINGS => 'Organisationsprofil (Logo etc.) bearbeiten',
             ],
             'Aufgaben' => [
                 self::TASKS_CREATE => 'Aufgaben erstellen',
@@ -90,6 +95,10 @@ class OrgPermissions
                 self::ROOMS_EDIT => 'Räume bearbeiten',
                 self::ROOMS_VIEW => 'Räume ansehen',
                 self::ROOMS_DELETE => 'Räume löschen',
+            ],
+            'Skript' => [
+                self::SCRIPT_EDIT => 'Skripte bearbeiten',
+                self::SCRIPT_MANAGE_ROLES => 'Skript-Rollen verwalten & zuweisen',
             ],
         ];
     }

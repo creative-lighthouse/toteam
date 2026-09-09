@@ -1,0 +1,53 @@
+// Shared, app-wide form field look (label, input, checkbox row) — used by
+// every modal/form that opts in via the .form-field/.form-label/.input/
+// .form-checkbox classes, so text fields, selects and textareas look the
+// same everywhere instead of each modal styling its own. Individual modals
+// may still layer more specific rules on top (e.g. a fixed width), but the
+// base look — rounded corners, light border, comfortable padding, focus
+// ring — comes from here.
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ColorGray);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.input,
+select.input,
+textarea.input {
+    padding: 9px 12px;
+    border: 1px solid var(--ColorLightGray);
+    border-radius: var(--BorderRadiusSmall);
+    font-size: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--ColorWhite);
+    height: auto;
+    font-family: inherit;
+    color: inherit;
+
+    &:focus {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: 1px;
+        border-color: transparent;
+    }
+}
+
+textarea.input {
+    resize: vertical;
+}

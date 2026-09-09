@@ -13,20 +13,22 @@
     <div class="event-card_header">
       <div class="event-card_header-left">
         <template v-if="event.OrganizationLogos?.length">
-          <img
+          <AppOrgLogo
             v-for="logo in event.OrganizationLogos"
             :key="logo.ID"
             :src="logo.LogoURL"
-            class="event-card_org-logo"
             alt=""
-          >
+            :size="25"
+            class="event-card_org-logo"
+          />
         </template>
-        <img
+        <AppOrgLogo
           v-else-if="event.OrganizationLogoURL"
           :src="event.OrganizationLogoURL"
-          class="event-card_org-logo"
           alt=""
-        >
+          :size="25"
+          class="event-card_org-logo"
+        />
         <h4 class="event-card_title">{{ event.Title }}</h4>
         <p v-if="event.IsPoll" class="event-card_status event-card_status--poll" title="Terminfindung">
           <span class="event-card_status-icon" :style="scheduleIconStyle" aria-hidden="true"></span>
@@ -45,13 +47,13 @@
     <div class="event-card_footer">
       <div class="event-card_footer-left">
         <div v-if="visibleAvatars.length" class="event-card_avatars">
-          <img
+          <AppAvatar
             v-for="p in visibleAvatars"
             :key="p.ID"
             :src="p.ProfileImageURL"
             :alt="p.MemberName"
-            class="event-card_avatar"
-          >
+            img-class="event-card_avatar"
+          />
         </div>
         <div class="event-card_footer-info">
           <span v-if="event.Location" class="event-card_location">{{ event.Location }}</span>
@@ -66,6 +68,8 @@
 <script setup>
 import { computed } from 'vue'
 import ParticipationIcon from './ParticipationIcon.vue'
+import AppAvatar from './AppAvatar.vue'
+import AppOrgLogo from './AppOrgLogo.vue'
 import ScheduleIcon from '../../../icons/actions/action_schedule.svg'
 
 const scheduleIconStyle = {

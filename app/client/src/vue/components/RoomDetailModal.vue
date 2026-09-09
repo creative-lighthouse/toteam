@@ -22,7 +22,13 @@
                   {{ stateLabel(task.State) }}
                 </span>
                 <span class="room-detail-modal_task-title">{{ task.Title }}</span>
-                <img v-if="task.Owner" :src="task.Owner.Avatar" :alt="task.Owner.Name" :title="task.Owner.Name" class="room-detail-modal_task-avatar" />
+                <AppAvatar
+                  v-if="task.Owner"
+                  :src="task.Owner.Avatar"
+                  :alt="task.Owner.Name"
+                  :title="task.Owner.Name"
+                  img-class="room-detail-modal_task-avatar"
+                />
               </button>
             </li>
           </ul>
@@ -44,6 +50,7 @@ import { useRouter } from 'vue-router'
 import { useRoomsStore } from '@stores/rooms'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 
 const emit = defineEmits(['edit', 'deleted'])
 const router = useRouter()

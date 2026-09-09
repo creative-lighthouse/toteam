@@ -1,0 +1,63 @@
+@use "../variables" as *;
+
+.script-create-modal {
+    text-align: left;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    &_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &_header {
+        @include modal-header;
+    }
+
+    // The body is a <form> element, which forms.scss's generic (unscoped)
+    // `form {...}` selector also targets — center-aligned content, its own
+    // border/background/box-shadow, max-width: 400px. Every modal's form
+    // body needs to cancel those back out explicitly, or fields shrink to
+    // their content width instead of filling the modal.
+    &_body {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 20px;
+        max-width: none;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        background-color: var(--ColorWhite);
+    }
+
+    .multiselect-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+    &_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    &_actions {
+        @include modal-actions;
+    }
+}

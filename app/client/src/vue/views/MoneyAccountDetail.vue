@@ -13,7 +13,11 @@
         <!-- Header -->
         <div class="money-detail_header">
           <div class="money-detail_org">
-            <img v-if="account.Organization?.LogoURL" :src="account.Organization.LogoURL" :alt="account.Organization.Title" class="money-detail_org-logo">
+            <AppOrgLogo
+              :src="account.Organization?.LogoURL"
+              :alt="account.Organization?.Title"
+              :size="24"
+            />
             {{ account.Organization?.Title }}
           </div>
           <div class="money-detail_header-actions">
@@ -208,6 +212,7 @@ import MoneyBudgetProgress from '@components/MoneyBudgetProgress.vue'
 import MoneySettleModal from '@components/MoneySettleModal.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -92,11 +92,10 @@
                     :class="{ 'absence-item--own': a.MemberID === authStore.user?.ID }"
                     @click="a.MemberID === authStore.user?.ID && entryModalRef.openEditAbsence(a)"
                     >
-                    <img
-                        v-if="a.ProfileImageURL"
+                    <AppAvatar
                         :src="a.ProfileImageURL"
-                        class="absence-item__avatar"
-                        alt=""
+                        :alt="a.MemberName"
+                        img-class="absence-item__avatar"
                     />
                     <span class="absence-item__name">{{ a.MemberName }}</span>
                     <span v-if="a.Note" class="absence-item__note">{{ a.Note }}</span>
@@ -173,6 +172,7 @@ import AppMenu from '@components/AppMenu.vue'
 import AddAppointmentModal from '@components/AddAppointmentModal.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
 import actionForward from '../../../icons/actions/action_forward.svg'
 import actionBack from '../../../icons/actions/action_back.svg'
 
@@ -325,6 +325,20 @@ const isCurrentMonth = computed(() => {
   return currentMonth.value === now.getMonth() + 1 && currentYear.value === now.getFullYear()
 })
 
+function getAdjacentMonth(year, month, offset) {
+  const date = new Date(year, month - 1 + offset, 1)
+  return { year: date.getFullYear(), month: date.getMonth() + 1 }
+}
+
+// Lädt den vorherigen und nächsten Monat im Hintergrund mit,
+// damit Termine an Monatsgrenzen (z.B. 1. November in der Oktober-Ansicht) sofort sichtbar sind
+function prefetchAdjacentMonths(year, month) {
+  const prev = getAdjacentMonth(year, month, -1)
+  const next = getAdjacentMonth(year, month, 1)
+  eventsStore.fetchEvents(prev.year, prev.month).catch(() => {})
+  eventsStore.fetchEvents(next.year, next.month).catch(() => {})
+}
+
 const jumptotoday = async () => {
   const now = new Date()
   const newYear = now.getFullYear()
@@ -337,6 +351,7 @@ const jumptotoday = async () => {
     monthLoading.value = true
     await eventsStore.fetchEvents(newYear, newMonth)
     monthLoading.value = false
+    prefetchAdjacentMonths(newYear, newMonth)
   }
 
   selectedDate.value = todayKey
@@ -357,6 +372,7 @@ const previousMonth = async () => {
     loadAbsenceCountsForCurrentMonth(),
   ])
   monthLoading.value = false
+  prefetchAdjacentMonths(currentYear.value, currentMonth.value)
 }
 
 const nextMonth = async () => {
@@ -374,6 +390,7 @@ const nextMonth = async () => {
     loadAbsenceCountsForCurrentMonth(),
   ])
   monthLoading.value = false
+  prefetchAdjacentMonths(currentYear.value, currentMonth.value)
 }
 
 // AddCalendarEntryModal
@@ -559,6 +576,7 @@ onMounted(async () => {
     loadAbsenceCountsForCurrentMonth(),
     orgsStore.fetchOrganizations(),
   ])
+  prefetchAdjacentMonths(currentYear.value, currentMonth.value)
 
   // Load absences for the initially selected day
   if (selectedDate.value) {

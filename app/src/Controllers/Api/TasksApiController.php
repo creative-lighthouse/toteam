@@ -97,7 +97,7 @@ class TasksApiController extends ApiController
             'Organization'   => $org && $org->exists() ? [
                 'ID'      => $org->ID,
                 'Title'   => $org->Title,
-                'LogoURL' => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(40)->getURL() : null,
+                'LogoURL' => $org->RenderLogo(40),
             ] : null,
             'Owner'          => $this->formatMember($owner->exists() ? $owner : null),
             'Supporters'     => $supporters,
@@ -178,7 +178,7 @@ class TasksApiController extends ApiController
                     $orgData[] = [
                         'ID'     => $org->ID,
                         'Title'  => $org->Title,
-                        'LogoURL' => $org->Logo()->exists() ? $org->Logo()->ScaleWidth(40)->getURL() : null,
+                        'LogoURL' => $org->RenderLogo(40),
                     ];
                 }
             }

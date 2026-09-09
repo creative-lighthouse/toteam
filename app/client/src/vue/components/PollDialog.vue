@@ -4,12 +4,12 @@
       <div class="dialog-content" @click.stop>
 
         <div class="dialog-header">
-          <img
+          <AppOrgLogo
             v-if="event.OrganizationLogoURL"
             :src="event.OrganizationLogoURL"
-            class="event-dialog_org-logo"
             alt=""
-          >
+            :size="32"
+          />
           <div class="event_title">
             <h2 class="hl2">{{ event.Title }}</h2>
             <p class="poll-badge" title="Terminfindung">
@@ -124,6 +124,7 @@ import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
 import ParticipantCard from '@components/ParticipantCard.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 import ScheduleIcon from '../../../icons/actions/action_schedule.svg'
 
 const scheduleIconStyle = {

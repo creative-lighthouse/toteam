@@ -22,11 +22,10 @@
         <div class="task-detail_header">
           <div class="task-detail_meta">
             <span v-if="task.Organization" class="task-detail_org">
-              <img
-                v-if="task.Organization.LogoURL"
+              <AppOrgLogo
                 :src="task.Organization.LogoURL"
                 :alt="task.Organization.Title"
-                class="task-detail_org-logo"
+                :size="22"
               />
               {{ task.Organization.Title }}
             </span>
@@ -76,7 +75,7 @@
         <!-- People -->
         <div class="task-detail_people">
           <div v-if="task.Owner" class="task-detail_person task-detail_person--editable">
-            <img :src="task.Owner.Avatar" :alt="task.Owner.Name" class="task-detail_avatar" />
+            <AppAvatar :src="task.Owner.Avatar" :alt="task.Owner.Name" img-class="task-detail_avatar" />
             <div>
               <span class="task-detail_person-role">Verantwortlich</span>
               <span class="task-detail_person-name">{{ task.Owner.Name }}</span>
@@ -93,7 +92,7 @@
           </div>
 
           <div v-for="s in task.Supporters" :key="s.ID" class="task-detail_person task-detail_person--editable">
-            <img :src="s.Avatar" :alt="s.Name" class="task-detail_avatar" />
+            <AppAvatar :src="s.Avatar" :alt="s.Name" img-class="task-detail_avatar" />
             <div>
               <span class="task-detail_person-role">Unterstützer</span>
               <span class="task-detail_person-name">{{ s.Name }}</span>
@@ -195,6 +194,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import TaskCard from '@components/TaskCard.vue'
+import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 import TaskSupportersModal from '@components/TaskSupportersModal.vue'
 import TaskRoomsModal from '@components/TaskRoomsModal.vue'
 import TaskCreateModal from '@components/TaskCreateModal.vue'

@@ -15,9 +15,12 @@
 
         <!-- Header -->
         <div class="meal-detail-hero">
-          <div v-if="meal.organizationLogoUrl" class="meal-detail-hero_logo">
-            <img :src="meal.organizationLogoUrl" :alt="meal.organizationTitle" />
-          </div>
+          <AppOrgLogo
+            :src="meal.organizationLogoUrl"
+            :alt="meal.organizationTitle"
+            :size="56"
+            class="meal-detail-hero_logo"
+          />
           <div class="meal-detail-hero_info">
             <p class="meal-detail-hero_date">{{ formatDate(meal.date) }} • {{ meal.time }} Uhr</p>
             <h2 class="meal-detail-hero_title">{{ meal.title }}</h2>
@@ -75,8 +78,12 @@
           <h3 class="hl3">Wer ist dabei ({{ meal.attendees.length }})</h3>
           <ul class="meal-attendee-list">
             <li v-for="a in meal.attendees" :key="a.id" class="meal-attendee">
-              <img v-if="a.avatarUrl" :src="a.avatarUrl" :alt="a.name" class="meal-attendee_avatar" />
-              <span v-else class="meal-attendee_avatar meal-attendee_avatar--placeholder">{{ a.name[0] }}</span>
+              <AppAvatar
+                :src="a.avatarUrl"
+                :alt="a.name"
+                :initials-length="1"
+                img-class="meal-attendee_avatar"
+              />
               <span class="meal-attendee_name">{{ a.name }}</span>
               <span
                 v-for="allergy in a.allergies"
@@ -320,6 +327,8 @@ import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
 import MealCard from '@components/EventDialog/MealCard.vue'
+import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')

@@ -215,6 +215,16 @@
         border-radius: 50%;
         object-fit: cover;
         flex-shrink: 0;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
     }
 
     .room-detail-modal_no-tasks {

@@ -80,9 +80,7 @@ class FoodApiController extends ApiController
             foreach ($upcomingAppointments as $appointment) {
                 $org      = $appointment->Organisations()->first();
                 $orgTitle = $org?->Title;
-                $orgLogo  = ($org && $org->Logo()->exists())
-                    ? $org->Logo()->ScaleWidth(80)->getURL()
-                    : null;
+                $orgLogo  = $org?->RenderLogo(80);
 
                 foreach ($appointment->Meals()->sort('Time ASC') as $meal) {
                     $data = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
@@ -108,9 +106,7 @@ class FoodApiController extends ApiController
             foreach ($pastAppointments as $appointment) {
                 $org      = $appointment->Organisations()->first();
                 $orgTitle = $org?->Title;
-                $orgLogo  = ($org && $org->Logo()->exists())
-                    ? $org->Logo()->ScaleWidth(80)->getURL()
-                    : null;
+                $orgLogo  = $org?->RenderLogo(80);
 
                 foreach ($appointment->Meals()->sort('Time ASC') as $meal) {
                     $pastMeals[] = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
@@ -145,9 +141,7 @@ class FoodApiController extends ApiController
                         'date'                => $appointment->DateStart,
                         'appointmentTitle'    => $appointment->Title,
                         'organizationTitle'   => $org?->Title,
-                        'organizationLogoUrl' => ($org && $org->Logo()->exists())
-                            ? $org->Logo()->ScaleWidth(80)->getURL()
-                            : null,
+                        'organizationLogoUrl' => $org?->RenderLogo(80),
                     ];
                 }
             }
@@ -266,7 +260,7 @@ class FoodApiController extends ApiController
 
             $org      = $appointment->Organisations()->first();
             $orgTitle = $org?->Title;
-            $orgLogo  = ($org && $org->Logo()->exists()) ? $org->Logo()->ScaleWidth(80)->getURL() : null;
+            $orgLogo  = $org?->RenderLogo(80);
 
             $canManage = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_MANAGE_MEALS);
 
@@ -569,9 +563,7 @@ class FoodApiController extends ApiController
                         'date'                => $appointment->DateStart,
                         'appointmentTitle'    => $appointment->Title,
                         'organizationTitle'   => $org?->Title,
-                        'organizationLogoUrl' => ($org && $org->Logo()->exists())
-                            ? $org->Logo()->ScaleWidth(80)->getURL()
-                            : null,
+                        'organizationLogoUrl' => $org?->RenderLogo(80),
                     ];
                 }
             }

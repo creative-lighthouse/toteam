@@ -7,16 +7,11 @@
           Willkommen zurück, <b>{{ authStore.user?.FirstName }} {{ authStore.user?.Surname }}!</b>
         </p>
         <div class="welcome_profileimage">
-          <img
-            v-if="authStore.user?.ProfileImage?.URL"
-            :src="authStore.user.ProfileImage.URL"
-            :alt="`Profilbild von ${authStore.user.FirstName}`"
-          >
-          <img
-            v-else
-            :src="authStore.user?.Gravatar"
-            alt="Standard Profilbild"
-          >
+          <AppAvatar
+            :src="authStore.user?.Avatar"
+            :alt="`Profilbild von ${authStore.user?.FirstName}`"
+            img-class="welcome_profileimage-avatar"
+          />
         </div>
       </div>
 
@@ -73,9 +68,12 @@
         <ul class="infobox_list infobox_list--flat">
           <li v-for="item in dashboardStore.myUpcomingContributions" :key="`${item.foodId}-${item.mealId}`">
             <router-link :to="`/food/meal/${item.mealId}`" class="contribution-item">
-              <div v-if="item.organizationLogoUrl" class="contribution-item_logo">
-                <img :src="item.organizationLogoUrl" :alt="item.organizationTitle" />
-              </div>
+              <AppOrgLogo
+                :src="item.organizationLogoUrl"
+                :alt="item.organizationTitle"
+                :size="32"
+                class="contribution-item_logo"
+              />
               <div class="contribution-item_info">
                 <span class="contribution-item_food">{{ item.foodTitle }}</span>
                 <span class="contribution-item_context">
@@ -170,6 +168,8 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/EventCard.vue'
 import AnnouncementCard from '@components/AnnouncementCard.vue'
 import AppButton from '@components/AppButton.vue'
+import AppAvatar from '@components/AppAvatar.vue'
+import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

@@ -67,6 +67,16 @@
         border-radius: 50%;
         object-fit: cover;
         flex-shrink: 0;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
     }
 
     .task-supporters-modal_error {

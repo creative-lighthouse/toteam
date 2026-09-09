@@ -5,18 +5,11 @@
             <li>
                 <div class="nav_link" @click="toggleProfileMenu">
                     <div class="nav_icon nav_icon--profile">
-                        <img
-                            v-if="authStore.user?.ProfileImage"
-                            :src="authStore.user.ProfileImage.URL"
-                            :alt="`Profilbild von ${authStore.user.FirstName}`"
-                            class="profile_image"
-                        >
-                        <img
-                            v-else
-                            :src="authStore.user?.Gravatar"
-                            alt="Standard Profilbild"
-                            class="profile_image"
-                        >
+                        <AppAvatar
+                            :src="authStore.user?.Avatar"
+                            :alt="`Profilbild von ${authStore.user?.FirstName}`"
+                            img-class="profile_image"
+                        />
                     </div>
                 </div>
             </li>
@@ -64,6 +57,7 @@
                         <div class="nav_button" :class="{ active: isSecondaryMenuOpen }">
                             <span></span>
                             <span></span>
+                            <span></span>
                         </div>
                     </div>
                 </div>
@@ -109,6 +103,15 @@
                     </router-link>
                 </li>
 
+                <li v-if="authStore.hasTotem('skript')">
+                    <router-link to="/skript" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Skript' || $route.name === 'SkriptDetail' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="skriptTotem" alt="Skript Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Skript <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
                 <li>
                     <router-link to="/money" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
                         <div class="nav_icon">
@@ -134,18 +137,11 @@
             <div class="nav_profile_wrap">
                 <router-link to="/profile" class="nav_profile" @click="closeAllMenus">
                     <div class="nav_icon nav_icon--profile">
-                        <img
-                            v-if="authStore.user?.ProfileImage"
-                            :src="authStore.user.ProfileImage.URL"
-                            :alt="`Profilbild von ${authStore.user.FirstName}`"
-                            class="profile_image"
-                        >
-                        <img
-                            v-else
-                            :src="authStore.user?.Gravatar"
-                            alt="Standard Profilbild"
-                            class="profile_image"
-                        >
+                        <AppAvatar
+                            :src="authStore.user?.Avatar"
+                            :alt="`Profilbild von ${authStore.user?.FirstName}`"
+                            img-class="profile_image"
+                        />
                     </div>
                     <div class="nav_text">
                         <p class="nav_title">{{ authStore.user?.FirstName }}</p>
@@ -182,6 +178,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useAnnouncementsStore } from '@stores/announcements'
 import { useUiStore } from '@stores/ui'
+import AppAvatar from '@components/AppAvatar.vue'
 import SettingsModal from '@components/SettingsModal.vue'
 import FeedbackModal from '@components/FeedbackModal.vue'
 
@@ -195,6 +192,7 @@ import kalenderTotemInactive from '../../../icons/totems/kalender_totem_inactive
 import essenTotem from '../../../icons/totems/essen_totem.png'
 import downloadsTotem from '../../../icons/totems/downloads_totem.png'
 import todosTotem from '../../../icons/totems/todos_totem.png'
+import skriptTotem from '../../../icons/totems/skript_totem.png'
 import geldTotem from '../../../icons/totems/geld_totem.png'
 import kartenTotem from '../../../icons/totems/karten_totem.png'
 import organizationsTotem from '../../../icons/totems/organizations_totem.png'

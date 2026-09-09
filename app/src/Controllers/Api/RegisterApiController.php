@@ -74,7 +74,7 @@ class RegisterApiController extends ApiController
                 'Email'     => $member->Email,
                 'FirstName' => $member->FirstName,
                 'Surname'   => $member->Surname,
-                'Gravatar'  => $member->getGravatar(),
+                'Avatar'    => $member->RenderProfileImage(),
             ],
             'message' => 'Registrierung erfolgreich.',
         ]);

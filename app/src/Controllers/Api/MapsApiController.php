@@ -78,9 +78,7 @@ class MapsApiController extends ApiController
                         ? $map->BackgroundImage()->FillMax(400, 300)->getURL()
                         : null,
                     'organizationTitle'   => $org->exists() ? $org->Title : null,
-                    'organizationLogoUrl' => $org->exists() && $org->Logo()->exists()
-                        ? $org->Logo()->ScaleWidth(80)->getURL()
-                        : null,
+                    'organizationLogoUrl' => $org->exists() ? $org->RenderLogo(80) : null,
                 ];
             }
 
