@@ -29,6 +29,8 @@ import MoneyBudgetDetail from '@views/MoneyBudgetDetail.vue'
 import MoneyEntryDetail from '@views/MoneyEntryDetail.vue'
 import Skript from '@views/Skript.vue'
 import SkriptDetail from '@views/SkriptDetail.vue'
+import Marketing from '@views/Marketing.vue'
+import MarketingStatistics from '@views/MarketingStatistics.vue'
 import Test from '@views/Test.vue'
 
 const routes = [
@@ -189,6 +191,18 @@ const routes = [
     name: 'SkriptDetail',
     component: SkriptDetail,
     meta: { requiresAuth: true, totem: 'skript' }
+  },
+  {
+    path: '/marketing',
+    name: 'Marketing',
+    component: Marketing,
+    meta: { requiresAuth: true, totem: 'marketing' }
+  },
+  {
+    path: '/marketing/statistics',
+    name: 'MarketingStatistics',
+    component: MarketingStatistics,
+    meta: { requiresAuth: true, totem: 'marketing' }
   },
   {
     path: '/login',

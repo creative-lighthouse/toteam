@@ -1,0 +1,83 @@
+@use "../variables" as *;
+
+.marketing-size-manager-modal {
+    text-align: left;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    &_content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &_header {
+        @include modal-header;
+    }
+
+    &_body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    &_new {
+        display: flex;
+        gap: 0.5rem;
+
+        .input {
+            flex: 1;
+        }
+    }
+
+    &_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    &_empty {
+        opacity: 0.6;
+        font-size: 0.9rem;
+    }
+
+    &_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    &_item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.4rem 0.75rem;
+
+        & + & {
+            border-top: 1px solid var(--ColorLightGray);
+        }
+
+        .input {
+            flex: 1;
+        }
+    }
+
+    &_item-title {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &_item-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+}

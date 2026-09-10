@@ -38,6 +38,8 @@
 @use "pages/TestPage.scss";
 @use "pages/SkriptPage.scss";
 @use "pages/SkriptDetailPage.scss";
+@use "pages/MarketingPage.scss";
+@use "pages/MarketingStatisticsPage.scss";
 
 
 @use "landingpage/landingpage.scss";
@@ -72,6 +74,8 @@
 @use "components/scriptcreatemodal.scss";
 @use "components/scriptroleinfomodal.scss";
 @use "components/scriptmemberpickerdropdown.scss";
+@use "components/marketingentrymodal.scss";
+@use "components/marketingsizemanagermodal.scss";
 
 
 html{
