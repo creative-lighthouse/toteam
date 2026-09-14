@@ -1,0 +1,127 @@
+@use "../variables" as *;
+
+.section.section--MarketingPage {
+    .marketing-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+
+        &_filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+
+            .input {
+                width: auto;
+            }
+        }
+
+        &_actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    }
+
+    // Desktop: every row uses the same fixed grid-template-columns, so the
+    // avatar/date/quantity/size/map/actions columns line up like a table
+    // across all entries; only the location column flexes.
+    $marketing-row-columns: 32px 64px 36px minmax(100px, 160px) 1fr 32px auto;
+
+    .marketing-list {
+        display: flex;
+        flex-direction: column;
+        background: var(--ColorWhite);
+        border: 1px solid var(--ColorLightGray);
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .marketing-list-row {
+        display: grid;
+        grid-template-columns: $marketing-row-columns;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.5rem 0.9rem;
+
+        & + & {
+            border-top: 1px solid var(--ColorLightGray);
+        }
+
+        &_avatar-img {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+
+        &_date {
+            font-size: 0.85rem;
+            opacity: 0.6;
+            white-space: nowrap;
+        }
+
+        &_quantity {
+            font-weight: 600;
+        }
+
+        &_size {
+            background: var(--ColorLightGray);
+            border-radius: var(--BorderRadiusSmall);
+            padding: 0.1rem 0.5rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        &_location {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &_map, &_actions {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        &_note {
+            grid-column: 4 / -1;
+            margin: 0.2rem 0 0;
+            font-size: 0.85rem;
+            opacity: 0.75;
+            white-space: pre-wrap;
+        }
+
+        // Grid columns only pay off once there's room for a table; below that,
+        // fall back to a simple wrapping flex row in source order.
+        @include media(max-medium) {
+            display: flex;
+            flex-wrap: wrap;
+            row-gap: 0.3rem;
+
+            &_location {
+                white-space: normal;
+                flex-basis: 100%;
+                order: 1;
+            }
+
+            &_map, &_actions {
+                margin-left: auto;
+            }
+
+            &_note {
+                flex-basis: 100%;
+                margin: 0.2rem 0 0;
+                order: 2;
+            }
+        }
+    }
+}

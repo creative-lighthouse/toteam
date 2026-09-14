@@ -2,10 +2,39 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { apiGet, apiPost, clearCacheForEndpoint } from '@utils/api'
 
+const LAST_ORGANIZATION_STORAGE_KEY = 'toteam_last_organization_id'
+
+function readLastOrganizationId() {
+  try {
+    const stored = localStorage.getItem(LAST_ORGANIZATION_STORAGE_KEY)
+    return stored ? parseInt(stored) : null
+  } catch {
+    return null
+  }
+}
+
 export const useOrganizationsStore = defineStore('organizations', () => {
   const organizations = ref([])
   const loading = ref(false)
   const error = ref(null)
+
+  // Persisted across the whole app so any single-organization picker can
+  // default to the org the user last worked in, instead of always falling
+  // back to "first in the list".
+  const lastOrganizationId = ref(readLastOrganizationId())
+
+  function setLastOrganizationId(id) {
+    lastOrganizationId.value = id || null
+    try {
+      if (id) {
+        localStorage.setItem(LAST_ORGANIZATION_STORAGE_KEY, String(id))
+      } else {
+        localStorage.removeItem(LAST_ORGANIZATION_STORAGE_KEY)
+      }
+    } catch {
+      // localStorage unavailable (private mode, etc.) — in-memory value still works for this session
+    }
+  }
 
   async function fetchOrganizations(forceRefresh = false) {
     try {
@@ -46,7 +75,9 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     organizations,
     loading,
     error,
+    lastOrganizationId,
     fetchOrganizations,
     joinOrganization,
+    setLastOrganizationId,
   }
 })

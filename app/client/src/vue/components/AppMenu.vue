@@ -112,6 +112,18 @@
                     </router-link>
                 </li>
 
+                <li v-if="authStore.hasTotem('marketing')">
+                    <router-link to="/marketing" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Marketing' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <svg class="nav_image" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 11v2a2 2 0 0 0 2 2h1l1 5h2l-1-5h2l7 4V6l-7 4H5a2 2 0 0 0-2 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                <path d="M17 9v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <p class="nav_title">Marketing <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
                 <li>
                     <router-link to="/money" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
                         <div class="nav_icon">
