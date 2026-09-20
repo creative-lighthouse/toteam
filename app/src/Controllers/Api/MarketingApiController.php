@@ -87,6 +87,7 @@ class MarketingApiController extends ApiController
             'Note'              => $distribution->Note,
             'DistributedAt'     => $distribution->DistributedAt,
             'DistributedAtNice' => $distribution->dbObject('DistributedAt')->Nice(),
+            'OrganizationID'    => (int) $distribution->OrganizationID,
             'PosterSize'        => $size && $size->exists() ? $this->formatSize($size) : null,
             'Member'            => $this->formatMember($distribution->Member()),
             'CanEdit'           => $distribution->isEditableBy($member),

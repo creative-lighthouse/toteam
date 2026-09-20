@@ -199,6 +199,7 @@ function open(distribution = null) {
   editingId = distribution?.ID ?? null
 
   if (distribution) {
+    form.OrganizationID = distribution.OrganizationID
     form.Location = distribution.Location
     form.PosterSizeID = distribution.PosterSize?.ID ?? ''
     form.Quantity = distribution.Quantity
