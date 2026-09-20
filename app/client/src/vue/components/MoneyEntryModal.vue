@@ -62,7 +62,6 @@
               <input
                 type="file"
                 accept="image/*,application/pdf"
-                capture="environment"
                 class="file-input-hidden"
                 @change="onFileSelected"
               />
