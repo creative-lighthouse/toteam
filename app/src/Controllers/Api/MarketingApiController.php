@@ -47,6 +47,24 @@ class MarketingApiController extends ApiController
         ];
     }
 
+    /**
+     * Wandelt einen vom Frontend gesendeten Zeitpunkt (z.B. das
+     * `datetime-local`-Format "YYYY-MM-DDTHH:mm") in das von SilverStripe
+     * erwartete "Y-m-d H:i:s" um. Liegt kein oder ein ungültiger Wert vor,
+     * wird null zurückgegeben (Aufrufer entscheidet dann über den Fallback).
+     */
+    private function parseDistributedAt(?string $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return null;
+        }
+        return date('Y-m-d H:i:s', $timestamp);
+    }
+
     private function formatSize(PosterSize $size): array
     {
         return [
@@ -61,18 +79,18 @@ class MarketingApiController extends ApiController
         $size = $distribution->PosterSize();
 
         return [
-            'ID'          => $distribution->ID,
-            'Location'    => $distribution->Location,
-            'Quantity'    => $distribution->Quantity,
-            'Latitude'    => $distribution->Latitude ?: null,
-            'Longitude'   => $distribution->Longitude ?: null,
-            'Note'        => $distribution->Note,
-            'Created'     => $distribution->Created,
-            'CreatedNice' => $distribution->dbObject('Created')->Nice(),
-            'PosterSize'  => $size && $size->exists() ? $this->formatSize($size) : null,
-            'Member'      => $this->formatMember($distribution->Member()),
-            'CanEdit'     => $distribution->isEditableBy($member),
-            'CanDelete'   => $distribution->isDeletableBy($member),
+            'ID'                => $distribution->ID,
+            'Location'          => $distribution->Location,
+            'Quantity'          => $distribution->Quantity,
+            'Latitude'          => $distribution->Latitude ?: null,
+            'Longitude'         => $distribution->Longitude ?: null,
+            'Note'              => $distribution->Note,
+            'DistributedAt'     => $distribution->DistributedAt,
+            'DistributedAtNice' => $distribution->dbObject('DistributedAt')->Nice(),
+            'PosterSize'        => $size && $size->exists() ? $this->formatSize($size) : null,
+            'Member'            => $this->formatMember($distribution->Member()),
+            'CanEdit'           => $distribution->isEditableBy($member),
+            'CanDelete'         => $distribution->isDeletableBy($member),
         ];
     }
 
@@ -98,9 +116,9 @@ class MarketingApiController extends ApiController
         // Years available for the filter dropdown, derived before the year
         // filter itself is applied below.
         $years = [];
-        foreach ($distributions->column('Created') as $created) {
-            if ($created) {
-                $years[(int) substr($created, 0, 4)] = true;
+        foreach ($distributions->column('DistributedAt') as $distributedAt) {
+            if ($distributedAt) {
+                $years[(int) substr($distributedAt, 0, 4)] = true;
             }
         }
         $years = array_keys($years);
@@ -108,8 +126,8 @@ class MarketingApiController extends ApiController
 
         if ($year = (int) $request->getVar('year')) {
             $distributions = $distributions->filter([
-                'Created:GreaterThanOrEqual' => "$year-01-01 00:00:00",
-                'Created:LessThanOrEqual'    => "$year-12-31 23:59:59",
+                'DistributedAt:GreaterThanOrEqual' => "$year-01-01 00:00:00",
+                'DistributedAt:LessThanOrEqual'    => "$year-12-31 23:59:59",
             ]);
         }
 
@@ -168,8 +186,8 @@ class MarketingApiController extends ApiController
 
         if ($year = (int) $request->getVar('year')) {
             $distributions = $distributions->filter([
-                'Created:GreaterThanOrEqual' => "$year-01-01 00:00:00",
-                'Created:LessThanOrEqual'    => "$year-12-31 23:59:59",
+                'DistributedAt:GreaterThanOrEqual' => "$year-01-01 00:00:00",
+                'DistributedAt:LessThanOrEqual'    => "$year-12-31 23:59:59",
             ]);
         }
 
@@ -255,6 +273,14 @@ class MarketingApiController extends ApiController
             return $this->errorResponse('Ungültige Plakat-Größe', 400);
         }
 
+        $distributedAt = null;
+        if (!empty($body['DistributedAt'])) {
+            $distributedAt = $this->parseDistributedAt($body['DistributedAt']);
+            if (!$distributedAt) {
+                return $this->errorResponse('Ungültiger Zeitpunkt', 400);
+            }
+        }
+
         try {
             $distribution = PosterDistribution::create();
             $distribution->Location       = $location;
@@ -262,6 +288,7 @@ class MarketingApiController extends ApiController
             $distribution->Latitude       = $latitude ?: null;
             $distribution->Longitude      = $longitude ?: null;
             $distribution->Note           = $body['Note'] ?? '';
+            $distribution->DistributedAt  = $distributedAt;
             $distribution->PosterSizeID   = $size->ID;
             $distribution->OrganizationID = $orgID;
             $distribution->MemberID       = $member->ID;
@@ -309,6 +336,13 @@ class MarketingApiController extends ApiController
         }
         if (isset($body['Note'])) {
             $distribution->Note = $body['Note'];
+        }
+        if (isset($body['DistributedAt'])) {
+            $distributedAt = $this->parseDistributedAt($body['DistributedAt']);
+            if (!$distributedAt) {
+                return $this->errorResponse('Ungültiger Zeitpunkt', 400);
+            }
+            $distribution->DistributedAt = $distributedAt;
         }
         if (isset($body['PosterSizeID'])) {
             $size = PosterSize::get()->filter(['ID' => (int) $body['PosterSizeID'], 'OrganizationID' => $distribution->OrganizationID])->first();
