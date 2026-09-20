@@ -25,7 +25,7 @@
           </div>
 
           <div class="form-field">
-            <label class="form-label" for="marketing-entry-location">Ort</label>
+            <label class="form-label" for="marketing-entry-location">Ort *</label>
             <div class="marketing-entry-modal_location-row">
               <input
                 id="marketing-entry-location"
@@ -49,30 +49,52 @@
             </p>
           </div>
 
-          <div class="form-field-row">
-            <div class="form-field">
-              <label class="form-label" for="marketing-entry-size">Größe *</label>
-              <select id="marketing-entry-size" v-model="form.PosterSizeID" class="input" required>
-                <option value="" disabled>Bitte wählen</option>
-                <option v-for="size in sizesForOrg" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
-              </select>
+          <div class="form-field">
+            <div class="form-field-row">
+              <div class="form-field">
+                <label class="form-label" for="marketing-entry-size">Größe *</label>
+                <select
+                  id="marketing-entry-size"
+                  v-model="form.PosterSizeID"
+                  class="input"
+                  required
+                  :disabled="!form.OrganizationID || sizesForOrg.length === 0"
+                >
+                  <option value="" disabled>Bitte wählen</option>
+                  <option v-for="size in sizesForOrg" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label class="form-label" for="marketing-entry-quantity">Anzahl *</label>
+                <input
+                  id="marketing-entry-quantity"
+                  v-model.number="form.Quantity"
+                  type="number"
+                  min="1"
+                  class="input"
+                  required
+                />
+              </div>
             </div>
 
-            <div class="form-field">
-              <label class="form-label" for="marketing-entry-quantity">Anzahl *</label>
-              <input
-                id="marketing-entry-quantity"
-                v-model.number="form.Quantity"
-                type="number"
-                min="1"
-                class="input"
-                required
-              />
-            </div>
+            <p v-if="!form.OrganizationID" class="marketing-entry-modal_hint">
+              Bitte zuerst eine Organisation auswählen.
+            </p>
+            <p v-else-if="sizesForOrg.length === 0" class="marketing-entry-modal_hint">
+              Für diese Organisation wurden noch keine Plakat-Größen angelegt.
+            </p>
           </div>
 
-          <div v-if="sizesForOrg.length === 0" class="marketing-entry-modal_hint">
-            Für diese Organisation wurden noch keine Plakat-Größen angelegt.
+          <div class="form-field">
+            <label class="form-label" for="marketing-entry-distributed-at">Zeitpunkt *</label>
+            <input
+              id="marketing-entry-distributed-at"
+              v-model="form.DistributedAt"
+              type="datetime-local"
+              class="input"
+              required
+            />
           </div>
 
           <div class="form-field">
@@ -95,7 +117,7 @@
             type="submit"
             form="marketing-entry-form"
             variant="primary"
-            :disabled="saving || !hasLocationInfo || !form.PosterSizeID || !form.OrganizationID"
+            :disabled="saving || !hasLocationInfo || !form.PosterSizeID || !form.OrganizationID || !form.DistributedAt"
           >
             {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
           </AppButton>
@@ -132,6 +154,12 @@ function defaultOrganizationId() {
   return store.filterOrganization || 0
 }
 
+function nowLocal() {
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 const defaultForm = () => ({
   OrganizationID: defaultOrganizationId(),
   Location: '',
@@ -140,6 +168,7 @@ const defaultForm = () => ({
   Latitude: '',
   Longitude: '',
   Note: '',
+  DistributedAt: nowLocal(),
 })
 
 const form = reactive(defaultForm())
@@ -176,6 +205,7 @@ function open(distribution = null) {
     form.Latitude = distribution.Latitude || ''
     form.Longitude = distribution.Longitude || ''
     form.Note = distribution.Note || ''
+    form.DistributedAt = distribution.DistributedAt ? distribution.DistributedAt.replace(' ', 'T').slice(0, 16) : nowLocal()
   }
 
   dialogEl.value?.showModal()
@@ -212,7 +242,7 @@ function clearLocation() {
 }
 
 async function submit() {
-  if (!hasLocationInfo.value || !form.PosterSizeID || !form.OrganizationID) return
+  if (!hasLocationInfo.value || !form.PosterSizeID || !form.OrganizationID || !form.DistributedAt) return
 
   saving.value = true
   error.value = null
@@ -224,6 +254,7 @@ async function submit() {
     Latitude: form.Latitude || '',
     Longitude: form.Longitude || '',
     Note: form.Note,
+    DistributedAt: form.DistributedAt,
   }
 
   try {

@@ -62,7 +62,7 @@
             />
           </div>
 
-          <span class="marketing-list-row_date">{{ formatDate(entry.Created) }}</span>
+          <span class="marketing-list-row_date">{{ formatDate(entry.DistributedAt) }}</span>
           <span class="marketing-list-row_quantity">{{ entry.Quantity }}×</span>
           <span
             v-if="entry.PosterSize"

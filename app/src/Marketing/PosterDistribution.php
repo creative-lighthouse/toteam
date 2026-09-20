@@ -11,14 +11,16 @@ use SilverStripe\Security\Member;
  * Class \App\Marketing\PosterDistribution
  *
  * Ein Eintrag "wo wurden wie viele Plakate welcher Größe verteilt", optional
- * mit GPS-Koordinaten. `Created` (von SilverStripe automatisch gepflegt) dient
- * als Zeitstempel für die jahresweise Rückschau im Frontend.
+ * mit GPS-Koordinaten. `DistributedAt` ist der (editierbare, auf "jetzt"
+ * vorausgefüllte) Zeitpunkt der Verteilung und dient als Zeitstempel für die
+ * jahresweise Rückschau im Frontend.
  *
  * @property ?string $Location
  * @property int $Quantity
  * @property ?string $Latitude
  * @property ?string $Longitude
  * @property ?string $Note
+ * @property ?string $DistributedAt
  * @property int $PosterSizeID
  * @property int $OrganizationID
  * @property int $MemberID
@@ -34,11 +36,12 @@ use SilverStripe\Security\Member;
 class PosterDistribution extends DataObject
 {
     private static $db = [
-        "Location"  => "Varchar(255)",
-        "Quantity"  => "Int",
-        "Latitude"  => "Varchar(30)",
-        "Longitude" => "Varchar(30)",
-        "Note"      => "Text",
+        "Location"      => "Varchar(255)",
+        "Quantity"      => "Int",
+        "Latitude"      => "Varchar(30)",
+        "Longitude"     => "Varchar(30)",
+        "Note"          => "Text",
+        "DistributedAt" => "Datetime",
     ];
 
     private static $has_one = [
@@ -47,17 +50,18 @@ class PosterDistribution extends DataObject
         "Member"       => Member::class,
     ];
 
-    private static $default_sort = "Created DESC";
+    private static $default_sort = "DistributedAt DESC";
 
     private static $field_labels = [
-        "Location"     => "Ort",
-        "Quantity"     => "Anzahl",
-        "Latitude"     => "Breitengrad",
-        "Longitude"    => "Längengrad",
-        "Note"         => "Notiz",
-        "PosterSize"   => "Größe",
-        "Organization" => "Organisation",
-        "Member"       => "Erfasst von",
+        "Location"      => "Ort",
+        "Quantity"      => "Anzahl",
+        "Latitude"      => "Breitengrad",
+        "Longitude"     => "Längengrad",
+        "Note"          => "Notiz",
+        "DistributedAt" => "Zeitpunkt",
+        "PosterSize"    => "Größe",
+        "Organization"  => "Organisation",
+        "Member"        => "Erfasst von",
     ];
 
     private static $summary_fields = [
@@ -65,12 +69,20 @@ class PosterDistribution extends DataObject
         "Quantity"        => "Anzahl",
         "PosterSize.Title" => "Größe",
         "Member.Name"     => "Erfasst von",
-        "Created"         => "Datum",
+        "DistributedAt"   => "Datum",
     ];
 
     private static $table_name = 'PosterDistribution';
     private static $singular_name = "Plakat-Verteilung";
     private static $plural_name = "Plakat-Verteilungen";
+
+    protected function onBeforeWrite()
+    {
+        parent::onBeforeWrite();
+        if (!$this->DistributedAt) {
+            $this->DistributedAt = date('Y-m-d H:i:s');
+        }
+    }
 
     public function isViewableBy(Member $member): bool
     {
