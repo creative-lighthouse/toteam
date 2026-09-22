@@ -63,7 +63,7 @@
 
         <h2 class="hl2 task-detail_title">{{ task.Title }}</h2>
 
-        <p v-if="task.DeadlineNice" class="task-detail_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
+        <p v-if="task.DeadlineNice && task.State !== 'finished'" class="task-detail_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
           Fällig: {{ task.DeadlineNice }}
         </p>
 
@@ -227,7 +227,7 @@ const deleteModal = ref(null)
 const editModal = ref(null)
 
 const isOverdue = computed(() => {
-  if (!task.value?.Deadline) return false
+  if (!task.value?.Deadline || task.value?.State === 'finished') return false
   return new Date(task.value.Deadline) < new Date()
 })
 

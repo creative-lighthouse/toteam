@@ -19,11 +19,10 @@ SilverStripe\Admin\LeftAndMain:
       priority: -10 # (optional) Defaults to menu item order
       items:
         - App-Admins-TaskAdmin
-    LandingPage:
-      icon_class: "fa fa-home" # (optional) Defaults to 'fa fa-folder'
+    Files:
+      icon_class: "fa fa-folder-open" # (optional) Defaults to 'fa fa-folder'
       priority: -50 # (optional) Defaults to menu item order
       items:
-        - SilverStripe-CMS-Controllers-CMSMain
         - SilverStripe-AssetAdmin-Controller-AssetAdmin
     Other:
       icon_class: "fa fa-folder" # (optional) Defaults to 'fa fa-folder'
@@ -31,6 +30,3 @@ SilverStripe\Admin\LeftAndMain:
       items:
         - SilverStripe-SiteConfig-SiteConfigLeftAndMain
         - SilverStripe-Admin-SecurityAdmin
-        - SilverStripe-CampaignAdmin-CampaignAdmin
-        - SilverStripe-VersionedAdmin-ArchiveAdmin
-        - SilverStripe-Reports-ReportAdmin

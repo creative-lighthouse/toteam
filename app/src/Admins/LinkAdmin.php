@@ -3,7 +3,6 @@
 namespace App\Admins;
 
 use App\Links\TeamLink;
-use App\Links\TeamLinkType;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Admin\ModelAdmin;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
@@ -21,7 +20,6 @@ class LinkAdmin extends ModelAdmin
 
     private static $managed_models = [
         TeamLink::class,
-        TeamLinkType::class,
     ];
 
     public function getEditForm($id = null, $fields = null)

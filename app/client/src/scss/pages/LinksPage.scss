@@ -8,25 +8,6 @@
         margin-bottom: 16px;
     }
 
-    .section_filter {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-
-        .button {
-            background-color: transparent;
-            border: 1px solid var(--ColorPrimary);
-            color: var(--ColorPrimary);
-
-            &.active {
-                background-color: var(--ColorPrimary);
-                color: var(--ColorWhite);
-            }
-        }
-    }
-
     .links-search {
         margin-bottom: 0;
         width: 100%;
@@ -146,16 +127,6 @@
         &:hover {
             background-color: color-mix(in srgb, var(--ColorPrimary) 20%, transparent);
         }
-    }
-
-    .link-item__type-badge {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: var(--BorderRadiusSmall);
-        background-color: var(--ColorLightGray);
-        color: var(--ColorGray);
-        white-space: nowrap;
     }
 
     .link-item__actions {

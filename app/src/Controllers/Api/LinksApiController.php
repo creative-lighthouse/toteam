@@ -4,15 +4,12 @@ namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
 use App\Links\TeamLink;
-use App\Links\TeamLinkType;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Upload;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
-use SilverStripe\LinkField\Models\ExternalLink;
-use SilverStripe\LinkField\Models\FileLink;
 
 /**
  * Class \App\Controllers\Api\LinksApiController
@@ -73,14 +70,8 @@ class LinksApiController extends ApiController
             }
 
             if (empty($organizationIDs)) {
-                $types = TeamLinkType::get();
-                $typesData = [];
-                foreach ($types as $type) {
-                    $typesData[] = ['ID' => $type->ID, 'Title' => $type->Title];
-                }
                 return $this->jsonResponse([
                     'links'       => [],
-                    'types'       => $typesData,
                     'adminOrgIDs' => $adminOrgIDs,
                     'adminOrgs'   => $adminOrgs,
                 ]);
@@ -93,28 +84,20 @@ class LinksApiController extends ApiController
             $linksData = [];
             foreach ($teamLinks as $teamLink) {
                 try {
-                    $btn = $teamLink->Button();
-                    $linkKind = 'external';
+                    $linkKind = $teamLink->LinkKind ?: 'external';
                     $url = null;
                     $fileName = null;
-                    $openInNew = false;
+                    $openInNew = (bool) $teamLink->OpenInNew;
 
-                    if ($btn && $btn->exists()) {
-                        if ($btn instanceof FileLink) {
-                            $linkKind = 'file';
-                            $file = $btn->File();
-                            $url = $file && $file->exists() ? $file->getURL(true) : null;
-                            $fileName = $file && $file->exists() ? basename($file->getFilename() ?? '') : null;
-                            $openInNew = (bool) $btn->OpenInNew;
-                        } else {
-                            $linkKind = 'external';
-                            $url = $btn->ExternalUrl ?? null;
-                            $openInNew = (bool) $btn->OpenInNew;
-                        }
+                    if ($linkKind === 'file') {
+                        $file = $teamLink->File();
+                        $url = $file && $file->exists() ? $file->getURL(true) : null;
+                        $fileName = $file && $file->exists() ? basename($file->getFilename() ?? '') : null;
+                    } else {
+                        $url = $teamLink->ExternalUrl ?: null;
                     }
 
                     $org = $teamLink->Parent();
-                    $type = $teamLink->Type();
 
                     $linksData[] = [
                         'ID'          => $teamLink->ID,
@@ -122,8 +105,6 @@ class LinksApiController extends ApiController
                         'OrgID'       => $org ? $org->ID : null,
                         'OrgTitle'    => $org ? $org->Title : null,
                         'OrgUsername' => $org ? ($org->Username ?: null) : null,
-                        'TypeID'      => ($type && $type->exists()) ? $type->ID : null,
-                        'TypeTitle'   => ($type && $type->exists()) ? $type->Title : null,
                         'LinkKind'    => $linkKind,
                         'URL'         => $url,
                         'FileName'    => $fileName,
@@ -134,15 +115,8 @@ class LinksApiController extends ApiController
                 }
             }
 
-            $types = TeamLinkType::get()->sort('Title ASC');
-            $typesData = [];
-            foreach ($types as $type) {
-                $typesData[] = ['ID' => $type->ID, 'Title' => $type->Title];
-            }
-
             return $this->jsonResponse([
                 'links'       => $linksData,
-                'types'       => $typesData,
                 'adminOrgIDs' => $adminOrgIDs,
                 'adminOrgs'   => $adminOrgs,
             ]);
@@ -161,7 +135,6 @@ class LinksApiController extends ApiController
             if ($isMultipart) {
                 $title     = $request->postVar('title') ?? '';
                 $orgId     = (int) ($request->postVar('orgId') ?? 0);
-                $typeId    = (int) ($request->postVar('typeId') ?? 0);
                 $url       = $request->postVar('url') ?? '';
                 $openInNew = (bool) ($request->postVar('openInNew') ?? false);
                 $hasFile   = !empty($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK;
@@ -169,7 +142,6 @@ class LinksApiController extends ApiController
                 $data      = $this->getJsonBody();
                 $title     = $data['title'] ?? '';
                 $orgId     = (int) ($data['orgId'] ?? 0);
-                $typeId    = (int) ($data['typeId'] ?? 0);
                 $url       = $data['url'] ?? '';
                 $openInNew = (bool) ($data['openInNew'] ?? false);
                 $hasFile   = false;
@@ -192,7 +164,12 @@ class LinksApiController extends ApiController
                 return $this->errorResponse('Keine Berechtigung für diese Organisation', 403);
             }
 
-            // Create the Link (Button)
+            // Create TeamLink
+            $teamLink           = TeamLink::create();
+            $teamLink->Title    = $title;
+            $teamLink->ParentID = $orgId;
+            $teamLink->OpenInNew = $openInNew;
+
             if ($hasFile) {
                 // File upload
                 $file   = File::create();
@@ -206,40 +183,20 @@ class LinksApiController extends ApiController
                 }
 
                 $file->write();
+                $file->publishSingle();
 
-                $btn            = FileLink::create();
-                $btn->FileID    = $file->ID;
-                $btn->OpenInNew = $openInNew;
-                $btn->write();
+                $teamLink->LinkKind = 'file';
+                $teamLink->FileID   = $file->ID;
             } else {
                 if (empty($url)) {
                     return $this->errorResponse('URL oder Datei ist erforderlich', 400);
                 }
 
-                $btn              = ExternalLink::create();
-                $btn->ExternalUrl = $url;
-                $btn->OpenInNew   = $openInNew;
-                $btn->write();
-            }
-
-            // Create TeamLink
-            $teamLink           = TeamLink::create();
-            $teamLink->Title    = $title;
-            $teamLink->ParentID = $orgId;
-            $teamLink->ButtonID = $btn->ID;
-
-            if ($typeId) {
-                $type = TeamLinkType::get()->byID($typeId);
-                if ($type) {
-                    $teamLink->TypeID = $typeId;
-                }
+                $teamLink->LinkKind    = 'external';
+                $teamLink->ExternalUrl = $url;
             }
 
             $teamLink->write();
-            // Publish the ownership chain: TeamLink → Button (FileLink) → File
-            // FileLinkExtension adds $owns = ['File'], so publishRecursive() cascades
-            // all the way to the File and moves it to the public asset store.
-            $teamLink->publishRecursive();
 
             return $this->successResponse(['ID' => $teamLink->ID], 'Link erfolgreich erstellt');
         } catch (\Exception $e) {
@@ -274,7 +231,6 @@ class LinksApiController extends ApiController
 
             $data      = $this->getJsonBody();
             $title     = $data['title'] ?? null;
-            $typeId    = isset($data['typeId']) ? (int) $data['typeId'] : null;
             $url       = $data['url'] ?? null;
             $openInNew = isset($data['openInNew']) ? (bool) $data['openInNew'] : null;
 
@@ -282,23 +238,17 @@ class LinksApiController extends ApiController
                 $teamLink->Title = $title;
             }
 
-            if ($typeId !== null) {
-                $teamLink->TypeID = $typeId ?: 0;
+            // Update url/openInNew only for external links (matches previous behaviour of leaving file links untouched)
+            if ($teamLink->LinkKind === 'external') {
+                if ($url !== null) {
+                    $teamLink->ExternalUrl = $url;
+                }
+                if ($openInNew !== null) {
+                    $teamLink->OpenInNew = $openInNew;
+                }
             }
 
             $teamLink->write();
-
-            // Update button if external link and url provided
-            $btn = $teamLink->Button();
-            if ($btn && $btn->exists() && !($btn instanceof FileLink)) {
-                if ($url !== null) {
-                    $btn->ExternalUrl = $url;
-                }
-                if ($openInNew !== null) {
-                    $btn->OpenInNew = $openInNew;
-                }
-                $btn->write();
-            }
 
             return $this->successResponse(['ID' => $teamLink->ID], 'Link erfolgreich aktualisiert');
         } catch (\Exception $e) {
@@ -331,22 +281,14 @@ class LinksApiController extends ApiController
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
-            $btn = $teamLink->Button();
+            $file = $teamLink->LinkKind === 'file' ? $teamLink->File() : null;
 
             // Delete the TeamLink first
             $teamLink->delete();
 
-            // Delete the associated Button and optionally its file
-            if ($btn && $btn->exists()) {
-                if ($btn instanceof FileLink) {
-                    $file = $btn->File();
-                    $btn->delete();
-                    if ($file && $file->exists()) {
-                        $file->delete();
-                    }
-                } else {
-                    $btn->delete();
-                }
+            // Delete the associated file, if any
+            if ($file && $file->exists()) {
+                $file->delete();
             }
 
             return $this->successResponse([], 'Link erfolgreich gelöscht');

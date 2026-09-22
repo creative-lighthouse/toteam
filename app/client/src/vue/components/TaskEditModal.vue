@@ -34,6 +34,16 @@
             />
           </div>
 
+          <div class="form-field">
+            <label class="form-label" for="task-edit-deadline">Fälligkeitsdatum</label>
+            <input
+              id="task-edit-deadline"
+              v-model="form.Deadline"
+              type="date"
+              class="input"
+            />
+          </div>
+
           <div v-if="error" class="task-create-modal_error">
             {{ error }}
           </div>
@@ -72,11 +82,13 @@ const error = ref(null)
 const form = reactive({
   Title: '',
   Description: '',
+  Deadline: '',
 })
 
 function open() {
   form.Title = props.task.Title || ''
   form.Description = props.task.Description || ''
+  form.Deadline = props.task.Deadline ? props.task.Deadline.slice(0, 10) : ''
   error.value = null
   dialogEl.value?.showModal()
 }
@@ -95,6 +107,7 @@ async function submit() {
     const response = await store.updateTask(props.task.ID, {
       Title: form.Title.trim(),
       Description: form.Description,
+      Deadline: form.Deadline,
     })
 
     if (response.success) {

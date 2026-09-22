@@ -86,7 +86,7 @@ class TasksApiController extends ApiController
             'Title'          => $task->Title,
             'Description'    => $task->Description,
             'Deadline'       => $task->Deadline,
-            'DeadlineNice'   => $task->Deadline ? $task->dbObject('Deadline')->Nice() : null,
+            'DeadlineNice'   => $task->Deadline ? $task->dbObject('Deadline')->Date() : null,
             'State'          => $task->State ?: 'open',
             'ParentID'       => $task->ParentID ?: null,
             'Parent'         => ($parent && $parent->exists()) ? [

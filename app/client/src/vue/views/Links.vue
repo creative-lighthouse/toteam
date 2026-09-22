@@ -2,26 +2,6 @@
   <div class="section section--LinksPage">
     <div class="section_content">
 
-      <!-- Type filter tabs -->
-      <div v-if="usedTypes.length > 0" class="section_filter">
-        <button
-          class="button"
-          :class="{ active: selectedType === null }"
-          @click="selectedType = null"
-        >
-          Alle
-        </button>
-        <button
-          v-for="type in usedTypes"
-          :key="type.ID"
-          class="button"
-          :class="{ active: selectedType?.ID === type.ID }"
-          @click="selectedType = type"
-        >
-          {{ type.Title }}
-        </button>
-      </div>
-
       <!-- Search + Add button row -->
       <div class="links-toolbar">
         <div class="links-search">
@@ -89,9 +69,6 @@
                 <span v-else-if="link.OrgTitle" class="link-item__org-badge">
                   {{ link.OrgTitle }}
                 </span>
-                <span v-if="link.TypeTitle" class="link-item__type-badge">
-                  {{ link.TypeTitle }}
-                </span>
               </div>
             </div>
           </a>
@@ -154,17 +131,6 @@
               <option value="" disabled>Bitte wählen…</option>
               <option v-for="org in adminOrgs" :key="org.ID" :value="org.ID">
                 {{ org.Title }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Type selector -->
-          <div class="link-modal__field">
-            <label for="link-type">Typ (optional)</label>
-            <select id="link-type" v-model="form.typeId">
-              <option :value="null">— Kein Typ —</option>
-              <option v-for="type in types" :key="type.ID" :value="type.ID">
-                {{ type.Title }}
               </option>
             </select>
           </div>
@@ -264,14 +230,12 @@ usePageHeaderStore().setHeader('Links', 'Wichtige Links und Ressourcen für dein
 
 // ── State ──────────────────────────────────────────────
 const links = ref([])
-const types = ref([])
 const adminOrgIDs = ref([])
 const adminOrgs = ref([])
 const loading = ref(false)
 const loadError = ref(null)
 
 const search = ref('')
-const selectedType = ref(null)
 
 const showModal = ref(false)
 const editingLink = ref(null)
@@ -284,7 +248,6 @@ const fileInputEl = ref(null)
 const form = ref({
   title: '',
   orgId: '',
-  typeId: null,
   kind: 'external',
   url: '',
   openInNew: false,
@@ -292,17 +255,8 @@ const form = ref({
 })
 
 // ── Computed ───────────────────────────────────────────
-const usedTypes = computed(() => {
-  const usedTypeIDs = new Set(links.value.map((l) => l.TypeID).filter(Boolean))
-  return types.value.filter((t) => usedTypeIDs.has(t.ID))
-})
-
 const filteredLinks = computed(() => {
   let result = links.value
-
-  if (selectedType.value) {
-    result = result.filter((l) => l.TypeID === selectedType.value.ID)
-  }
 
   if (search.value.trim()) {
     const q = search.value.trim().toLowerCase()
@@ -319,7 +273,6 @@ async function fetchLinks() {
   try {
     const data = await apiGet('/links', false)
     links.value = data.links || []
-    types.value = data.types || []
     adminOrgIDs.value = data.adminOrgIDs || []
     adminOrgs.value = data.adminOrgs || []
   } catch (e) {
@@ -352,7 +305,6 @@ function openAddModal() {
   form.value = {
     title: '',
     orgId: adminOrgs.value.length === 1 ? adminOrgs.value[0].ID : '',
-    typeId: null,
     kind: 'external',
     url: '',
     openInNew: false,
@@ -367,7 +319,6 @@ function openEditModal(link) {
   form.value = {
     title: link.Title,
     orgId: link.OrgID,
-    typeId: link.TypeID || null,
     kind: link.LinkKind || 'external',
     url: link.URL || '',
     openInNew: link.OpenInNew || false,
@@ -401,7 +352,6 @@ async function submitModal() {
       // Edit existing link
       const payload = {
         title: form.value.title,
-        typeId: form.value.typeId,
       }
       if (editingLink.value.LinkKind !== 'file') {
         payload.url = form.value.url
@@ -423,7 +373,6 @@ async function submitModal() {
         const fd = new FormData()
         fd.append('title', form.value.title)
         fd.append('orgId', form.value.orgId)
-        if (form.value.typeId) fd.append('typeId', form.value.typeId)
         fd.append('openInNew', form.value.openInNew ? '1' : '0')
         fd.append('file', form.value.file)
         await apiPostForm('/links', fd)
@@ -435,7 +384,6 @@ async function submitModal() {
         await apiPost('/links', {
           title: form.value.title,
           orgId: form.value.orgId,
-          typeId: form.value.typeId,
           url: form.value.url,
           openInNew: form.value.openInNew,
         })

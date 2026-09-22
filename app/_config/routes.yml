@@ -7,6 +7,8 @@ After:
 SilverStripe\Control\Director:
   rules:
     'login//$Action/$ID': '->admin'
+    '': 'App\Controllers\LandingController'
+    'rechtliches': 'App\Controllers\LandingController'
     'register//$Action/$ID': 'App\Controllers\RegisterController'
     'ics//$Action/$ID/$Name': 'App\Controllers\ICSController'
     'app//$Action/$ID/$OtherID': 'App\Controllers\VueAppController'

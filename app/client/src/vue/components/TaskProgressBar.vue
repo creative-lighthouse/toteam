@@ -38,7 +38,7 @@ const progress = computed(() => {
 
   return {
     total,
-    segments: store.STATES.map(s => ({
+    segments: [...store.STATES].reverse().map(s => ({
       state: s.value,
       label: s.label,
       count: counts[s.value] || 0,

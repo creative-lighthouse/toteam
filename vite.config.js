@@ -53,6 +53,7 @@ export default defineConfig(({ command }) => {
                 input: {
                 'main.js': './app/client/src/js/main.js',
                 'app.js': './app/client/src/vue/app.js',
+                'landing.js': './app/client/src/vue/landing.js',
                 'main.scss': './app/client/src/scss/main.scss',
                 'editor.scss': './app/client/src/scss/editor.scss',
                 },
