@@ -6,42 +6,6 @@
     max-height: 90vh;
     overflow-y: auto;
 
-    .form-field {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .form-label {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--ColorGray);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .input {
-        padding: 9px 12px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
-        font-size: 15px;
-        width: 100%;
-        box-sizing: border-box;
-        background-color: var(--ColorWhite);
-        height: auto;
-
-        &:focus {
-            outline: 2px solid var(--ColorPrimary);
-            outline-offset: 1px;
-            border-color: transparent;
-        }
-    }
-
-    textarea.input {
-        resize: vertical;
-        min-height: 72px;
-    }
-
     .multiselect-group {
         display: flex;
         flex-wrap: wrap;

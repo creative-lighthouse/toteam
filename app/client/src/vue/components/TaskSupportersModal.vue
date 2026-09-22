@@ -8,13 +8,7 @@
         Keine weiteren Mitglieder in dieser Organisation.
       </div>
 
-      <div v-else class="task-supporters-modal_list">
-        <label v-for="m in memberOptions" :key="m.ID" class="task-supporters-modal_option">
-          <input type="checkbox" :value="m.ID" v-model="selected" />
-          <AppAvatar :src="m.Avatar" :alt="m.Name" img-class="task-supporters-modal_avatar" />
-          <span>{{ m.Name }}</span>
-        </label>
-      </div>
+      <MemberPicker v-else v-model="selected" :members="memberOptions" multiple show-select-all />
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -33,7 +27,7 @@ import { ref } from 'vue'
 import { useTasksStore } from '@stores/tasks'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
-import AppAvatar from '@components/AppAvatar.vue'
+import MemberPicker from '@components/MemberPicker.vue'
 
 const props = defineProps({
   taskId: { type: Number, required: true },

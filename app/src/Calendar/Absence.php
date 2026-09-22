@@ -2,12 +2,14 @@
 
 namespace App\Calendar;
 
-use App\Teams\Organization;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
 /**
  * Class \App\Calendar\Absence
+ *
+ * Gilt immer für alle Organisationen/Kalender, in denen das Mitglied ist —
+ * eine Abwesenheit ist am Menschen festgemacht, nicht an einer Organisation.
  *
  * @property ?string $DateStart
  * @property ?string $DateEnd
@@ -15,7 +17,6 @@ use SilverStripe\Security\Member;
  * @property ?string $Note
  * @property int $MemberID
  * @method \SilverStripe\Security\Member Member()
- * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -35,10 +36,6 @@ class Absence extends DataObject
 
     private static $has_one = [
         'Member' => Member::class,
-    ];
-
-    private static $many_many = [
-        'Organisations' => Organization::class,
     ];
 
     private static $singular_name = 'Abwesenheit';

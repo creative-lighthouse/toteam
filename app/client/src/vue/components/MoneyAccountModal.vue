@@ -5,55 +5,37 @@
     :title="mode === 'create' ? 'Neue Kasse' : 'Kasse bearbeiten'"
     @close="close"
   >
-    <form id="money-account-form" @submit.prevent="submit">
+    <form id="money-account-form" class="modalform" @submit.prevent="submit">
 
-      <div v-if="mode === 'create'" class="form-field">
-        <label class="form-label">Organisation</label>
-        <div class="multiselect-group">
-          <label v-for="org in adminOrgs" :key="org.ID" class="checkbox-label">
-            <input type="radio" :value="org.ID" v-model="form.OrganizationID" />
-            {{ org.Title }}
-          </label>
-        </div>
+      <div v-if="mode === 'create'" class="field">
+        <label>Organisation</label>
+        <OrganizationPicker v-model="form.OrganizationID" :orgs="adminOrgs" />
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="account-title">Titel *</label>
-        <input id="account-title" v-model="form.Title" type="text" class="input" placeholder="z.B. Vereinskasse" required />
-      </div>
-
-      <div class="form-field">
-        <label class="form-label" for="account-iban">IBAN</label>
-        <input id="account-iban" v-model="form.IBAN" type="text" class="input" placeholder="DE00 0000 0000 0000 0000 00" />
-      </div>
-
-      <div class="form-field-row">
-        <div class="form-field">
-          <label class="form-label" for="account-start">Startbetrag (€)</label>
-          <input id="account-start" v-model="form.StartingAmount" type="number" step="0.01" class="input" />
-          <p v-if="startingAmountError" class="money-field-error">{{ startingAmountError }}</p>
-        </div>
-        <div class="form-field">
-          <label class="form-label" for="account-target">Zielbetrag (€)</label>
-          <input id="account-target" v-model="form.TargetAmount" type="number" step="0.01" class="input" />
-          <p v-if="targetAmountError" class="money-field-error">{{ targetAmountError }}</p>
-        </div>
-      </div>
-
-      <label class="form-checkbox">
-        <input type="checkbox" v-model="form.RequiresApproval" />
-        Buchungen müssen freigegeben werden
+      <label class="field">
+        Titel *
+        <input id="account-title" v-model="form.Title" type="text" placeholder="z.B. Vereinskasse" required />
       </label>
 
-      <label class="form-checkbox">
-        <input type="checkbox" v-model="form.RequiresReceiptDeposit" />
-        Beleg für Einnahmen erforderlich
+      <label class="field">
+        IBAN
+        <input id="account-iban" v-model="form.IBAN" type="text" placeholder="DE00 0000 0000 0000 0000 00" />
       </label>
 
-      <label class="form-checkbox">
-        <input type="checkbox" v-model="form.RequiresReceiptWithdrawal" />
-        Beleg für Ausgaben erforderlich
-      </label>
+      <div class="field field--3">
+        <label for="account-start">Startbetrag (€)</label>
+        <input id="account-start" v-model="form.StartingAmount" type="number" step="0.01" />
+        <p v-if="startingAmountError" class="money-field-error">{{ startingAmountError }}</p>
+      </div>
+      <div class="field field--3">
+        <label for="account-target">Zielbetrag (€)</label>
+        <input id="account-target" v-model="form.TargetAmount" type="number" step="0.01" />
+        <p v-if="targetAmountError" class="money-field-error">{{ targetAmountError }}</p>
+      </div>
+
+      <AppToggle v-model="form.RequiresApproval" label="Buchungen müssen freigegeben werden" />
+      <AppToggle v-model="form.RequiresReceiptDeposit" label="Beleg für Einnahmen erforderlich" />
+      <AppToggle v-model="form.RequiresReceiptWithdrawal" label="Beleg für Ausgaben erforderlich" />
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -72,6 +54,8 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useMoneyStore } from '@stores/money'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
+import AppToggle from '@components/AppToggle.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
 
 const props = defineProps({
   mode: { type: String, default: 'create' },

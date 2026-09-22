@@ -1,28 +1,29 @@
 <template>
   <AppModal ref="modal" class="script-role-edit-modal" title="Rolle bearbeiten" @close="close">
-    <form id="script-role-edit-form" @submit.prevent="submit">
+    <form id="script-role-edit-form" class="modalform" @submit.prevent="submit">
 
-      <div class="form-field">
-        <label class="form-label" for="script-role-title">Titel *</label>
-        <input id="script-role-title" v-model="form.Title" type="text" class="input" required />
-      </div>
+      <label class="field">
+        Titel *
+        <input id="script-role-title" v-model="form.Title" type="text" required />
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="script-role-description">Beschreibung</label>
+      <label class="field">
+        Beschreibung
         <textarea
           id="script-role-description"
           v-model="form.Description"
-          class="input"
           rows="3"
           placeholder="z.B. Alter, Charaktereigenschaften, Hinweise für die Besetzung…"
         />
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label">Mitglieder</label>
-        <ScriptMemberMultiSelect
+      <div class="field">
+        <label>Mitglieder</label>
+        <MemberPicker
           :members="orgMembers"
           v-model="form.MemberIDs"
+          multiple
+          show-select-all
         />
       </div>
 
@@ -43,7 +44,7 @@ import { ref, reactive } from 'vue'
 import { useSkriptStore } from '@stores/skript'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
-import ScriptMemberMultiSelect from '@components/ScriptMemberMultiSelect.vue'
+import MemberPicker from '@components/MemberPicker.vue'
 
 const props = defineProps({
   orgMembers: { type: Array, default: () => [] },

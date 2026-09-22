@@ -1,25 +1,25 @@
 <template>
   <AppModal ref="modal" class="money-settle-modal" :title="canSettle ? 'Zahlung erfassen' : 'Zahlungen'" @close="close">
-    <form id="money-settle-form" @submit.prevent="submit">
+    <form id="money-settle-form" class="modalform" @submit.prevent="submit">
 
       <p v-if="entry" class="money-settle-modal_summary">
         {{ entry.ChangeReason }} — bereits beglichen: <strong>{{ formatCurrency(settledAmount) }}</strong> von {{ formatCurrency(entry.ChangeAmount) }}
       </p>
 
       <template v-if="canSettle">
-        <div class="form-field">
-          <label class="form-label" for="settle-amount">Betrag (€) *</label>
-          <input id="settle-amount" v-model="form.Amount" type="number" step="0.01" min="0.01" class="input" placeholder="0,00" required />
+        <div class="field">
+          <label for="settle-amount">Betrag (€) *</label>
+          <input id="settle-amount" v-model="form.Amount" type="number" step="0.01" min="0.01" placeholder="0,00" required />
           <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
         </div>
 
-        <div class="form-field">
-          <label class="form-label" for="settle-date">Datum</label>
-          <input id="settle-date" v-model="form.Date" type="date" class="input" />
-        </div>
+        <label class="field">
+          Datum
+          <input id="settle-date" v-model="form.Date" type="date" />
+        </label>
 
-        <div class="form-field">
-          <label class="form-label">Zahlungsart</label>
+        <div class="field">
+          <label>Zahlungsart</label>
           <div class="multiselect-group">
             <label class="checkbox-label">
               <input type="radio" value="Bar" v-model="form.PaymentMethod" />

@@ -312,82 +312,44 @@ dialog{
         overflow: hidden;
     }
 
-    // Profile form
-    .profile-form {
-        width: 100%;
-        padding: 0;
+    // Profile form — grid/field styling itself comes from the shared
+    // .modalform/.field system (forminputs.scss); only this modal's
+    // field-content widgets (email display + inline change flow) live here.
+    .email-display {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 9px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 15px;
+    }
+
+    .email-change-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        &_actions {
+            display: flex;
+            gap: 8px;
+        }
+    }
+
+    .link-button {
+        background: none;
         border: none;
-        background: transparent;
-        box-shadow: none;
-        margin: 0;
-        align-items: stretch;
+        padding: 0;
+        font: inherit;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--ColorPrimary);
+        cursor: pointer;
+        white-space: nowrap;
 
-        .field {
-            width: 100%;
-            margin-bottom: 12px;
-
-            label {
-                display: block;
-                font-size: 13px;
-                font-weight: 600;
-                color: var(--ColorGray);
-                margin-bottom: 4px;
-            }
-
-            input, select {
-                width: 100%;
-                padding: 9px 12px;
-                border: 1px solid var(--ColorLightGray);
-                border-radius: var(--BorderRadiusSmall);
-                font-size: 15px;
-                box-sizing: border-box;
-                height: auto;
-                background-color: var(--ColorWhite);
-
-                &:focus {
-                    outline: 2px solid var(--ColorPrimary);
-                    outline-offset: 1px;
-                    border-color: transparent;
-                }
-            }
-
-            .email-display {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 8px;
-                padding: 9px 12px;
-                border: 1px solid var(--ColorLightGray);
-                border-radius: var(--BorderRadiusSmall);
-                font-size: 15px;
-            }
-
-            .email-change-form {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-
-                &_actions {
-                    display: flex;
-                    gap: 8px;
-                }
-            }
-
-            .link-button {
-                background: none;
-                border: none;
-                padding: 0;
-                font: inherit;
-                font-weight: 600;
-                font-size: 13px;
-                color: var(--ColorPrimary);
-                cursor: pointer;
-                white-space: nowrap;
-
-                &:hover:not(:disabled) {
-                    text-decoration: underline;
-                }
-            }
+        &:hover:not(:disabled) {
+            text-decoration: underline;
         }
     }
 
@@ -561,8 +523,12 @@ dialog{
         }
     }
 
+    // Zeilen-Layout für AppToggle innerhalb der Einstellungen (der Schalter
+    // selbst kommt aus der geteilten .toggle-switch-Komponente/-Klasse in
+    // forminputs.scss).
     .settings-toggle {
         display: flex;
+        flex-direction: row;
         align-items: center;
         justify-content: space-between;
         padding: 12px 20px;
@@ -570,53 +536,11 @@ dialog{
         background-color: var(--ColorWhite);
         margin: 1px 0;
         gap: 12px;
+        font-size: 15px;
+        font-weight: 500;
 
         &:hover {
             background-color: var(--ColorLightGray);
-        }
-
-        .settings-toggle_label {
-            font-size: 15px;
-            font-weight: 500;
-            flex: 1;
-        }
-
-        .settings-toggle_input {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .settings-toggle_track {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-            border-radius: 12px;
-            background-color: var(--ColorGray, #aaa);
-            flex-shrink: 0;
-            transition: background-color 0.2s ease;
-
-            &::after {
-                content: '';
-                position: absolute;
-                top: 3px;
-                left: 3px;
-                width: 18px;
-                height: 18px;
-                border-radius: 50%;
-                background-color: var(--ColorWhite);
-                transition: transform 0.2s ease;
-            }
-        }
-
-        .settings-toggle_input:checked + .settings-toggle_track {
-            background-color: var(--ColorPrimary);
-
-            &::after {
-                transform: translateX(20px);
-            }
         }
     }
 
@@ -722,10 +646,14 @@ dialog{
         }
     }
 
+    // Zeilen-Layout für AppToggle (der Schalter selbst kommt aus der
+    // geteilten .toggle-switch-Klasse in forminputs.scss).
     .feedback-checkbox {
         display: flex;
+        flex-direction: row;
         align-items: center;
-        gap: 8px;
+        justify-content: space-between;
+        gap: 12px;
         font-size: 14px;
         cursor: pointer;
     }

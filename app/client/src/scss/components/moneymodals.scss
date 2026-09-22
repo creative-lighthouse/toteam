@@ -9,63 +9,10 @@
     max-height: 90vh;
     overflow-y: auto;
 
-    .form-field {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
     .money-field-error {
         margin: 0;
         font-size: 12px;
         color: var(--ColorStatusBad);
-    }
-
-    .form-field-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-
-        @include media(max-smartphone) {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .form-label {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--ColorGray);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .form-checkbox {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        cursor: pointer;
-    }
-
-    .input {
-        padding: 9px 12px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
-        font-size: 15px;
-        width: 100%;
-        box-sizing: border-box;
-        background-color: var(--ColorWhite);
-        height: auto;
-
-        &:focus {
-            outline: 2px solid var(--ColorPrimary);
-            outline-offset: 1px;
-            border-color: transparent;
-        }
-
-        &[type="date"] {
-            cursor: pointer;
-        }
     }
 
     .multiselect-group {

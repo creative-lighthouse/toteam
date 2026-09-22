@@ -1,0 +1,71 @@
+// Einheitlicher Organisations-Auswähler (Einzel- oder Mehrfachauswahl, mit
+// Logo + Suchfeld). Ersetzt die früheren, pro Modal duplizierten
+// .multiselect-group/.checkbox-label-Pillen und nativen <select>-Listen für
+// die Organisationsauswahl.
+.org-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+
+    &_search {
+        margin-bottom: 2px;
+    }
+
+    .org-picker_list {
+        display: flex;
+        //flex-direction: column;
+        gap: 4px;
+        max-height: 220px;
+        overflow-y: auto;
+        justify-content: center;
+        flex-wrap: wrap;
+
+        .org-picker_option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px 5px 5px;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusMedium);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            background-color: var(--ColorWhite);
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+
+            input[type="checkbox"],
+            input[type="radio"] {
+                margin: 0;
+                flex-shrink: 0;
+                display: none;
+            }
+
+            &:has(input:checked) {
+                border-color: var(--ColorPrimary);
+                background-color: var(--ColorPrimaryLight);
+            }
+
+            &--disabled {
+                opacity: 0.5;
+                cursor: default;
+            }
+        }
+    }
+
+
+
+    &_name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &_empty {
+        font-size: 13px;
+        color: var(--ColorGray);
+        margin: 4px 0 0;
+    }
+}

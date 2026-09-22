@@ -43,13 +43,3 @@
         text-decoration: underline;
     }
 }
-
-.form-field-row {
-    display: flex;
-    gap: 16px;
-
-    .form-field {
-        flex: 1;
-        min-width: 0;
-    }
-}

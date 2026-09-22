@@ -30,7 +30,7 @@
           <section class="edit-section">
             <h3 class="edit-section_title">Persönliche Daten</h3>
 
-            <div class="profile-form">
+            <div class="modalform">
               <div class="field">
                 <label for="ep-firstname">Vorname</label>
                 <input id="ep-firstname" type="text" v-model="form.FirstName" required>
@@ -98,7 +98,7 @@
               ein Passwort einrichten, um dich auch damit anmelden zu können.
             </p>
 
-            <form class="profile-form password-form" @submit.prevent="submitPassword">
+            <form class="modalform" @submit.prevent="submitPassword">
               <div v-if="passwordForm.hasPassword" class="field">
                 <label for="ep-current-password">Aktuelles Passwort</label>
                 <input id="ep-current-password" type="password" v-model="passwordForm.currentPassword" required>

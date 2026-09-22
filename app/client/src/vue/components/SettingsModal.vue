@@ -7,35 +7,11 @@
       <div v-if="loadingPrefs" class="settings-section_loading">Lädt...</div>
 
       <template v-else>
-        <label class="settings-toggle">
-          <span class="settings-toggle_label">Termine</span>
-          <input type="checkbox" v-model="prefs.NotifyEvents" @change="savePrefs" class="settings-toggle_input">
-          <span class="settings-toggle_track"></span>
-        </label>
-
-        <label class="settings-toggle">
-          <span class="settings-toggle_label">Ankündigungen</span>
-          <input type="checkbox" v-model="prefs.NotifyAnnouncements" @change="savePrefs" class="settings-toggle_input">
-          <span class="settings-toggle_track"></span>
-        </label>
-
-        <label class="settings-toggle">
-          <span class="settings-toggle_label">Essensvorschläge</span>
-          <input type="checkbox" v-model="prefs.NotifyMeals" @change="savePrefs" class="settings-toggle_input">
-          <span class="settings-toggle_track"></span>
-        </label>
-
-        <label class="settings-toggle">
-          <span class="settings-toggle_label">Lagepläne</span>
-          <input type="checkbox" v-model="prefs.NotifyMaps" @change="savePrefs" class="settings-toggle_input">
-          <span class="settings-toggle_track"></span>
-        </label>
-
-        <label class="settings-toggle">
-          <span class="settings-toggle_label">Organisationsbewerbungen</span>
-          <input type="checkbox" v-model="prefs.NotifyApplications" @change="savePrefs" class="settings-toggle_input">
-          <span class="settings-toggle_track"></span>
-        </label>
+        <AppToggle v-model="prefs.NotifyEvents" label="Termine" field-class="settings-toggle" @update:model-value="savePrefs" />
+        <AppToggle v-model="prefs.NotifyAnnouncements" label="Ankündigungen" field-class="settings-toggle" @update:model-value="savePrefs" />
+        <AppToggle v-model="prefs.NotifyMeals" label="Essensvorschläge" field-class="settings-toggle" @update:model-value="savePrefs" />
+        <AppToggle v-model="prefs.NotifyMaps" label="Lagepläne" field-class="settings-toggle" @update:model-value="savePrefs" />
+        <AppToggle v-model="prefs.NotifyApplications" label="Organisationsbewerbungen" field-class="settings-toggle" @update:model-value="savePrefs" />
       </template>
     </section>
 
@@ -43,11 +19,7 @@
     <section class="settings-section">
       <h3 class="settings-section_title">Erscheinungsbild</h3>
 
-      <label class="settings-toggle">
-        <span class="settings-toggle_label">Dark Mode</span>
-        <input type="checkbox" v-model="darkMode" @change="applyDarkMode" class="settings-toggle_input">
-        <span class="settings-toggle_track"></span>
-      </label>
+      <AppToggle v-model="darkMode" label="Dark Mode" field-class="settings-toggle" @update:model-value="applyDarkMode" />
     </section>
   </AppModal>
 </template>
@@ -57,6 +29,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { apiGet, apiPost } from '@utils/api'
 import { useUiStore } from '@stores/ui'
 import AppModal from '@components/AppModal.vue'
+import AppToggle from '@components/AppToggle.vue'
 
 const uiStore = useUiStore()
 

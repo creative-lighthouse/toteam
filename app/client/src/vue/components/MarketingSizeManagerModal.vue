@@ -1,11 +1,11 @@
 <template>
   <AppModal ref="modal" class="marketing-size-manager-modal" title="Plakat-Größen verwalten" @close="close">
 
-    <div v-if="manageableOrganizations.length > 1" class="form-field">
-      <label class="form-label" for="marketing-size-org">Organisation</label>
-      <select id="marketing-size-org" v-model="selectedOrgId" class="input" @change="onOrgChange">
-        <option v-for="org in manageableOrganizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
-      </select>
+    <div v-if="manageableOrganizations.length > 1" class="modalform">
+      <div class="field">
+        <label for="marketing-size-org">Organisation</label>
+        <OrganizationPicker v-model="selectedOrgId" :orgs="manageableOrganizations" @update:model-value="onOrgChange" />
+      </div>
     </div>
 
     <form class="marketing-size-manager-modal_new" @submit.prevent="addSize">
@@ -67,6 +67,7 @@ import { useOrganizationsStore } from '@stores/organizations'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppModal from '@components/AppModal.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
 import actionEdit from '../../../icons/actions/action_edit.svg'
 import actionTrash from '../../../icons/actions/action_trash.svg'
 import actionCheck from '../../../icons/actions/action_check.svg'

@@ -53,6 +53,8 @@
 @use "components/organizationcard.scss";
 @use "components/participantcard.scss";
 @use "components/contextmenu.scss";
+@use "components/orgpicker.scss";
+@use "components/memberpicker.scss";
 @use "components/mealcard.scss";
 @use "components/eventagendamodal.scss";
 @use "components/eventmealmodal.scss";
@@ -75,7 +77,6 @@
 @use "components/scriptparagraphrow.scss";
 @use "components/scripttocsidebar.scss";
 @use "components/scriptrolesview.scss";
-@use "components/scriptmembermultiselect.scss";
 @use "components/scriptroleeditmodal.scss";
 @use "components/scriptcreatemodal.scss";
 @use "components/scriptroleinfomodal.scss";

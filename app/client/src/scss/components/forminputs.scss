@@ -51,3 +51,156 @@ textarea.input {
 textarea.input {
     resize: vertical;
 }
+
+// ── Grid-based form layout (.modalform/.field) ──────────────────────────────
+// A second, simpler system for modal forms that need fields side by side
+// (e.g. start date / end date / all-day on one row) instead of the plain
+// vertical stack above. `.modalform` is a 6-column grid; each `.field` spans
+// all 6 columns by default and styles its own `label`/`input`/`select`/
+// `textarea` directly, so no extra `.form-label`/`.input` classes are needed
+// inside it. Add `.field--2`/`.field--3`/`.field--4` to let 3/2/1.5 fields
+// share a row. Named `.modalform` (not `.form`) so it stays clearly distinct
+// from the plain `form { ... }` element styling in forms.scss (the login-page
+// "card" look) instead of fighting it for the same name.
+.modalform {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px 10px;
+
+    // Neutralizes the legacy bare `form { ... }` "card" look (border,
+    // background, box-shadow, centered max-width) from forms.scss whenever
+    // this class is put directly on a <form> element.
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 10px;
+    border: none;
+    background-color: transparent;
+    box-shadow: none;
+    align-items: start;
+
+    // Nested under .modalform (not a bare top-level .field rule) so this
+    // reliably outranks the legacy `form .field { ... }` stack-layout rule in
+    // forms.scss (login form) wherever both happen to apply to the same
+    // element — two classes beat one tag + one class.
+    .field {
+        grid-column: span 6;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        margin: 0;
+        width: auto;
+
+        > label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ColorGray);
+            margin: 0;
+        }
+
+        // Excludes type="file" too: a hidden file input (e.g. MoneyEntryModal's
+        // Beleg upload, styled via a wrapping <label class="button">) relies on
+        // its own zero-size/opacity-0 rule for layout, which has lower CSS
+        // specificity than this selector and would otherwise be overridden by
+        // the width/height set here.
+        input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+        select,
+        textarea {
+            padding: 9px 12px;
+            margin: 0;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusSmall);
+            font-size: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: var(--ColorWhite);
+            font-family: inherit;
+            color: inherit;
+            height: auto;
+
+            &:focus {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: 1px;
+                border-color: transparent;
+            }
+
+            &[type="date"],
+            &[type="time"],
+            &[type="datetime-local"] {
+                cursor: pointer;
+            }
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 72px;
+        }
+
+        &--2 { grid-column: span 2; }
+        &--3 { grid-column: span 3; }
+        &--4 { grid-column: span 4; }
+
+        // Ein .field, das aus Label + Toggle-Switch statt Label + Input
+        // besteht (siehe .toggle-switch weiter unten). Nested hier drin, damit
+        // es dieselbe Spezifität wie die Grundregel oben hat und flex-direction
+        // zuverlässig überschreibt.
+        &.toggle-field {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            cursor: pointer;
+        }
+    }
+}
+
+// ── Toggle-Switch (An/Aus-Schalter) ─────────────────────────────────────────
+// Generisches An/Aus-Element für Checkbox-artige Felder in Modal-Formularen
+// (z.B. "Ganztägig"), damit sie nicht wie eine normale, unscheinbare Checkbox
+// aussehen. Markup: <span class="toggle-switch"><input type="checkbox"
+// class="toggle-switch_input">v-model...<span class="toggle-switch_track">
+// </span></span>.
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+
+    &_input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    &_track {
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        background-color: var(--ColorGray, #aaa);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: var(--ColorWhite);
+            transition: transform 0.2s ease;
+        }
+    }
+
+    &_input:checked + &_track {
+        background-color: var(--ColorPrimary);
+
+        &::after {
+            transform: translateX(20px);
+        }
+    }
+}

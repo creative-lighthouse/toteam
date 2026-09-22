@@ -1,52 +1,49 @@
 <template>
   <AppModal ref="modal" class="organization-create-modal" title="Neue Organisation" @close="close">
-    <form id="organization-create-form" @submit.prevent="submit">
+    <form id="organization-create-form" class="modalform" @submit.prevent="submit">
 
-      <div class="form-field">
-        <label class="form-label" for="org-title">Titel *</label>
+      <label class="field">
+        Titel *
         <input
           id="org-title"
           v-model="form.Title"
           type="text"
-          class="input"
           placeholder="Name der Organisation"
           required
           autofocus
         />
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="org-username">Benutzername</label>
+      <label class="field">
+        Benutzername
         <input
           id="org-username"
           :value="form.Username"
           type="text"
-          class="input"
           placeholder="z. B. mein-verein"
           @input="onUsernameInput"
         />
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="org-description">Beschreibung</label>
+      <label class="field">
+        Beschreibung
         <textarea
           id="org-description"
           v-model="form.Description"
-          class="input"
           rows="3"
           placeholder="Optionale Beschreibung…"
         />
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="org-join-mode">Beitrittsmodus</label>
-        <select id="org-join-mode" v-model="form.JoinMode" class="input">
+      <label class="field">
+        Beitrittsmodus
+        <select id="org-join-mode" v-model="form.JoinMode">
           <option value="open">Offen</option>
           <option value="application">Bewerbung erforderlich</option>
           <option value="invite_only">Nur auf Einladung</option>
           <option value="hidden">Versteckt</option>
         </select>
-      </div>
+      </label>
 
       <div v-if="error" class="app-modal_error">
         {{ error }}

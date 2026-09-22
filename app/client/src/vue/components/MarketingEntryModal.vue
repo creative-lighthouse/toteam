@@ -1,29 +1,23 @@
 <template>
   <AppModal ref="modal" class="marketing-entry-modal" :title="isEdit ? 'Eintrag bearbeiten' : 'Neuer Verteil-Eintrag'" @close="close">
-    <form id="marketing-entry-form" @submit.prevent="submit">
+    <form id="marketing-entry-form" class="modalform" @submit.prevent="submit">
 
-      <div v-if="!isEdit && store.organizations.length > 1" class="form-field">
-        <label class="form-label" for="marketing-entry-org">Organisation *</label>
-        <select
-          id="marketing-entry-org"
+      <div v-if="!isEdit && store.organizations.length > 1" class="field">
+        <label for="marketing-entry-org">Organisation *</label>
+        <OrganizationPicker
           v-model="form.OrganizationID"
-          class="input"
-          required
-          @change="orgsStore.setLastOrganizationId(form.OrganizationID)"
-        >
-          <option :value="0" disabled>Bitte wählen</option>
-          <option v-for="org in store.organizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
-        </select>
+          :orgs="store.organizations"
+          @update:model-value="orgsStore.setLastOrganizationId(form.OrganizationID)"
+        />
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="marketing-entry-location">Ort *</label>
+      <div class="field">
+        <label for="marketing-entry-location">Ort *</label>
         <div class="marketing-entry-modal_location-row">
           <input
             id="marketing-entry-location"
             v-model="form.Location"
             type="text"
-            class="input"
             placeholder="z.B. Marktplatz, schwarzes Brett"
             autofocus
           />
@@ -41,64 +35,57 @@
         </p>
       </div>
 
-      <div class="form-field">
-        <div class="form-field-row">
-          <div class="form-field">
-            <label class="form-label" for="marketing-entry-size">Größe *</label>
-            <select
-              id="marketing-entry-size"
-              v-model="form.PosterSizeID"
-              class="input"
-              required
-              :disabled="!form.OrganizationID || sizesForOrg.length === 0"
-            >
-              <option value="" disabled>Bitte wählen</option>
-              <option v-for="size in sizesForOrg" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="marketing-entry-quantity">Anzahl *</label>
-            <input
-              id="marketing-entry-quantity"
-              v-model.number="form.Quantity"
-              type="number"
-              min="1"
-              class="input"
-              required
-            />
-          </div>
-        </div>
-
-        <p v-if="!form.OrganizationID" class="marketing-entry-modal_hint">
-          Bitte zuerst eine Organisation auswählen.
-        </p>
-        <p v-else-if="sizesForOrg.length === 0" class="marketing-entry-modal_hint">
-          Für diese Organisation wurden noch keine Plakat-Größen angelegt.
-        </p>
+      <div class="field field--3">
+        <label for="marketing-entry-size">Größe *</label>
+        <select
+          id="marketing-entry-size"
+          v-model="form.PosterSizeID"
+          required
+          :disabled="!form.OrganizationID || sizesForOrg.length === 0"
+        >
+          <option value="" disabled>Bitte wählen</option>
+          <option v-for="size in sizesForOrg" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
+        </select>
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="marketing-entry-distributed-at">Zeitpunkt *</label>
+      <div class="field field--3">
+        <label for="marketing-entry-quantity">Anzahl *</label>
         <input
-          id="marketing-entry-distributed-at"
-          v-model="form.DistributedAt"
-          type="datetime-local"
-          class="input"
+          id="marketing-entry-quantity"
+          v-model.number="form.Quantity"
+          type="number"
+          min="1"
           required
         />
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="marketing-entry-note">Notiz</label>
+      <p v-if="!form.OrganizationID" class="marketing-entry-modal_hint">
+        Bitte zuerst eine Organisation auswählen.
+      </p>
+      <p v-else-if="sizesForOrg.length === 0" class="marketing-entry-modal_hint">
+        Für diese Organisation wurden noch keine Plakat-Größen angelegt.
+      </p>
+
+      <DateTimeRangeField
+        :model-value="distributedAtField"
+        @update:model-value="v => (distributedAtField = v)"
+        time="always"
+        :show-end-date="false"
+        :time-range="false"
+        start-label-date="Zeitpunkt"
+        start-label-time="Zeitpunkt"
+        start-field-class="field"
+      />
+
+      <label class="field">
+        Notiz
         <textarea
           id="marketing-entry-note"
           v-model="form.Note"
-          class="input"
           rows="2"
           placeholder="Optionale Anmerkung…"
         />
-      </div>
+      </label>
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -123,6 +110,8 @@ import { useMarketingStore } from '@stores/marketing'
 import { useOrganizationsStore } from '@stores/organizations'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
+import DateTimeRangeField from '@components/DateTimeRangeField.vue'
 
 const emit = defineEmits(['saved'])
 const store = useMarketingStore()
@@ -161,6 +150,19 @@ const defaultForm = () => ({
 })
 
 const form = reactive(defaultForm())
+
+// Adapter zwischen dem kombinierten "YYYY-MM-DDTHH:mm"-String, den das
+// Backend erwartet, und der { dateStart, timeStart }-Form, die
+// DateTimeRangeField per v-model erwartet/liefert.
+const distributedAtField = computed({
+  get() {
+    const [dateStart = '', timeStart = ''] = (form.DistributedAt || '').split('T')
+    return { dateStart, timeStart }
+  },
+  set(val) {
+    form.DistributedAt = val.dateStart && val.timeStart ? `${val.dateStart}T${val.timeStart}` : ''
+  },
+})
 
 // Ort und Koordinaten sind austauschbar — es reicht, wenn eines von beiden vorliegt.
 const hasLocationInfo = computed(() => !!form.Location.trim() || !!(form.Latitude && form.Longitude))

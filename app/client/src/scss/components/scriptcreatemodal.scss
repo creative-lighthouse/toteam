@@ -3,19 +3,4 @@
     max-width: 420px;
     max-height: 90vh;
     overflow-y: auto;
-
-    .multiselect-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 14px;
-        font-weight: normal;
-        cursor: pointer;
-    }
 }

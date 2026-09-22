@@ -1,11 +1,11 @@
 <template>
   <AppModal ref="modal" class="role-edit-modal" :title="isEdit ? 'Rolle bearbeiten' : 'Neue Rolle'" @close="close">
-    <form id="role-edit-form" @submit.prevent="submit">
+    <form id="role-edit-form" class="modalform" @submit.prevent="submit">
 
-      <div class="form-field">
-        <label class="form-label" for="role-title">Titel *</label>
-        <input id="role-title" v-model="form.Title" type="text" class="input" placeholder="z.B. Kassenwart" required />
-      </div>
+      <label class="field">
+        Titel *
+        <input id="role-title" v-model="form.Title" type="text" placeholder="z.B. Kassenwart" required />
+      </label>
 
       <div v-for="(permissions, category) in orgRolesStore.categories" :key="category" class="role-edit-modal_category">
         <h3 class="role-edit-modal_category-title">{{ category }}</h3>

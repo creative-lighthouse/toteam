@@ -1,73 +1,64 @@
 <template>
   <AppModal ref="modal" class="task-create-modal" :title="parentTask ? 'Neue Unteraufgabe' : 'Neue Aufgabe'" @close="close">
-    <form id="task-create-form" @submit.prevent="submit">
+    <form id="task-create-form" class="modalform" @submit.prevent="submit">
 
-      <p v-if="parentTask" class="task-create-modal_parent-hint">
+      <p v-if="parentTask" class="field task-create-modal_parent-hint">
         Unteraufgabe von <strong>{{ parentTask.Title }}</strong> ({{ parentTask.Organization?.Title }})
       </p>
 
-      <div v-else class="form-field">
-        <label class="form-label">Organisation</label>
-        <div class="multiselect-group">
-          <label v-for="org in store.organizations" :key="org.ID" class="checkbox-label">
-            <input type="radio" :value="org.ID" v-model="form.OrganizationID" :aria-label="org.Title" />
-            {{ org.Title }}
-          </label>
-        </div>
+      <div v-else class="field">
+        <label>Organisation</label>
+        <OrganizationPicker v-model="form.OrganizationID" :orgs="store.organizations" />
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="task-owner">Verantwortlicher *</label>
-        <select id="task-owner" v-model="form.OwnerID" class="input" :disabled="!form.OrganizationID || loadingOwners">
+      <div class="field">
+        <label for="task-owner">Verantwortlicher *</label>
+        <select id="task-owner" v-model="form.OwnerID" :disabled="!form.OrganizationID || loadingOwners">
           <option value="0" disabled>{{ loadingOwners ? 'Lade Mitglieder…' : 'Bitte wählen' }}</option>
           <option v-for="owner in ownerOptions" :key="owner.ID" :value="owner.ID">{{ owner.Name }}</option>
         </select>
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="task-title">Titel *</label>
+      <label class="field">
+        Titel *
         <input
           id="task-title"
           v-model="form.Title"
           type="text"
-          class="input"
           placeholder="Aufgabentitel"
           required
           autofocus
         />
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="task-description">Beschreibung</label>
+      <label class="field">
+        Beschreibung
         <textarea
           id="task-description"
           v-model="form.Description"
-          class="input"
           rows="3"
           placeholder="Optionale Beschreibung…"
         />
+      </label>
+
+      <div class="field field--3">
+        <label for="task-state">Status</label>
+        <select id="task-state" v-model="form.State">
+          <option v-for="s in store.STATES" :key="s.value" :value="s.value">
+            {{ s.label }}
+          </option>
+        </select>
       </div>
 
-      <div class="form-field-row">
-        <div class="form-field">
-          <label class="form-label" for="task-state">Status</label>
-          <select id="task-state" v-model="form.State" class="input">
-            <option v-for="s in store.STATES" :key="s.value" :value="s.value">
-              {{ s.label }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-field">
-          <label class="form-label" for="task-deadline">Fälligkeitsdatum</label>
-          <input
-            id="task-deadline"
-            v-model="form.Deadline"
-            type="date"
-            class="input"
-          />
-        </div>
-      </div>
+      <DateTimeRangeField
+        :model-value="deadlineField"
+        @update:model-value="v => (deadlineField = v)"
+        time="none"
+        :show-end-date="false"
+        :required="false"
+        start-label-date="Fälligkeitsdatum"
+        start-field-class="field field--3"
+      />
 
       <div v-if="error" class="app-modal_error">
         {{ error }}
@@ -86,11 +77,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useTasksStore } from '@stores/tasks'
 import { useAuthStore } from '@stores/auth'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
+import DateTimeRangeField from '@components/DateTimeRangeField.vue'
 
 const props = defineProps({
   // When set, the modal creates a subtask of this task instead of a top-level task
@@ -118,6 +111,13 @@ const defaultForm = () => ({
 })
 
 const form = reactive(defaultForm())
+
+// Adapter zwischen dem einzelnen "YYYY-MM-DD"-String und der
+// { dateStart }-Form, die DateTimeRangeField per v-model erwartet/liefert.
+const deadlineField = computed({
+  get: () => ({ dateStart: form.Deadline }),
+  set: (val) => { form.Deadline = val.dateStart },
+})
 
 async function loadOwners(orgId) {
   if (!orgId) {

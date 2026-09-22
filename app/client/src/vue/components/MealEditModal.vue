@@ -1,34 +1,32 @@
 <template>
   <AppModal ref="modal" class="meal-edit-modal" title="Mahlzeit bearbeiten" @close="close">
-    <form id="meal-edit-form" @submit.prevent="submit">
-      <div class="form-field">
-        <label class="form-label" for="meal-edit-title">Titel *</label>
+    <form id="meal-edit-form" class="modalform" @submit.prevent="submit">
+      <label class="field">
+        Titel *
         <input
           id="meal-edit-title"
           v-model="form.title"
           type="text"
-          class="input"
           placeholder="z.B. Mittagessen"
           maxlength="255"
           required
         >
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="meal-edit-time">Uhrzeit *</label>
-        <input id="meal-edit-time" v-model="form.time" type="time" class="input" required>
-      </div>
+      <label class="field">
+        Uhrzeit *
+        <input id="meal-edit-time" v-model="form.time" type="time" required>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="meal-edit-description">Beschreibung</label>
+      <label class="field">
+        Beschreibung
         <textarea
           id="meal-edit-description"
           v-model="form.description"
-          class="input"
           rows="4"
           placeholder="Beschreibung der Mahlzeit…"
         ></textarea>
-      </div>
+      </label>
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>

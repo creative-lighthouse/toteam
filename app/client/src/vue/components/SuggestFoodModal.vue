@@ -1,26 +1,25 @@
 <template>
   <AppModal ref="modal" class="suggest-food-modal" title="Gericht vorschlagen" @close="close">
-    <form id="suggest-food-form" @submit.prevent="submit">
-      <div class="form-field">
-        <label class="form-label" for="suggest-food-title">Name des Gerichts *</label>
+    <form id="suggest-food-form" class="modalform" @submit.prevent="submit">
+      <label class="field">
+        Name des Gerichts *
         <input
           id="suggest-food-title"
           v-model="form.title"
           type="text"
-          class="input"
           placeholder="z.B. Nudelsalat"
           required
         >
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="suggest-food-pref">Essenspräferenz</label>
-        <select id="suggest-food-pref" v-model="form.preference" class="input">
+      <label class="field">
+        Essenspräferenz
+        <select id="suggest-food-pref" v-model="form.preference">
           <option value="None">Keine Angabe</option>
           <option value="Vegetarian">🥗 Vegetarisch</option>
           <option value="Vegan">🌱 Vegan</option>
         </select>
-      </div>
+      </label>
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>

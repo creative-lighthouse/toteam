@@ -742,7 +742,6 @@ class CalendarApiController extends ApiController
             if (!$absence || $absence->MemberID !== $member->ID) {
                 return $this->errorResponse('Nicht gefunden oder keine Berechtigung', 404);
             }
-            $absence->Organisations()->removeAll();
             $absence->delete();
             return $this->successResponse([], 'Abwesenheit gelöscht');
         }
@@ -761,15 +760,6 @@ class CalendarApiController extends ApiController
             $absence->Note = $body['note'] ?? null;
             $absence->write();
 
-            $absence->Organisations()->removeAll();
-            $orgIDs = $body['organizationIds'] ?? [];
-            if (!empty($orgIDs)) {
-                $validIDs = $member->getOrganizationIDs();
-                $filtered = array_values(array_intersect(array_map('intval', $orgIDs), $validIDs));
-                if (!empty($filtered)) {
-                    $absence->Organisations()->addMany($filtered);
-                }
-            }
             return $this->successResponse(['ID' => $absence->ID], 'Abwesenheit aktualisiert');
         }
 
@@ -796,15 +786,6 @@ class CalendarApiController extends ApiController
         $absence->Note       = $body['note'] ?? null;
         $absence->MemberID   = $member->ID;
         $absence->write();
-
-        $orgIDs = $body['organizationIds'] ?? [];
-        if (!empty($orgIDs)) {
-            $validIDs = $member->getOrganizationIDs();
-            $filtered = array_values(array_intersect(array_map('intval', $orgIDs), $validIDs));
-            if (!empty($filtered)) {
-                $absence->Organisations()->addMany($filtered);
-            }
-        }
 
         return $this->successResponse(['ID' => $absence->ID], 'Abwesenheit eingetragen');
     }
@@ -890,7 +871,6 @@ class CalendarApiController extends ApiController
                 'DateStart'       => $absence->DateStart,
                 'DateEnd'         => $absence->DateEnd,
                 'Recurrence'      => $absence->Recurrence,
-                'OrganizationIds' => array_map('intval', $absence->Organisations()->column('ID')),
             ];
         }
 
@@ -1330,11 +1310,12 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Fetch all Absence records visible to the given organisation IDs,
-     * with their Organisations relation pre-filtered for the org-scope check.
+     * Fetch all Absence records for members of the given organisations. An
+     * absence always applies to every organisation/calendar its member is
+     * part of, so no further per-org scoping is needed here.
      *
      * @param int[] $organizationIDs
-     * @return \SilverStripe\ORM\DataList
+     * @return \App\Calendar\Absence[]
      */
     private function getRelevantAbsences(array $organizationIDs)
     {
@@ -1342,19 +1323,9 @@ class CalendarApiController extends ApiController
             ->filter(['OrganizationID' => $organizationIDs, 'Role' => 'member'])
             ->column('MemberID');
 
-        $absences = Absence::get()->filter(['MemberID' => $memberIDsInOrgs]);
-
-        // Filter out absences scoped to orgs the current user doesn't share
-        $filtered = [];
-        foreach ($absences as $absence) {
-            $absenceOrgIDs = $absence->Organisations()->column('ID');
-            if (!empty($absenceOrgIDs) && empty(array_intersect($absenceOrgIDs, $organizationIDs))) {
-                continue;
-            }
-            $filtered[] = $absence;
-        }
-
-        return $filtered;
+        // Materialized as an array (not returned lazily) since callers iterate
+        // it repeatedly, e.g. once per day of a month.
+        return Absence::get()->filter(['MemberID' => $memberIDsInOrgs])->toArray();
     }
 
     /**

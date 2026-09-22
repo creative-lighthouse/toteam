@@ -1,413 +1,50 @@
 @use "../variables" as *;
 
+// Grid layout (.modalform/.field) and field styling come from
+// components/forminputs.scss — only content-specific widgets that aren't
+// part of that generic system live here.
 .addappointmentmodal {
-    .modal-tabs {
-        display: flex;
-        gap: 4px;
-        border-bottom: 2px solid var(--ColorGray, #ddd);
-        padding-bottom: 0;
-        justify-content: center;
-
-        .tab-btn {
-            background: none;
-            border: none;
-            padding: 8px 14px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            color: var(--ColorDarkGray, #555);
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-
-            &--active {
-                color: var(--ColorPrimary);
-                border-bottom-color: var(--ColorPrimary);
-                font-weight: 600;
-            }
-
-            &:hover:not(.tab-btn--active) {
-                color: var(--ColorPrimary);
-            }
-
-            @include media(max-medium) {
-                font-size: 12px;
-                padding: 8px 5px;
-            }
-        }
-    }
-
     .dialog-infobox {
+        .invited-members-loading {
+            font-size: 0.85rem;
+            color: var(--ColorGray, #777);
+        }
 
-        .modal-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
-            flex-direction: column;
-            gap: 12px;
-
-            label:not(.checkbox-label) {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-                font-size: 0.85rem;
-                font-weight: 600;
-            }
-
-            input[type="text"],
-            input[type="date"],
-            input[type="time"],
-            select,
-            textarea {
-                padding: 7px 10px;
-                border: 1px solid var(--ColorGray, #ddd);
-                border-radius: var(--BorderRadiusSmall, 6px);
-                font-size: 0.9rem;
-                width: 100%;
-                box-sizing: border-box;
-                font-weight: 400;
-
-                &:focus {
-                    outline: 2px solid var(--ColorPrimary);
-                    border-color: transparent;
-                }
-            }
-
-            .field {
-                margin: 0;
-                grid-column: span 6;
-
-                input, select, textarea {
-                    border: 1px solid var(--ColorLightGray);
-                    border-radius: var(--BorderRadiusSmall);
-                }
-            }
-
-            &.form--appointment, &.form--poll {
-                .field {
-                    &.field--organizations {
-                        grid-column: span 6;
-                    }
-
-                    &.field--invited-members {
-                        grid-column: span 6;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 4px;
-                        font-size: 0.85rem;
-                        font-weight: 600;
-
-                        .invited-members-header {
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            gap: 10px;
-                        }
-
-                        .invited-members-loading {
-                            margin: 6px 0 0;
-                            font-size: 0.85rem;
-                            font-weight: normal;
-                            color: var(--ColorGray, #777);
-                        }
-
-                        .member-search {
-                            margin-top: 6px;
-                            display: flex;
-                            flex-direction: column;
-                            gap: 8px;
-                        }
-
-                        .member-chip-list {
-                            display: flex;
-                            flex-wrap: wrap;
-                            gap: 6px;
-                        }
-
-                        .member-chip {
-                            display: inline-flex;
-                            align-items: center;
-                            gap: 6px;
-                            padding: 5px 6px 5px 12px;
-                            border-radius: 50px;
-                            background-color: var(--ColorPrimary);
-                            color: var(--ColorWhite);
-                            font-size: 0.85rem;
-                            font-weight: 500;
-
-                            &_remove {
-                                display: inline-flex;
-                                align-items: center;
-                                justify-content: center;
-                                width: 18px;
-                                height: 18px;
-                                border: none;
-                                border-radius: 50%;
-                                background: rgba(255, 255, 255, 0.25);
-                                color: var(--ColorWhite);
-                                font-size: 0.9rem;
-                                line-height: 1;
-                                cursor: pointer;
-                                padding: 0;
-
-                                &:hover {
-                                    background: rgba(255, 255, 255, 0.45);
-                                }
-                            }
-                        }
-
-                        .member-search-input-wrap {
-                            position: relative;
-
-                            input[type="text"] {
-                                margin: 0;
-                            }
-                        }
-
-                        .member-search-dropdown {
-                            position: absolute;
-                            top: calc(100% + 4px);
-                            left: 0;
-                            right: 0;
-                            z-index: 20;
-                            margin: 0;
-                            padding: 4px;
-                            list-style: none;
-                            max-height: 220px;
-                            overflow-y: auto;
-                            background: var(--ColorWhite);
-                            border: 1px solid var(--ColorLightGray);
-                            border-radius: var(--BorderRadiusSmall);
-                            box-shadow: var(--BoxShadowMedium);
-
-                            li button {
-                                display: block;
-                                width: 100%;
-                                text-align: left;
-                                padding: 7px 10px;
-                                border: none;
-                                border-radius: var(--BorderRadiusSmall);
-                                background: none;
-                                font-size: 0.85rem;
-                                font-weight: normal;
-                                cursor: pointer;
-
-                                &:hover {
-                                    background-color: var(--ColorVeryLightGray);
-                                }
-                            }
-                        }
-
-                        .member-search-empty {
-                            position: absolute;
-                            top: calc(100% + 4px);
-                            left: 0;
-                            margin: 0;
-                            font-size: 0.8rem;
-                            font-weight: normal;
-                            color: var(--ColorGray, #777);
-                        }
-                    }
-
-                    &.field--allday {
-                        grid-column: span 6;
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                        gap: 6px;
-                        justify-content: flex-start;
-
-                        input[type="checkbox"] {
-                            width: 20px;
-                            margin: 0;
-                        }
-                    }
-
-                    &.field--description {
-                        grid-column: span 6;
-                        textarea {
-                            height: auto;
-                        }
-                    }
-
-                    &.field--features {
-                        grid-column: span 6;
-
-                        .multiselect-group {
-                            margin-top: 6px;
-                        }
-                    }
-
-                    &.field--startdatetime, &.field--startdate {
-                        grid-column: span 3;
-                    }
-
-                    &.field--enddatetime, &.field--enddate {
-                        grid-column: span 3;
-                    }
-
-                    &.field--poll-options {
-                        grid-column: span 6;
-                        margin: 0;
-
-                        .poll-options-header {
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            gap: 10px;
-                            margin-bottom: 8px;
-                        }
-
-                        .poll-option-row {
-                            display: flex;
-                            align-items: flex-end;
-                            flex-wrap: wrap;
-                            gap: 10px;
-                            padding: 10px;
-                            margin-bottom: 8px;
-                            background-color: var(--ColorVeryLightGray);
-                            border-radius: var(--BorderRadiusSmall);
-
-                            .field {
-                                flex: 1 1 130px;
-                                margin: 0;
-                                min-width: 0;
-                            }
-
-                            .field--allday {
-                                flex: 0 0 auto;
-                                flex-direction: row;
-                                align-items: center;
-                                gap: 6px;
-
-                                input[type="checkbox"] {
-                                    width: 20px;
-                                    margin: 0;
-                                }
-                            }
-
-                            .app-icon-button {
-                                flex: 0 0 auto;
-                                margin-bottom: 2px;
-                            }
-                        }
-                    }
-
-                    @include media(medium) {
-                        &.field--title {
-                            grid-column: span 4;
-                        }
-
-                        &.field--status {
-                            grid-column: span 2;
-                        }
-
-                        &.field--allday {
-                            grid-column: span 2;
-                        }
-
-                        &.field--startdatetime, &.field--startdate {
-                            grid-column: span 2;
-                        }
-
-                        &.field--enddatetime, &.field--enddate {
-                            grid-column: span 2;
-                        }
-
-                        &.field--location {
-                            grid-column: span 4;
-                        }
-
-                        &.field--type {
-                            grid-column: span 2;
-                        }
-                    }
-                }
-            }
-
-            &.form--absence {
-                .field {
-                    &.field--organizations {
-                        grid-column: span 6;
-                    }
-
-                    &.field--startdate, &.field--enddate, &.field--recurrence {
-                        grid-column: span 3;
-                    }
-
-                    &.field--note {
-                        grid-column: span 6;
-                        textarea {
-                            height: auto;
-                        }
-                    }
-
-                    @include media(medium) {
-                        &.field--startdate, &.field--enddate {
-                            grid-column: span 2;
-                        }
-
-                        &.field--recurrence {
-                            grid-column: span 2;
-                        }
-                    }
-                }
-            }
-
-            .multiselect-group {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 6px;
-
-                .checkbox-label {
-                    input[type="checkbox"] {
-                        display: none;
-                    }
-
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 6px 14px;
-                    border: 2px solid var(--ColorGray, #ddd);
-                    border-radius: 50px;
-                    font-size: 0.85rem;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-                    user-select: none;
-
-                    &:has(input:checked) {
-                        background-color: var(--ColorPrimary);
-                        border-color: var(--ColorPrimary);
-                        color: var(--ColorWhite);
-                    }
-
-                    &:has(input:disabled) {
-                        opacity: 0.4;
-                        cursor: default;
-                    }
-
-                    &:not(:has(input:disabled)):hover {
-                        border-color: var(--ColorPrimary);
-                    }
-                }
-            }
-
-            .checkbox-label {
+        .field--poll-options {
+            .poll-options-header {
                 display: flex;
                 align-items: center;
-                gap: 6px;
-                font-size: 0.85rem;
-                font-weight: normal;
-                cursor: pointer;
+                justify-content: space-between;
+                gap: 10px;
+                margin-bottom: 8px;
+            }
 
-                &--inline {
-                    flex-direction: row;
+            // Selbe Feld-Klassen/Grid wie im "Termin"-Tab (nested .modalform),
+            // nur mit dem Löschen-Button oben rechts in der Ecke statt in
+            // derselben Zeile wie die Felder.
+            .poll-option {
+                position: relative;
+                padding: 15px;
+                margin-bottom: 8px;
+                background-color: var(--ColorVeryLightGray);
+                border-radius: var(--BorderRadiusSmall);
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+
+                .app-icon-button {
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
                 }
             }
+        }
 
-            .form-error {
-                color: #c0392b;
-                font-size: 0.85rem;
-            }
+        .form-error {
+            color: #c0392b;
+            font-size: 0.85rem;
+            grid-column: 1 / -1;
         }
     }
 }

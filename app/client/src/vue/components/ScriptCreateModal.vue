@@ -1,29 +1,23 @@
 <template>
   <AppModal ref="modal" class="script-create-modal" title="Neues Skript" @close="close">
-    <form id="script-create-form" @submit.prevent="submit">
+    <form id="script-create-form" class="modalform" @submit.prevent="submit">
 
-      <div class="form-field">
-        <label class="form-label">Organisation</label>
-        <div class="multiselect-group">
-          <label v-for="org in store.organizations" :key="org.ID" class="checkbox-label">
-            <input type="radio" :value="org.ID" v-model="form.OrganizationID" :aria-label="org.Title" />
-            {{ org.Title }}
-          </label>
-        </div>
+      <div class="field">
+        <label>Organisation</label>
+        <OrganizationPicker v-model="form.OrganizationID" :orgs="store.organizations" />
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="script-title">Titel *</label>
+      <label class="field">
+        Titel *
         <input
           id="script-title"
           v-model="form.Title"
           type="text"
-          class="input"
           placeholder="z.B. Sommertheater 2027"
           required
           autofocus
         />
-      </div>
+      </label>
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -42,6 +36,7 @@ import { ref, reactive } from 'vue'
 import { useSkriptStore } from '@stores/skript'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
 
 const emit = defineEmits(['created'])
 const store = useSkriptStore()

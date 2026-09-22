@@ -1,9 +1,9 @@
 <template>
   <AppModal ref="modal" class="money-entry-modal" :title="isEdit ? 'Buchung bearbeiten' : 'Buchung erfassen'" @close="close">
-    <form id="money-entry-form" @submit.prevent="submit">
+    <form id="money-entry-form" class="modalform" @submit.prevent="submit">
 
-      <div class="form-field">
-        <label class="form-label">Typ</label>
+      <div class="field">
+        <label>Typ</label>
         <div class="multiselect-group">
           <label class="checkbox-label" :class="{ 'checkbox-label--disabled': !canEnterWithdrawal }">
             <input type="radio" value="Withdrawal" v-model="form.ChangeType" :disabled="!canEnterWithdrawal" />
@@ -16,37 +16,37 @@
         </div>
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="entry-amount">Betrag (€) *</label>
-        <input id="entry-amount" v-model="form.ChangeAmount" type="number" step="0.01" min="0.01" class="input" placeholder="0,00" required />
+      <div class="field">
+        <label for="entry-amount">Betrag (€) *</label>
+        <input id="entry-amount" v-model="form.ChangeAmount" type="number" step="0.01" min="0.01" placeholder="0,00" required />
         <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="entry-reason">Grund *</label>
-        <input id="entry-reason" v-model="form.ChangeReason" type="text" class="input" placeholder="z.B. Getränkeeinkauf" required />
-      </div>
+      <label class="field">
+        Grund *
+        <input id="entry-reason" v-model="form.ChangeReason" type="text" placeholder="z.B. Getränkeeinkauf" required />
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="entry-date">Datum</label>
-        <input id="entry-date" v-model="form.ChangeDate" type="date" class="input" />
-      </div>
+      <label class="field">
+        Datum
+        <input id="entry-date" v-model="form.ChangeDate" type="date" />
+      </label>
 
-      <div v-if="form.ChangeType === 'Withdrawal' && budgets.length" class="form-field">
-        <label class="form-label" for="entry-budget">Budget</label>
-        <select id="entry-budget" v-model="form.BudgetID" class="input">
+      <div v-if="form.ChangeType === 'Withdrawal' && budgets.length" class="field">
+        <label for="entry-budget">Budget</label>
+        <select id="entry-budget" v-model="form.BudgetID">
           <option value="">Kein Budget</option>
           <option v-for="b in budgets" :key="b.ID" :value="b.ID">{{ b.Title }}</option>
         </select>
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="entry-notes">Anmerkungen</label>
-        <textarea id="entry-notes" v-model="form.Notes" class="input" rows="3" placeholder="Weitere Details zu dieser Buchung…"></textarea>
-      </div>
+      <label class="field">
+        Anmerkungen
+        <textarea id="entry-notes" v-model="form.Notes" rows="3" placeholder="Weitere Details zu dieser Buchung…"></textarea>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label">
+      <div class="field">
+        <label>
           Beleg{{ requiresReceipt && !existingReceiptURL ? ' *' : '' }}
         </label>
         <label class="button button--secondary money-entry-modal_file-label">

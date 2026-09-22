@@ -1,43 +1,36 @@
 <template>
   <AppModal ref="modal" class="room-form-modal" :title="isEdit ? 'Raum bearbeiten' : 'Neuer Raum'" @close="close">
-    <form id="room-form-form" @submit.prevent="submit">
+    <form id="room-form-form" class="modalform" @submit.prevent="submit">
 
-      <div v-if="!isEdit" class="form-field">
-        <label class="form-label">Organisation</label>
-        <div class="multiselect-group">
-          <label v-for="org in store.organizations" :key="org.ID" class="checkbox-label">
-            <input type="radio" :value="org.ID" v-model="form.OrganizationID" :aria-label="org.Title" />
-            {{ org.Title }}
-          </label>
-        </div>
+      <div v-if="!isEdit" class="field">
+        <label>Organisation</label>
+        <OrganizationPicker v-model="form.OrganizationID" :orgs="store.organizations" />
       </div>
 
-      <div class="form-field">
-        <label class="form-label" for="room-title">Titel *</label>
+      <label class="field">
+        Titel *
         <input
           id="room-title"
           v-model="form.Title"
           type="text"
-          class="input"
           placeholder="Raumtitel"
           required
           autofocus
         />
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label" for="room-description">Beschreibung</label>
+      <label class="field">
+        Beschreibung
         <textarea
           id="room-description"
           v-model="form.Description"
-          class="input"
           rows="3"
           placeholder="Optionale Beschreibung…"
         />
-      </div>
+      </label>
 
-      <div class="form-field">
-        <label class="form-label">Aufgaben</label>
+      <div class="field">
+        <label>Aufgaben</label>
         <p v-if="loadingTasks" class="room-form-modal_tasks-loading">Lade Aufgaben…</p>
         <p v-else-if="!form.OrganizationID" class="room-form-modal_tasks-loading">Bitte zuerst eine Organisation wählen.</p>
         <div v-else-if="attachableTasks.length" class="multiselect-group room-form-modal_tasks">
@@ -70,6 +63,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useRoomsStore } from '@stores/rooms'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
 
 const emit = defineEmits(['saved'])
 const store = useRoomsStore()

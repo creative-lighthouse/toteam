@@ -32,10 +32,7 @@
         <textarea v-model="description" class="feedback-field_textarea" rows="5" placeholder="Was ist passiert bzw. was wünschst du dir?" required></textarea>
       </label>
 
-      <label class="feedback-checkbox">
-        <input type="checkbox" v-model="notifyByEmail">
-        <span>Per E-Mail über Status-Updates informieren</span>
-      </label>
+      <AppToggle v-model="notifyByEmail" label="Per E-Mail über Status-Updates informieren" field-class="feedback-checkbox" />
 
       <p v-if="error" class="feedback-error">{{ error }}</p>
 
@@ -59,6 +56,7 @@ import confetti from 'canvas-confetti'
 import { apiPost } from '@utils/api'
 import AppModal from '@components/AppModal.vue'
 import AppButton from '@components/AppButton.vue'
+import AppToggle from '@components/AppToggle.vue'
 import iconBug from '../../../icons/feedback_admin.svg'
 import iconFeature from '../../../icons/featurerequest.svg'
 
