@@ -1,46 +1,36 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="member-roles-modal" @cancel.prevent="close">
-      <div class="member-roles-modal_content" @click.stop>
+  <AppModal ref="modal" class="member-roles-modal" :title="`Rollen für ${memberName}`" @close="close">
+    <form id="member-roles-form" @submit.prevent="submit">
 
-        <div class="member-roles-modal_header">
-          <h2 class="hl2 member-roles-modal_title">Rollen für {{ memberName }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
-
-        <form class="member-roles-modal_body" @submit.prevent="submit">
-
-          <div v-if="availableRoles.length === 0" class="member-roles-modal_empty">
-            Diese Organisation hat noch keine Rollen.
-          </div>
-
-          <div v-else class="member-roles-modal_list">
-            <label v-for="role in availableRoles" :key="role.ID" class="form-checkbox">
-              <input type="checkbox" :value="role.ID" v-model="selected" />
-              {{ role.Title }}
-            </label>
-          </div>
-
-          <div v-if="error" class="member-roles-modal_error">{{ error }}</div>
-
-          <div class="member-roles-modal_actions">
-            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving">
-              {{ saving ? 'Speichern…' : 'Speichern' }}
-            </AppButton>
-          </div>
-
-        </form>
+      <div v-if="availableRoles.length === 0" class="member-roles-modal_empty">
+        Diese Organisation hat noch keine Rollen.
       </div>
-    </dialog>
-  </Teleport>
+
+      <div v-else class="member-roles-modal_list">
+        <label v-for="role in availableRoles" :key="role.ID" class="form-checkbox">
+          <input type="checkbox" :value="role.ID" v-model="selected" />
+          {{ role.Title }}
+        </label>
+      </div>
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="member-roles-form" variant="primary" :disabled="saving">
+        {{ saving ? 'Speichern…' : 'Speichern' }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useOrgRolesStore } from '@stores/orgRoles'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 
 const props = defineProps({
   membershipId: { type: Number, required: true },
@@ -51,7 +41,7 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 const orgRolesStore = useOrgRolesStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 const selected = ref([])
@@ -59,11 +49,11 @@ const selected = ref([])
 function open() {
   selected.value = [...props.currentRoleIds]
   error.value = null
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function submit() {

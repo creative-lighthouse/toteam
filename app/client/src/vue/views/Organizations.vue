@@ -1,6 +1,24 @@
 <template>
   <div class="section section--OrganizationsPage">
     <div class="section_content">
+      <div class="organizations-toolbar">
+        <div class="organizations-search">
+          <input
+            v-model="search"
+            type="search"
+            placeholder="Organisationen durchsuchen…"
+            aria-label="Organisationen durchsuchen"
+          />
+        </div>
+        <AppButton
+          class="organizations-toolbar_action"
+          variant="primary"
+          @click="createModal?.open()"
+        >
+          + Organisation erstellen
+        </AppButton>
+      </div>
+
       <div v-if="store.loading" class="section_infobox">
         <p>Lade Organisationen...</p>
       </div>
@@ -11,13 +29,13 @@
       </div>
 
       <template v-else>
-        <div v-if="store.organizations.length === 0" class="section_infobox">
+        <div v-if="filteredOrganizations.length === 0" class="section_infobox">
           <p>Keine Organisationen gefunden.</p>
         </div>
 
         <div v-else class="organizations-list">
           <OrganizationCard
-            v-for="org in store.organizations"
+            v-for="org in filteredOrganizations"
             :key="org.ID"
             :org="org"
             @joined="handleJoin"
@@ -28,24 +46,34 @@
     </div>
 
     <ApplicantsModal ref="applicantsModal" @accepted="handleApplicantAccepted" />
+    <OrganizationCreateModal ref="createModal" @created="handleCreated" />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOrganizationsStore } from '@stores/organizations'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import OrganizationCard from '@components/OrganizationCard.vue'
 import ApplicantsModal from '@components/ApplicantsModal.vue'
+import OrganizationCreateModal from '@components/OrganizationCreateModal.vue'
 import AppButton from '@components/AppButton.vue'
 
 const route = useRoute()
 const store = useOrganizationsStore()
 usePageHeaderStore().setHeader('Organisationen', 'Alle Organisationen auf einen Blick.')
 
-const joiningID      = ref(null)
+const joiningID       = ref(null)
 const applicantsModal = ref(null)
+const createModal     = ref(null)
+const search          = ref('')
+
+const filteredOrganizations = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return store.organizations
+  return store.organizations.filter(org => org.Title?.toLowerCase().includes(q))
+})
 
 onMounted(async () => {
   await store.fetchOrganizations(true)
@@ -83,5 +111,9 @@ function handleApplicantAccepted(orgID) {
     org.MemberCount++
     if (org.ApplicantCount !== null) org.ApplicantCount--
   }
+}
+
+function handleCreated() {
+  store.fetchOrganizations(true)
 }
 </script>

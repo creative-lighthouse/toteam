@@ -31,9 +31,11 @@ class OrgPermissions
 
     public const CALENDAR_MANAGE = 'CALENDAR_MANAGE';
     public const CALENDAR_DELETE = 'CALENDAR_DELETE';
+    public const CALENDAR_RECORD_RSVP = 'CALENDAR_RECORD_RSVP';
 
     public const FOOD_MANAGE_MEALS = 'FOOD_MANAGE_MEALS';
     public const FOOD_APPROVE_SUGGESTIONS = 'FOOD_APPROVE_SUGGESTIONS';
+    public const FOOD_RECORD_RSVP = 'FOOD_RECORD_RSVP';
 
     public const LINKS_MANAGE = 'LINKS_MANAGE';
 
@@ -81,10 +83,12 @@ class OrgPermissions
             'Kalender' => [
                 self::CALENDAR_MANAGE => 'Termine verwalten',
                 self::CALENDAR_DELETE => 'Termine löschen',
+                self::CALENDAR_RECORD_RSVP => 'Zu-/Absagen für andere eintragen',
             ],
             'Essen' => [
                 self::FOOD_MANAGE_MEALS => 'Mahlzeiten verwalten',
                 self::FOOD_APPROVE_SUGGESTIONS => 'Essens-Vorschläge bestätigen',
+                self::FOOD_RECORD_RSVP => 'Zu-/Absagen für andere eintragen',
             ],
             'Links' => [
                 self::LINKS_MANAGE => 'Links verwalten',

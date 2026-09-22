@@ -1,61 +1,48 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="image-crop-modal" @cancel.prevent="cancel">
-      <div class="image-crop-modal_content" @click.stop>
+  <AppModal ref="modal" class="image-crop-modal" :title="title" @close="cancel">
+    <p class="image-crop-modal_hint">Ziehen zum Verschieben · Scrollen oder Schieberegler zum Zoomen</p>
 
-        <div class="image-crop-modal_header">
-          <h2 class="hl2 image-crop-modal_title">{{ title }}</h2>
-          <AppIconButton variant="ghost" aria-label="Abbrechen" @click="cancel">✕</AppIconButton>
-        </div>
+    <!-- Der Ausschnitt entspricht exakt dem finalen Bild (Größe + Form), damit
+         das Endergebnis schon beim Zuschneiden sichtbar ist. -->
+    <canvas
+      ref="canvasEl"
+      class="image-crop-modal_canvas"
+      :class="`image-crop-modal_canvas--${shape}`"
+      width="280"
+      height="280"
+      @wheel.prevent="onWheel"
+      @mousedown.prevent="onMouseDown"
+      @mousemove="onMouseMove"
+      @mouseup="onMouseUp"
+      @mouseleave="onMouseUp"
+      @touchstart.prevent="onTouchStart"
+      @touchmove.prevent="onTouchMove"
+      @touchend="onTouchEnd"
+    ></canvas>
 
-        <div class="image-crop-modal_body">
-          <p class="image-crop-modal_hint">Ziehen zum Verschieben · Scrollen oder Schieberegler zum Zoomen</p>
+    <div class="zoom-controls">
+      <AppIconButton variant="neutral" aria-label="Verkleinern" @click="adjustZoom(-0.15)">−</AppIconButton>
+      <input
+        type="range"
+        class="zoom-slider"
+        min="1"
+        :max="maxZoom"
+        step="0.01"
+        :value="zoom"
+        @input="onZoomSlider"
+      >
+      <AppIconButton variant="neutral" aria-label="Vergrößern" @click="adjustZoom(0.15)">+</AppIconButton>
+    </div>
 
-          <!-- Der Ausschnitt entspricht exakt dem finalen Bild (Größe + Form), damit
-               das Endergebnis schon beim Zuschneiden sichtbar ist. -->
-          <canvas
-            ref="canvasEl"
-            class="image-crop-modal_canvas"
-            :class="`image-crop-modal_canvas--${shape}`"
-            width="280"
-            height="280"
-            @wheel.prevent="onWheel"
-            @mousedown.prevent="onMouseDown"
-            @mousemove="onMouseMove"
-            @mouseup="onMouseUp"
-            @mouseleave="onMouseUp"
-            @touchstart.prevent="onTouchStart"
-            @touchmove.prevent="onTouchMove"
-            @touchend="onTouchEnd"
-          ></canvas>
+    <p v-if="error" class="status-text status-text--error">{{ error }}</p>
 
-          <div class="zoom-controls">
-            <AppIconButton variant="neutral" aria-label="Verkleinern" @click="adjustZoom(-0.15)">−</AppIconButton>
-            <input
-              type="range"
-              class="zoom-slider"
-              min="1"
-              :max="maxZoom"
-              step="0.01"
-              :value="zoom"
-              @input="onZoomSlider"
-            >
-            <AppIconButton variant="neutral" aria-label="Vergrößern" @click="adjustZoom(0.15)">+</AppIconButton>
-          </div>
-
-          <p v-if="error" class="status-text status-text--error">{{ error }}</p>
-        </div>
-
-        <div class="image-crop-modal_actions">
-          <AppButton variant="secondary" :disabled="saving" @click="cancel">Abbrechen</AppButton>
-          <AppButton variant="primary" :disabled="saving" @click="save">
-            {{ saving ? 'Wird gespeichert …' : 'Speichern' }}
-          </AppButton>
-        </div>
-
-      </div>
-    </dialog>
-  </Teleport>
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="cancel">Abbrechen</AppButton>
+      <AppButton variant="primary" :disabled="saving" @click="save">
+        {{ saving ? 'Wird gespeichert …' : 'Speichern' }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
@@ -63,6 +50,7 @@ import { ref, nextTick } from 'vue'
 import { apiPostForm } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 
 // Generischer Zuschnitt-Editor: wird sowohl für das eigene Profilbild (Kreis,
 // RenderProfileImage) als auch für Organisations-Logos (abgerundetes Quadrat,
@@ -79,7 +67,7 @@ const props = defineProps({
 
 const emit = defineEmits(['saved'])
 
-const dialogEl  = ref(null)
+const modal      = ref(null)
 const canvasEl  = ref(null)
 const editorImg = ref(null)
 const objectUrl = ref(null)
@@ -111,14 +99,14 @@ function open(file) {
     zoom.value      = 1
     panX.value      = img.width  / 2
     panY.value      = img.height / 2
-    dialogEl.value?.showModal()
+    modal.value?.open()
     nextTick(redraw)
   }
   img.src = objectUrl.value
 }
 
 function cancel() {
-  dialogEl.value?.close()
+  modal.value?.close()
   cleanupImage()
 }
 
@@ -252,7 +240,7 @@ async function save() {
 
     if (result.success && savedUrl) {
       emit('saved', savedUrl)
-      dialogEl.value?.close()
+      modal.value?.close()
       cleanupImage()
     } else {
       error.value = result.error ?? 'Bild konnte nicht gespeichert werden.'

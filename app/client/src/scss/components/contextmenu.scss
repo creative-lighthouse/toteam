@@ -1,0 +1,35 @@
+@use "../variables" as *;
+
+.context-menu {
+    position: fixed;
+    // Muss über dem Termin-Modal (EventDialog, z-index: 10000) liegen, da das
+    // Kontextmenü auch aus dessen Teilnehmerliste heraus geöffnet werden kann.
+    z-index: 10001;
+    min-width: 200px;
+    padding: 6px;
+    background-color: var(--ColorWhite);
+    border-radius: var(--BorderRadiusSmall);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+    &_item {
+        display: block;
+        width: 100%;
+        padding: 8px 12px;
+        border: none;
+        background: none;
+        text-align: left;
+        font-size: 14px;
+        color: var(--ColorBlack);
+        border-radius: var(--BorderRadiusSmall);
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background-color: var(--ColorLightGray);
+        }
+
+        &--danger {
+            color: var(--ColorStatusBad);
+        }
+    }
+}

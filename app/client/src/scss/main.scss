@@ -15,6 +15,7 @@
 @use "layout/AppNotifications.scss";
 @use "layout/dialog.scss";
 @use "layout/EventDialog.scss";
+@use "components/appmodal.scss";
 
 @use "pages/DashboardPage.scss";
 @use "pages/RegistrationPage.scss";
@@ -51,9 +52,12 @@
 @use "components/announcementcard.scss";
 @use "components/organizationcard.scss";
 @use "components/participantcard.scss";
+@use "components/contextmenu.scss";
 @use "components/mealcard.scss";
 @use "components/eventagendamodal.scss";
 @use "components/eventmealmodal.scss";
+@use "components/mealeditmodal.scss";
+@use "components/suggestfoodmodal.scss";
 @use "components/addappointmentmodal.scss";
 @use "components/pwainstallbanner.scss";
 @use "components/taskcard.scss";
@@ -78,6 +82,7 @@
 @use "components/scriptmemberpickerdropdown.scss";
 @use "components/marketingentrymodal.scss";
 @use "components/marketingsizemanagermodal.scss";
+@use "components/organizationcreatemodal.scss";
 
 
 html{
@@ -113,7 +118,7 @@ body {
         .section {
             max-width: var(--MaxWidth);
             margin: 50px auto;
-            padding: 0 20px;
+            padding: 0 10px;
 
             &:first-of-type {
                 margin-top: 0;

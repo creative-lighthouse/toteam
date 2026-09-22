@@ -108,6 +108,71 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   /**
+   * Trägt (als Admin mit CALENDAR_RECORD_RSVP) die Zu-/Absage eines anderen
+   * Mitglieds ein, z.B. um eine mündliche Zusage nachzupflegen.
+   * @param {number} eventId
+   * @param {number} targetMemberId
+   * @param {string|null} type - 'Accept', 'Maybe', 'Decline' oder null (Antwort entfernen)
+   */
+  async function changeParticipationFor(eventId, targetMemberId, type) {
+    try {
+      const response = await apiPost(`/calendar/participation/${eventId}`, {
+        response: type,
+        targetMemberId,
+      })
+
+      const event = getEventById(eventId)
+      if (event) {
+        const pending = (event.MembersWithoutResponse || []).find(m => m.ID === targetMemberId)
+        const existing = (event.Participations || []).find(p => p.MemberID === targetMemberId)
+
+        if (!type) {
+          // Zurück auf "Ohne Antwort"
+          if (event.Participations) {
+            event.Participations = event.Participations.filter(p => p.MemberID !== targetMemberId)
+          }
+          if (event.MembersWithoutResponse && !pending) {
+            event.MembersWithoutResponse.push({
+              ID: targetMemberId,
+              MemberName: existing?.MemberName ?? '',
+              ProfileImageURL: existing?.ProfileImageURL ?? null,
+            })
+          }
+        } else {
+          if (existing) {
+            existing.Type = response.data.Type
+            existing.TimeStart = response.data.TimeStart
+            existing.TimeEnd = response.data.TimeEnd
+            existing.CustomTimeframe = response.data.CustomTimeframe ?? false
+          } else if (event.Participations) {
+            event.Participations.push({
+              ID: response.data.ID,
+              MemberID: targetMemberId,
+              MemberName: pending?.MemberName ?? '',
+              ProfileImageURL: pending?.ProfileImageURL ?? null,
+              Type: response.data.Type,
+              TimeStart: response.data.TimeStart,
+              TimeEnd: response.data.TimeEnd,
+              CustomTimeframe: response.data.CustomTimeframe ?? false,
+              IsCurrentUser: false,
+            })
+          }
+          if (event.MembersWithoutResponse) {
+            event.MembersWithoutResponse = event.MembersWithoutResponse.filter(m => m.ID !== targetMemberId)
+          }
+        }
+      }
+
+      await clearCacheForEndpoint('/calendar')
+
+      return response.data
+    } catch (err) {
+      console.error('Failed to change participation for member:', err)
+      throw err
+    }
+  }
+
+  /**
    * Ändert die Teilnahme an einem Event
    * @param {number} eventId
    * @param {string} type - 'Accept', 'Maybe', oder 'Decline'
@@ -574,6 +639,7 @@ export const useEventsStore = defineStore('events', () => {
     fetchEventRange,
     getEventById,
     changeParticipation,
+    changeParticipationFor,
     changeParticipationTime,
     changeParticipationRide,
     changeParticipationNotes,

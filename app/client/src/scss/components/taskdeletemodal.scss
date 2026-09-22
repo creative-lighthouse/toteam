@@ -1,46 +1,21 @@
-@use "../variables" as *;
-
 .task-delete-modal {
     text-align: left;
     max-width: 440px;
 
-    .task-delete-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .task-delete-modal_header {
-        @include modal-header;
-    }
-
-    .task-delete-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        padding: 20px;
-        background-color: var(--ColorWhite);
-
-        p {
-            margin: 0;
-            font-size: 14px;
-            line-height: 1.5;
-        }
+    p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.5;
     }
 
     .task-delete-modal_subtask-note {
         color: var(--ColorGray);
     }
 
-    .task-delete-modal_error {
-        font-size: 13px;
-        color: var(--ColorStatusBad);
-        background-color: var(--ColorStatusBadAccent);
-        padding: 8px 12px;
-        border-radius: var(--BorderRadiusSmall);
-    }
-
-    .task-delete-modal_actions {
-        display: flex;
+    // This modal can show up to three action buttons at once (Abbrechen +
+    // two delete-mode choices), so it needs its own stacked layout instead
+    // of the shared bottom bar's default row of buttons.
+    .app-modal_actions {
         flex-direction: column;
         gap: 8px;
         padding-top: 4px;

@@ -5,23 +5,6 @@
     max-width: 420px;
     max-height: 90vh;
     overflow-y: auto;
-
-    &_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    &_header {
-        @include modal-header;
-    }
-
-    &_body {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        padding: 20px;
-        background-color: var(--ColorWhite);
-    }
 }
 
 .script-role-info-modal_role {

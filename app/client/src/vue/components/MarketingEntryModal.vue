@@ -1,131 +1,120 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="marketing-entry-modal" @cancel.prevent="close">
-      <div class="marketing-entry-modal_content" @click.stop>
+  <AppModal ref="modal" class="marketing-entry-modal" :title="isEdit ? 'Eintrag bearbeiten' : 'Neuer Verteil-Eintrag'" @close="close">
+    <form id="marketing-entry-form" @submit.prevent="submit">
 
-        <div class="marketing-entry-modal_header">
-          <h2 class="hl2 marketing-entry-modal_title">{{ isEdit ? 'Eintrag bearbeiten' : 'Neuer Verteil-Eintrag' }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
+      <div v-if="!isEdit && store.organizations.length > 1" class="form-field">
+        <label class="form-label" for="marketing-entry-org">Organisation *</label>
+        <select
+          id="marketing-entry-org"
+          v-model="form.OrganizationID"
+          class="input"
+          required
+          @change="orgsStore.setLastOrganizationId(form.OrganizationID)"
+        >
+          <option :value="0" disabled>Bitte wählen</option>
+          <option v-for="org in store.organizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="marketing-entry-location">Ort *</label>
+        <div class="marketing-entry-modal_location-row">
+          <input
+            id="marketing-entry-location"
+            v-model="form.Location"
+            type="text"
+            class="input"
+            placeholder="z.B. Marktplatz, schwarzes Brett"
+            autofocus
+          />
+          <AppButton type="button" variant="secondary" size="small" :disabled="geoLoading" @click="useCurrentLocation">
+            {{ geoLoading ? 'Ermittle Standort…' : '📍 Position erfassen' }}
+          </AppButton>
         </div>
+        <p v-if="form.Latitude && form.Longitude" class="marketing-entry-modal_geo-value">
+          Koordinaten erfasst ({{ form.Latitude }}, {{ form.Longitude }})
+          <button type="button" class="marketing-entry-modal_geo-clear" @click="clearLocation">Entfernen</button>
+        </p>
+        <p v-if="geoError" class="app-modal_error">{{ geoError }}</p>
+        <p v-if="!hasLocationInfo" class="marketing-entry-modal_hint">
+          Bitte entweder einen Ort eingeben oder die aktuelle Position erfassen.
+        </p>
+      </div>
 
-        <form id="marketing-entry-form" class="marketing-entry-modal_body" @submit.prevent="submit">
-
-          <div v-if="!isEdit && store.organizations.length > 1" class="form-field">
-            <label class="form-label" for="marketing-entry-org">Organisation *</label>
+      <div class="form-field">
+        <div class="form-field-row">
+          <div class="form-field">
+            <label class="form-label" for="marketing-entry-size">Größe *</label>
             <select
-              id="marketing-entry-org"
-              v-model="form.OrganizationID"
+              id="marketing-entry-size"
+              v-model="form.PosterSizeID"
               class="input"
               required
-              @change="orgsStore.setLastOrganizationId(form.OrganizationID)"
+              :disabled="!form.OrganizationID || sizesForOrg.length === 0"
             >
-              <option :value="0" disabled>Bitte wählen</option>
-              <option v-for="org in store.organizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
+              <option value="" disabled>Bitte wählen</option>
+              <option v-for="size in sizesForOrg" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
             </select>
           </div>
 
           <div class="form-field">
-            <label class="form-label" for="marketing-entry-location">Ort *</label>
-            <div class="marketing-entry-modal_location-row">
-              <input
-                id="marketing-entry-location"
-                v-model="form.Location"
-                type="text"
-                class="input"
-                placeholder="z.B. Marktplatz, schwarzes Brett"
-                autofocus
-              />
-              <AppButton type="button" variant="secondary" size="small" :disabled="geoLoading" @click="useCurrentLocation">
-                {{ geoLoading ? 'Ermittle Standort…' : '📍 Position erfassen' }}
-              </AppButton>
-            </div>
-            <p v-if="form.Latitude && form.Longitude" class="marketing-entry-modal_geo-value">
-              Koordinaten erfasst ({{ form.Latitude }}, {{ form.Longitude }})
-              <button type="button" class="marketing-entry-modal_geo-clear" @click="clearLocation">Entfernen</button>
-            </p>
-            <p v-if="geoError" class="marketing-entry-modal_error">{{ geoError }}</p>
-            <p v-if="!hasLocationInfo" class="marketing-entry-modal_hint">
-              Bitte entweder einen Ort eingeben oder die aktuelle Position erfassen.
-            </p>
-          </div>
-
-          <div class="form-field">
-            <div class="form-field-row">
-              <div class="form-field">
-                <label class="form-label" for="marketing-entry-size">Größe *</label>
-                <select
-                  id="marketing-entry-size"
-                  v-model="form.PosterSizeID"
-                  class="input"
-                  required
-                  :disabled="!form.OrganizationID || sizesForOrg.length === 0"
-                >
-                  <option value="" disabled>Bitte wählen</option>
-                  <option v-for="size in sizesForOrg" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
-                </select>
-              </div>
-
-              <div class="form-field">
-                <label class="form-label" for="marketing-entry-quantity">Anzahl *</label>
-                <input
-                  id="marketing-entry-quantity"
-                  v-model.number="form.Quantity"
-                  type="number"
-                  min="1"
-                  class="input"
-                  required
-                />
-              </div>
-            </div>
-
-            <p v-if="!form.OrganizationID" class="marketing-entry-modal_hint">
-              Bitte zuerst eine Organisation auswählen.
-            </p>
-            <p v-else-if="sizesForOrg.length === 0" class="marketing-entry-modal_hint">
-              Für diese Organisation wurden noch keine Plakat-Größen angelegt.
-            </p>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="marketing-entry-distributed-at">Zeitpunkt *</label>
+            <label class="form-label" for="marketing-entry-quantity">Anzahl *</label>
             <input
-              id="marketing-entry-distributed-at"
-              v-model="form.DistributedAt"
-              type="datetime-local"
+              id="marketing-entry-quantity"
+              v-model.number="form.Quantity"
+              type="number"
+              min="1"
               class="input"
               required
             />
           </div>
-
-          <div class="form-field">
-            <label class="form-label" for="marketing-entry-note">Notiz</label>
-            <textarea
-              id="marketing-entry-note"
-              v-model="form.Note"
-              class="input"
-              rows="2"
-              placeholder="Optionale Anmerkung…"
-            />
-          </div>
-
-          <div v-if="error" class="marketing-entry-modal_error">{{ error }}</div>
-        </form>
-
-        <div class="marketing-entry-modal_actions">
-          <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-          <AppButton
-            type="submit"
-            form="marketing-entry-form"
-            variant="primary"
-            :disabled="saving || !hasLocationInfo || !form.PosterSizeID || !form.OrganizationID || !form.DistributedAt"
-          >
-            {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
-          </AppButton>
         </div>
 
+        <p v-if="!form.OrganizationID" class="marketing-entry-modal_hint">
+          Bitte zuerst eine Organisation auswählen.
+        </p>
+        <p v-else-if="sizesForOrg.length === 0" class="marketing-entry-modal_hint">
+          Für diese Organisation wurden noch keine Plakat-Größen angelegt.
+        </p>
       </div>
-    </dialog>
-  </Teleport>
+
+      <div class="form-field">
+        <label class="form-label" for="marketing-entry-distributed-at">Zeitpunkt *</label>
+        <input
+          id="marketing-entry-distributed-at"
+          v-model="form.DistributedAt"
+          type="datetime-local"
+          class="input"
+          required
+        />
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="marketing-entry-note">Notiz</label>
+        <textarea
+          id="marketing-entry-note"
+          v-model="form.Note"
+          class="input"
+          rows="2"
+          placeholder="Optionale Anmerkung…"
+        />
+      </div>
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton
+        type="submit"
+        form="marketing-entry-form"
+        variant="primary"
+        :disabled="saving || !hasLocationInfo || !form.PosterSizeID || !form.OrganizationID || !form.DistributedAt"
+      >
+        {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
@@ -133,13 +122,13 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useMarketingStore } from '@stores/marketing'
 import { useOrganizationsStore } from '@stores/organizations'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 
 const emit = defineEmits(['saved'])
 const store = useMarketingStore()
 const orgsStore = useOrganizationsStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 const geoLoading = ref(false)
@@ -209,11 +198,11 @@ function open(distribution = null) {
     form.DistributedAt = distribution.DistributedAt ? distribution.DistributedAt.replace(' ', 'T').slice(0, 16) : nowLocal()
   }
 
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 function useCurrentLocation() {

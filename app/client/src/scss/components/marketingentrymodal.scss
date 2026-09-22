@@ -6,32 +6,6 @@
     max-height: 90vh;
     overflow-y: auto;
 
-    &_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    &_header {
-        @include modal-header;
-    }
-
-    // See scriptroleeditmodal.scss for why every form-body override below is
-    // necessary: forms.scss's unscoped `form {...}` selector otherwise shrinks
-    // this to a centered, bordered box instead of the full modal body.
-    &_body {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 16px;
-        padding: 20px;
-        max-width: none;
-        margin: 0;
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-        background-color: var(--ColorWhite);
-    }
-
     &_hint {
         font-size: 0.85rem;
         opacity: 0.6;
@@ -67,18 +41,6 @@
         font-size: 0.85rem;
         cursor: pointer;
         text-decoration: underline;
-    }
-
-    &_error {
-        font-size: 13px;
-        color: var(--ColorStatusBad);
-        background-color: var(--ColorStatusBadAccent);
-        padding: 8px 12px;
-        border-radius: var(--BorderRadiusSmall);
-    }
-
-    &_actions {
-        @include modal-actions;
     }
 }
 

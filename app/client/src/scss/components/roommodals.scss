@@ -6,31 +6,6 @@
     max-height: 90vh;
     overflow-y: auto;
 
-    .room-form-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .room-form-modal_header {
-        @include modal-header;
-    }
-
-    .room-form-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        padding: 20px;
-        background-color: var(--ColorWhite);
-
-        // Override global form styles
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-        max-width: none;
-        margin: 0;
-        align-items: stretch;
-    }
-
     .form-field {
         display: flex;
         flex-direction: column;
@@ -113,17 +88,6 @@
         color: var(--ColorGray);
     }
 
-    .room-form-modal_error {
-        font-size: 13px;
-        color: var(--ColorStatusBad);
-        background-color: var(--ColorStatusBadAccent);
-        padding: 8px 12px;
-        border-radius: var(--BorderRadiusSmall);
-    }
-
-    .room-form-modal_actions {
-        @include modal-actions;
-    }
 }
 
 .room-detail-modal {
@@ -132,27 +96,10 @@
     max-height: 90vh;
     overflow-y: auto;
 
-    .room-detail-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .room-detail-modal_header {
-        @include modal-header;
-    }
-
     .room-detail-modal_loading {
         padding: 32px 20px;
         text-align: center;
         color: var(--ColorGray);
-    }
-
-    .room-detail-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        padding: 20px;
-        background-color: var(--ColorWhite);
     }
 
     .room-detail-modal_org {
@@ -232,10 +179,6 @@
         font-size: 14px;
         color: var(--ColorGray);
     }
-
-    .room-detail-modal_actions {
-        @include modal-actions;
-    }
 }
 
 // "Räume verwalten" — attach/detach a task to rooms in its organization
@@ -244,29 +187,6 @@
     max-width: 420px;
     max-height: 90vh;
     overflow-y: auto;
-
-    .task-rooms-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .task-rooms-modal_header {
-        @include modal-header;
-    }
-
-    .task-rooms-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        padding: 20px;
-        background-color: var(--ColorWhite);
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-        max-width: none;
-        margin: 0;
-        align-items: stretch;
-    }
 
     .task-rooms-modal_loading {
         font-size: 14px;
@@ -298,17 +218,5 @@
         input[type="checkbox"] {
             flex-shrink: 0;
         }
-    }
-
-    .task-rooms-modal_error {
-        font-size: 13px;
-        color: var(--ColorStatusBad);
-        background-color: var(--ColorStatusBadAccent);
-        padding: 8px 12px;
-        border-radius: var(--BorderRadiusSmall);
-    }
-
-    .task-rooms-modal_actions {
-        @include modal-actions;
     }
 }

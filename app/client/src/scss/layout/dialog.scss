@@ -66,7 +66,6 @@ dialog{
 
         .dialog-infobox {
             background-color: var(--ColorWhite);
-            padding: 15px;
             border-radius: var(--BorderRadiusSmall);
             transition: all 0.3s ease;
 
@@ -127,17 +126,9 @@ dialog{
     text-align: left;
     max-width: 520px;
 
-    .applicants-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .applicants-modal_header {
-        @include modal-header;
-    }
-
-    .applicants-modal_body {
+    .app-modal_body {
         padding: 8px 0;
+        gap: 0;
         max-height: 60vh;
         overflow-y: auto;
     }
@@ -221,22 +212,8 @@ dialog{
 .qrcode-modal {
     max-width: 320px;
 
-    .qrcode-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .qrcode-modal_header {
-        @include modal-header;
-    }
-
-    .qrcode-modal_body {
-        display: flex;
-        flex-direction: column;
+    .app-modal_body {
         align-items: center;
-        gap: 16px;
-        padding: 24px 20px;
-        background: var(--ColorWhite);
     }
 
     .qrcode-modal_canvas {
@@ -260,25 +237,15 @@ dialog{
     max-height: 90vh;
     overflow-y: auto;
 
-    .edit-profile-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .edit-profile-modal_header {
-        @include modal-header;
-    }
-
     .edit-profile-modal_loading {
         padding: 32px 20px;
         text-align: center;
         color: var(--ColorGray);
     }
 
-    .edit-profile-modal_body {
-        display: flex;
-        flex-direction: column;
+    .app-modal_body {
         gap: 2px;
+        padding: 0;
     }
 
     .edit-section {
@@ -574,22 +541,6 @@ dialog{
     text-align: left;
     max-width: 420px;
 
-    .settings-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .settings-modal_header {
-        @include modal-header;
-    }
-
-    .settings-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        padding: 12px 0;
-    }
-
     .settings-section {
         padding: 4px 0;
 
@@ -710,22 +661,6 @@ dialog{
 .feedback-modal {
     text-align: left;
     max-width: 420px;
-
-    .feedback-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .feedback-modal_header {
-        @include modal-header;
-    }
-
-    .feedback-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        padding: 16px 20px 20px;
-    }
 
     .feedback-type_group {
         display: flex;

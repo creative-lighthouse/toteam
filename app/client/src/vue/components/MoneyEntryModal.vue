@@ -1,96 +1,85 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="money-entry-modal" @cancel.prevent="close">
-      <div class="money-entry-modal_content" @click.stop>
+  <AppModal ref="modal" class="money-entry-modal" :title="isEdit ? 'Buchung bearbeiten' : 'Buchung erfassen'" @close="close">
+    <form id="money-entry-form" @submit.prevent="submit">
 
-        <div class="money-entry-modal_header">
-          <h2 class="hl2 money-entry-modal_title">{{ isEdit ? 'Buchung bearbeiten' : 'Buchung erfassen' }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
+      <div class="form-field">
+        <label class="form-label">Typ</label>
+        <div class="multiselect-group">
+          <label class="checkbox-label" :class="{ 'checkbox-label--disabled': !canEnterWithdrawal }">
+            <input type="radio" value="Withdrawal" v-model="form.ChangeType" :disabled="!canEnterWithdrawal" />
+            Ausgabe
+          </label>
+          <label class="checkbox-label" :class="{ 'checkbox-label--disabled': !canEnterDeposit }">
+            <input type="radio" value="Deposit" v-model="form.ChangeType" :disabled="!canEnterDeposit" />
+            Einnahme
+          </label>
         </div>
-
-        <form class="money-entry-modal_body" @submit.prevent="submit">
-
-          <div class="form-field">
-            <label class="form-label">Typ</label>
-            <div class="multiselect-group">
-              <label class="checkbox-label" :class="{ 'checkbox-label--disabled': !canEnterWithdrawal }">
-                <input type="radio" value="Withdrawal" v-model="form.ChangeType" :disabled="!canEnterWithdrawal" />
-                Ausgabe
-              </label>
-              <label class="checkbox-label" :class="{ 'checkbox-label--disabled': !canEnterDeposit }">
-                <input type="radio" value="Deposit" v-model="form.ChangeType" :disabled="!canEnterDeposit" />
-                Einnahme
-              </label>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="entry-amount">Betrag (€) *</label>
-            <input id="entry-amount" v-model="form.ChangeAmount" type="number" step="0.01" min="0.01" class="input" placeholder="0,00" required />
-            <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="entry-reason">Grund *</label>
-            <input id="entry-reason" v-model="form.ChangeReason" type="text" class="input" placeholder="z.B. Getränkeeinkauf" required />
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="entry-date">Datum</label>
-            <input id="entry-date" v-model="form.ChangeDate" type="date" class="input" />
-          </div>
-
-          <div v-if="form.ChangeType === 'Withdrawal' && budgets.length" class="form-field">
-            <label class="form-label" for="entry-budget">Budget</label>
-            <select id="entry-budget" v-model="form.BudgetID" class="input">
-              <option value="">Kein Budget</option>
-              <option v-for="b in budgets" :key="b.ID" :value="b.ID">{{ b.Title }}</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="entry-notes">Anmerkungen</label>
-            <textarea id="entry-notes" v-model="form.Notes" class="input" rows="3" placeholder="Weitere Details zu dieser Buchung…"></textarea>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label">
-              Beleg{{ requiresReceipt && !existingReceiptURL ? ' *' : '' }}
-            </label>
-            <label class="button button--secondary money-entry-modal_file-label">
-              {{ receiptFile || existingReceiptURL ? 'Anderen Beleg wählen' : 'Beleg fotografieren / auswählen' }}
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                class="file-input-hidden"
-                @change="onFileSelected"
-              />
-            </label>
-            <img v-if="receiptPreview" :src="receiptPreview" alt="Beleg-Vorschau" class="money-entry-modal_preview" />
-            <p v-else-if="receiptFile" class="money-entry-modal_filename">{{ receiptFile.name }}</p>
-            <p v-else-if="existingReceiptURL" class="money-entry-modal_filename">Aktueller Beleg bleibt erhalten, falls kein neuer gewählt wird.</p>
-          </div>
-
-          <div v-if="error" class="money-entry-modal_error">{{ error }}</div>
-
-          <div class="money-entry-modal_actions">
-            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || !canSubmit">
-              {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erfassen') }}
-            </AppButton>
-          </div>
-
-        </form>
       </div>
-    </dialog>
-  </Teleport>
+
+      <div class="form-field">
+        <label class="form-label" for="entry-amount">Betrag (€) *</label>
+        <input id="entry-amount" v-model="form.ChangeAmount" type="number" step="0.01" min="0.01" class="input" placeholder="0,00" required />
+        <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="entry-reason">Grund *</label>
+        <input id="entry-reason" v-model="form.ChangeReason" type="text" class="input" placeholder="z.B. Getränkeeinkauf" required />
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="entry-date">Datum</label>
+        <input id="entry-date" v-model="form.ChangeDate" type="date" class="input" />
+      </div>
+
+      <div v-if="form.ChangeType === 'Withdrawal' && budgets.length" class="form-field">
+        <label class="form-label" for="entry-budget">Budget</label>
+        <select id="entry-budget" v-model="form.BudgetID" class="input">
+          <option value="">Kein Budget</option>
+          <option v-for="b in budgets" :key="b.ID" :value="b.ID">{{ b.Title }}</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="entry-notes">Anmerkungen</label>
+        <textarea id="entry-notes" v-model="form.Notes" class="input" rows="3" placeholder="Weitere Details zu dieser Buchung…"></textarea>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">
+          Beleg{{ requiresReceipt && !existingReceiptURL ? ' *' : '' }}
+        </label>
+        <label class="button button--secondary money-entry-modal_file-label">
+          {{ receiptFile || existingReceiptURL ? 'Anderen Beleg wählen' : 'Beleg fotografieren / auswählen' }}
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            class="file-input-hidden"
+            @change="onFileSelected"
+          />
+        </label>
+        <img v-if="receiptPreview" :src="receiptPreview" alt="Beleg-Vorschau" class="money-entry-modal_preview" />
+        <p v-else-if="receiptFile" class="money-entry-modal_filename">{{ receiptFile.name }}</p>
+        <p v-else-if="existingReceiptURL" class="money-entry-modal_filename">Aktueller Beleg bleibt erhalten, falls kein neuer gewählt wird.</p>
+      </div>
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="money-entry-form" variant="primary" :disabled="saving || !canSubmit">
+        {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erfassen') }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useMoneyStore } from '@stores/money'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 
 const props = defineProps({
   accountId: { type: Number, required: true },
@@ -111,7 +100,7 @@ const store = useMoneyStore()
 const currentEntry = ref(null)
 const isEdit = computed(() => !!currentEntry.value)
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 const receiptFile = ref(null)
@@ -179,11 +168,11 @@ function open(entryToEdit = null, defaultBudgetId = null) {
   } else if (defaultBudgetId) {
     form.BudgetID = defaultBudgetId
   }
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 function formatCurrency(value) {

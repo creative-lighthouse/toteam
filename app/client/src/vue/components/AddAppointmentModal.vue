@@ -1,14 +1,5 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="event-modal addappointmentmodal" @cancel.prevent="close">
-      <div class="dialog-content" @click.stop>
-
-        <!-- Header -->
-        <div class="dialog-header">
-          <h2 class="hl2">{{ headerTitle }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
-
+  <AppModal ref="modal" class="app-modal--flush addappointmentmodal" :title="headerTitle" @close="close">
         <!-- Tabs (nur beim Anlegen, nicht beim Bearbeiten) -->
         <div v-if="!editMode" class="modal-tabs">
           <button
@@ -34,7 +25,7 @@
         <!-- Tab: Abwesenheit -->
 
         <div class="dialog-infobox" v-if="activeTab === 'absence'">
-            <form class="modal-form form--absence" @submit.prevent="submitAbsence">
+            <form id="absence-form" class="modal-form form--absence" @submit.prevent="submitAbsence">
                 <label class="field field--organizations">
                     Kalender
                     <div class="multiselect-group">
@@ -84,24 +75,12 @@
                 </label>
 
                 <div v-if="absenceError" class="form-error">{{ absenceError }}</div>
-
-                <div class="form-actions">
-                    <AppButton type="submit" variant="primary" :disabled="absenceSubmitting">
-                        {{ absenceSubmitting ? 'Wird gespeichert…' : (editMode === 'absence' ? 'Speichern' : 'Abwesenheit eintragen') }}
-                    </AppButton>
-                    <AppButton
-                        v-if="editMode === 'absence'"
-                        variant="danger"
-                        :disabled="absenceSubmitting"
-                        @click="deleteAbsence"
-                    >Löschen</AppButton>
-                </div>
             </form>
         </div>
 
         <!-- Tab: Termin hinzufügen -->
         <div class="dialog-infobox" v-if="activeTab === 'appointment' && canManageContent">
-            <form class="modal-form form--appointment" @submit.prevent="submitAppointment">
+            <form id="appointment-form" class="modal-form form--appointment" @submit.prevent="submitAppointment">
                 <InviteePicker
                     ref="apptInviteePickerRef"
                     v-model:organization-ids="appt.organizationIds"
@@ -182,24 +161,12 @@
                 </label>
 
                 <div v-if="apptError" class="form-error">{{ apptError }}</div>
-
-                <div class="form-actions">
-                    <AppButton type="submit" variant="primary" :disabled="apptSubmitting">
-                        {{ apptSubmitting ? 'Wird gespeichert…' : (editMode === 'appointment' ? 'Speichern' : 'Termin erstellen') }}
-                    </AppButton>
-                    <AppButton
-                        v-if="editMode === 'appointment'"
-                        variant="danger"
-                        :disabled="apptSubmitting"
-                        @click="deleteAppointment"
-                    >Löschen</AppButton>
-                </div>
             </form>
         </div>
 
         <!-- Tab: Terminfindung -->
         <div class="dialog-infobox" v-if="activeTab === 'poll' && canManageContent">
-            <form class="modal-form form--poll" @submit.prevent="submitPoll">
+            <form id="poll-form" class="modal-form form--poll" @submit.prevent="submitPoll">
                 <InviteePicker
                     ref="pollInviteePickerRef"
                     v-model:organization-ids="poll.organizationIds"
@@ -261,18 +228,6 @@
                 </div>
 
                 <div v-if="pollError" class="form-error">{{ pollError }}</div>
-
-                <div class="form-actions">
-                    <AppButton type="submit" variant="primary" :disabled="pollSubmitting">
-                        {{ pollSubmitting ? 'Wird gespeichert…' : (editMode === 'poll' ? 'Speichern' : 'Terminfindung erstellen') }}
-                    </AppButton>
-                    <AppButton
-                        v-if="editMode === 'poll'"
-                        variant="danger"
-                        :disabled="pollSubmitting"
-                        @click="deletePoll"
-                    >Löschen</AppButton>
-                </div>
             </form>
         </div>
 
@@ -280,9 +235,42 @@
             <p>{{ noPermissionMessage }}</p>
         </div>
 
-      </div>
-    </dialog>
-  </Teleport>
+    <template #actions>
+      <template v-if="activeTab === 'absence'">
+        <AppButton type="submit" form="absence-form" variant="primary" :disabled="absenceSubmitting">
+          {{ absenceSubmitting ? 'Wird gespeichert…' : (editMode === 'absence' ? 'Speichern' : 'Abwesenheit eintragen') }}
+        </AppButton>
+        <AppButton
+          v-if="editMode === 'absence'"
+          variant="danger"
+          :disabled="absenceSubmitting"
+          @click="deleteAbsence"
+        >Löschen</AppButton>
+      </template>
+      <template v-else-if="activeTab === 'appointment' && canManageContent">
+        <AppButton type="submit" form="appointment-form" variant="primary" :disabled="apptSubmitting">
+          {{ apptSubmitting ? 'Wird gespeichert…' : (editMode === 'appointment' ? 'Speichern' : 'Termin erstellen') }}
+        </AppButton>
+        <AppButton
+          v-if="editMode === 'appointment'"
+          variant="danger"
+          :disabled="apptSubmitting"
+          @click="deleteAppointment"
+        >Löschen</AppButton>
+      </template>
+      <template v-else-if="activeTab === 'poll' && canManageContent">
+        <AppButton type="submit" form="poll-form" variant="primary" :disabled="pollSubmitting">
+          {{ pollSubmitting ? 'Wird gespeichert…' : (editMode === 'poll' ? 'Speichern' : 'Terminfindung erstellen') }}
+        </AppButton>
+        <AppButton
+          v-if="editMode === 'poll'"
+          variant="danger"
+          :disabled="pollSubmitting"
+          @click="deletePoll"
+        >Löschen</AppButton>
+      </template>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
@@ -292,6 +280,7 @@ import { useEventsStore } from '@stores/events'
 import { apiGet } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 import InviteePicker from '@components/InviteePicker.vue'
 
 const emit = defineEmits([
@@ -303,7 +292,7 @@ const emit = defineEmits([
 
 const savedThisSession = ref(false)
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const activeTab = ref('absence')
 const editMode = ref(null) // null | 'absence' | 'appointment' | 'poll'
 const editId = ref(null)
@@ -658,7 +647,7 @@ async function open(preselectedDate = null) {
     appt.value.organizationIds = [managedOrgs.value[0].ID]
     poll.value.organizationIds = [managedOrgs.value[0].ID]
   }
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 async function openEditAbsence(data) {
@@ -680,7 +669,7 @@ async function openEditAbsence(data) {
     organizationIds: orgIds,
   }
 
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 async function openEditAppointment(event) {
@@ -712,7 +701,7 @@ async function openEditAppointment(event) {
     enableAgenda: event.EnableAgenda ?? true,
   }
 
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 async function openEditPoll(event) {
@@ -742,11 +731,11 @@ async function openEditPoll(event) {
     })),
   }
 
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
   emit('closed', savedThisSession.value)
   savedThisSession.value = false
 }

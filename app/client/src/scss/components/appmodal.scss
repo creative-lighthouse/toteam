@@ -1,0 +1,55 @@
+@use "../variables" as *;
+
+// Gemeinsame Modal-Hülle (Topbar mit Titel + Schließen-X, Inhaltsbereich,
+// optionale Bottombar mit Aktionen). Jedes einzelne Modal steuert nur noch
+// Breite/Höhe über eine eigene Modifier-Klasse und den Inhalt über die
+// Slots — Kopf- und Aktionsleiste kommen zentral von hier.
+
+.app-modal {
+    max-width: 480px;
+
+    &_content {
+        padding: 0;
+        gap: 0;
+    }
+
+    &_header {
+        @include modal-header;
+    }
+
+    &_body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+    }
+
+    &_actions {
+        @include modal-actions;
+
+        // Falls das #actions-Slot zwar deklariert ist, sein Inhalt aber je
+        // nach Zustand komplett wegfällt (z.B. abhängig vom aktiven Tab),
+        // keine leere Leiste anzeigen.
+        &:empty {
+            display: none;
+        }
+    }
+
+    &_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+}
+
+// Für große, freiform gestaltete Dialoge (z.B. Termindetails), die ihren
+// Inhalt selbst strukturieren (siehe .dialog-infobox in EventDialog.scss)
+// statt der generischen Body-Polsterung/Abstände von .app-modal_body.
+.app-modal--flush .app-modal_body {
+    padding: 0;
+    gap: 0;
+    background-color: transparent;
+}

@@ -1,83 +1,77 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="money-account-modal" @cancel.prevent="close">
-      <div class="money-account-modal_content" @click.stop>
+  <AppModal
+    ref="modal"
+    class="money-account-modal"
+    :title="mode === 'create' ? 'Neue Kasse' : 'Kasse bearbeiten'"
+    @close="close"
+  >
+    <form id="money-account-form" @submit.prevent="submit">
 
-        <div class="money-account-modal_header">
-          <h2 class="hl2 money-account-modal_title">{{ mode === 'create' ? 'Neue Kasse' : 'Kasse bearbeiten' }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
+      <div v-if="mode === 'create'" class="form-field">
+        <label class="form-label">Organisation</label>
+        <div class="multiselect-group">
+          <label v-for="org in adminOrgs" :key="org.ID" class="checkbox-label">
+            <input type="radio" :value="org.ID" v-model="form.OrganizationID" />
+            {{ org.Title }}
+          </label>
         </div>
-
-        <form class="money-account-modal_body" @submit.prevent="submit">
-
-          <div v-if="mode === 'create'" class="form-field">
-            <label class="form-label">Organisation</label>
-            <div class="multiselect-group">
-              <label v-for="org in adminOrgs" :key="org.ID" class="checkbox-label">
-                <input type="radio" :value="org.ID" v-model="form.OrganizationID" />
-                {{ org.Title }}
-              </label>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="account-title">Titel *</label>
-            <input id="account-title" v-model="form.Title" type="text" class="input" placeholder="z.B. Vereinskasse" required />
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="account-iban">IBAN</label>
-            <input id="account-iban" v-model="form.IBAN" type="text" class="input" placeholder="DE00 0000 0000 0000 0000 00" />
-          </div>
-
-          <div class="form-field-row">
-            <div class="form-field">
-              <label class="form-label" for="account-start">Startbetrag (€)</label>
-              <input id="account-start" v-model="form.StartingAmount" type="number" step="0.01" class="input" />
-              <p v-if="startingAmountError" class="money-field-error">{{ startingAmountError }}</p>
-            </div>
-            <div class="form-field">
-              <label class="form-label" for="account-target">Zielbetrag (€)</label>
-              <input id="account-target" v-model="form.TargetAmount" type="number" step="0.01" class="input" />
-              <p v-if="targetAmountError" class="money-field-error">{{ targetAmountError }}</p>
-            </div>
-          </div>
-
-          <label class="form-checkbox">
-            <input type="checkbox" v-model="form.RequiresApproval" />
-            Buchungen müssen freigegeben werden
-          </label>
-
-          <label class="form-checkbox">
-            <input type="checkbox" v-model="form.RequiresReceiptDeposit" />
-            Beleg für Einnahmen erforderlich
-          </label>
-
-          <label class="form-checkbox">
-            <input type="checkbox" v-model="form.RequiresReceiptWithdrawal" />
-            Beleg für Ausgaben erforderlich
-          </label>
-
-          <div v-if="error" class="money-account-modal_error">{{ error }}</div>
-
-          <div class="money-account-modal_actions">
-            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || !canSubmit">
-              {{ saving ? 'Speichern…' : (mode === 'create' ? 'Erstellen' : 'Speichern') }}
-            </AppButton>
-          </div>
-
-        </form>
       </div>
-    </dialog>
-  </Teleport>
+
+      <div class="form-field">
+        <label class="form-label" for="account-title">Titel *</label>
+        <input id="account-title" v-model="form.Title" type="text" class="input" placeholder="z.B. Vereinskasse" required />
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="account-iban">IBAN</label>
+        <input id="account-iban" v-model="form.IBAN" type="text" class="input" placeholder="DE00 0000 0000 0000 0000 00" />
+      </div>
+
+      <div class="form-field-row">
+        <div class="form-field">
+          <label class="form-label" for="account-start">Startbetrag (€)</label>
+          <input id="account-start" v-model="form.StartingAmount" type="number" step="0.01" class="input" />
+          <p v-if="startingAmountError" class="money-field-error">{{ startingAmountError }}</p>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="account-target">Zielbetrag (€)</label>
+          <input id="account-target" v-model="form.TargetAmount" type="number" step="0.01" class="input" />
+          <p v-if="targetAmountError" class="money-field-error">{{ targetAmountError }}</p>
+        </div>
+      </div>
+
+      <label class="form-checkbox">
+        <input type="checkbox" v-model="form.RequiresApproval" />
+        Buchungen müssen freigegeben werden
+      </label>
+
+      <label class="form-checkbox">
+        <input type="checkbox" v-model="form.RequiresReceiptDeposit" />
+        Beleg für Einnahmen erforderlich
+      </label>
+
+      <label class="form-checkbox">
+        <input type="checkbox" v-model="form.RequiresReceiptWithdrawal" />
+        Beleg für Ausgaben erforderlich
+      </label>
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="money-account-form" variant="primary" :disabled="saving || !canSubmit">
+        {{ saving ? 'Speichern…' : (mode === 'create' ? 'Erstellen' : 'Speichern') }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useMoneyStore } from '@stores/money'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 
 const props = defineProps({
   mode: { type: String, default: 'create' },
@@ -87,7 +81,7 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 const store = useMoneyStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 
@@ -146,11 +140,11 @@ function open() {
   if (props.mode === 'edit') fillFromAccount(props.account)
   error.value = null
   serverAmountError.value = null
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 function formatCurrency(value) {

@@ -1,17 +1,8 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="edit-profile-modal" @cancel.prevent="close">
-      <div class="edit-profile-modal_content" @click.stop>
+  <AppModal ref="modal" class="edit-profile-modal" title="Profil bearbeiten" @close="close">
+    <div v-if="loading" class="edit-profile-modal_loading">Profil wird geladen …</div>
 
-        <!-- Header -->
-        <div class="edit-profile-modal_header">
-          <h2 class="hl2 edit-profile-modal_title">Profil bearbeiten</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
-
-        <div v-if="loading" class="edit-profile-modal_loading">Profil wird geladen …</div>
-
-        <div v-else class="edit-profile-modal_body">
+    <template v-else>
 
           <!-- ── Section: Profilbild ── -->
           <section class="edit-section">
@@ -203,10 +194,8 @@
             </div>
           </section>
 
-        </div>
-      </div>
-    </dialog>
-  </Teleport>
+    </template>
+  </AppModal>
 
   <ImageCropModal
     ref="cropModal"
@@ -224,6 +213,7 @@ import { useAuthStore } from '@stores/auth'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
+import AppModal from '@components/AppModal.vue'
 import ImageCropModal from '@components/ImageCropModal.vue'
 import AppOrgLogo from '@components/AppOrgLogo.vue'
 import actionLogout from '../../../icons/actions/action_logout.svg'
@@ -233,10 +223,10 @@ const emit = defineEmits(['updated'])
 const authStore = useAuthStore()
 
 // ── Modal ──────────────────────────────────────────
-const dialogEl = ref(null)
+const modal = ref(null)
 
 async function open() {
-  dialogEl.value?.showModal()
+  modal.value?.open()
   autosaveEnabled = false
   await Promise.all([loadProfile(), loadAllergies()])
   // Die obigen Zuweisungen an `form` lösen den Autosave-Watcher aus; erst nach
@@ -258,7 +248,7 @@ function close() {
   }
   clearTimeout(successTimeout)
   autosaveEnabled = false
-  dialogEl.value?.close()
+  modal.value?.close()
   fileError.value   = null
   imageSaved.value  = false
   saveError.value   = null

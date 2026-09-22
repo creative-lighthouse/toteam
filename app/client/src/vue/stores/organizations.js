@@ -55,6 +55,17 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     }
   }
 
+  async function createOrganization(payload) {
+    const response = await apiPost('/organizations/store', payload)
+
+    if (response.success) {
+      organizations.value.push(response.data.organization)
+      await clearCacheForEndpoint('/organizations')
+    }
+
+    return response
+  }
+
   async function joinOrganization(orgID) {
     const response = await apiPost(`/organizations/join/${orgID}`, {})
 
@@ -77,6 +88,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     error,
     lastOrganizationId,
     fetchOrganizations,
+    createOrganization,
     joinOrganization,
     setLastOrganizationId,
   }

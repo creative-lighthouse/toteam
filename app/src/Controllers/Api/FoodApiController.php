@@ -28,7 +28,7 @@ class FoodApiController extends ApiController
         'index',
         'suggest',
         'mealdetail',
-        'mealDescription',
+        'mealUpdate',
         'mealProduct',
         'mealProductOrder',
         'foodStatus',
@@ -265,8 +265,8 @@ class FoodApiController extends ApiController
 
             $canManage = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_MANAGE_MEALS);
 
-            $mealData               = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
-            $mealData['canManage']  = $canManage;
+            $mealData              = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
+            $mealData['canManage'] = $canManage;
 
             return $this->jsonResponse(['meal' => $mealData]);
         } catch (\Exception $e) {
@@ -274,7 +274,12 @@ class FoodApiController extends ApiController
         }
     }
 
-    public function mealDescription(HTTPRequest $request): HTTPResponse
+    /**
+     * Aktualisiert Titel, Uhrzeit und/oder Beschreibung einer Mahlzeit.
+     * PUT /api/v1/food/mealUpdate/:id
+     * Body: { title?, time?, description? } — nur mitgegebene Felder werden geändert.
+     */
+    public function mealUpdate(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
         if (!$member) {
@@ -298,10 +303,37 @@ class FoodApiController extends ApiController
         }
 
         $body = $this->getJsonBody();
-        $meal->Description = trim($body['description'] ?? '');
+
+        if (array_key_exists('title', $body)) {
+            $title = trim($body['title']);
+            if (!$title) {
+                return $this->errorResponse('Titel ist erforderlich', 400);
+            }
+            $meal->Title = $title;
+        }
+
+        if (array_key_exists('time', $body)) {
+            $time = trim($body['time']);
+            if (!$time) {
+                return $this->errorResponse('Uhrzeit ist erforderlich', 400);
+            }
+            if (preg_match('/^\d{2}:\d{2}$/', $time)) {
+                $time .= ':00';
+            }
+            $meal->Time = $time;
+        }
+
+        if (array_key_exists('description', $body)) {
+            $meal->Description = trim($body['description']);
+        }
+
         $meal->write();
 
-        return $this->successResponse(['description' => $meal->Description], 'Beschreibung gespeichert');
+        return $this->successResponse([
+            'title'       => $meal->Title,
+            'time'        => $meal->RenderTime(),
+            'description' => $meal->Description,
+        ], 'Mahlzeit aktualisiert');
     }
 
     public function mealProduct(HTTPRequest $request): HTTPResponse
@@ -604,8 +636,35 @@ class FoodApiController extends ApiController
             ];
         }
 
-        $org        = $appointment->Organisations()->first();
-        $canApprove = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
+        $declinedAttendees = [];
+        foreach ($meal->Eaters()->filter('Type', 'Decline') as $eater) {
+            $m = $eater->Member();
+            if (!$m || !$m->exists()) {
+                continue;
+            }
+            $declinedAttendees[] = [
+                'id'        => $m->ID,
+                'name'      => trim($m->FirstName . ' ' . $m->Surname),
+                'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+            ];
+        }
+
+        $pendingAttendees = [];
+        foreach ($meal->getMembersWithoutResponse() as $m) {
+            $pendingAttendees[] = [
+                'id'        => $m->ID,
+                'name'      => trim($m->FirstName . ' ' . $m->Surname),
+                'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+            ];
+        }
+
+        $org           = $appointment->Organisations()->first();
+        $canApprove    = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
+        $canRecordRsvp = $this->hasPermissionInAnyOrg(
+            $member,
+            $appointment->Organisations()->column('ID'),
+            OrgPermissions::FOOD_RECORD_RSVP
+        );
 
         $foods = [];
         foreach ($meal->Foods()->sort('ID ASC') as $food) {
@@ -671,8 +730,11 @@ class FoodApiController extends ApiController
             'organizationLogoUrl'  => $orgLogo,
             'userResponse'         => $memberResponses[$meal->ID] ?? null,
             'attendees'            => $attendees,
+            'declinedAttendees'    => $declinedAttendees,
+            'pendingAttendees'     => $pendingAttendees,
             'foods'                => $foods,
             'canApprove'           => $canApprove,
+            'canRecordRsvp'        => $canRecordRsvp,
         ];
     }
 }

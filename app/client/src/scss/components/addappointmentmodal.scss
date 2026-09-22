@@ -80,17 +80,6 @@
                 }
             }
 
-            .form-actions {
-                @include modal-actions;
-                grid-column: span 6;
-                margin: 0 -15px -15px;
-                border-radius: 0 0 var(--BorderRadiusSmall) var(--BorderRadiusSmall);
-
-                .button {
-                    margin-top: 0;
-                }
-            }
-
             &.form--appointment, &.form--poll {
                 .field {
                     &.field--organizations {

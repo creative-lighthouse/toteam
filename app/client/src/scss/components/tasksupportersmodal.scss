@@ -1,33 +1,8 @@
-@use "../variables" as *;
-
 .task-supporters-modal {
     text-align: left;
     max-width: 420px;
     max-height: 90vh;
     overflow-y: auto;
-
-    .task-supporters-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .task-supporters-modal_header {
-        @include modal-header;
-    }
-
-    .task-supporters-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        padding: 20px;
-        background-color: var(--ColorWhite);
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-        max-width: none;
-        margin: 0;
-        align-items: stretch;
-    }
 
     .task-supporters-modal_loading {
         font-size: 14px;
@@ -77,17 +52,5 @@
             font-size: 0.75rem;
             font-weight: 700;
         }
-    }
-
-    .task-supporters-modal_error {
-        font-size: 13px;
-        color: var(--ColorStatusBad);
-        background-color: var(--ColorStatusBadAccent);
-        padding: 8px 12px;
-        border-radius: var(--BorderRadiusSmall);
-    }
-
-    .task-supporters-modal_actions {
-        @include modal-actions;
     }
 }

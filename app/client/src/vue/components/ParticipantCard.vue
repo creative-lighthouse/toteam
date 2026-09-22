@@ -19,6 +19,11 @@
         <span class="participant-status" v-if="participation.Type !== 'Decline' && participation.CustomTimeframe && participation.TimeStart && participation.TimeEnd">
             {{ formatTime(participation.TimeStart) }} – {{ formatTime(participation.TimeEnd) }}
         </span>
+        <span
+          v-for="allergy in participation.Allergies || []"
+          :key="allergy"
+          class="allergy-pill"
+        >{{ allergy }}</span>
     </div>
     <p
       v-if="participation.Notes"

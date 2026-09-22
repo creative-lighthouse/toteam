@@ -1,23 +1,19 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="event-modal poll-dialog" @cancel.prevent="$emit('close')">
-      <div class="dialog-content" @click.stop>
-
-        <div class="dialog-header">
-          <AppOrgLogo
-            v-if="event.OrganizationLogoURL"
-            :src="event.OrganizationLogoURL"
-            alt=""
-            :size="32"
-          />
-          <div class="event_title">
-            <h2 class="hl2">{{ event.Title }}</h2>
-            <p class="poll-badge" title="Terminfindung">
-              <span class="poll-badge_icon" :style="scheduleIconStyle" aria-hidden="true"></span>
-            </p>
-          </div>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="$emit('close')">✕</AppIconButton>
-        </div>
+  <AppModal ref="modal" class="app-modal--flush poll-dialog" @close="$emit('close')">
+    <template #header>
+      <AppOrgLogo
+        v-if="event.OrganizationLogoURL"
+        :src="event.OrganizationLogoURL"
+        alt=""
+        :size="32"
+      />
+      <div class="event_title">
+        <h2 class="hl2">{{ event.Title }}</h2>
+        <p class="poll-badge" title="Terminfindung">
+          <span class="poll-badge_icon" :style="scheduleIconStyle" aria-hidden="true"></span>
+        </p>
+      </div>
+    </template>
 
         <div class="dialog-infobox">
           <div v-if="canManageContent" class="event-manage-actions">
@@ -106,14 +102,12 @@
 
         </div>
 
-        <Transition name="fade">
-          <div v-if="statusMessage" :class="['status-message', `status-message--${statusMessage.type}`]">
-            {{ statusMessage.text }}
-          </div>
-        </Transition>
+    <Transition name="fade">
+      <div v-if="statusMessage" :class="['status-message', `status-message--${statusMessage.type}`]">
+        {{ statusMessage.text }}
       </div>
-    </dialog>
-  </Teleport>
+    </Transition>
+  </AppModal>
 </template>
 
 <script setup>
@@ -122,6 +116,7 @@ import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
 import ParticipantCard from '@components/ParticipantCard.vue'
 import AppOrgLogo from '@components/AppOrgLogo.vue'
@@ -140,7 +135,7 @@ const emit = defineEmits(['close', 'edit-poll', 'finalized', 'deleted'])
 
 const orgsStore = useOrganizationsStore()
 const eventsStore = useEventsStore()
-const dialogEl = ref(null)
+const modal = ref(null)
 const statusMessage = ref(null)
 const votingOptionId = ref(null)
 const finalizing = ref(false)
@@ -213,10 +208,10 @@ async function deletePoll() {
 }
 
 onMounted(() => {
-  dialogEl.value?.showModal()
+  modal.value?.open()
 })
 
 onUnmounted(() => {
-  dialogEl.value?.close()
+  modal.value?.close()
 })
 </script>
