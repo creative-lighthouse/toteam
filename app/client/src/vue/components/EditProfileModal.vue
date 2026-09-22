@@ -39,7 +39,7 @@
           <section class="edit-section">
             <h3 class="edit-section_title">Persönliche Daten</h3>
 
-            <form class="profile-form" @submit.prevent="saveProfile" novalidate>
+            <div class="profile-form">
               <div class="field">
                 <label for="ep-firstname">Vorname</label>
                 <input id="ep-firstname" type="text" v-model="form.FirstName" required>
@@ -70,12 +70,9 @@
               </div>
 
               <p v-if="saveError" class="status-text status-text--error">{{ saveError }}</p>
-              <p v-if="saveSuccess" class="status-text status-text--success">{{ saveSuccess }}</p>
-
-              <AppButton type="submit" variant="primary" :disabled="saving">
-                {{ saving ? 'Wird gespeichert …' : 'Speichern' }}
-              </AppButton>
-            </form>
+              <p v-else-if="saving" class="status-text">Wird gespeichert …</p>
+              <p v-else-if="saveSuccess" class="status-text status-text--success">{{ saveSuccess }}</p>
+            </div>
           </section>
 
           <!-- ── Section: Allergien ── -->
@@ -83,16 +80,21 @@
             <h3 class="edit-section_title">Allergien & Unverträglichkeiten</h3>
             <div v-if="allergiesLoading" class="empty-hint">Wird geladen…</div>
             <div v-else-if="allergies.length === 0" class="empty-hint">Keine Allergien hinterlegt.</div>
-            <div v-else class="allergy-chips">
-              <button
-                v-for="a in allergies"
-                :key="a.id"
-                type="button"
-                class="allergy-chip"
-                :class="{ 'allergy-chip--selected': a.selected }"
-                :disabled="allergiesSaving"
-                @click="toggleAllergy(a)"
-              >{{ a.title }}</button>
+            <div v-else>
+              <div v-for="group in allergiesByCategory" :key="group.category" class="allergy-group">
+                <h4 class="allergy-group_title">{{ group.label }}</h4>
+                <div class="allergy-chips">
+                  <button
+                    v-for="a in group.items"
+                    :key="a.id"
+                    type="button"
+                    class="allergy-chip"
+                    :class="{ 'allergy-chip--selected': a.selected }"
+                    :disabled="allergiesSaving"
+                    @click="toggleAllergy(a)"
+                  >{{ a.title }}</button>
+                </div>
+              </div>
             </div>
             <p v-if="allergiesSaveError" class="status-text status-text--error">{{ allergiesSaveError }}</p>
           </section>
@@ -108,46 +110,44 @@
               :key="org.MembershipID"
               class="org-item"
             >
-              <div class="org-item_info">
-                <AppOrgLogo :src="org.LogoURL" :alt="org.Title" :size="36" />
-                <div class="org-item_text">
-                  <strong>{{ org.Title }}</strong>
-                  <span class="org-item_role">{{ roleLabel(org.Role) }}</span>
+              <div class="org-item_row">
+                <div class="org-item_info">
+                  <AppOrgLogo :src="org.LogoURL" :alt="org.Title" :size="36" />
+                  <div class="org-item_text">
+                    <strong>{{ org.Title }}</strong>
+                    <span class="org-item_role">{{ roleLabel(org.Role) }}</span>
+                  </div>
                 </div>
+
+                <AppIconButton
+                  variant="danger"
+                  aria-label="Organisation verlassen"
+                  title="Organisation verlassen"
+                  @click="leaveConfirmId = org.MembershipID"
+                >
+                  <span class="icon-mask" :style="logoutIconStyle" />
+                </AppIconButton>
               </div>
 
-              <div class="org-item_actions">
-                <template v-if="leaveConfirmId !== org.MembershipID">
+              <div v-if="leaveConfirmId === org.MembershipID" class="leave-confirm">
+                <p class="leave-confirm_text">Mitgliedschaft in <strong>{{ org.Title }}</strong> wirklich auflösen?</p>
+                <div class="leave-confirm_btns">
                   <AppButton
                     size="small"
                     variant="danger"
-                    @click="leaveConfirmId = org.MembershipID"
+                    :disabled="leavingOrg"
+                    @click="confirmLeaveOrg(org)"
                   >
-                    Organisation verlassen
+                    {{ leavingOrg ? '…' : 'Ja, auflösen' }}
                   </AppButton>
-                </template>
-                <template v-else>
-                  <div class="leave-confirm">
-                    <p class="leave-confirm_text">Mitgliedschaft in <strong>{{ org.Title }}</strong> wirklich auflösen?</p>
-                    <div class="leave-confirm_btns">
-                      <AppButton
-                        size="small"
-                        variant="danger"
-                        :disabled="leavingOrg"
-                        @click="confirmLeaveOrg(org)"
-                      >
-                        {{ leavingOrg ? '…' : 'Ja, auflösen' }}
-                      </AppButton>
-                      <AppButton
-                        size="small"
-                        variant="secondary"
-                        @click="leaveConfirmId = null"
-                      >
-                        Abbrechen
-                      </AppButton>
-                    </div>
-                  </div>
-                </template>
+                  <AppButton
+                    size="small"
+                    variant="secondary"
+                    @click="leaveConfirmId = null"
+                  >
+                    Abbrechen
+                  </AppButton>
+                </div>
               </div>
             </div>
           </section>
@@ -167,7 +167,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { apiGet, apiPost, apiPut } from '@utils/api'
 import { useAuthStore } from '@stores/auth'
 import AppButton from '@components/AppButton.vue'
@@ -175,6 +175,7 @@ import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
 import ImageCropModal from '@components/ImageCropModal.vue'
 import AppOrgLogo from '@components/AppOrgLogo.vue'
+import actionLogout from '../../../icons/actions/action_logout.svg'
 
 const emit = defineEmits(['updated'])
 
@@ -185,14 +186,38 @@ const dialogEl = ref(null)
 
 async function open() {
   dialogEl.value?.showModal()
+  autosaveEnabled = false
   await Promise.all([loadProfile(), loadAllergies()])
+  // Die obigen Zuweisungen an `form` lösen den Autosave-Watcher aus; erst nach
+  // dem nächsten Tick (wenn dieser Lauf verarbeitet ist) wieder scharf schalten,
+  // damit das Laden des Profils nicht selbst ein Speichern auslöst.
+  await nextTick()
+  autosaveEnabled = true
 }
 
 function close() {
+  // Eine noch ausstehende Autosave-Verzögerung sofort ausführen, damit die
+  // letzte Änderung beim Schließen nicht verloren geht.
+  if (autosaveTimeout) {
+    clearTimeout(autosaveTimeout)
+    autosaveTimeout = null
+    if (autosaveEnabled && !validateForm()) {
+      persistProfile()
+    }
+  }
+  clearTimeout(successTimeout)
+  autosaveEnabled = false
   dialogEl.value?.close()
-  fileError.value  = null
-  imageSaved.value = false
+  fileError.value   = null
+  imageSaved.value  = false
+  saveError.value   = null
+  saveSuccess.value = null
 }
+
+onBeforeUnmount(() => {
+  clearTimeout(autosaveTimeout)
+  clearTimeout(successTimeout)
+})
 
 defineExpose({ open, close })
 
@@ -224,6 +249,19 @@ const allergies         = ref([])
 const allergiesLoading  = ref(false)
 const allergiesSaving   = ref(false)
 const allergiesSaveError = ref(null)
+
+const ALLERGY_CATEGORY_LABELS = { Essen: 'Essen', Tiere: 'Tiere', Sonstiges: 'Sonstiges' }
+const ALLERGY_CATEGORY_ORDER  = ['Essen', 'Tiere', 'Sonstiges']
+
+const allergiesByCategory = computed(() => {
+  return ALLERGY_CATEGORY_ORDER
+    .map(category => ({
+      category,
+      label: ALLERGY_CATEGORY_LABELS[category] ?? category,
+      items: allergies.value.filter(a => (a.category ?? 'Sonstiges') === category),
+    }))
+    .filter(group => group.items.length > 0)
+})
 
 async function loadAllergies() {
   allergiesLoading.value = true
@@ -290,36 +328,32 @@ function onImageSaved(avatarUrl) {
   emit('updated')
 }
 
-// ── Profile form ───────────────────────────────────
+// ── Profile form (Autosave) ─────────────────────────
 const form = reactive({ FirstName: '', Surname: '', Email: '', FoodPreference: 'None', NameVisibility: 'full' })
 const saving      = ref(false)
 const saveError   = ref(null)
 const saveSuccess = ref(null)
 
+const AUTOSAVE_DELAY_MS = 1000
+const SUCCESS_MESSAGE_MS = 2000
+let autosaveEnabled = false
+let autosaveTimeout = null
+let successTimeout  = null
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())
 }
 
-async function saveProfile() {
-  saving.value      = true
-  saveError.value   = null
-  saveSuccess.value = null
+function validateForm() {
+  if (!form.FirstName.trim()) return 'Vorname darf nicht leer sein.'
+  if (!form.Surname.trim()) return 'Nachname darf nicht leer sein.'
+  if (!isValidEmail(form.Email)) return 'Bitte gib eine gültige E-Mail-Adresse ein.'
+  return null
+}
 
-  if (!form.FirstName.trim()) {
-    saveError.value = 'Vorname darf nicht leer sein.'
-    saving.value    = false
-    return
-  }
-  if (!form.Surname.trim()) {
-    saveError.value = 'Nachname darf nicht leer sein.'
-    saving.value    = false
-    return
-  }
-  if (!isValidEmail(form.Email)) {
-    saveError.value = 'Bitte gib eine gültige E-Mail-Adresse ein.'
-    saving.value    = false
-    return
-  }
+async function persistProfile() {
+  saving.value    = true
+  saveError.value = null
 
   try {
     const result = await apiPost('/profile/update', { ...form })
@@ -330,7 +364,9 @@ async function saveProfile() {
         Email:          form.Email,
         FoodPreference: form.FoodPreference,
       })
-      saveSuccess.value = 'Profil gespeichert.'
+      saveSuccess.value = 'Gespeichert.'
+      clearTimeout(successTimeout)
+      successTimeout = setTimeout(() => { saveSuccess.value = null }, SUCCESS_MESSAGE_MS)
       emit('updated')
     } else {
       saveError.value = result.error ?? 'Speichern fehlgeschlagen.'
@@ -343,10 +379,30 @@ async function saveProfile() {
   }
 }
 
+function scheduleAutosave() {
+  if (!autosaveEnabled) return
+
+  saveSuccess.value = null
+  clearTimeout(successTimeout)
+  clearTimeout(autosaveTimeout)
+  autosaveTimeout = setTimeout(() => {
+    const error = validateForm()
+    if (error) {
+      saveError.value = error
+      return
+    }
+    saveError.value = null
+    persistProfile()
+  }, AUTOSAVE_DELAY_MS)
+}
+
+watch(form, scheduleAutosave, { deep: true })
+
 // ── Organizations ──────────────────────────────────
 const orgs          = ref([])
 const leaveConfirmId = ref(null)
 const leavingOrg    = ref(false)
+const logoutIconStyle = { maskImage: `url("${actionLogout}")`, WebkitMaskImage: `url("${actionLogout}")` }
 
 function roleLabel(role) {
   return { member: 'Mitglied', moderator: 'Moderator', admin: 'Administrator', applicant: 'Bewerber' }[role] ?? role

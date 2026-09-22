@@ -413,6 +413,21 @@ dialog{
     }
 
     // Organization list
+    .allergy-group {
+        margin-bottom: 12px;
+
+        &:last-child { margin-bottom: 0; }
+    }
+
+    .allergy-group_title {
+        margin: 0 0 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: var(--ColorGray);
+    }
+
     .allergy-chips {
         display: flex;
         flex-wrap: wrap;
@@ -460,6 +475,14 @@ dialog{
             border-top: none;
         }
 
+        .org-item_row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+        }
+
         .org-item_info {
             display: flex;
             align-items: center;
@@ -482,10 +505,6 @@ dialog{
             color: var(--ColorGray);
         }
 
-        .org-item_actions {
-            display: flex;
-            justify-content: flex-end;
-        }
     }
 
     // Leave-org confirmation

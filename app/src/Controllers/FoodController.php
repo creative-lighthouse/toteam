@@ -79,13 +79,13 @@ class FoodController extends BaseController
 
     public function getAllAllergies()
     {
-        return Allergy::get()->sort('Title', 'ASC');
+        return Allergy::get()->filter('Category', Allergy::CATEGORY_FOOD)->sort('Title', 'ASC');
     }
 
     public function getAllAllergiesWithUsers()
     {
-        //Get all allergies which have at least one member having that allergy
-        $allergies = Allergy::get()->sort('Title', 'ASC');
+        //Get all food allergies which have at least one member having that allergy
+        $allergies = Allergy::get()->filter('Category', Allergy::CATEGORY_FOOD)->sort('Title', 'ASC');
         $allergiesWithUsers = [];
         foreach ($allergies as $allergy) {
             if ($allergy->Members()->count() > 0) {
@@ -144,7 +144,7 @@ class FoodController extends BaseController
 
             $allergyIDs = $request->postVar('allergies'); // This should be an array of allergy IDs
             if (is_array($allergyIDs)) {
-                $allergies = Allergy::get()->filter('ID', $allergyIDs);
+                $allergies = Allergy::get()->filter(['ID' => $allergyIDs, 'Category' => Allergy::CATEGORY_FOOD]);
                 if ($allergies->count() > 0) {
                     $food->Allergies()->addMany($allergies);
                 }
@@ -200,7 +200,7 @@ class FoodController extends BaseController
             // Clear existing allergies
             $food->Allergies()->removeAll();
             if (is_array($allergyIDs)) {
-                $allergies = Allergy::get()->filter('ID', $allergyIDs);
+                $allergies = Allergy::get()->filter(['ID' => $allergyIDs, 'Category' => Allergy::CATEGORY_FOOD]);
                 if ($allergies->count() > 0) {
                     $food->Allergies()->addMany($allergies);
                 }

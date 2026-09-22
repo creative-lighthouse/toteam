@@ -205,6 +205,7 @@ class ProfileApiController extends ApiController
                 $result[] = [
                     'id'       => $allergy->ID,
                     'title'    => $allergy->Title,
+                    'category' => $allergy->Category,
                     'selected' => in_array($allergy->ID, $memberIds),
                 ];
             }

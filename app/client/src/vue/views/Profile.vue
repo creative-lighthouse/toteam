@@ -75,7 +75,7 @@
                 <AppButton variant="primary" @click="editModal?.open()">
                     Profil bearbeiten
                 </AppButton>
-                <AppButton variant="danger" @click="authStore.logout()">
+                <AppButton variant="danger" @click="handleLogout">
                     Abmelden
                 </AppButton>
             </div>
@@ -136,6 +136,13 @@ function calcAge(dateStr) {
 
 function foodLabel(pref) {
   return { Vegetarian: 'Vegetarisch', Vegan: 'Vegan' }[pref] ?? 'Keine Besonderheiten'
+}
+
+async function handleLogout() {
+  await authStore.logout()
+  // Vollständige Navigation (statt Vue-Router), da die Landingpage außerhalb
+  // des /app-SPA-Basispfads von SilverStripe gerendert wird.
+  window.location.href = '/'
 }
 
 function roleLabel(role) {

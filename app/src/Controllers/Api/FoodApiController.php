@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Calendar\Appointment;
+use App\HumanResources\Allergy;
 use App\Food\Food;
 use App\Food\Meal;
 use App\Food\MealEater;
@@ -599,7 +600,7 @@ class FoodApiController extends ApiController
                 'id'        => $m->ID,
                 'name'      => trim($m->FirstName . ' ' . $m->Surname),
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
-                'allergies' => $m->Allergies()->column('Title'),
+                'allergies' => $m->Allergies()->filter('Category', Allergy::CATEGORY_FOOD)->column('Title'),
             ];
         }
 

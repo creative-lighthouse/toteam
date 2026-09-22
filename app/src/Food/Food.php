@@ -110,6 +110,14 @@ class Food extends DataObject implements PermissionProvider
             $EventDayMealConfig->getComponentByType(GridFieldAddExistingAutocompleter::class)
                 ->setResultsFormat('$Title - $Parent.Title ($Foods.Count Gerichte)');
         }
+
+        $allergiesField = $fields->dataFieldByName('Allergies');
+        if ($allergiesField) {
+            $allergiesConfig = $allergiesField->getConfig();
+            $allergiesConfig->getComponentByType(GridFieldAddExistingAutocompleter::class)
+                ->setSearchList(Allergy::get()->filter('Category', Allergy::CATEGORY_FOOD));
+        }
+
         return $fields;
     }
 
