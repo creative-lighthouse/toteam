@@ -8,7 +8,7 @@
                 das konzentrieren, was wirklich zählt: dein Team.
             </p>
             <div class="landingpage__hero-actions">
-                <a class="app-button app-button--default app-button--primary" href="/app/register">Jetzt loslegen</a>
+                <a class="app-button app-button--default app-button--primary" href="/app/login">Jetzt loslegen</a>
                 <a class="app-button app-button--default app-button--secondary" href="/app/login">Login</a>
             </div>
         </section>
@@ -43,7 +43,7 @@
                     <span class="landingpage__cta-word" :key="wordIndex">{{ currentWord.article }} {{ currentWord.noun }}</span>
                 </Transition>
             </h2>
-            <a class="app-button app-button--default app-button--primary" href="/app/register">Jetzt registrieren</a>
+            <a class="app-button app-button--default app-button--primary" href="/app/login">Jetzt registrieren</a>
         </section>
     </main>
 </template>

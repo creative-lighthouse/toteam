@@ -2,6 +2,8 @@
 
 namespace App\Controllers\Api;
 
+use App\Auth\LoginCode;
+use App\Auth\LoginCodeMailer;
 use App\Controllers\ApiController;
 use App\HumanResources\Allergy;
 use App\Teams\OrganizationMembership;
@@ -10,6 +12,7 @@ use SilverStripe\Assets\Upload;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\MemberAuthenticator\MemberAuthenticator;
 
 /**
  * Class \App\Controllers\Api\ProfileApiController
@@ -26,6 +29,9 @@ class ProfileApiController extends ApiController
         'leaveOrg',
         'user',
         'allergies',
+        'requestEmailChange',
+        'confirmEmailChange',
+        'setPassword',
     ];
 
     public function index(HTTPRequest $request): HTTPResponse
@@ -60,9 +66,10 @@ class ProfileApiController extends ApiController
         if (isset($data['Surname'])) {
             $member->Surname = trim($data['Surname']);
         }
-        if (isset($data['Email'])) {
-            $member->Email = trim($data['Email']);
-        }
+        // Email is intentionally NOT settable here anymore — since login is
+        // passwordless (email + one-time code), the email address IS the
+        // credential, so changing it goes through requestEmailChange()/
+        // confirmEmailChange() below instead of being written directly.
         if (isset($data['FoodPreference']) && in_array($data['FoodPreference'], ['None', 'Vegetarian', 'Vegan'], true)) {
             $member->FoodPreference = $data['FoodPreference'];
         }
@@ -222,6 +229,130 @@ class ProfileApiController extends ApiController
         return $this->errorResponse('Method not allowed', 405);
     }
 
+    /**
+     * Step 1 of changing the profile email: sends a code to the NEW address.
+     * The current email is left untouched until confirmEmailChange() succeeds.
+     */
+    public function requestEmailChange(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $data = $this->getJsonBody();
+        $email = strtolower(trim($data['email'] ?? ''));
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->errorResponse('Bitte gib eine gültige E-Mail-Adresse ein.');
+        }
+
+        if (Member::get()->filter('Email', $email)->exclude('ID', $member->ID)->exists()) {
+            return $this->errorResponse('Diese E-Mail-Adresse wird bereits verwendet.');
+        }
+
+        if (!LoginCode::canRequest($email, LoginCode::PURPOSE_EMAIL_CHANGE)) {
+            return $this->errorResponse('Bitte warte kurz, bevor du einen neuen Code anforderst.', 429);
+        }
+
+        [, $code] = LoginCode::issue($email, LoginCode::PURPOSE_EMAIL_CHANGE, $member->ID);
+        LoginCodeMailer::sendEmailChangeCode($email, $code);
+
+        return $this->successResponse([], 'Code wurde an die neue Adresse verschickt.');
+    }
+
+    /**
+     * Step 2: verifying the code actually applies the new email.
+     */
+    public function confirmEmailChange(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $data = $this->getJsonBody();
+        $email = strtolower(trim($data['email'] ?? ''));
+        $code = trim($data['code'] ?? '');
+
+        if (!$email || !$code) {
+            return $this->errorResponse('E-Mail und Code sind erforderlich.');
+        }
+
+        $entry = LoginCode::verify($email, LoginCode::PURPOSE_EMAIL_CHANGE, $code);
+        if (!$entry || (int) $entry->MemberID !== (int) $member->ID) {
+            return $this->errorResponse('Der Code ist ungültig oder abgelaufen.', 401);
+        }
+
+        // Re-check uniqueness — the address may have been taken by someone
+        // else between requesting and confirming the code.
+        if (Member::get()->filter('Email', $email)->exclude('ID', $member->ID)->exists()) {
+            return $this->errorResponse('Diese E-Mail-Adresse wird bereits verwendet.');
+        }
+
+        $entry->consume();
+
+        $member->Email = $email;
+        $member->write();
+
+        return $this->successResponse($this->serializeProfile($member), 'E-Mail-Adresse aktualisiert.');
+    }
+
+    /**
+     * Sets or changes the member's password, opting them into email+password
+     * as an alternative to the code login. If a password is already set,
+     * the current one must be confirmed first.
+     */
+    public function setPassword(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $data = $this->getJsonBody();
+        $currentPassword = $data['currentPassword'] ?? '';
+        $newPassword = $data['newPassword'] ?? '';
+
+        if (!$newPassword) {
+            return $this->errorResponse('Bitte gib ein neues Passwort ein.');
+        }
+
+        if ($member->PasswordSet) {
+            if (!$currentPassword) {
+                return $this->errorResponse('Bitte gib dein aktuelles Passwort ein.');
+            }
+            $authenticator = new MemberAuthenticator();
+            $verified = $authenticator->authenticate(['Email' => $member->Email, 'Password' => $currentPassword], $request);
+            if (!$verified || (int) $verified->ID !== (int) $member->ID) {
+                return $this->errorResponse('Das aktuelle Passwort ist falsch.', 401);
+            }
+        }
+
+        $result = $member->changePassword($newPassword);
+        if (!$result->isValid()) {
+            $messages = array_map(fn($m) => $m['message'], $result->getMessages());
+            return $this->errorResponse($messages ? implode(' ', $messages) : 'Passwort ungültig.');
+        }
+
+        $member->PasswordSet = true;
+        $member->write();
+
+        return $this->successResponse([], 'Passwort gespeichert.');
+    }
+
     private function serializePublicProfile(Member $member): array
     {
         $orgs = [];
@@ -279,6 +410,7 @@ class ProfileApiController extends ApiController
             'FirstName'      => $member->FirstName,
             'Surname'        => $member->Surname,
             'Email'          => $member->Email,
+            'HasPassword'    => (bool) $member->PasswordSet,
             'Username'        => $member->Username ?: null,
             'NameVisibility'  => $member->NameVisibility ?: 'full',
             'FoodPreference'  => $member->FoodPreference ?: 'None',

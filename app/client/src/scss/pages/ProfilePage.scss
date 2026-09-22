@@ -201,5 +201,73 @@ section.section--ProfilePage {
             gap: 8px;
             margin-top: 20px;
         }
+
+        .active-sessions {
+            width: 100%;
+            max-width: 350px;
+            // Matches the site-wide `.section:last-of-type` bottom clearance
+            // (main.scss) so this — the last thing on the page — doesn't end
+            // up hidden behind the fixed bottom nav bar on mobile.
+            margin: 24px auto 100px;
+            padding: 16px 20px;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusMedium);
+            background-color: var(--ColorWhite);
+            text-align: left;
+
+            &_title {
+                font-size: 13px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--ColorGray);
+                margin: 0 0 12px;
+            }
+
+            &_list {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            &_item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 8px 0;
+                border-top: 1px solid var(--ColorLightGray);
+
+                &:first-child {
+                    border-top: none;
+                }
+            }
+
+            &_info {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                font-size: 14px;
+            }
+
+            &_meta {
+                font-size: 12px;
+                color: var(--ColorGray);
+            }
+
+            &_current-badge {
+                display: inline-block;
+                width: fit-content;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 1px 8px;
+                border-radius: var(--BorderRadiusLarge);
+                background-color: var(--ColorPrimaryLight);
+                color: var(--ColorPrimaryDark);
+            }
+        }
     }
 }

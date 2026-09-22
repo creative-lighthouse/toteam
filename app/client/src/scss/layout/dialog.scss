@@ -383,6 +383,44 @@ dialog{
                     border-color: transparent;
                 }
             }
+
+            .email-display {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                padding: 9px 12px;
+                border: 1px solid var(--ColorLightGray);
+                border-radius: var(--BorderRadiusSmall);
+                font-size: 15px;
+            }
+
+            .email-change-form {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+
+                &_actions {
+                    display: flex;
+                    gap: 8px;
+                }
+            }
+
+            .link-button {
+                background: none;
+                border: none;
+                padding: 0;
+                font: inherit;
+                font-weight: 600;
+                font-size: 13px;
+                color: var(--ColorPrimary);
+                cursor: pointer;
+                white-space: nowrap;
+
+                &:hover:not(:disabled) {
+                    text-decoration: underline;
+                }
+            }
         }
     }
 

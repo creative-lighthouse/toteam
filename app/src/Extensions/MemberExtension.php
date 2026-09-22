@@ -28,6 +28,7 @@ use App\Teams\OrgPermissions;
  * @property ?string $FoodPreference
  * @property ?string $DateOfBirth
  * @property ?string $Hash
+ * @property bool $PasswordSet
  * @property bool $NotifyEvents
  * @property bool $NotifyAnnouncements
  * @property bool $NotifyMeals
@@ -47,6 +48,11 @@ class MemberExtension extends Extension
         "FoodPreference" => "Varchar(255)",
         "DateOfBirth"    => "Date",
         "Hash"           => "Varchar(255)",
+        // Whether this member has deliberately set a password via
+        // ProfileApiController::setPassword(). Member::Password is never
+        // actually empty (SilverStripe always hashes/salts it on write, even
+        // when blank), so that field alone can't tell us this.
+        "PasswordSet"    => "Boolean(0)",
         "NotifyEvents"   => "Boolean(1)",
         "NotifyAnnouncements" => "Boolean(1)",
         "NotifyMeals"    => "Boolean(1)",

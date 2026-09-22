@@ -79,6 +79,8 @@
                     Abmelden
                 </AppButton>
             </div>
+
+            <ActiveSessionsCard />
         </div>
 
         <EditProfileModal ref="editModal" @updated="loadOrgs" />
@@ -94,6 +96,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import EditProfileModal from '@components/EditProfileModal.vue'
 import QrCodeModal from '@components/QrCodeModal.vue'
+import ActiveSessionsCard from '@components/ActiveSessionsCard.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'

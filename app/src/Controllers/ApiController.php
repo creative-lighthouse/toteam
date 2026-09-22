@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Auth\JwtHelper;
 use App\Teams\Organization;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
@@ -36,17 +37,32 @@ class ApiController extends Controller
     }
     
     /**
-     * Check if user is authenticated
+     * Resolves the current Member from the "Authorization: Bearer <JWT>" header.
+     * Returns null (never throws/httpErrors) so callers can respond with their
+     * own 401 payload.
      */
     protected function requireAuth(): ?Member
     {
-        $member = Security::getCurrentUser();
-        
-        if (!$member) {
-            // Don't use httpError, return null instead
+        $header = $this->getRequest()->getHeader('Authorization') ?? '';
+        if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
             return null;
         }
-        
+
+        $memberID = JwtHelper::verifyAccessToken(trim($matches[1]));
+        if (!$memberID) {
+            return null;
+        }
+
+        $member = Member::get()->byID($memberID);
+        if (!$member) {
+            return null;
+        }
+
+        // Populated so existing framework/permission helpers (Permission::checkMember(),
+        // canView()/canEdit() checks, etc.) that read the "current user" keep working
+        // unchanged, regardless of how the member was actually resolved here.
+        Security::setCurrentUser($member);
+
         return $member;
     }
     

@@ -23,6 +23,13 @@ section.section--LoginPage {
                     color: #c33;
                 }
 
+                .login-intro {
+                    margin: 0 0 1.5rem;
+                    color: var(--ColorGray);
+                    font-size: 0.95rem;
+                    line-height: 1.5;
+                }
+
                 .form-group {
                     margin-bottom: 1.5rem;
                     width: 100%;
@@ -67,6 +74,25 @@ section.section--LoginPage {
                         &:hover {
                             text-decoration: underline;
                         }
+                    }
+                }
+
+                .link-button {
+                    background: none;
+                    border: none;
+                    padding: 0;
+                    font: inherit;
+                    font-weight: 500;
+                    color: var(--ColorPrimary);
+                    cursor: pointer;
+
+                    &:hover:not(:disabled) {
+                        text-decoration: underline;
+                    }
+
+                    &:disabled {
+                        color: var(--ColorGray);
+                        cursor: not-allowed;
                     }
                 }
             }
