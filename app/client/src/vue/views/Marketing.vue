@@ -111,7 +111,7 @@
 
     </div>
 
-    <MarketingEntryModal ref="entryModal" />
+    <MarketingEntryModal ref="entryModal" @manage-sizes="openSizeManager" />
     <MarketingSizeManagerModal
       ref="sizeManagerModal"
       :organizations="store.organizations"

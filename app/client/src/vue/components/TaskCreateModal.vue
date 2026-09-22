@@ -11,13 +11,13 @@
         <OrganizationPicker v-model="form.OrganizationID" :orgs="store.organizations" />
       </div>
 
-      <div class="field">
-        <label for="task-owner">Verantwortlicher *</label>
-        <select id="task-owner" v-model="form.OwnerID" :disabled="!form.OrganizationID || loadingOwners">
+      <label class="field">
+        Verantwortlicher *
+        <select v-model="form.OwnerID" :disabled="!form.OrganizationID || loadingOwners">
           <option value="0" disabled>{{ loadingOwners ? 'Lade Mitglieder…' : 'Bitte wählen' }}</option>
           <option v-for="owner in ownerOptions" :key="owner.ID" :value="owner.ID">{{ owner.Name }}</option>
         </select>
-      </div>
+      </label>
 
       <label class="field">
         Titel *
@@ -41,14 +41,14 @@
         />
       </label>
 
-      <div class="field field--3">
-        <label for="task-state">Status</label>
-        <select id="task-state" v-model="form.State">
+      <label class="field field--3">
+        Status
+        <select v-model="form.State">
           <option v-for="s in store.STATES" :key="s.value" :value="s.value">
             {{ s.label }}
           </option>
         </select>
-      </div>
+      </label>
 
       <DateTimeRangeField
         :model-value="deadlineField"

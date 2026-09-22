@@ -1,7 +1,7 @@
 <template>
   <AppModal
     ref="modal"
-    class="app-modal--flush addappointmentmodal"
+    class="addappointmentmodal"
     :title="headerTitle"
     :tabs="visibleTabs"
     :tab="activeTab"

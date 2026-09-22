@@ -22,17 +22,19 @@
         </button>
       </div>
 
-      <label class="feedback-field">
-        <span class="feedback-field_label">Titel</span>
-        <input v-model="title" type="text" class="feedback-field_input" placeholder="Kurze Zusammenfassung" required>
-      </label>
+      <div class="modalform">
+        <label class="field">
+          Titel
+          <input v-model="title" type="text" placeholder="Kurze Zusammenfassung" required>
+        </label>
 
-      <label class="feedback-field">
-        <span class="feedback-field_label">Beschreibung</span>
-        <textarea v-model="description" class="feedback-field_textarea" rows="5" placeholder="Was ist passiert bzw. was wünschst du dir?" required></textarea>
-      </label>
+        <label class="field">
+          Beschreibung
+          <textarea v-model="description" rows="5" placeholder="Was ist passiert bzw. was wünschst du dir?" required></textarea>
+        </label>
 
-      <AppToggle v-model="notifyByEmail" label="Per E-Mail über Status-Updates informieren" field-class="feedback-checkbox" />
+        <AppToggle v-model="notifyByEmail" label="Per E-Mail über Status-Updates informieren" />
+      </div>
 
       <p v-if="error" class="feedback-error">{{ error }}</p>
 

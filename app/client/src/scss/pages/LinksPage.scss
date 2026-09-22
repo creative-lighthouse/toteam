@@ -145,83 +145,13 @@
         }
     }
 
-    // Link modal
+    // Link modal — Grundgerüst (Header/Body/Footer, .modalform/.field) kommt
+    // von AppModal/forminputs.scss; hier nur noch Inhalte, die dieses Modal
+    // speziell braucht.
     .link-modal {
-        text-align: left;
         max-width: 480px;
 
-        .link-modal__content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .link-modal__header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            background-color: var(--ColorPrimary);
-            color: var(--ColorWhite);
-
-            .link-modal__title {
-                margin: 0;
-                color: var(--ColorWhite);
-                font-size: 18px;
-            }
-        }
-
-        .link-modal__body {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            width: 100%;
-            max-width: unset;
-            border-radius: 0;
-            background-color: var(--ColorWhite);
-
-            .link-modal__field {
-                width: 100%;
-            }
-        }
-
-        .link-modal__field {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-
-            label {
-                font-size: 13px;
-                font-weight: 600;
-                color: var(--ColorGray);
-            }
-
-            input[type="text"],
-            input[type="url"],
-            input[type="file"],
-            select {
-                width: 100%;
-                padding: 9px 12px;
-                border: 1px solid var(--ColorLightGray);
-                border-radius: var(--BorderRadiusSmall);
-                font-size: 15px;
-                box-sizing: border-box;
-                background-color: var(--ColorWhite);
-
-                &:focus {
-                    outline: 2px solid var(--ColorPrimary);
-                    outline-offset: 1px;
-                    border-color: transparent;
-                }
-            }
-
-            input[type="file"] {
-                padding: 6px 12px;
-                cursor: pointer;
-            }
-        }
-
-        .link-modal__kind-toggle {
+        .link-modal_kind-toggle {
             display: flex;
             gap: 10px;
 
@@ -240,36 +170,10 @@
             }
         }
 
-        .link-modal__checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-
-            input[type="checkbox"] {
-                width: 18px;
-                height: 18px;
-                accent-color: var(--ColorPrimary);
-                cursor: pointer;
-            }
-        }
-
-        .link-modal__error {
+        .link-modal_file-hint {
             font-size: 13px;
-            padding: 8px 12px;
-            border-radius: var(--BorderRadiusSmall);
-            background-color: var(--ColorStatusBadAccent);
-            color: var(--ColorStatusBad);
             margin: 0;
-        }
-
-        .link-modal__footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            padding: 16px 20px;
-            background-color: var(--ColorLightGray);
-            border-top: 1px solid color-mix(in srgb, var(--ColorGray) 15%, transparent);
+            grid-column: 1 / -1;
         }
     }
 }

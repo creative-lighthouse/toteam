@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useTasksStore } from '@stores/tasks'
 import { useAuthStore } from '@stores/auth'
 import AppIconButton from '@components/AppIconButton.vue'

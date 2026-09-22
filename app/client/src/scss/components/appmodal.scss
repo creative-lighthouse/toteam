@@ -14,6 +14,18 @@ dialog.app-modal {
     overflow: hidden;
 }
 
+// Neutralisiert die alte `dialog .dialog-content { padding: 15px; gap: 15px }`
+// Regel aus layout/dialog.scss (Typ + Klasse), die `.app-modal_content`
+// (nur eine Klasse) sonst unabhängig von der Ladereihenfolge nach
+// Spezifität schlägt — dadurch bekäme jedes Modal einen ungewollten
+// 15px-Rahmen/-Abstand um Header/Body/Actions statt der beabsichtigten
+// nahtlosen Hülle. Am auffälligsten bei den "flush"-Modals (z.B.
+// Termindetails), die bewusst randlos gestaltet sind.
+dialog.app-modal .app-modal_content {
+    padding: 0;
+    gap: 0;
+}
+
 // WICHTIG: `display` darf nur gelten, während der Dialog tatsächlich offen
 // ist (`[open]`). Eine Autoren-Regel wie `.app-modal { display: flex }`
 // ohne diese Einschränkung würde IMMER gewinnen — Autoren-Stylesheets

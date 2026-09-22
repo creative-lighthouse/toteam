@@ -31,7 +31,7 @@
           </div>
         </div>
 
-        <form class="event-response-actions" @submit.prevent>
+        <div class="event-response-actions">
           <AppButtonGroup
             :options="foodParticipationOptions"
             :model-value="meal.UserResponse"
@@ -39,7 +39,7 @@
             :disabled="submitting"
             @select="type => changeFoodParticipation(meal.ID, type)"
           />
-        </form>
+        </div>
 
         <!-- Bestellbare + feste Gerichte (nur nach Zusage zur Mahlzeit) -->
         <div v-if="meal.UserResponse === 'Accept' && mealEntries(meal).length" class="meal-entries">

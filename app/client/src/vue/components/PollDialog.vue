@@ -1,5 +1,5 @@
 <template>
-  <AppModal ref="modal" class="app-modal--flush poll-dialog" @close="$emit('close')">
+  <AppModal ref="modal" class="poll-dialog" @close="$emit('close')">
     <template #header>
       <AppOrgLogo
         v-if="event.OrganizationLogoURL"

@@ -125,13 +125,7 @@ dialog{
 .applicants-modal {
     text-align: left;
     max-width: 520px;
-
-    .app-modal_body {
-        padding: 8px 0;
-        gap: 0;
-        max-height: 60vh;
-        overflow-y: auto;
-    }
+    max-height: 90vh;
 
     .applicants-modal_state {
         padding: 24px 20px;
@@ -235,17 +229,11 @@ dialog{
     text-align: left;
     max-width: 480px;
     max-height: 90vh;
-    overflow-y: auto;
 
     .edit-profile-modal_loading {
         padding: 32px 20px;
         text-align: center;
         color: var(--ColorGray);
-    }
-
-    .app-modal_body {
-        gap: 2px;
-        padding: 0;
     }
 
     .edit-section {
@@ -615,47 +603,6 @@ dialog{
             border-color: var(--ColorPrimary);
             background-color: var(--ColorPrimaryLight);
         }
-    }
-
-    .feedback-field {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-
-        .feedback-field_label {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--ColorGray);
-        }
-
-        .feedback-field_input,
-        .feedback-field_textarea {
-            font-size: 15px;
-            font-family: inherit;
-            padding: 10px 12px;
-            border: 1px solid var(--ColorGray, #aaa);
-            border-radius: var(--BorderRadiusSmall, 6px);
-            background-color: var(--ColorWhite);
-            color: var(--ColorDark);
-            resize: vertical;
-
-            &:focus {
-                outline: 2px solid var(--ColorPrimary);
-                outline-offset: 1px;
-            }
-        }
-    }
-
-    // Zeilen-Layout für AppToggle (der Schalter selbst kommt aus der
-    // geteilten .toggle-switch-Klasse in forminputs.scss).
-    .feedback-checkbox {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        font-size: 14px;
-        cursor: pointer;
     }
 
     .feedback-error {

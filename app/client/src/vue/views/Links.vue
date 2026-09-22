@@ -101,120 +101,87 @@
     </div>
 
     <!-- Add / Edit Modal -->
-    <dialog ref="modalEl" class="link-modal">
-      <div class="link-modal__content">
-        <div class="link-modal__header">
-          <h3 class="link-modal__title">
-            {{ editingLink ? 'Link bearbeiten' : 'Link hinzufügen' }}
-          </h3>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="closeModal">✕</AppIconButton>
+    <AppModal
+      ref="modal"
+      class="link-modal"
+      :title="editingLink ? 'Link bearbeiten' : 'Link hinzufügen'"
+      @close="closeModal"
+    >
+      <form id="link-form" class="modalform" @submit.prevent="submitModal">
+
+        <label class="field">
+          Titel *
+          <input v-model="form.title" type="text" required placeholder="z.B. Vereinssatzung" />
+        </label>
+
+        <!-- Org selector (only when adding) -->
+        <label v-if="!editingLink" class="field">
+          Organisation *
+          <select v-model="form.orgId" required>
+            <option value="" disabled>Bitte wählen…</option>
+            <option v-for="org in adminOrgs" :key="org.ID" :value="org.ID">
+              {{ org.Title }}
+            </option>
+          </select>
+        </label>
+
+        <!-- Kind toggle (only when adding) -->
+        <div v-if="!editingLink" class="field link-modal_kind-toggle">
+          <button
+            type="button"
+            class="button"
+            :class="{ active: form.kind === 'external' }"
+            @click="form.kind = 'external'"
+          >
+            Externe URL
+          </button>
+          <button
+            type="button"
+            class="button"
+            :class="{ active: form.kind === 'file' }"
+            @click="form.kind = 'file'"
+          >
+            Datei hochladen
+          </button>
         </div>
 
-        <form class="link-modal__body" @submit.prevent="submitModal">
+        <!-- URL input (when external or editing an external link) -->
+        <label v-if="form.kind === 'external'" class="field">
+          URL *
+          <input
+            v-model="form.url"
+            type="url"
+            placeholder="https://…"
+            :required="form.kind === 'external' && !editingLink"
+          />
+        </label>
 
-          <!-- Title -->
-          <div class="link-modal__field">
-            <label for="link-title">Titel *</label>
-            <input
-              id="link-title"
-              v-model="form.title"
-              type="text"
-              required
-              placeholder="z.B. Vereinssatzung"
-            />
-          </div>
+        <!-- Open in new tab (for external links) -->
+        <AppToggle v-if="form.kind === 'external'" v-model="form.openInNew" label="In neuem Tab öffnen" />
 
-          <!-- Org selector (only when adding) -->
-          <div v-if="!editingLink" class="link-modal__field">
-            <label for="link-org">Organisation *</label>
-            <select id="link-org" v-model="form.orgId" required>
-              <option value="" disabled>Bitte wählen…</option>
-              <option v-for="org in adminOrgs" :key="org.ID" :value="org.ID">
-                {{ org.Title }}
-              </option>
-            </select>
-          </div>
+        <!-- File input (when adding a file) -->
+        <label v-if="!editingLink && form.kind === 'file'" class="field">
+          Datei *
+          <input ref="fileInputEl" type="file" @change="onFileChange" />
+        </label>
 
-          <!-- Kind toggle (only when adding) -->
-          <div v-if="!editingLink" class="link-modal__kind-toggle">
-            <button
-              type="button"
-              class="button"
-              :class="{ active: form.kind === 'external' }"
-              @click="form.kind = 'external'"
-            >
-              Externe URL
-            </button>
-            <button
-              type="button"
-              class="button"
-              :class="{ active: form.kind === 'file' }"
-              @click="form.kind = 'file'"
-            >
-              Datei hochladen
-            </button>
-          </div>
+        <!-- File links: note about editing -->
+        <p v-if="editingLink && editingLink.LinkKind === 'file'" class="link-modal_file-hint">
+          Datei-Links können nicht geändert werden. Bitte lösche diesen Link und erstelle einen neuen.
+        </p>
 
-          <!-- URL input (when external or editing an external link) -->
-          <div
-            v-if="form.kind === 'external'"
-            class="link-modal__field"
-          >
-            <label for="link-url">URL *</label>
-            <input
-              id="link-url"
-              v-model="form.url"
-              type="url"
-              placeholder="https://…"
-              :required="form.kind === 'external' && !editingLink"
-            />
-          </div>
+        <!-- Error -->
+        <div v-if="modalError" class="app-modal_error">{{ modalError }}</div>
 
-          <!-- Open in new tab (for external links) -->
-          <div v-if="form.kind === 'external'" class="link-modal__checkbox-row">
-            <input
-              id="link-openinnew"
-              v-model="form.openInNew"
-              type="checkbox"
-            />
-            <label for="link-openinnew">In neuem Tab öffnen</label>
-          </div>
+      </form>
 
-          <!-- File input (when adding a file) -->
-          <div v-if="!editingLink && form.kind === 'file'" class="link-modal__field">
-            <label for="link-file">Datei *</label>
-            <input
-              id="link-file"
-              ref="fileInputEl"
-              type="file"
-              @change="onFileChange"
-            />
-          </div>
-
-          <!-- File links: note about editing -->
-          <div v-if="editingLink && editingLink.LinkKind === 'file'" class="section_infobox" style="margin: 0; font-size: 13px;">
-            <p style="margin: 0;">Datei-Links können nicht geändert werden. Bitte lösche diesen Link und erstelle einen neuen.</p>
-          </div>
-
-          <!-- Error -->
-          <p v-if="modalError" class="link-modal__error">{{ modalError }}</p>
-
-        </form>
-
-        <div class="link-modal__footer">
-          <AppButton variant="secondary" @click="closeModal">
-            Abbrechen
-          </AppButton>
-          <AppButton
-            variant="primary"
-            :disabled="submitting"
-            @click="submitModal"
-          >
-            {{ submitting ? 'Speichern…' : 'Speichern' }}
-          </AppButton>
-        </div>
-      </div>
-    </dialog>
+      <template #actions>
+        <AppButton variant="secondary" @click="closeModal">Abbrechen</AppButton>
+        <AppButton type="submit" form="link-form" variant="primary" :disabled="submitting">
+          {{ submitting ? 'Speichern…' : 'Speichern' }}
+        </AppButton>
+      </template>
+    </AppModal>
 
   </div>
 </template>
@@ -225,6 +192,8 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete, apiPostForm, clearCacheForEndpoint } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
+import AppToggle from '@components/AppToggle.vue'
 
 usePageHeaderStore().setHeader('Links', 'Wichtige Links und Ressourcen für dein Team.')
 
@@ -237,12 +206,11 @@ const loadError = ref(null)
 
 const search = ref('')
 
-const showModal = ref(false)
 const editingLink = ref(null)
 const submitting = ref(false)
 const modalError = ref(null)
 
-const modalEl = ref(null)
+const modal = ref(null)
 const fileInputEl = ref(null)
 
 const form = ref({
@@ -311,7 +279,7 @@ function openAddModal() {
     file: null,
   }
   modalError.value = null
-  modalEl.value?.showModal()
+  modal.value?.open()
 }
 
 function openEditModal(link) {
@@ -325,11 +293,11 @@ function openEditModal(link) {
     file: null,
   }
   modalError.value = null
-  modalEl.value?.showModal()
+  modal.value?.open()
 }
 
 function closeModal() {
-  modalEl.value?.close()
+  modal.value?.close()
   editingLink.value = null
   modalError.value = null
 }

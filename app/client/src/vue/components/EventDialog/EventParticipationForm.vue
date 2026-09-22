@@ -2,7 +2,7 @@
   <div v-if="event.Status !== 'Cancelled'" class="event-participation">
     <h3 class="event-participation_title">Deine Teilnahme</h3>
 
-    <form class="event-response-actions" @submit.prevent>
+    <div class="event-response-actions">
       <AppButtonGroup
         :options="participationOptions"
         :model-value="userParticipationType"
@@ -90,7 +90,7 @@
           ></textarea>
         </div>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 

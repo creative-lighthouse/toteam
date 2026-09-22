@@ -1,7 +1,7 @@
 <template>
   <AppModal
     ref="modal"
-    :class="['app-modal--flush', `event-modal--${event.Status}`]"
+    :class="`event-modal--${event.Status}`"
     @close="$emit('close')"
   >
     <template #header>

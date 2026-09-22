@@ -4,11 +4,11 @@
     text-align: left;
     max-width: 520px;
     max-height: 90vh;
-    overflow-y: auto;
 
     &_hint {
         font-size: 0.85rem;
         opacity: 0.6;
+        grid-column: 1 / -1;
     }
 
     &_location-row {

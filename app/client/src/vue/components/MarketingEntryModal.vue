@@ -11,81 +11,97 @@
         />
       </div>
 
-      <div class="field">
-        <label for="marketing-entry-location">Ort *</label>
-        <div class="marketing-entry-modal_location-row">
-          <input
-            id="marketing-entry-location"
-            v-model="form.Location"
-            type="text"
-            placeholder="z.B. Marktplatz, schwarzes Brett"
-            autofocus
-          />
-          <AppButton type="button" variant="secondary" size="small" :disabled="geoLoading" @click="useCurrentLocation">
-            {{ geoLoading ? 'Ermittle Standort…' : '📍 Position erfassen' }}
-          </AppButton>
-        </div>
-        <p v-if="form.Latitude && form.Longitude" class="marketing-entry-modal_geo-value">
-          Koordinaten erfasst ({{ form.Latitude }}, {{ form.Longitude }})
-          <button type="button" class="marketing-entry-modal_geo-clear" @click="clearLocation">Entfernen</button>
-        </p>
-        <p v-if="geoError" class="app-modal_error">{{ geoError }}</p>
-        <p v-if="!hasLocationInfo" class="marketing-entry-modal_hint">
-          Bitte entweder einen Ort eingeben oder die aktuelle Position erfassen.
-        </p>
-      </div>
-
-      <div class="field field--3">
-        <label for="marketing-entry-size">Größe *</label>
-        <select
-          id="marketing-entry-size"
-          v-model="form.PosterSizeID"
-          required
-          :disabled="!form.OrganizationID || sizesForOrg.length === 0"
-        >
-          <option value="" disabled>Bitte wählen</option>
-          <option v-for="size in sizesForOrg" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
-        </select>
-      </div>
-
-      <div class="field field--3">
-        <label for="marketing-entry-quantity">Anzahl *</label>
-        <input
-          id="marketing-entry-quantity"
-          v-model.number="form.Quantity"
-          type="number"
-          min="1"
-          required
-        />
-      </div>
-
-      <p v-if="!form.OrganizationID" class="marketing-entry-modal_hint">
+      <p v-if="!isEdit && !form.OrganizationID" class="marketing-entry-modal_hint">
         Bitte zuerst eine Organisation auswählen.
       </p>
-      <p v-else-if="sizesForOrg.length === 0" class="marketing-entry-modal_hint">
-        Für diese Organisation wurden noch keine Plakat-Größen angelegt.
-      </p>
 
-      <DateTimeRangeField
-        :model-value="distributedAtField"
-        @update:model-value="v => (distributedAtField = v)"
-        time="always"
-        :show-end-date="false"
-        :time-range="false"
-        start-label-date="Zeitpunkt"
-        start-label-time="Zeitpunkt"
-        start-field-class="field"
-      />
+      <!-- Ohne Plakat-Größen kann eh kein Eintrag erfasst werden — der Rest
+           des Formulars bleibt daher ausgeblendet, bis welche angelegt sind. -->
+      <template v-else-if="!isEdit && sizesForOrg.length === 0">
+        <p class="marketing-entry-modal_hint">
+          Für diese Organisation wurden noch keine Plakat-Größen angelegt.
+        </p>
+        <AppButton
+          v-if="store.canManageSizes"
+          type="button"
+          variant="secondary"
+          size="small"
+          @click="manageSizes"
+        >
+          Plakat-Größen anlegen
+        </AppButton>
+      </template>
 
-      <label class="field">
-        Notiz
-        <textarea
-          id="marketing-entry-note"
-          v-model="form.Note"
-          rows="2"
-          placeholder="Optionale Anmerkung…"
+      <template v-else>
+        <div class="field">
+          <label for="marketing-entry-location">Ort *</label>
+          <div class="marketing-entry-modal_location-row">
+            <input
+              id="marketing-entry-location"
+              v-model="form.Location"
+              type="text"
+              placeholder="z.B. Marktplatz, schwarzes Brett"
+              autofocus
+            />
+            <AppButton type="button" variant="secondary" size="small" :disabled="geoLoading" @click="useCurrentLocation">
+              {{ geoLoading ? 'Ermittle Standort…' : '📍 Position erfassen' }}
+            </AppButton>
+          </div>
+          <p v-if="form.Latitude && form.Longitude" class="marketing-entry-modal_geo-value">
+            Koordinaten erfasst ({{ form.Latitude }}, {{ form.Longitude }})
+            <button type="button" class="marketing-entry-modal_geo-clear" @click="clearLocation">Entfernen</button>
+          </p>
+          <p v-if="geoError" class="app-modal_error">{{ geoError }}</p>
+          <p v-if="!hasLocationInfo" class="marketing-entry-modal_hint">
+            Bitte entweder einen Ort eingeben oder die aktuelle Position erfassen.
+          </p>
+        </div>
+
+        <div class="field field--3">
+          <label for="marketing-entry-size">Größe *</label>
+          <select
+            id="marketing-entry-size"
+            v-model="form.PosterSizeID"
+            required
+            :disabled="!form.OrganizationID || sizesForOrg.length === 0"
+          >
+            <option value="" disabled>Bitte wählen</option>
+            <option v-for="size in sizesForOrg" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
+          </select>
+        </div>
+
+        <div class="field field--3">
+          <label for="marketing-entry-quantity">Anzahl *</label>
+          <input
+            id="marketing-entry-quantity"
+            v-model.number="form.Quantity"
+            type="number"
+            min="1"
+            required
+          />
+        </div>
+
+        <DateTimeRangeField
+          :model-value="distributedAtField"
+          @update:model-value="v => (distributedAtField = v)"
+          time="always"
+          :show-end-date="false"
+          :time-range="false"
+          start-label-date="Zeitpunkt"
+          start-label-time="Zeitpunkt"
+          start-field-class="field"
         />
-      </label>
+
+        <label class="field">
+          Notiz
+          <textarea
+            id="marketing-entry-note"
+            v-model="form.Note"
+            rows="2"
+            placeholder="Optionale Anmerkung…"
+          />
+        </label>
+      </template>
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -113,7 +129,7 @@ import AppModal from '@components/AppModal.vue'
 import OrganizationPicker from '@components/OrganizationPicker.vue'
 import DateTimeRangeField from '@components/DateTimeRangeField.vue'
 
-const emit = defineEmits(['saved'])
+const emit = defineEmits(['saved', 'manage-sizes'])
 const store = useMarketingStore()
 const orgsStore = useOrganizationsStore()
 
@@ -231,6 +247,15 @@ function useCurrentLocation() {
 function clearLocation() {
   form.Latitude = ''
   form.Longitude = ''
+}
+
+// Öffnet den Größen-Manager für die aktuell gewählte Organisation, statt den
+// Nutzer erst zurück zur Marketing-Übersicht zu schicken — store.sizes wird
+// dort reaktiv aktualisiert, wodurch sich das restliche Formular hier von
+// selbst einblendet, sobald eine Größe angelegt wurde.
+function manageSizes() {
+  if (form.OrganizationID) orgsStore.setLastOrganizationId(form.OrganizationID)
+  emit('manage-sizes')
 }
 
 async function submit() {

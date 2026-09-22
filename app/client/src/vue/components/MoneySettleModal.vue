@@ -34,7 +34,7 @@
       </template>
 
       <div v-if="entry?.Settlements?.length" class="money-settle-modal_history">
-        <p class="form-label">Bisherige Zahlungen</p>
+        <p class="money-settle-modal_history-title">Bisherige Zahlungen</p>
         <ul class="money-settle-modal_history-list">
           <li v-for="s in entry.Settlements" :key="s.ID">
             {{ formatCurrency(s.Amount) }} ({{ s.PaymentMethod }}) am {{ formatDate(s.Date) }}<span v-if="s.User"> · {{ s.User.Name }}</span>

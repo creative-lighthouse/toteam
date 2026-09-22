@@ -1,5 +1,5 @@
 <template>
-  <AppModal ref="modal" class="applicants-modal" :title="`Bewerber – ${org?.Title ?? ''}`" @close="close">
+  <AppModal ref="modal" class="app-modal--flush applicants-modal" :title="`Bewerber – ${org?.Title ?? ''}`" @close="close">
     <div v-if="loading" class="applicants-modal_state">Lädt...</div>
 
     <div v-else-if="applicants.length === 0" class="applicants-modal_state">

@@ -1,5 +1,5 @@
 <template>
-  <AppModal ref="modal" class="edit-profile-modal" title="Profil bearbeiten" @close="close">
+  <AppModal ref="modal" class="app-modal--flush edit-profile-modal" title="Profil bearbeiten" @close="close">
     <div v-if="loading" class="edit-profile-modal_loading">Profil wird geladen …</div>
 
     <template v-else>

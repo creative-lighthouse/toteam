@@ -1,28 +1,17 @@
 <template>
   <AppModal ref="modal" class="event-meal-modal" :title="isEdit ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen'" @close="close">
-    <form id="event-meal-form" @submit.prevent="submit">
-      <div class="form-field">
-        <label class="form-label" for="event-meal-title">Titel *</label>
-        <input
-          id="event-meal-title"
-          v-model="form.title"
-          type="text"
-          class="input"
-          placeholder="z.B. Mittagessen"
-          maxlength="255"
-          required
-        >
-      </div>
-
-      <div class="form-field">
-        <label class="form-label" for="event-meal-time">Uhrzeit *</label>
-        <input id="event-meal-time" v-model="form.time" type="time" class="input" required>
-      </div>
-
-      <label class="form-checkbox">
-        <input type="checkbox" v-model="form.acceptsContributions">
-        Mitglieder dürfen Gerichte vorschlagen
+    <form id="event-meal-form" class="modalform" @submit.prevent="submit">
+      <label class="field">
+        Titel *
+        <input v-model="form.title" type="text" placeholder="z.B. Mittagessen" maxlength="255" required>
       </label>
+
+      <label class="field">
+        Uhrzeit *
+        <input v-model="form.time" type="time" required>
+      </label>
+
+      <AppToggle v-model="form.acceptsContributions" label="Mitglieder dürfen Gerichte vorschlagen" />
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -42,6 +31,7 @@ import { ref, computed } from 'vue'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
+import AppToggle from '@components/AppToggle.vue'
 
 const props = defineProps({
   eventId: { type: Number, required: true },
