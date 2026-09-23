@@ -1,6 +1,8 @@
 .AppHeader {
     align-items: center;
     padding: 10px 0;
+    height: 52px;
+    box-sizing: border-box;
     view-transition-name: appheader;
     position: fixed;
     top: 0;
@@ -8,19 +10,25 @@
     width: 100%;
     z-index: 50;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr minmax(0, auto) 1fr;
     background-color: var(--ColorVeryLightGray);
 
     .AppHeader_content {
         max-width: var(--MaxWidth);
         margin: 0 auto;
         padding: 0 20px;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
 
         .AppHeader_title{
             text-align: center;
             color: var(--ColorPrimary);
             font-size: 25px;
             text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
 
