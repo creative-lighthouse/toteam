@@ -440,10 +440,32 @@ class FoodApiController extends ApiController
 
             $isOrderable = (bool) ($body['isOrderable'] ?? $food->IsOrderable);
 
+            $oldTitle       = (string) $food->Title;
+            $oldIsOrderable = (bool) $food->IsOrderable;
+            $oldMaxQuantity = (int) $food->MaxQuantity;
+
             $food->Title       = $title;
             $food->IsOrderable = $isOrderable;
             $food->MaxQuantity = $isOrderable ? max(0, (int) ($body['maxQuantity'] ?? $food->MaxQuantity)) : 0;
             $food->write();
+
+            // Ein Gericht kann mehreren Mahlzeiten zugeordnet sein — in jedem Verlauf festhalten
+            $maxLabel = fn (bool $orderable, int $max) => $orderable ? ($max > 0 ? (string) $max : 'Unbegrenzt') : null;
+            foreach ($food->Meals() as $foodMeal) {
+                $foodMeal->recordHistoryValueChange('Food#' . $food->ID . '.Title', 'Gericht', $oldTitle, $food->Title);
+                $foodMeal->recordHistoryValueChange(
+                    'Food#' . $food->ID . '.IsOrderable',
+                    'Bestellbar (' . $food->Title . ')',
+                    $oldIsOrderable ? 'Ja' : 'Nein',
+                    $food->IsOrderable ? 'Ja' : 'Nein'
+                );
+                $foodMeal->recordHistoryValueChange(
+                    'Food#' . $food->ID . '.MaxQuantity',
+                    'Max. Menge (' . $food->Title . ')',
+                    $maxLabel($oldIsOrderable, $oldMaxQuantity),
+                    $maxLabel((bool) $food->IsOrderable, (int) $food->MaxQuantity)
+                );
+            }
 
             return $this->successResponse([
                 'food' => [

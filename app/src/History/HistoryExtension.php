@@ -36,10 +36,13 @@ use SilverStripe\Security\Security;
  *
  *     private static $history_target = 'Parent';          // has_one zum Zielobjekt (braucht selbst die Extension)
  *     private static $history_delete_fields = ['Type'];   // beim Löschen protokollierte Felder (Standard: alle)
+ *     private static $history_target_set = 'AgendaPoints'; // optional, s. u.
  *     public function getHistoryContextLabel(): ?string   // optional, z. B. Name des Teilnehmers
  *
  * Anlegen wird dann als Änderung "leer → Wert", Löschen als "Wert → leer" im Verlauf
- * des Zielobjekts festgehalten.
+ * des Zielobjekts festgehalten. Ist `history_target_set` gesetzt, erscheinen Anlegen
+ * und Löschen stattdessen als Hinzufügen/Entfernen in dieser Liste des Zielobjekts
+ * (z. B. "Tagesordnungspunkte: + Begrüßung"), Änderungen weiterhin als Wertänderung.
  *
  * @property DataObject|HistoryExtension $owner
  */
@@ -63,6 +66,11 @@ class HistoryExtension extends Extension
         }
 
         $target = $this->getHistoryTarget();
+        if ($target && $isNew && ($setField = $this->owner->config()->get('history_target_set'))) {
+            $target->recordHistorySetChange($setField, [$this->owner], []);
+            return;
+        }
+
         $fieldMap = $this->getHistoryFieldMap();
         if (!$target || !$fieldMap) {
             return;
@@ -93,6 +101,11 @@ class HistoryExtension extends Extension
 
         $target = $this->getHistoryTarget();
         if (!$target) {
+            return;
+        }
+
+        if ($setField = $this->owner->config()->get('history_target_set')) {
+            $target->recordHistorySetChange($setField, [], [$this->owner]);
             return;
         }
 

@@ -51,3 +51,7 @@ App\Food\MealEater:
 App\Food\MealProductOrder:
   extensions:
     - App\History\HistoryExtension
+
+App\Calendar\AppointmentAgendaPoint:
+  extensions:
+    - App\History\HistoryExtension
