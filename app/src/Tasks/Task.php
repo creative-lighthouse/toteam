@@ -28,6 +28,7 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\TaskGroup[] TaskGroups()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Supporters()
  * @method \SilverStripe\ORM\ManyManyList|\App\Rooms\Room[] Rooms()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -69,6 +70,31 @@ class Task extends DataObject implements PermissionProvider
         "TaskGroups"   => "Aufgaben-Gruppen",
         "Supporters"   => "Unterstützer",
         "Parent"       => "Übergeordnete Aufgabe",
+        "Rooms"        => "Räume",
+        "SubTasks"     => "Unteraufgaben",
+    ];
+
+    /**
+     * Felder, deren Änderungen im Verlauf erscheinen (siehe HistoryExtension).
+     * Unterstützer/Räume werden im TasksApiController, Unteraufgaben in
+     * onAfterWrite()/onBeforeDelete() protokolliert.
+     */
+    private static $history_fields = [
+        'Title',
+        'Description',
+        'State',
+        'Deadline',
+        'Owner',
+        'Organization',
+    ];
+
+    private static $history_value_labels = [
+        'State' => [
+            'open'        => 'Offen',
+            'in_progress' => 'In Bearbeitung',
+            'feedback'    => 'Feedback',
+            'finished'    => 'Abgeschlossen',
+        ],
     ];
 
     private static $summary_fields = [
@@ -84,6 +110,35 @@ class Task extends DataObject implements PermissionProvider
         parent::onBeforeWrite();
         if (!$this->Hash) {
             $this->Hash = bin2hex(random_bytes(16));
+        }
+    }
+
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        // Hinzufügen/Entfernen von Unteraufgaben im Verlauf der übergeordneten Aufgabe
+        // festhalten (greift auch beim Anlegen, da ParentID dann von 0 auf X wechselt)
+        $changed = $this->getChangedFields(['ParentID'], DataObject::CHANGE_VALUE);
+        if (isset($changed['ParentID'])) {
+            $oldParent = Task::get()->byID((int) $changed['ParentID']['before']);
+            if ($oldParent) {
+                $oldParent->recordHistorySetChange('SubTasks', [], [$this]);
+            }
+            $newParent = Task::get()->byID((int) $changed['ParentID']['after']);
+            if ($newParent) {
+                $newParent->recordHistorySetChange('SubTasks', [$this], []);
+            }
+        }
+    }
+
+    public function onBeforeDelete()
+    {
+        parent::onBeforeDelete();
+
+        $parent = $this->ParentID ? Task::get()->byID($this->ParentID) : null;
+        if ($parent) {
+            $parent->recordHistorySetChange('SubTasks', [], [$this]);
         }
     }
 

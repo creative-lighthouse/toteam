@@ -6,7 +6,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
 
             .section_filter {
                 flex: 1;
@@ -49,6 +49,7 @@
                 background-color: transparent;
                 border: 1px solid var(--ColorPrimary);
                 color: var(--ColorPrimary);
+                margin-top: 0;
 
                 &.active {
                     background-color: var(--ColorPrimary);

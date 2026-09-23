@@ -29,6 +29,7 @@ class TasksApiController extends ApiController
         'updateState',
         'orgMembers',
         'assignableMembers',
+        'history',
     ];
 
     protected function getDefaultAction()
@@ -216,6 +217,26 @@ class TasksApiController extends ApiController
         return $this->jsonResponse(['task' => $this->formatTask($task, $member)]);
     }
 
+    /** GET /api/v1/tasks/history/$ID?before=<EntryID>&limit=20 */
+    public function history(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $task = Task::get()->byID((int) $request->param('ID'));
+        if (!$task || !$task->exists()) {
+            return $this->errorResponse('Aufgabe nicht gefunden', 404);
+        }
+
+        if (!$task->isViewableBy($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        return $this->historyResponse($task, $request);
+    }
+
     /** GET /api/v1/tasks/orgMembers/$ID */
     public function orgMembers(HTTPRequest $request): HTTPResponse
     {
@@ -387,10 +408,9 @@ class TasksApiController extends ApiController
             $task->write();
 
             if (isset($body['SupporterIDs']) && is_array($body['SupporterIDs'])) {
-                $task->Supporters()->removeAll();
-                foreach ($body['SupporterIDs'] as $sid) {
-                    $task->Supporters()->add((int) $sid);
-                }
+                $task->trackHistoryRelation('Supporters', function () use ($task, $body) {
+                    $task->Supporters()->setByIDList(array_map('intval', $body['SupporterIDs']));
+                });
             }
 
             if (isset($body['RoomIDs']) && is_array($body['RoomIDs'])) {
@@ -399,10 +419,9 @@ class TasksApiController extends ApiController
                     ->filter(['ID' => $body['RoomIDs'], 'OrganizationID' => $task->OrganizationID])
                     ->column('ID');
 
-                $task->Rooms()->removeAll();
-                foreach ($validRoomIDs as $rid) {
-                    $task->Rooms()->add($rid);
-                }
+                $task->trackHistoryRelation('Rooms', function () use ($task, $validRoomIDs) {
+                    $task->Rooms()->setByIDList($validRoomIDs);
+                });
             }
 
             return $this->successResponse(['task' => $this->formatTask($task, $member)], 'Aufgabe aktualisiert');

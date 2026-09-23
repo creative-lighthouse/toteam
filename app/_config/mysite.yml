@@ -27,3 +27,7 @@ SilverStripe\Core\Injector\Injector:
 SilverStripe\Security\Member:
   extensions:
     - App\Extensions\MemberExtension
+
+App\Tasks\Task:
+  extensions:
+    - App\History\HistoryExtension
