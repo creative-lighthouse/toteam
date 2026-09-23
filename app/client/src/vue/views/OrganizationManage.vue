@@ -49,7 +49,9 @@
                 </span>
               </div>
               <div class="org-manage_role-actions">
-                <AppIconButton variant="primary" aria-label="Rolle bearbeiten" @click="openEditRole(role)">✎</AppIconButton>
+                <AppIconButton variant="primary" aria-label="Rolle bearbeiten" @click="openEditRole(role)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </AppIconButton>
                 <AppIconButton variant="danger" aria-label="Rolle löschen" @click="removeRole(role)">×</AppIconButton>
               </div>
             </div>
@@ -70,7 +72,9 @@
                   <span v-if="!m.Roles.length" class="org-manage_role-chip org-manage_role-chip--empty">Keine Rolle</span>
                 </span>
               </div>
-              <AppIconButton variant="primary" aria-label="Rollen zuweisen" @click="openMemberRoles(m)">✎</AppIconButton>
+              <AppIconButton variant="primary" aria-label="Rollen zuweisen" @click="openMemberRoles(m)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </AppIconButton>
             </div>
           </div>
         </section>

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { apiGet, apiPost, apiPut, apiDelete, clearCacheForEndpoint } from '@utils/api'
 
 export const useMarketingStore = defineStore('marketing', () => {
@@ -13,6 +13,24 @@ export const useMarketingStore = defineStore('marketing', () => {
 
   const filterYear = ref(null)
   const filterOrganization = ref(null)
+  // Plakat-Art wird nicht mitgeladen (kein Server-Roundtrip nötig) — anders
+  // als Jahr/Organisation lässt sich das rein clientseitig aus den bereits
+  // geladenen distributions filtern.
+  const filterSize = ref(null)
+
+  const filteredDistributions = computed(() => {
+    if (!filterSize.value) return distributions.value
+    return distributions.value.filter(d => d.PosterSize?.ID === filterSize.value)
+  })
+
+  // Der Organisationsfilter lädt einen neuen, org-gescopten sizes-Katalog nach
+  // — eine zuvor gewählte Plakat-Art, die es dort nicht mehr gibt, würde sonst
+  // sang- und klanglos alles herausfiltern.
+  watch(sizes, () => {
+    if (filterSize.value && !sizes.value.some(s => s.ID === filterSize.value)) {
+      filterSize.value = null
+    }
+  })
 
   const statistics = ref(null)
   const statisticsLoading = ref(false)
@@ -132,6 +150,10 @@ export const useMarketingStore = defineStore('marketing', () => {
     filterOrganization.value = orgId
   }
 
+  function setSizeFilter(sizeId) {
+    filterSize.value = sizeId
+  }
+
   return {
     distributions,
     sizes,
@@ -142,6 +164,8 @@ export const useMarketingStore = defineStore('marketing', () => {
     error,
     filterYear,
     filterOrganization,
+    filterSize,
+    filteredDistributions,
     statistics,
     statisticsLoading,
     statisticsError,
@@ -155,5 +179,6 @@ export const useMarketingStore = defineStore('marketing', () => {
     deleteSize,
     setYearFilter,
     setOrganizationFilter,
+    setSizeFilter,
   }
 })

@@ -43,9 +43,15 @@
               placeholder="z.B. Marktplatz, schwarzes Brett"
               autofocus
             />
-            <AppButton type="button" variant="secondary" size="small" :disabled="geoLoading" @click="useCurrentLocation">
-              {{ geoLoading ? 'Ermittle Standort…' : '📍 Position erfassen' }}
-            </AppButton>
+            <AppIconButton
+              variant="neutral"
+              :disabled="geoLoading"
+              :aria-label="geoLoading ? 'Ermittle Standort…' : 'Position erfassen'"
+              :title="geoLoading ? 'Ermittle Standort…' : 'Position erfassen'"
+              @click="useCurrentLocation"
+            >
+              <span class="icon-mask" :style="addLocationIconStyle" />
+            </AppIconButton>
           </div>
           <p v-if="form.Latitude && form.Longitude" class="marketing-entry-modal_geo-value">
             Koordinaten erfasst ({{ form.Latitude }}, {{ form.Longitude }})
@@ -125,9 +131,13 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useMarketingStore } from '@stores/marketing'
 import { useOrganizationsStore } from '@stores/organizations'
 import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 import AppModal from '@components/AppModal.vue'
 import OrganizationPicker from '@components/OrganizationPicker.vue'
 import DateTimeRangeField from '@components/DateTimeRangeField.vue'
+import actionAddLocation from '../../../icons/actions/action_addlocation.svg'
+
+const addLocationIconStyle = { maskImage: `url("${actionAddLocation}")`, WebkitMaskImage: `url("${actionAddLocation}")` }
 
 const emit = defineEmits(['saved', 'manage-sizes'])
 const store = useMarketingStore()

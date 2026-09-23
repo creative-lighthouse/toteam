@@ -111,9 +111,11 @@
         }
     }
 
+    // Randfarbe = Icon-Farbe statt Füllfarbe = Randfarbe, damit der Kreis
+    // wie bei --primary/--danger ein sichtbares Umriss statt einer kaum
+    // erkennbaren hellgrauen Füllung auf weißem Grund ist.
     &--neutral {
-        background-color: var(--ColorLightGray);
-        border: 1px solid var(--ColorLightGray);
+        border: 1px solid var(--ColorGray);
         color: var(--ColorGray);
 
         &:hover:not(:disabled) {

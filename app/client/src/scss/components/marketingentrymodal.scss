@@ -13,15 +13,12 @@
 
     &_location-row {
         display: flex;
+        align-items: center;
         gap: 8px;
 
         .input {
             flex: 1;
             min-width: 0;
-        }
-
-        @include media(max-medium) {
-            flex-wrap: wrap;
         }
     }
 
@@ -41,5 +38,16 @@
         font-size: 0.85rem;
         cursor: pointer;
         text-decoration: underline;
+    }
+
+    #marketing-entry-form {
+        .marketing-entry-modal_hint {
+            text-align: center;
+        }
+
+        .app-button {
+            width: 100%;
+            grid-column: 1 / -1;
+        }
     }
 }

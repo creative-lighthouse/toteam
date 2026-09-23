@@ -3,7 +3,7 @@
 dialog{
     border: none;
     max-width: 400px;
-    width: 90%;
+    width: calc(100% - 20px);
     border-radius: var(--BorderRadiusMedium);
     border: none;
     font-weight: 500;
