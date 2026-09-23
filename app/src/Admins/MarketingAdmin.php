@@ -15,7 +15,7 @@ class MarketingAdmin extends ModelAdmin
     private static $menu_title = 'Marketing';
 
     private static $url_segment = 'marketing-directory';
-    private static $menu_icon_class = 'font-icon-image';
+    private static $menu_icon = 'app/client/icons/totems/marketing_totem_admin.png';
 
     private static $managed_models = [
         PosterDistribution::class,
