@@ -20,7 +20,6 @@ import Organizations from '@views/Organizations.vue'
 import OrganizationDetail from '@views/OrganizationDetail.vue'
 import OrganizationManage from '@views/OrganizationManage.vue'
 import Login from '@views/Login.vue'
-import Register from '@views/Register.vue'
 import Tasks from '@views/Tasks.vue'
 import TaskDetail from '@views/TaskDetail.vue'
 import Money from '@views/Money.vue'
@@ -211,12 +210,6 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/register',
-    name: 'Register',
-    component: Register,
-    meta: { requiresAuth: false }
-  },
-  {
     path: '/test',
     name: 'Test',
     component: Test,
@@ -244,8 +237,8 @@ router.beforeEach(async (to, from, next) => {
     return
   }
   
-  // Redirect authenticated users away from login/register pages
-  if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
+  // Redirect authenticated users away from the login page
+  if (to.name === 'Login' && authStore.isAuthenticated) {
     next({ name: 'Dashboard' })
     return
   }

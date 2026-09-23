@@ -1,91 +1,74 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="room-form-modal" @cancel.prevent="close">
-      <div class="room-form-modal_content" @click.stop>
+  <AppModal ref="modal" class="room-form-modal" :title="isEdit ? 'Raum bearbeiten' : 'Neuer Raum'" @close="close">
+    <form id="room-form-form" class="modalform" @submit.prevent="submit">
 
-        <div class="room-form-modal_header">
-          <h2 class="hl2 room-form-modal_title">{{ isEdit ? 'Raum bearbeiten' : 'Neuer Raum' }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
-
-        <form class="room-form-modal_body" @submit.prevent="submit">
-
-          <div v-if="!isEdit" class="form-field">
-            <label class="form-label">Organisation</label>
-            <div class="multiselect-group">
-              <label v-for="org in store.organizations" :key="org.ID" class="checkbox-label">
-                <input type="radio" :value="org.ID" v-model="form.OrganizationID" :aria-label="org.Title" />
-                {{ org.Title }}
-              </label>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="room-title">Titel *</label>
-            <input
-              id="room-title"
-              v-model="form.Title"
-              type="text"
-              class="input"
-              placeholder="Raumtitel"
-              required
-              autofocus
-            />
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="room-description">Beschreibung</label>
-            <textarea
-              id="room-description"
-              v-model="form.Description"
-              class="input"
-              rows="3"
-              placeholder="Optionale Beschreibung…"
-            />
-          </div>
-
-          <div class="form-field">
-            <label class="form-label">Aufgaben</label>
-            <p v-if="loadingTasks" class="room-form-modal_tasks-loading">Lade Aufgaben…</p>
-            <p v-else-if="!form.OrganizationID" class="room-form-modal_tasks-loading">Bitte zuerst eine Organisation wählen.</p>
-            <div v-else-if="attachableTasks.length" class="multiselect-group room-form-modal_tasks">
-              <label v-for="t in attachableTasks" :key="t.ID" class="checkbox-label">
-                <input type="checkbox" :value="t.ID" v-model="form.TaskIDs" />
-                {{ t.Title }}
-              </label>
-            </div>
-            <p v-else class="room-form-modal_tasks-loading">Keine Aufgaben in dieser Organisation.</p>
-          </div>
-
-          <div v-if="error" class="room-form-modal_error">
-            {{ error }}
-          </div>
-
-          <div class="room-form-modal_actions">
-            <AppButton variant="secondary" :disabled="saving" @click="close">
-              Abbrechen
-            </AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || !form.Title.trim() || !form.OrganizationID">
-              {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
-            </AppButton>
-          </div>
-
-        </form>
+      <div v-if="!isEdit" class="field">
+        <label>Organisation</label>
+        <OrganizationPicker v-model="form.OrganizationID" :orgs="store.organizations" />
       </div>
-    </dialog>
-  </Teleport>
+
+      <label class="field">
+        Titel *
+        <input
+          id="room-title"
+          v-model="form.Title"
+          type="text"
+          placeholder="Raumtitel"
+          required
+          autofocus
+        />
+      </label>
+
+      <label class="field">
+        Beschreibung
+        <textarea
+          id="room-description"
+          v-model="form.Description"
+          rows="3"
+          placeholder="Optionale Beschreibung…"
+        />
+      </label>
+
+      <div class="field">
+        <label>Aufgaben</label>
+        <p v-if="loadingTasks" class="room-form-modal_tasks-loading">Lade Aufgaben…</p>
+        <p v-else-if="!form.OrganizationID" class="room-form-modal_tasks-loading">Bitte zuerst eine Organisation wählen.</p>
+        <div v-else-if="attachableTasks.length" class="multiselect-group room-form-modal_tasks">
+          <label v-for="t in attachableTasks" :key="t.ID" class="checkbox-label">
+            <input type="checkbox" :value="t.ID" v-model="form.TaskIDs" />
+            {{ t.Title }}
+          </label>
+        </div>
+        <p v-else class="room-form-modal_tasks-loading">Keine Aufgaben in dieser Organisation.</p>
+      </div>
+
+      <div v-if="error" class="app-modal_error">
+        {{ error }}
+      </div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">
+        Abbrechen
+      </AppButton>
+      <AppButton type="submit" form="room-form-form" variant="primary" :disabled="saving || !form.Title.trim() || !form.OrganizationID">
+        {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useRoomsStore } from '@stores/rooms'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
 
 const emit = defineEmits(['saved'])
 const store = useRoomsStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 const attachableTasks = ref([])
@@ -129,7 +112,7 @@ function open() {
   Object.assign(form, defaultForm())
   error.value = null
   loadAttachableTasks(form.OrganizationID)
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 // Edit an existing room — `room` is the full detail object from fetchRoomDetail (incl. Tasks)
@@ -143,11 +126,11 @@ function openForEdit(room) {
   })
   error.value = null
   loadAttachableTasks(form.OrganizationID, form.TaskIDs)
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function submit() {

@@ -63,7 +63,7 @@ class RoomsApiController extends ApiController
             'Hash'         => $task->Hash,
             'Title'        => $task->Title,
             'State'        => $task->State ?: 'open',
-            'DeadlineNice' => $task->Deadline ? $task->dbObject('Deadline')->Nice() : null,
+            'DeadlineNice' => $task->Deadline ? $task->dbObject('Deadline')->Date() : null,
             'Owner'        => ($owner && $owner->exists()) ? [
                 'ID'     => $owner->ID,
                 'Name'   => $owner->getDisplayName(),

@@ -15,6 +15,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $Description
  * @property int $ParentID
  * @method \App\Calendar\Appointment Parent()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -41,6 +42,20 @@ class AppointmentAgendaPoint extends DataObject implements PermissionProvider
         "Description" => "Beschreibung",
     ];
 
+    /**
+     * Hinzufügen/Entfernen und Änderungen landen im Verlauf des Termins (siehe HistoryExtension).
+     */
+    private static $history_target = 'Parent';
+
+    private static $history_target_set = 'AgendaPoints';
+
+    private static $history_fields = [
+        'Title',
+        'StartTime',
+        'EndTime',
+        'Description',
+    ];
+
     private static $summary_fields = [
         "Title" => "Titel",
         "StartTime" => "Startzeit",
@@ -50,6 +65,11 @@ class AppointmentAgendaPoint extends DataObject implements PermissionProvider
     private static $table_name = 'AppointmentAgendaPoint';
     private static $singular_name = "Tagesordnungspunkt";
     private static $plural_name = "Tagesordnungspunkte";
+
+    public function getHistoryContextLabel(): ?string
+    {
+        return 'TOP „' . $this->Title . '“';
+    }
 
     public function RenderTime()
     {

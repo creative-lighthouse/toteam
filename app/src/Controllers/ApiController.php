@@ -2,10 +2,13 @@
 
 namespace App\Controllers;
 
+use App\Auth\JwtHelper;
+use App\History\HistoryEntry;
 use App\Teams\Organization;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
 use SilverStripe\Security\Member;
 
@@ -36,17 +39,32 @@ class ApiController extends Controller
     }
     
     /**
-     * Check if user is authenticated
+     * Resolves the current Member from the "Authorization: Bearer <JWT>" header.
+     * Returns null (never throws/httpErrors) so callers can respond with their
+     * own 401 payload.
      */
     protected function requireAuth(): ?Member
     {
-        $member = Security::getCurrentUser();
-        
-        if (!$member) {
-            // Don't use httpError, return null instead
+        $header = $this->getRequest()->getHeader('Authorization') ?? '';
+        if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
             return null;
         }
-        
+
+        $memberID = JwtHelper::verifyAccessToken(trim($matches[1]));
+        if (!$memberID) {
+            return null;
+        }
+
+        $member = Member::get()->byID($memberID);
+        if (!$member) {
+            return null;
+        }
+
+        // Populated so existing framework/permission helpers (Permission::checkMember(),
+        // canView()/canEdit() checks, etc.) that read the "current user" keep working
+        // unchanged, regardless of how the member was actually resolved here.
+        Security::setCurrentUser($member);
+
         return $member;
     }
     
@@ -73,6 +91,29 @@ class ApiController extends Controller
         ], $statusCode);
     }
     
+    /**
+     * Paginierte Verlaufseinträge eines Datenobjekts mit {@see \App\History\HistoryExtension}.
+     * Cursor-basiert (`?before=<EntryID>&limit=20`), damit beim Nachladen keine Einträge
+     * doppelt erscheinen oder fehlen, wenn zwischendurch neue hinzukommen.
+     */
+    protected function historyResponse(DataObject $record, HTTPRequest $request): HTTPResponse
+    {
+        $limit = max(1, min(50, (int) ($request->getVar('limit') ?: 20)));
+        $entries = HistoryEntry::getForRecord($record)->sort('ID', 'DESC');
+        if ($before = (int) $request->getVar('before')) {
+            $entries = $entries->filter('ID:LessThan', $before);
+        }
+
+        // Einen mehr laden, um zu wissen, ob es noch weitere Einträge gibt
+        $page = $entries->limit($limit + 1)->toArray();
+        $hasMore = count($page) > $limit;
+
+        return $this->jsonResponse([
+            'entries' => array_map(fn (HistoryEntry $e) => $e->toApi(), array_slice($page, 0, $limit)),
+            'hasMore' => $hasMore,
+        ]);
+    }
+
     /**
      * Return success response
      */

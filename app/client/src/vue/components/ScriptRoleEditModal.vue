@@ -1,60 +1,50 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="script-role-edit-modal" @cancel.prevent="close">
-      <div class="script-role-edit-modal_content" @click.stop>
+  <AppModal ref="modal" class="script-role-edit-modal" title="Rolle bearbeiten" @close="close">
+    <form id="script-role-edit-form" class="modalform" @submit.prevent="submit">
 
-        <div class="script-role-edit-modal_header">
-          <h2 class="hl2 script-role-edit-modal_title">Rolle bearbeiten</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
+      <label class="field">
+        Titel *
+        <input id="script-role-title" v-model="form.Title" type="text" required />
+      </label>
 
-        <form id="script-role-edit-form" class="script-role-edit-modal_body" @submit.prevent="submit">
+      <label class="field">
+        Beschreibung
+        <textarea
+          id="script-role-description"
+          v-model="form.Description"
+          rows="3"
+          placeholder="z.B. Alter, Charaktereigenschaften, Hinweise für die Besetzung…"
+        />
+      </label>
 
-          <div class="form-field">
-            <label class="form-label" for="script-role-title">Titel *</label>
-            <input id="script-role-title" v-model="form.Title" type="text" class="input" required />
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="script-role-description">Beschreibung</label>
-            <textarea
-              id="script-role-description"
-              v-model="form.Description"
-              class="input"
-              rows="3"
-              placeholder="z.B. Alter, Charaktereigenschaften, Hinweise für die Besetzung…"
-            />
-          </div>
-
-          <div class="form-field">
-            <label class="form-label">Mitglieder</label>
-            <ScriptMemberMultiSelect
-              :members="orgMembers"
-              v-model="form.MemberIDs"
-            />
-          </div>
-
-          <div v-if="error" class="script-role-edit-modal_error">{{ error }}</div>
-        </form>
-
-        <div class="script-role-edit-modal_actions">
-          <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-          <AppButton type="submit" form="script-role-edit-form" variant="primary" :disabled="saving || !form.Title.trim()">
-            {{ saving ? 'Speichern…' : 'Speichern' }}
-          </AppButton>
-        </div>
-
+      <div class="field">
+        <label>Mitglieder</label>
+        <MemberPicker
+          :members="orgMembers"
+          v-model="form.MemberIDs"
+          multiple
+          show-select-all
+        />
       </div>
-    </dialog>
-  </Teleport>
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="script-role-edit-form" variant="primary" :disabled="saving || !form.Title.trim()">
+        {{ saving ? 'Speichern…' : 'Speichern' }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
 import { useSkriptStore } from '@stores/skript'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import ScriptMemberMultiSelect from '@components/ScriptMemberMultiSelect.vue'
+import AppModal from '@components/AppModal.vue'
+import MemberPicker from '@components/MemberPicker.vue'
 
 const props = defineProps({
   orgMembers: { type: Array, default: () => [] },
@@ -62,7 +52,7 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 const store = useSkriptStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 let currentRole = null
@@ -79,11 +69,11 @@ function open(role) {
   form.Description = role.Description || ''
   form.MemberIDs = [...(role.MemberIDs || [])]
   error.value = null
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function submit() {

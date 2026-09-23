@@ -42,28 +42,30 @@
 
           <div class="task-detail_header-actions">
             <!-- Share link button -->
-            <AppButton variant="secondary" :title="copied ? 'Kopiert!' : 'Link teilen'" @click="copyShareLink">
+            <AppIconButton variant="neutral" :aria-label="copied ? 'Kopiert!' : 'Link teilen'" :title="copied ? 'Kopiert!' : 'Link teilen'" @click="copyShareLink">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-              {{ copied ? 'Kopiert!' : 'Teilen' }}
-            </AppButton>
+            </AppIconButton>
+
+            <!-- History button -->
+            <AppIconButton variant="neutral" aria-label="Verlauf anzeigen" title="Verlauf anzeigen" @click="historyModal?.open()">
+              <span class="icon-mask" :style="historyIconStyle" />
+            </AppIconButton>
 
             <!-- Edit button -->
-            <AppButton v-if="task.CanEdit" variant="secondary" title="Aufgabe bearbeiten" @click="editModal?.open()">
-              <img :src="actionEdit" alt="" width="16" height="16" />
-              Bearbeiten
-            </AppButton>
+            <AppIconButton v-if="task.CanEdit" variant="primary" aria-label="Aufgabe bearbeiten" title="Aufgabe bearbeiten" @click="editModal?.open()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </AppIconButton>
 
             <!-- Delete button -->
-            <AppButton v-if="task.CanDelete" variant="danger" title="Aufgabe löschen" @click="deleteModal?.open()">
+            <AppIconButton v-if="task.CanDelete" variant="danger" aria-label="Aufgabe löschen" title="Aufgabe löschen" @click="deleteModal?.open()">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              Löschen
-            </AppButton>
+            </AppIconButton>
           </div>
         </div>
 
         <h2 class="hl2 task-detail_title">{{ task.Title }}</h2>
 
-        <p v-if="task.DeadlineNice" class="task-detail_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
+        <p v-if="task.DeadlineNice && task.State !== 'finished'" class="task-detail_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
           Fällig: {{ task.DeadlineNice }}
         </p>
 
@@ -118,7 +120,9 @@
         <div class="task-detail_rooms">
           <div class="task-detail_rooms-header">
             <h3 class="hl3">Räume</h3>
-            <AppButton size="small" variant="secondary" @click="roomsModal?.open()">+ Raum hinzufügen</AppButton>
+            <AppIconButton variant="neutral" aria-label="Raum hinzufügen" title="Raum hinzufügen" @click="roomsModal?.open()">
+              <span class="icon-mask" :style="addRoomIconStyle" />
+            </AppIconButton>
           </div>
 
           <div v-if="task.Rooms?.length" class="task-detail_room-chips">
@@ -131,7 +135,9 @@
         <div class="task-detail_subtasks">
           <div class="task-detail_subtasks-header">
             <h3 class="hl3">Unteraufgaben</h3>
-            <AppButton size="small" variant="secondary" @click="subtaskModal?.open()">+ Unteraufgabe</AppButton>
+            <AppIconButton variant="neutral" aria-label="Unteraufgabe hinzufügen" title="Unteraufgabe hinzufügen" @click="subtaskModal?.open()">
+              <span class="icon-mask" :style="addTaskIconStyle" />
+            </AppIconButton>
           </div>
 
           <TaskProgressBar :subtasks="task.SubTasks || []" />
@@ -179,6 +185,12 @@
       :task="task"
       @deleted="onTaskDeleted"
     />
+    <HistoryModal
+      v-if="task"
+      ref="historyModal"
+      :endpoint="`/tasks/history/${task.ID}`"
+      created-label="hat die Aufgabe erstellt"
+    />
     <TaskEditModal
       v-if="task"
       ref="editModal"
@@ -203,7 +215,15 @@ import TaskProgressBar from '@components/TaskProgressBar.vue'
 import TaskDeleteModal from '@components/TaskDeleteModal.vue'
 import TaskEditModal from '@components/TaskEditModal.vue'
 import AppButton from '@components/AppButton.vue'
-import actionEdit from '../../../icons/actions/action_edit.svg'
+import AppIconButton from '@components/AppIconButton.vue'
+import HistoryModal from '@components/HistoryModal.vue'
+import actionAddRoom from '../../../icons/actions/action_addroom.svg'
+import actionAddTask from '../../../icons/actions/action_addtask.svg'
+import actionHistory from '../../../icons/actions/action_history.svg'
+
+const addRoomIconStyle = { maskImage: `url("${actionAddRoom}")`, WebkitMaskImage: `url("${actionAddRoom}")` }
+const addTaskIconStyle = { maskImage: `url("${actionAddTask}")`, WebkitMaskImage: `url("${actionAddTask}")` }
+const historyIconStyle = { maskImage: `url("${actionHistory}")`, WebkitMaskImage: `url("${actionHistory}")` }
 
 const route = useRoute()
 const router = useRouter()
@@ -225,9 +245,10 @@ const roomsModal = ref(null)
 const subtaskModal = ref(null)
 const deleteModal = ref(null)
 const editModal = ref(null)
+const historyModal = ref(null)
 
 const isOverdue = computed(() => {
-  if (!task.value?.Deadline) return false
+  if (!task.value?.Deadline || task.value?.State === 'finished') return false
   return new Date(task.value.Deadline) < new Date()
 })
 

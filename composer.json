@@ -19,11 +19,11 @@
         "ext-intl": "*",
         "ext-json": "*",
         "symbiote/silverstripe-gridfieldextensions": "^5.0",
-        "silverstripe/linkfield": "^5.0",
         "ryanpotter/silverstripe-cms-theme": "dev-master",
         "colymba/gridfield-bulk-editing-tools": "^5.0",
         "stevenpaw/stevens-silverstripe-icons": "dev-main",
-        "symfony/var-exporter": "^7.4"
+        "symfony/var-exporter": "^7.4",
+        "firebase/php-jwt": "^7.2"
     },
     "require-dev": {
         "silverleague/ideannotator": "4.0.1",
@@ -49,9 +49,7 @@
             "app/.htaccess",
             "app/_config.php",
             "app/_config/mimevalidator.yml",
-            "app/_config/mysite.yml",
-            "app/src/Page.php",
-            "app/src/PageController.php"
+            "app/_config/mysite.yml"
         ],
         "public-files-installed": [
             ".htaccess",

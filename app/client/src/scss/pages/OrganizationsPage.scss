@@ -1,6 +1,43 @@
 @use "../variables" as *;
 
 .section.section--OrganizationsPage {
+    .organizations-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+
+        @include media(max-smartphone) {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+
+    .organizations-search {
+        flex: 1;
+        min-width: 200px;
+
+        input[type="search"] {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusMedium);
+            font-size: 15px;
+            background-color: var(--ColorWhite);
+            box-sizing: border-box;
+
+            &:focus {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: 1px;
+                border-color: transparent;
+            }
+        }
+    }
+
+    .organizations-toolbar_action {
+        flex-shrink: 0;
+    }
+
     .organizations-list {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

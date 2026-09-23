@@ -1,50 +1,33 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="task-supporters-modal" @cancel.prevent="close">
-      <div class="task-supporters-modal_content" @click.stop>
+  <AppModal ref="modal" class="task-supporters-modal" title="Unterstützer verwalten" @close="close">
+    <form id="task-supporters-form" @submit.prevent="submit">
 
-        <div class="task-supporters-modal_header">
-          <h2 class="hl2 task-supporters-modal_title">Unterstützer verwalten</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
+      <div v-if="loadingMembers" class="task-supporters-modal_loading">Lade Mitglieder…</div>
 
-        <form class="task-supporters-modal_body" @submit.prevent="submit">
-
-          <div v-if="loadingMembers" class="task-supporters-modal_loading">Lade Mitglieder…</div>
-
-          <div v-else-if="memberOptions.length === 0" class="task-supporters-modal_loading">
-            Keine weiteren Mitglieder in dieser Organisation.
-          </div>
-
-          <div v-else class="task-supporters-modal_list">
-            <label v-for="m in memberOptions" :key="m.ID" class="task-supporters-modal_option">
-              <input type="checkbox" :value="m.ID" v-model="selected" />
-              <AppAvatar :src="m.Avatar" :alt="m.Name" img-class="task-supporters-modal_avatar" />
-              <span>{{ m.Name }}</span>
-            </label>
-          </div>
-
-          <div v-if="error" class="task-supporters-modal_error">{{ error }}</div>
-
-          <div class="task-supporters-modal_actions">
-            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || loadingMembers">
-              {{ saving ? 'Speichern…' : 'Speichern' }}
-            </AppButton>
-          </div>
-
-        </form>
+      <div v-else-if="memberOptions.length === 0" class="task-supporters-modal_loading">
+        Keine weiteren Mitglieder in dieser Organisation.
       </div>
-    </dialog>
-  </Teleport>
+
+      <MemberPicker v-else v-model="selected" :members="memberOptions" multiple show-select-all />
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="task-supporters-form" variant="primary" :disabled="saving || loadingMembers">
+        {{ saving ? 'Speichern…' : 'Speichern' }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useTasksStore } from '@stores/tasks'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import AppAvatar from '@components/AppAvatar.vue'
+import AppModal from '@components/AppModal.vue'
+import MemberPicker from '@components/MemberPicker.vue'
 
 const props = defineProps({
   taskId: { type: Number, required: true },
@@ -55,7 +38,7 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 const store = useTasksStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const loadingMembers = ref(false)
 const error = ref(null)
@@ -72,11 +55,11 @@ async function open() {
   } finally {
     loadingMembers.value = false
   }
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function submit() {

@@ -85,6 +85,8 @@
         grid-row: 1;
         display: flex;
         align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
         gap: 6px;
     }
 
@@ -138,4 +140,31 @@
             line-clamp: unset;
         }
     }
+
+}
+
+// ── Wrapper für gruppierte Teilnehmerlisten (Termine & Essen) ──────────────────
+
+.participants-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    .participant-group_title {
+        margin: 0 0 5px 0;
+        padding: 12px 12px 0 12px;
+        font-size: 14px;
+        color: #333;
+        font-weight: 400;
+        text-align: center;
+
+        span {
+            opacity: 0.7;
+            font-size: 12px;
+        }
+    }
+}
+
+.event-participation_title {
+    margin: 0;
 }

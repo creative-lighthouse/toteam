@@ -3,7 +3,7 @@
 dialog{
     border: none;
     max-width: 400px;
-    width: 90%;
+    width: calc(100% - 20px);
     border-radius: var(--BorderRadiusMedium);
     border: none;
     font-weight: 500;
@@ -66,7 +66,6 @@ dialog{
 
         .dialog-infobox {
             background-color: var(--ColorWhite);
-            padding: 15px;
             border-radius: var(--BorderRadiusSmall);
             transition: all 0.3s ease;
 
@@ -126,21 +125,7 @@ dialog{
 .applicants-modal {
     text-align: left;
     max-width: 520px;
-
-    .applicants-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .applicants-modal_header {
-        @include modal-header;
-    }
-
-    .applicants-modal_body {
-        padding: 8px 0;
-        max-height: 60vh;
-        overflow-y: auto;
-    }
+    max-height: 90vh;
 
     .applicants-modal_state {
         padding: 24px 20px;
@@ -221,22 +206,8 @@ dialog{
 .qrcode-modal {
     max-width: 320px;
 
-    .qrcode-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .qrcode-modal_header {
-        @include modal-header;
-    }
-
-    .qrcode-modal_body {
-        display: flex;
-        flex-direction: column;
+    .app-modal_body {
         align-items: center;
-        gap: 16px;
-        padding: 24px 20px;
-        background: var(--ColorWhite);
     }
 
     .qrcode-modal_canvas {
@@ -258,27 +229,11 @@ dialog{
     text-align: left;
     max-width: 480px;
     max-height: 90vh;
-    overflow-y: auto;
-
-    .edit-profile-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .edit-profile-modal_header {
-        @include modal-header;
-    }
 
     .edit-profile-modal_loading {
         padding: 32px 20px;
         text-align: center;
         color: var(--ColorGray);
-    }
-
-    .edit-profile-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
     }
 
     .edit-section {
@@ -345,44 +300,44 @@ dialog{
         overflow: hidden;
     }
 
-    // Profile form
-    .profile-form {
-        width: 100%;
-        padding: 0;
+    // Profile form — grid/field styling itself comes from the shared
+    // .modalform/.field system (forminputs.scss); only this modal's
+    // field-content widgets (email display + inline change flow) live here.
+    .email-display {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 9px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 15px;
+    }
+
+    .email-change-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        &_actions {
+            display: flex;
+            gap: 8px;
+        }
+    }
+
+    .link-button {
+        background: none;
         border: none;
-        background: transparent;
-        box-shadow: none;
-        margin: 0;
-        align-items: stretch;
+        padding: 0;
+        font: inherit;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--ColorPrimary);
+        cursor: pointer;
+        white-space: nowrap;
 
-        .field {
-            width: 100%;
-            margin-bottom: 12px;
-
-            label {
-                display: block;
-                font-size: 13px;
-                font-weight: 600;
-                color: var(--ColorGray);
-                margin-bottom: 4px;
-            }
-
-            input, select {
-                width: 100%;
-                padding: 9px 12px;
-                border: 1px solid var(--ColorLightGray);
-                border-radius: var(--BorderRadiusSmall);
-                font-size: 15px;
-                box-sizing: border-box;
-                height: auto;
-                background-color: var(--ColorWhite);
-
-                &:focus {
-                    outline: 2px solid var(--ColorPrimary);
-                    outline-offset: 1px;
-                    border-color: transparent;
-                }
-            }
+        &:hover:not(:disabled) {
+            text-decoration: underline;
         }
     }
 
@@ -413,6 +368,21 @@ dialog{
     }
 
     // Organization list
+    .allergy-group {
+        margin-bottom: 12px;
+
+        &:last-child { margin-bottom: 0; }
+    }
+
+    .allergy-group_title {
+        margin: 0 0 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: var(--ColorGray);
+    }
+
     .allergy-chips {
         display: flex;
         flex-wrap: wrap;
@@ -460,6 +430,14 @@ dialog{
             border-top: none;
         }
 
+        .org-item_row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+        }
+
         .org-item_info {
             display: flex;
             align-items: center;
@@ -482,10 +460,6 @@ dialog{
             color: var(--ColorGray);
         }
 
-        .org-item_actions {
-            display: flex;
-            justify-content: flex-end;
-        }
     }
 
     // Leave-org confirmation
@@ -517,22 +491,6 @@ dialog{
     text-align: left;
     max-width: 420px;
 
-    .settings-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .settings-modal_header {
-        @include modal-header;
-    }
-
-    .settings-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        padding: 12px 0;
-    }
-
     .settings-section {
         padding: 4px 0;
 
@@ -553,8 +511,12 @@ dialog{
         }
     }
 
+    // Zeilen-Layout für AppToggle innerhalb der Einstellungen (der Schalter
+    // selbst kommt aus der geteilten .toggle-switch-Komponente/-Klasse in
+    // forminputs.scss).
     .settings-toggle {
         display: flex;
+        flex-direction: row;
         align-items: center;
         justify-content: space-between;
         padding: 12px 20px;
@@ -562,53 +524,11 @@ dialog{
         background-color: var(--ColorWhite);
         margin: 1px 0;
         gap: 12px;
+        font-size: 15px;
+        font-weight: 500;
 
         &:hover {
             background-color: var(--ColorLightGray);
-        }
-
-        .settings-toggle_label {
-            font-size: 15px;
-            font-weight: 500;
-            flex: 1;
-        }
-
-        .settings-toggle_input {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .settings-toggle_track {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-            border-radius: 12px;
-            background-color: var(--ColorGray, #aaa);
-            flex-shrink: 0;
-            transition: background-color 0.2s ease;
-
-            &::after {
-                content: '';
-                position: absolute;
-                top: 3px;
-                left: 3px;
-                width: 18px;
-                height: 18px;
-                border-radius: 50%;
-                background-color: var(--ColorWhite);
-                transition: transform 0.2s ease;
-            }
-        }
-
-        .settings-toggle_input:checked + .settings-toggle_track {
-            background-color: var(--ColorPrimary);
-
-            &::after {
-                transform: translateX(20px);
-            }
         }
     }
 
@@ -654,22 +574,6 @@ dialog{
     text-align: left;
     max-width: 420px;
 
-    .feedback-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .feedback-modal_header {
-        @include modal-header;
-    }
-
-    .feedback-modal_body {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        padding: 16px 20px 20px;
-    }
-
     .feedback-type_group {
         display: flex;
         gap: 8px;
@@ -699,43 +603,6 @@ dialog{
             border-color: var(--ColorPrimary);
             background-color: var(--ColorPrimaryLight);
         }
-    }
-
-    .feedback-field {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-
-        .feedback-field_label {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--ColorGray);
-        }
-
-        .feedback-field_input,
-        .feedback-field_textarea {
-            font-size: 15px;
-            font-family: inherit;
-            padding: 10px 12px;
-            border: 1px solid var(--ColorGray, #aaa);
-            border-radius: var(--BorderRadiusSmall, 6px);
-            background-color: var(--ColorWhite);
-            color: var(--ColorDark);
-            resize: vertical;
-
-            &:focus {
-                outline: 2px solid var(--ColorPrimary);
-                outline-offset: 1px;
-            }
-        }
-    }
-
-    .feedback-checkbox {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        cursor: pointer;
     }
 
     .feedback-error {

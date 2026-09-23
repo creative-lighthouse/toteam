@@ -1,0 +1,175 @@
+.member-graphic {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 1 / 1;
+    margin: 40px auto;
+
+    &__lines {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+    }
+
+    &__line {
+        stroke: var(--ColorPrimaryLight);
+        stroke-width: 0.6;
+        stroke-linecap: round;
+        opacity: 0.7;
+        transition: opacity 0.5s ease;
+
+        &--kassenwart {
+            stroke: color-mix(in srgb, var(--ColorSecondary) 70%, var(--ColorPrimaryLight));
+        }
+
+        &.is-hidden {
+            opacity: 0;
+        }
+    }
+
+    &__hub {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+        box-shadow: 0 8px 24px color-mix(in srgb, var(--ColorPrimary) 35%, transparent);
+        text-align: center;
+
+        span {
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1.2;
+            max-width: 72px;
+        }
+    }
+
+    &__member {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        // left/top change only while opacity is 0 (see MemberGraphic.vue), so this
+        // transition is a safety net, not what makes the swap invisible.
+        transition: left 0.6s ease, top 0.6s ease, opacity 0.5s ease, transform 0.5s ease;
+
+        &.is-hidden {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.5);
+        }
+    }
+
+    &__avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background-color: var(--ColorVeryLightGray);
+        color: var(--ColorPrimary);
+        border: 2px solid var(--ColorPrimaryLight);
+        box-shadow: 0 4px 14px color-mix(in srgb, var(--ColorBlack) 8%, transparent);
+    }
+
+    &__member--vorstand &__avatar {
+        border-color: var(--ColorPrimary);
+        color: var(--ColorPrimary);
+    }
+
+    &__member--kassenwart &__avatar {
+        border-color: var(--ColorSecondary);
+        color: color-mix(in srgb, var(--ColorSecondary) 60%, var(--ColorPrimaryDark));
+    }
+
+    &__role-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: var(--BorderRadiusLarge);
+        background-color: var(--ColorVeryLightGray);
+        color: var(--TextColor);
+        white-space: nowrap;
+    }
+
+    &__member--vorstand &__role-badge {
+        background-color: var(--ColorPrimaryLight);
+        color: var(--ColorPrimaryDark);
+    }
+
+    &__member--kassenwart &__role-badge {
+        background-color: var(--ColorSecondary);
+        color: var(--ColorPrimaryDark);
+    }
+
+    &__bubble {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px 5px 6px;
+        border-radius: var(--BorderRadiusLarge);
+        background-color: var(--ColorWhite);
+        border: 1px solid var(--ColorLightGray);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--ColorBlack) 6%, transparent);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--TextColor);
+        white-space: nowrap;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        transition: left 0.6s ease, top 0.6s ease, opacity 0.5s ease, transform 0.5s ease;
+
+        &.is-hidden {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.5);
+        }
+    }
+
+    &__bubble-icon {
+        display: inline-flex;
+    }
+
+    &__bubble--beitritt &__bubble-icon {
+        color: var(--ColorPrimary);
+    }
+
+    &__bubble--allergien &__bubble-icon {
+        color: var(--ColorStatusWarning);
+    }
+
+    &__bubble--essen &__bubble-icon {
+        color: color-mix(in srgb, var(--ColorSecondary) 55%, var(--ColorPrimaryDark));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .member-graphic {
+        &__line,
+        &__member,
+        &__bubble {
+            transition: none !important;
+            opacity: 0.7;
+        }
+
+        &__member,
+        &__bubble {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1) !important;
+        }
+    }
+}

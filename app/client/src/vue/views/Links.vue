@@ -2,26 +2,6 @@
   <div class="section section--LinksPage">
     <div class="section_content">
 
-      <!-- Type filter tabs -->
-      <div v-if="usedTypes.length > 0" class="section_filter">
-        <button
-          class="button"
-          :class="{ active: selectedType === null }"
-          @click="selectedType = null"
-        >
-          Alle
-        </button>
-        <button
-          v-for="type in usedTypes"
-          :key="type.ID"
-          class="button"
-          :class="{ active: selectedType?.ID === type.ID }"
-          @click="selectedType = type"
-        >
-          {{ type.Title }}
-        </button>
-      </div>
-
       <!-- Search + Add button row -->
       <div class="links-toolbar">
         <div class="links-search">
@@ -89,9 +69,6 @@
                 <span v-else-if="link.OrgTitle" class="link-item__org-badge">
                   {{ link.OrgTitle }}
                 </span>
-                <span v-if="link.TypeTitle" class="link-item__type-badge">
-                  {{ link.TypeTitle }}
-                </span>
               </div>
             </div>
           </a>
@@ -124,131 +101,87 @@
     </div>
 
     <!-- Add / Edit Modal -->
-    <dialog ref="modalEl" class="link-modal">
-      <div class="link-modal__content">
-        <div class="link-modal__header">
-          <h3 class="link-modal__title">
-            {{ editingLink ? 'Link bearbeiten' : 'Link hinzufügen' }}
-          </h3>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="closeModal">✕</AppIconButton>
+    <AppModal
+      ref="modal"
+      class="link-modal"
+      :title="editingLink ? 'Link bearbeiten' : 'Link hinzufügen'"
+      @close="closeModal"
+    >
+      <form id="link-form" class="modalform" @submit.prevent="submitModal">
+
+        <label class="field">
+          Titel *
+          <input v-model="form.title" type="text" required placeholder="z.B. Vereinssatzung" />
+        </label>
+
+        <!-- Org selector (only when adding) -->
+        <label v-if="!editingLink" class="field">
+          Organisation *
+          <select v-model="form.orgId" required>
+            <option value="" disabled>Bitte wählen…</option>
+            <option v-for="org in adminOrgs" :key="org.ID" :value="org.ID">
+              {{ org.Title }}
+            </option>
+          </select>
+        </label>
+
+        <!-- Kind toggle (only when adding) -->
+        <div v-if="!editingLink" class="field link-modal_kind-toggle">
+          <button
+            type="button"
+            class="button"
+            :class="{ active: form.kind === 'external' }"
+            @click="form.kind = 'external'"
+          >
+            Externe URL
+          </button>
+          <button
+            type="button"
+            class="button"
+            :class="{ active: form.kind === 'file' }"
+            @click="form.kind = 'file'"
+          >
+            Datei hochladen
+          </button>
         </div>
 
-        <form class="link-modal__body" @submit.prevent="submitModal">
+        <!-- URL input (when external or editing an external link) -->
+        <label v-if="form.kind === 'external'" class="field">
+          URL *
+          <input
+            v-model="form.url"
+            type="url"
+            placeholder="https://…"
+            :required="form.kind === 'external' && !editingLink"
+          />
+        </label>
 
-          <!-- Title -->
-          <div class="link-modal__field">
-            <label for="link-title">Titel *</label>
-            <input
-              id="link-title"
-              v-model="form.title"
-              type="text"
-              required
-              placeholder="z.B. Vereinssatzung"
-            />
-          </div>
+        <!-- Open in new tab (for external links) -->
+        <AppToggle v-if="form.kind === 'external'" v-model="form.openInNew" label="In neuem Tab öffnen" />
 
-          <!-- Org selector (only when adding) -->
-          <div v-if="!editingLink" class="link-modal__field">
-            <label for="link-org">Organisation *</label>
-            <select id="link-org" v-model="form.orgId" required>
-              <option value="" disabled>Bitte wählen…</option>
-              <option v-for="org in adminOrgs" :key="org.ID" :value="org.ID">
-                {{ org.Title }}
-              </option>
-            </select>
-          </div>
+        <!-- File input (when adding a file) -->
+        <label v-if="!editingLink && form.kind === 'file'" class="field">
+          Datei *
+          <input ref="fileInputEl" type="file" @change="onFileChange" />
+        </label>
 
-          <!-- Type selector -->
-          <div class="link-modal__field">
-            <label for="link-type">Typ (optional)</label>
-            <select id="link-type" v-model="form.typeId">
-              <option :value="null">— Kein Typ —</option>
-              <option v-for="type in types" :key="type.ID" :value="type.ID">
-                {{ type.Title }}
-              </option>
-            </select>
-          </div>
+        <!-- File links: note about editing -->
+        <p v-if="editingLink && editingLink.LinkKind === 'file'" class="link-modal_file-hint">
+          Datei-Links können nicht geändert werden. Bitte lösche diesen Link und erstelle einen neuen.
+        </p>
 
-          <!-- Kind toggle (only when adding) -->
-          <div v-if="!editingLink" class="link-modal__kind-toggle">
-            <button
-              type="button"
-              class="button"
-              :class="{ active: form.kind === 'external' }"
-              @click="form.kind = 'external'"
-            >
-              Externe URL
-            </button>
-            <button
-              type="button"
-              class="button"
-              :class="{ active: form.kind === 'file' }"
-              @click="form.kind = 'file'"
-            >
-              Datei hochladen
-            </button>
-          </div>
+        <!-- Error -->
+        <div v-if="modalError" class="app-modal_error">{{ modalError }}</div>
 
-          <!-- URL input (when external or editing an external link) -->
-          <div
-            v-if="form.kind === 'external'"
-            class="link-modal__field"
-          >
-            <label for="link-url">URL *</label>
-            <input
-              id="link-url"
-              v-model="form.url"
-              type="url"
-              placeholder="https://…"
-              :required="form.kind === 'external' && !editingLink"
-            />
-          </div>
+      </form>
 
-          <!-- Open in new tab (for external links) -->
-          <div v-if="form.kind === 'external'" class="link-modal__checkbox-row">
-            <input
-              id="link-openinnew"
-              v-model="form.openInNew"
-              type="checkbox"
-            />
-            <label for="link-openinnew">In neuem Tab öffnen</label>
-          </div>
-
-          <!-- File input (when adding a file) -->
-          <div v-if="!editingLink && form.kind === 'file'" class="link-modal__field">
-            <label for="link-file">Datei *</label>
-            <input
-              id="link-file"
-              ref="fileInputEl"
-              type="file"
-              @change="onFileChange"
-            />
-          </div>
-
-          <!-- File links: note about editing -->
-          <div v-if="editingLink && editingLink.LinkKind === 'file'" class="section_infobox" style="margin: 0; font-size: 13px;">
-            <p style="margin: 0;">Datei-Links können nicht geändert werden. Bitte lösche diesen Link und erstelle einen neuen.</p>
-          </div>
-
-          <!-- Error -->
-          <p v-if="modalError" class="link-modal__error">{{ modalError }}</p>
-
-        </form>
-
-        <div class="link-modal__footer">
-          <AppButton variant="secondary" @click="closeModal">
-            Abbrechen
-          </AppButton>
-          <AppButton
-            variant="primary"
-            :disabled="submitting"
-            @click="submitModal"
-          >
-            {{ submitting ? 'Speichern…' : 'Speichern' }}
-          </AppButton>
-        </div>
-      </div>
-    </dialog>
+      <template #actions>
+        <AppButton variant="secondary" @click="closeModal">Abbrechen</AppButton>
+        <AppButton type="submit" form="link-form" variant="primary" :disabled="submitting">
+          {{ submitting ? 'Speichern…' : 'Speichern' }}
+        </AppButton>
+      </template>
+    </AppModal>
 
   </div>
 </template>
@@ -259,32 +192,30 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete, apiPostForm, clearCacheForEndpoint } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
+import AppToggle from '@components/AppToggle.vue'
 
 usePageHeaderStore().setHeader('Links', 'Wichtige Links und Ressourcen für dein Team.')
 
 // ── State ──────────────────────────────────────────────
 const links = ref([])
-const types = ref([])
 const adminOrgIDs = ref([])
 const adminOrgs = ref([])
 const loading = ref(false)
 const loadError = ref(null)
 
 const search = ref('')
-const selectedType = ref(null)
 
-const showModal = ref(false)
 const editingLink = ref(null)
 const submitting = ref(false)
 const modalError = ref(null)
 
-const modalEl = ref(null)
+const modal = ref(null)
 const fileInputEl = ref(null)
 
 const form = ref({
   title: '',
   orgId: '',
-  typeId: null,
   kind: 'external',
   url: '',
   openInNew: false,
@@ -292,17 +223,8 @@ const form = ref({
 })
 
 // ── Computed ───────────────────────────────────────────
-const usedTypes = computed(() => {
-  const usedTypeIDs = new Set(links.value.map((l) => l.TypeID).filter(Boolean))
-  return types.value.filter((t) => usedTypeIDs.has(t.ID))
-})
-
 const filteredLinks = computed(() => {
   let result = links.value
-
-  if (selectedType.value) {
-    result = result.filter((l) => l.TypeID === selectedType.value.ID)
-  }
 
   if (search.value.trim()) {
     const q = search.value.trim().toLowerCase()
@@ -319,7 +241,6 @@ async function fetchLinks() {
   try {
     const data = await apiGet('/links', false)
     links.value = data.links || []
-    types.value = data.types || []
     adminOrgIDs.value = data.adminOrgIDs || []
     adminOrgs.value = data.adminOrgs || []
   } catch (e) {
@@ -352,14 +273,13 @@ function openAddModal() {
   form.value = {
     title: '',
     orgId: adminOrgs.value.length === 1 ? adminOrgs.value[0].ID : '',
-    typeId: null,
     kind: 'external',
     url: '',
     openInNew: false,
     file: null,
   }
   modalError.value = null
-  modalEl.value?.showModal()
+  modal.value?.open()
 }
 
 function openEditModal(link) {
@@ -367,18 +287,17 @@ function openEditModal(link) {
   form.value = {
     title: link.Title,
     orgId: link.OrgID,
-    typeId: link.TypeID || null,
     kind: link.LinkKind || 'external',
     url: link.URL || '',
     openInNew: link.OpenInNew || false,
     file: null,
   }
   modalError.value = null
-  modalEl.value?.showModal()
+  modal.value?.open()
 }
 
 function closeModal() {
-  modalEl.value?.close()
+  modal.value?.close()
   editingLink.value = null
   modalError.value = null
 }
@@ -401,7 +320,6 @@ async function submitModal() {
       // Edit existing link
       const payload = {
         title: form.value.title,
-        typeId: form.value.typeId,
       }
       if (editingLink.value.LinkKind !== 'file') {
         payload.url = form.value.url
@@ -423,7 +341,6 @@ async function submitModal() {
         const fd = new FormData()
         fd.append('title', form.value.title)
         fd.append('orgId', form.value.orgId)
-        if (form.value.typeId) fd.append('typeId', form.value.typeId)
         fd.append('openInNew', form.value.openInNew ? '1' : '0')
         fd.append('file', form.value.file)
         await apiPostForm('/links', fd)
@@ -435,7 +352,6 @@ async function submitModal() {
         await apiPost('/links', {
           title: form.value.title,
           orgId: form.value.orgId,
-          typeId: form.value.typeId,
           url: form.value.url,
           openInNew: form.value.openInNew,
         })

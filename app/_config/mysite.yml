@@ -28,6 +28,30 @@ SilverStripe\Security\Member:
   extensions:
     - App\Extensions\MemberExtension
 
-SilverStripe\LinkField\Models\FileLink:
+App\Tasks\Task:
   extensions:
-    - App\Extensions\FileLinkExtension
+    - App\History\HistoryExtension
+
+App\Calendar\Appointment:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Calendar\AppointmentParticipation:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Food\Meal:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Food\MealEater:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Food\MealProductOrder:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Calendar\AppointmentAgendaPoint:
+  extensions:
+    - App\History\HistoryExtension

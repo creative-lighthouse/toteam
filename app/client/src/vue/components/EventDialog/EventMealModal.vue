@@ -1,58 +1,37 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="event-meal-modal" @cancel.prevent="close">
-      <div class="event-meal-modal_content" @click.stop>
+  <AppModal ref="modal" class="event-meal-modal" :title="isEdit ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen'" @close="close">
+    <form id="event-meal-form" class="modalform" @submit.prevent="submit">
+      <label class="field">
+        Titel *
+        <input v-model="form.title" type="text" placeholder="z.B. Mittagessen" maxlength="255" required>
+      </label>
 
-        <div class="event-meal-modal_header">
-          <h2>{{ isEdit ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen' }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
+      <label class="field">
+        Uhrzeit *
+        <input v-model="form.time" type="time" required>
+      </label>
 
-        <form id="event-meal-form" class="event-meal-modal_body" @submit.prevent="submit">
-          <div class="form-field">
-            <label class="form-label" for="event-meal-title">Titel *</label>
-            <input
-              id="event-meal-title"
-              v-model="form.title"
-              type="text"
-              class="input"
-              placeholder="z.B. Mittagessen"
-              maxlength="255"
-              required
-            >
-          </div>
+      <AppToggle v-model="form.acceptsContributions" label="Mitglieder dürfen Gerichte vorschlagen" />
 
-          <div class="form-field">
-            <label class="form-label" for="event-meal-time">Uhrzeit *</label>
-            <input id="event-meal-time" v-model="form.time" type="time" class="input" required>
-          </div>
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
 
-          <label class="form-checkbox">
-            <input type="checkbox" v-model="form.acceptsContributions">
-            Mitglieder dürfen Gerichte vorschlagen
-          </label>
-
-          <div v-if="error" class="event-meal-modal_error">{{ error }}</div>
-        </form>
-
-        <div class="event-meal-modal_actions">
-          <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-          <AppButton type="submit" form="event-meal-form" variant="primary" :disabled="saving || !form.title || !form.time">
-            {{ saving ? 'Speichern…' : 'Speichern' }}
-          </AppButton>
-          <AppButton v-if="isEdit" variant="danger" :disabled="saving" @click="remove">Löschen</AppButton>
-        </div>
-
-      </div>
-    </dialog>
-  </Teleport>
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="event-meal-form" variant="primary" :disabled="saving || !form.title || !form.time">
+        {{ saving ? 'Speichern…' : 'Speichern' }}
+      </AppButton>
+      <AppButton v-if="isEdit" variant="danger" :disabled="saving" @click="remove">Löschen</AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
+import AppToggle from '@components/AppToggle.vue'
 
 const props = defineProps({
   eventId: { type: Number, required: true },
@@ -61,7 +40,7 @@ const props = defineProps({
 const emit = defineEmits(['show-status'])
 const eventsStore = useEventsStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 
@@ -82,11 +61,11 @@ function open(meal = null) {
     ? { title: meal.Title, time: meal.RenderTime ?? '', acceptsContributions: !!meal.AcceptsContributions }
     : defaultForm()
   error.value = null
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function submit() {

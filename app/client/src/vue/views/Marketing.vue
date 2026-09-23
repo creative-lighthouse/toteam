@@ -13,6 +13,11 @@
             <option :value="null">Alle Organisationen</option>
             <option v-for="org in store.organizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
           </select>
+
+          <select v-if="store.sizes.length > 1" class="input" :value="store.filterSize ?? ''" @change="onSizeChange($event.target.value)">
+            <option value="">Alle Plakat-Arten</option>
+            <option v-for="size in store.sizes" :key="size.ID" :value="size.ID">{{ size.Title }}</option>
+          </select>
         </div>
 
         <div class="marketing-toolbar_actions">
@@ -24,13 +29,15 @@
           >
             <span class="icon-mask" :style="statisticsIconStyle" />
           </AppIconButton>
-          <AppButton
+          <AppIconButton
             v-if="store.canManageSizes"
-            variant="secondary"
+            variant="neutral"
+            aria-label="Plakat-Größen verwalten"
+            title="Plakat-Größen verwalten"
             @click="openSizeManager"
           >
-            Plakat-Größen verwalten
-          </AppButton>
+            <span class="icon-mask" :style="sizesIconStyle" />
+          </AppIconButton>
           <AppButton variant="primary" @click="entryModal?.open()">
             + Neuer Eintrag
           </AppButton>
@@ -46,12 +53,12 @@
         <AppButton variant="primary" @click="store.fetchDistributions(true)">Erneut versuchen</AppButton>
       </div>
 
-      <div v-else-if="store.distributions.length === 0" class="section_infobox">
+      <div v-else-if="store.filteredDistributions.length === 0" class="section_infobox">
         <p>Noch keine Verteil-Einträge vorhanden.</p>
       </div>
 
       <div v-else class="marketing-list">
-        <div v-for="entry in store.distributions" :key="entry.ID" class="marketing-list-row">
+        <div v-for="entry in store.filteredDistributions" :key="entry.ID" class="marketing-list-row">
           <div class="marketing-list-row_avatar">
             <img
               v-if="entry.Member?.Avatar"
@@ -111,7 +118,7 @@
 
     </div>
 
-    <MarketingEntryModal ref="entryModal" />
+    <MarketingEntryModal ref="entryModal" @manage-sizes="openSizeManager" />
     <MarketingSizeManagerModal
       ref="sizeManagerModal"
       :organizations="store.organizations"
@@ -133,10 +140,12 @@ import actionEdit from '../../../icons/actions/action_edit.svg'
 import actionTrash from '../../../icons/actions/action_trash.svg'
 import actionLocation from '../../../icons/actions/action_location.svg'
 import actionStatistics from '../../../icons/actions/action_statistics.svg'
+import actionPages from '../../../icons/actions/action_pages.svg'
 
 const editIconStyle = { maskImage: `url("${actionEdit}")`, WebkitMaskImage: `url("${actionEdit}")` }
 const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 const locationIconStyle = { maskImage: `url("${actionLocation}")`, WebkitMaskImage: `url("${actionLocation}")` }
+const sizesIconStyle = { maskImage: `url("${actionPages}")`, WebkitMaskImage: `url("${actionPages}")` }
 const statisticsIconStyle = { maskImage: `url("${actionStatistics}")`, WebkitMaskImage: `url("${actionStatistics}")` }
 
 const router = useRouter()
@@ -156,6 +165,11 @@ function onYearChange() {
 function onOrgChange() {
   store.setOrganizationFilter(orgFilter.value)
   store.fetchDistributions(true)
+}
+
+// Rein clientseitiger Filter (kein Server-Roundtrip nötig, siehe Store)
+function onSizeChange(value) {
+  store.setSizeFilter(value ? parseInt(value) : null)
 }
 
 function openSizeManager() {

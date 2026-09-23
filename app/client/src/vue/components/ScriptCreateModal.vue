@@ -1,63 +1,47 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="script-create-modal" @cancel.prevent="close">
-      <div class="script-create-modal_content" @click.stop>
+  <AppModal ref="modal" class="script-create-modal" title="Neues Skript" @close="close">
+    <form id="script-create-form" class="modalform" @submit.prevent="submit">
 
-        <div class="script-create-modal_header">
-          <h2 class="hl2 script-create-modal_title">Neues Skript</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
-
-        <form class="script-create-modal_body" @submit.prevent="submit">
-
-          <div class="form-field">
-            <label class="form-label">Organisation</label>
-            <div class="multiselect-group">
-              <label v-for="org in store.organizations" :key="org.ID" class="checkbox-label">
-                <input type="radio" :value="org.ID" v-model="form.OrganizationID" :aria-label="org.Title" />
-                {{ org.Title }}
-              </label>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="script-title">Titel *</label>
-            <input
-              id="script-title"
-              v-model="form.Title"
-              type="text"
-              class="input"
-              placeholder="z.B. Sommertheater 2027"
-              required
-              autofocus
-            />
-          </div>
-
-          <div v-if="error" class="script-create-modal_error">{{ error }}</div>
-
-          <div class="script-create-modal_actions">
-            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || !form.Title.trim() || !form.OrganizationID">
-              {{ saving ? 'Speichern…' : 'Erstellen' }}
-            </AppButton>
-          </div>
-
-        </form>
+      <div class="field">
+        <label>Organisation</label>
+        <OrganizationPicker v-model="form.OrganizationID" :orgs="store.organizations" />
       </div>
-    </dialog>
-  </Teleport>
+
+      <label class="field">
+        Titel *
+        <input
+          id="script-title"
+          v-model="form.Title"
+          type="text"
+          placeholder="z.B. Sommertheater 2027"
+          required
+          autofocus
+        />
+      </label>
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="script-create-form" variant="primary" :disabled="saving || !form.Title.trim() || !form.OrganizationID">
+        {{ saving ? 'Speichern…' : 'Erstellen' }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
 import { useSkriptStore } from '@stores/skript'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
 
 const emit = defineEmits(['created'])
 const store = useSkriptStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 
@@ -71,11 +55,11 @@ const form = reactive(defaultForm())
 function open() {
   Object.assign(form, defaultForm())
   error.value = null
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function submit() {

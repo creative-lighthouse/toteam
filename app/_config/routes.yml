@@ -7,15 +7,15 @@ After:
 SilverStripe\Control\Director:
   rules:
     'login//$Action/$ID': '->admin'
-    'register//$Action/$ID': 'App\Controllers\RegisterController'
+    '': 'App\Controllers\LandingController'
+    'rechtliches': 'App\Controllers\LandingController'
     'ics//$Action/$ID/$Name': 'App\Controllers\ICSController'
     'app//$Action/$ID/$OtherID': 'App\Controllers\VueAppController'
-    'api/v1/auth//$Action': 'App\Controllers\Api\AuthApiController'
+    'api/v1/auth//$Action/$ID': 'App\Controllers\Api\AuthApiController'
     'api/v1/dashboard//$Action': 'App\Controllers\Api\DashboardApiController'
     'api/v1/announcements': 'App\Controllers\Api\AnnouncementsApiController'
     'api/v1/organizations//$Action/$ID': 'App\Controllers\Api\OrganizationsApiController'
     'api/v1/settings': 'App\Controllers\Api\SettingsApiController'
-    'api/v1/register': 'App\Controllers\Api\RegisterApiController'
     'api/v1/maps//$Action/$ID': 'App\Controllers\Api\MapsApiController'
     'api/v1/food//$Action/$ID': 'App\Controllers\Api\FoodApiController'
     'api/v1/profile//$Action/$ID': 'App\Controllers\Api\ProfileApiController'

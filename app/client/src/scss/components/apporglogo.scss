@@ -10,7 +10,7 @@
     // Prozentual statt fest in px, damit der Radius bei jeder Icon-Größe (22px bis
     // 64px, je nach Einsatzstelle) gleich proportioniert aussieht, ohne dass jede
     // Stelle ihren eigenen Radius-Wert erraten/pflegen muss.
-    border-radius: 20%;
+    border-radius: var(--BorderRadiusSmall);
     flex-shrink: 0;
 
     &--placeholder {

@@ -4,22 +4,8 @@
     text-align: left;
     max-width: 360px;
 
-    .image-crop-modal_content {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .image-crop-modal_header {
-        @include modal-header;
-    }
-
-    .image-crop-modal_body {
-        display: flex;
-        flex-direction: column;
+    .app-modal_body {
         align-items: center;
-        gap: 14px;
-        padding: 20px;
-        background-color: var(--ColorWhite);
     }
 
     .image-crop-modal_hint {
@@ -64,10 +50,5 @@
             height: 4px;
             cursor: pointer;
         }
-    }
-
-    .image-crop-modal_actions {
-        @include modal-actions;
-        background-color: var(--ColorWhite);
     }
 }

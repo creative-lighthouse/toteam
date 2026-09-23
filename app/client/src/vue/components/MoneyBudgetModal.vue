@@ -1,62 +1,46 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="money-budget-modal" @cancel.prevent="close">
-      <div class="money-budget-modal_content" @click.stop>
+  <AppModal ref="modal" class="money-budget-modal" :title="isEdit ? 'Budget bearbeiten' : 'Neues Budget'" @close="close">
+    <form id="money-budget-form" class="modalform" @submit.prevent="submit">
 
-        <div class="money-budget-modal_header">
-          <h2 class="hl2 money-budget-modal_title">{{ isEdit ? 'Budget bearbeiten' : 'Neues Budget' }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
+      <label class="field">
+        Titel *
+        <input id="budget-title" v-model="form.Title" type="text" placeholder="z.B. Sommerfest" required />
+      </label>
 
-        <form class="money-budget-modal_body" @submit.prevent="submit">
+      <AppToggle v-model="form.HasBudget" label="Budget-Limit festlegen" />
 
-          <div class="form-field">
-            <label class="form-label" for="budget-title">Titel *</label>
-            <input id="budget-title" v-model="form.Title" type="text" class="input" placeholder="z.B. Sommerfest" required />
-          </div>
-
-          <label class="form-checkbox">
-            <input type="checkbox" v-model="form.HasBudget" />
-            Budget-Limit festlegen
-          </label>
-
-          <div v-if="form.HasBudget" class="form-field">
-            <label class="form-label" for="budget-amount">Budget (€)</label>
-            <input id="budget-amount" v-model="form.Budget" type="number" step="0.01" min="0" class="input" />
-            <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
-          </div>
-
-          <label v-if="form.HasBudget" class="form-checkbox">
-            <input type="checkbox" v-model="form.CanBeOverBudget" />
-            Kann über Budget gehen
-          </label>
-
-          <div v-if="error" class="money-budget-modal_error">{{ error }}</div>
-
-          <div class="money-budget-modal_actions">
-            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-            <AppButton
-              v-if="isEdit"
-              variant="danger"
-              :disabled="saving || deleting"
-              @click="remove"
-            >{{ deleting ? 'Wird gelöscht…' : 'Löschen' }}</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || deleting || !form.Title.trim() || !!amountError">
-              {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
-            </AppButton>
-          </div>
-
-        </form>
+      <div v-if="form.HasBudget" class="field">
+        <label for="budget-amount">Budget (€)</label>
+        <input id="budget-amount" v-model="form.Budget" type="number" step="0.01" min="0" />
+        <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
       </div>
-    </dialog>
-  </Teleport>
+
+      <AppToggle v-if="form.HasBudget" v-model="form.CanBeOverBudget" label="Kann über Budget gehen" />
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton
+        v-if="isEdit"
+        variant="danger"
+        :disabled="saving || deleting"
+        @click="remove"
+      >{{ deleting ? 'Wird gelöscht…' : 'Löschen' }}</AppButton>
+      <AppButton type="submit" form="money-budget-form" variant="primary" :disabled="saving || deleting || !form.Title.trim() || !!amountError">
+        {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useMoneyStore } from '@stores/money'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
+import AppToggle from '@components/AppToggle.vue'
 
 const props = defineProps({
   accountId: { type: Number, required: true },
@@ -64,7 +48,7 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 const store = useMoneyStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const deleting = ref(false)
 const error = ref(null)
@@ -114,11 +98,11 @@ function open(budgetToEdit = null) {
   if (budgetToEdit) fillFromBudget(budgetToEdit)
   error.value = null
   serverAmountError.value = null
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 function formatCurrency(value) {

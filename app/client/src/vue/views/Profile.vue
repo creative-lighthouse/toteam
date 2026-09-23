@@ -75,10 +75,12 @@
                 <AppButton variant="primary" @click="editModal?.open()">
                     Profil bearbeiten
                 </AppButton>
-                <AppButton variant="danger" @click="authStore.logout()">
+                <AppButton variant="danger" @click="handleLogout">
                     Abmelden
                 </AppButton>
             </div>
+
+            <ActiveSessionsCard />
         </div>
 
         <EditProfileModal ref="editModal" @updated="loadOrgs" />
@@ -94,6 +96,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import EditProfileModal from '@components/EditProfileModal.vue'
 import QrCodeModal from '@components/QrCodeModal.vue'
+import ActiveSessionsCard from '@components/ActiveSessionsCard.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppAvatar from '@components/AppAvatar.vue'
@@ -136,6 +139,13 @@ function calcAge(dateStr) {
 
 function foodLabel(pref) {
   return { Vegetarian: 'Vegetarisch', Vegan: 'Vegan' }[pref] ?? 'Keine Besonderheiten'
+}
+
+async function handleLogout() {
+  await authStore.logout()
+  // Vollständige Navigation (statt Vue-Router), da die Landingpage außerhalb
+  // des /app-SPA-Basispfads von SilverStripe gerendert wird.
+  window.location.href = '/'
 }
 
 function roleLabel(role) {

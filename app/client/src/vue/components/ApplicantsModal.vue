@@ -1,68 +1,57 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="applicants-modal" @cancel.prevent="close">
-      <div class="applicants-modal_content" @click.stop>
-        <div class="applicants-modal_header">
-          <h2 class="hl2 applicants-modal_title">Bewerber – {{ org?.Title }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
+  <AppModal ref="modal" class="app-modal--flush applicants-modal" :title="`Bewerber – ${org?.Title ?? ''}`" @close="close">
+    <div v-if="loading" class="applicants-modal_state">Lädt...</div>
+
+    <div v-else-if="applicants.length === 0" class="applicants-modal_state">
+      Keine offenen Bewerbungen.
+    </div>
+
+    <ul v-else class="applicants-list">
+      <li v-for="a in applicants" :key="a.MembershipID" class="applicant-item">
+        <AppAvatar
+          :src="a.Avatar"
+          :alt="`${a.FirstName} ${a.Surname}`"
+          img-class="applicant-avatar"
+        />
+
+        <div class="applicant-info">
+          <strong class="applicant-name">{{ a.FirstName }} {{ a.Surname }}</strong>
+          <span class="applicant-email">{{ a.Email }}</span>
         </div>
 
-        <div class="applicants-modal_body">
-          <div v-if="loading" class="applicants-modal_state">Lädt...</div>
-
-          <div v-else-if="applicants.length === 0" class="applicants-modal_state">
-            Keine offenen Bewerbungen.
-          </div>
-
-          <ul v-else class="applicants-list">
-            <li v-for="a in applicants" :key="a.MembershipID" class="applicant-item">
-              <AppAvatar
-                :src="a.Avatar"
-                :alt="`${a.FirstName} ${a.Surname}`"
-                img-class="applicant-avatar"
-              />
-
-              <div class="applicant-info">
-                <strong class="applicant-name">{{ a.FirstName }} {{ a.Surname }}</strong>
-                <span class="applicant-email">{{ a.Email }}</span>
-              </div>
-
-              <div class="applicant-actions">
-                <AppButton
-                  size="small"
-                  variant="primary"
-                  :disabled="processingID === a.MembershipID"
-                  @click="accept(a.MembershipID)"
-                >
-                  Annehmen
-                </AppButton>
-                <AppButton
-                  size="small"
-                  variant="secondary"
-                  :disabled="processingID === a.MembershipID"
-                  @click="reject(a.MembershipID)"
-                >
-                  Ablehnen
-                </AppButton>
-              </div>
-            </li>
-          </ul>
+        <div class="applicant-actions">
+          <AppButton
+            size="small"
+            variant="primary"
+            :disabled="processingID === a.MembershipID"
+            @click="accept(a.MembershipID)"
+          >
+            Annehmen
+          </AppButton>
+          <AppButton
+            size="small"
+            variant="secondary"
+            :disabled="processingID === a.MembershipID"
+            @click="reject(a.MembershipID)"
+          >
+            Ablehnen
+          </AppButton>
         </div>
-      </div>
-    </dialog>
-  </Teleport>
+      </li>
+    </ul>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { apiGet, apiPost } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 import AppAvatar from '@components/AppAvatar.vue'
 
 const emit = defineEmits(['accepted'])
 
-const dialogEl    = ref(null)
+const modal       = ref(null)
 const org         = ref(null)
 const applicants  = ref([])
 const loading     = ref(false)
@@ -71,12 +60,12 @@ const processingID = ref(null)
 async function open(orgData) {
   org.value = orgData
   applicants.value = []
-  dialogEl.value?.showModal()
+  modal.value?.open()
   await loadApplicants()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 

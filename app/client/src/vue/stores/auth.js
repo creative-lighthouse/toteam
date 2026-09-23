@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiGet, apiPost } from '@utils/api'
+import { apiPost, setAccessToken } from '@utils/api'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -8,7 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = ref(false)
   const loading = ref(false)
   const error = ref(null)
-  
+
   // Getters
   const currentUser = computed(() => user.value)
   const userName = computed(() => {
@@ -25,14 +25,20 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Actions
+
+  /**
+   * Called once on app start (router guard). Tries to silently obtain a
+   * fresh access token from the httpOnly refresh cookie — if that succeeds
+   * the user is still logged in from a previous visit, otherwise they're not.
+   */
   async function checkAuth() {
     try {
       loading.value = true
       error.value = null
-      
-      const response = await apiGet('/auth/check', false) // Don't cache auth check
-      
-      if (response.authenticated) {
+
+      const response = await apiPost('/auth/refresh', {})
+
+      if (response.success) {
         user.value = response.user
         isAuthenticated.value = true
       } else {
@@ -48,31 +54,147 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = false
     }
   }
-  
-  async function login(email, password) {
+
+  /**
+   * Step 1 of passwordless login/signup: request a code for `email`.
+   * Returns { success, isNewAccount } — the caller shows the code-entry step
+   * either way, since the backend never reveals whether the account exists.
+   */
+  async function requestCode(email) {
     try {
       loading.value = true
       error.value = null
-      
-      const response = await apiPost('/auth/login', { email, password })
-      
-      if (response.success) {
-        user.value = response.user
-        isAuthenticated.value = true
-        return true
-      } else {
-        error.value = response.message || 'Login failed'
-        return false
+
+      const response = await apiPost('/auth/requestCode', { email })
+      if (!response.success) {
+        error.value = response.error || 'Code konnte nicht verschickt werden.'
       }
+      return response
     } catch (err) {
-      console.error('Login failed:', err)
+      console.error('requestCode failed:', err)
       error.value = err.message
-      return false
+      return { success: false }
     } finally {
       loading.value = false
     }
   }
-  
+
+  /**
+   * Step 2: verify the code. `profile` ({firstName, surname}) is only needed
+   * when the backend previously responded with needsProfile: true.
+   */
+  async function verifyCode(email, code, profile = {}) {
+    try {
+      loading.value = true
+      error.value = null
+
+      const response = await apiPost('/auth/verifyCode', {
+        email,
+        code,
+        firstName: profile.firstName,
+        surname: profile.surname,
+      })
+
+      if (response.success) {
+        setAccessToken(response.accessToken)
+        user.value = response.user
+        isAuthenticated.value = true
+      } else if (!response.needsProfile) {
+        error.value = response.error || response.message || 'Code ungültig.'
+      }
+
+      return response
+    } catch (err) {
+      console.error('verifyCode failed:', err)
+      error.value = err.message
+      return { success: false }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Alternative to the code flow: email + password, for members who've set
+   * one (see EditProfileModal's password section / ProfileApiController::setPassword()).
+   */
+  async function loginWithPassword(email, password) {
+    try {
+      loading.value = true
+      error.value = null
+
+      const response = await apiPost('/auth/loginPassword', { email, password })
+
+      if (response.success) {
+        setAccessToken(response.accessToken)
+        user.value = response.user
+        isAuthenticated.value = true
+      } else {
+        error.value = response.error || 'Anmeldung fehlgeschlagen.'
+      }
+
+      return response
+    } catch (err) {
+      console.error('loginWithPassword failed:', err)
+      error.value = err.message
+      return { success: false }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * "Forgot password" step 1: request a reset code. Always looks successful
+   * to the caller (generic backend response), regardless of whether the
+   * account/password actually exists.
+   */
+  async function requestPasswordReset(email) {
+    try {
+      loading.value = true
+      error.value = null
+
+      const response = await apiPost('/auth/requestPasswordReset', { email })
+      if (!response.success) {
+        error.value = response.error || 'Code konnte nicht verschickt werden.'
+      }
+      return response
+    } catch (err) {
+      console.error('requestPasswordReset failed:', err)
+      error.value = err.message
+      return { success: false }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * "Forgot password" step 2: verify the code and set a new password. Logs
+   * the member in on success, same as the other login flows.
+   */
+  async function resetPassword(email, code, newPassword) {
+    try {
+      loading.value = true
+      error.value = null
+
+      const response = await apiPost('/auth/resetPassword', { email, code, newPassword })
+
+      if (response.success) {
+        setAccessToken(response.accessToken)
+        user.value = response.user
+        isAuthenticated.value = true
+      } else {
+        error.value = response.error || 'Code ungültig.'
+      }
+
+      return response
+    } catch (err) {
+      console.error('resetPassword failed:', err)
+      error.value = err.message
+      return { success: false }
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function logout() {
     try {
       loading.value = true
@@ -80,12 +202,13 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       console.error('Logout failed:', err)
     } finally {
+      setAccessToken(null)
       user.value = null
       isAuthenticated.value = false
       loading.value = false
     }
   }
-  
+
   function updateUser(data) {
     if (user.value) {
       Object.assign(user.value, data)
@@ -103,7 +226,11 @@ export const useAuthStore = defineStore('auth', () => {
     userName,
     // Actions
     checkAuth,
-    login,
+    requestCode,
+    verifyCode,
+    loginWithPassword,
+    requestPasswordReset,
+    resetPassword,
     logout,
     updateUser,
     hasTotem

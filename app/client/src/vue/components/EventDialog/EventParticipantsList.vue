@@ -10,6 +10,7 @@
           :participation="p"
           :note-expanded="expandedNoteIds.has(p.ID)"
           @toggle-note="toggleNoteExpanded(p.ID)"
+          @contextmenu="onContextMenu($event, p)"
         />
       </template>
 
@@ -21,6 +22,7 @@
           :participation="p"
           :note-expanded="expandedNoteIds.has(p.ID)"
           @toggle-note="toggleNoteExpanded(p.ID)"
+          @contextmenu="onContextMenu($event, p)"
         />
       </template>
 
@@ -32,6 +34,7 @@
           :participation="p"
           :note-expanded="expandedNoteIds.has(p.ID)"
           @toggle-note="toggleNoteExpanded(p.ID)"
+          @contextmenu="onContextMenu($event, p)"
         />
       </template>
 
@@ -41,21 +44,28 @@
           v-for="p in membersWithoutResponse"
           :key="p.ID"
           :participation="p"
+          @contextmenu="onContextMenu($event, p)"
         />
       </template>
     </div>
+
+    <ContextMenu ref="participantMenu" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import ParticipantCard from '@components/ParticipantCard.vue'
+import ContextMenu from '@components/ContextMenu.vue'
+import { useEventsStore } from '@stores/events'
 
 const props = defineProps({
   event: { type: Object, required: true }
 })
 
+const eventsStore = useEventsStore()
 const expandedNoteIds = ref(new Set())
+const participantMenu = ref(null)
 
 const groupedParticipations = computed(() => {
   if (!props.event.Participations) return null
@@ -69,11 +79,45 @@ const groupedParticipations = computed(() => {
 const membersWithoutResponse = computed(() =>
   (props.event.MembersWithoutResponse || []).map(m => ({
     ID: m.ID,
+    MemberID: m.ID,
     MemberName: m.MemberName,
     ProfileImageURL: m.ProfileImageURL,
     Type: 'Pending',
   }))
 )
+
+function onContextMenu(event, participation) {
+  if (!props.event.CanRecordRsvp) return
+
+  const options = [
+    { value: 'Accept', label: 'Zusagen' },
+    { value: 'Maybe', label: 'Vielleicht' },
+    { value: 'Decline', label: 'Absagen' },
+  ].filter(o => o.value !== participation.Type)
+
+  const menuItems = options.map(o => ({
+    label: o.label,
+    onClick: () => recordParticipation(participation.MemberID, o.value),
+  }))
+
+  if (participation.Type !== 'Pending') {
+    menuItems.push({
+      label: 'Antwort entfernen',
+      danger: true,
+      onClick: () => recordParticipation(participation.MemberID, null),
+    })
+  }
+
+  participantMenu.value?.open(event, menuItems)
+}
+
+async function recordParticipation(targetMemberId, type) {
+  try {
+    await eventsStore.changeParticipationFor(props.event.ID, targetMemberId, type)
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  }
+}
 
 function toggleNoteExpanded(participationId) {
   const next = new Set(expandedNoteIds.value)

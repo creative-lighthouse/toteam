@@ -73,6 +73,10 @@ onMounted(async () => {
     await announcementsStore.fetchAnnouncements()
     found = announcementsStore.getAnnouncementById(id)
   }
+  if (!found) {
+    await announcementsStore.fetchArchivedAnnouncements()
+    found = announcementsStore.getAnnouncementById(id)
+  }
 
   announcement.value = found
   loading.value = false

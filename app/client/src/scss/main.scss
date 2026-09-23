@@ -15,6 +15,7 @@
 @use "layout/AppNotifications.scss";
 @use "layout/dialog.scss";
 @use "layout/EventDialog.scss";
+@use "components/appmodal.scss";
 
 @use "pages/DashboardPage.scss";
 @use "pages/RegistrationPage.scss";
@@ -43,15 +44,22 @@
 
 
 @use "landingpage/landingpage.scss";
+@use "landingpage/membergraphic.scss";
+@use "landingpage/calendargraphic.scss";
 
 @use "components/map-renderer.scss";
 @use "components/eventcard.scss";
 @use "components/announcementcard.scss";
 @use "components/organizationcard.scss";
 @use "components/participantcard.scss";
+@use "components/contextmenu.scss";
+@use "components/orgpicker.scss";
+@use "components/memberpicker.scss";
 @use "components/mealcard.scss";
 @use "components/eventagendamodal.scss";
 @use "components/eventmealmodal.scss";
+@use "components/mealeditmodal.scss";
+@use "components/suggestfoodmodal.scss";
 @use "components/addappointmentmodal.scss";
 @use "components/pwainstallbanner.scss";
 @use "components/taskcard.scss";
@@ -59,6 +67,7 @@
 @use "components/taskcreatemodal.scss";
 @use "components/tasksupportersmodal.scss";
 @use "components/taskdeletemodal.scss";
+@use "components/history.scss";
 @use "components/roommodals.scss";
 @use "components/moneymodals.scss";
 @use "components/orgrolesmodals.scss";
@@ -69,18 +78,38 @@
 @use "components/scriptparagraphrow.scss";
 @use "components/scripttocsidebar.scss";
 @use "components/scriptrolesview.scss";
-@use "components/scriptmembermultiselect.scss";
 @use "components/scriptroleeditmodal.scss";
 @use "components/scriptcreatemodal.scss";
 @use "components/scriptroleinfomodal.scss";
 @use "components/scriptmemberpickerdropdown.scss";
 @use "components/marketingentrymodal.scss";
 @use "components/marketingsizemanagermodal.scss";
+@use "components/announcementcreatemodal.scss";
+@use "components/organizationcreatemodal.scss";
 
 
 html{
     overflow-y: scroll;
     scroll-behavior: smooth;
+    // Remove the blue/grey tap flash on mobile so the PWA feels native
+    -webkit-tap-highlight-color: transparent;
+}
+
+// Native-app feel for interactive elements: no text selection or iOS callout
+// on long-press, and no double-tap-zoom delay
+button,
+a,
+[role="button"],
+.button {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+}
+
+// Only show focus rings for keyboard navigation, not after a tap
+:focus:not(:focus-visible) {
+    outline: none;
 }
 
 //Styles to make the footer stick to the bottom of the page
@@ -111,7 +140,7 @@ body {
         .section {
             max-width: var(--MaxWidth);
             margin: 50px auto;
-            padding: 0 20px;
+            padding: 0 10px;
 
             &:first-of-type {
                 margin-top: 0;

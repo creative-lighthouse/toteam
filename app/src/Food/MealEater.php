@@ -8,6 +8,7 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Food\MealEater
@@ -17,6 +18,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $MemberID
  * @method \App\Food\Meal Parent()
  * @method \SilverStripe\Security\Member Member()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -39,6 +41,23 @@ class MealEater extends DataObject implements PermissionProvider
         "Type" => "Nimmt teil",
     ];
 
+    /**
+     * Zu-/Absagen zum Essen landen im Verlauf der Mahlzeit (siehe HistoryExtension).
+     */
+    private static $history_target = 'Parent';
+
+    private static $history_fields = ['Type'];
+
+    private static $history_field_labels = ['Type' => 'Essen'];
+
+    private static $history_value_labels = [
+        'Type' => [
+            ''        => 'Keine Antwort',
+            'Accept'  => 'Isst mit',
+            'Decline' => 'Isst nicht mit',
+        ],
+    ];
+
     private static $summary_fields = [
         "Member.Title" => "Benutzer",
         "Type" => "Nimmt teil",
@@ -54,6 +73,16 @@ class MealEater extends DataObject implements PermissionProvider
         $fields = parent::getCMSFields();
         $fields->removeByName("ParentID");
         return $fields;
+    }
+
+    public function getHistoryContextLabel(): ?string
+    {
+        $current = Security::getCurrentUser();
+        if ($current && (int) $current->ID === (int) $this->MemberID) {
+            return null;
+        }
+        $member = $this->Member();
+        return $member && $member->exists() ? $member->getDisplayName() : null;
     }
 
     public function providePermissions()

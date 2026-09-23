@@ -7,7 +7,9 @@ use App\Food\Food;
 use App\Food\MealEater;
 use App\Notifications\PushNotificationService;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
 use SilverStripe\Security\Security;
@@ -23,6 +25,7 @@ use SilverStripe\Security\Security;
  * @method \App\Calendar\Appointment Parent()
  * @method \SilverStripe\ORM\DataList|\App\Food\MealEater[] Eaters()
  * @method \SilverStripe\ORM\ManyManyList|\App\Food\Food[] Foods()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -59,6 +62,20 @@ class Meal extends DataObject implements PermissionProvider
         "Time" => "Uhrzeit",
         "Eaters" => "Teilnehmer",
         "Foods" => "Gerichte",
+        "Description" => "Beschreibung",
+        "AcceptsContributions" => "Nimmt Vorschläge an",
+    ];
+
+    /**
+     * Felder, deren Änderungen im Verlauf erscheinen (siehe HistoryExtension).
+     * Gerichte werden im Food-/CalendarApiController, Teilnahmen und Bestellungen
+     * über MealEater/MealProductOrder protokolliert.
+     */
+    private static $history_fields = [
+        'Title',
+        'Time',
+        'Description',
+        'AcceptsContributions',
     ];
 
     private static $summary_fields = [
@@ -111,6 +128,25 @@ class Meal extends DataObject implements PermissionProvider
     public function getDetailsLink()
     {
         return '/food/meal/' . $this->ID;
+    }
+
+    /**
+     * Zum übergeordneten Termin eingeladene Mitglieder, die noch keine Rückmeldung
+     * (Accept/Decline) fürs Essen hinterlegt haben.
+     */
+    public function getMembersWithoutResponse()
+    {
+        $appointment = $this->Parent();
+        if (!$appointment || !$appointment->exists()) {
+            return ArrayList::create();
+        }
+        $invitedIDs = $appointment->InvitedMembers()->column('ID');
+        $respondedIDs = $this->Eaters()->column('MemberID');
+        $missingIDs = array_diff($invitedIDs, $respondedIDs);
+        if (empty($missingIDs)) {
+            return ArrayList::create();
+        }
+        return Member::get()->filter('ID', $missingIDs);
     }
 
     /**

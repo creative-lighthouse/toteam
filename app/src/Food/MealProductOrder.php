@@ -5,6 +5,7 @@ namespace App\Food;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Food\MealProductOrder
@@ -16,6 +17,7 @@ use SilverStripe\Security\Permission;
  * @method \App\Food\Food Food()
  * @method \App\Food\Meal Meal()
  * @method \SilverStripe\Security\Member Member()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -40,6 +42,32 @@ class MealProductOrder extends DataObject
         'Meal'     => 'Mahlzeit',
         'Member'   => 'Benutzer',
     ];
+
+    /**
+     * Bestellmengen landen im Verlauf der Mahlzeit (siehe HistoryExtension).
+     */
+    private static $history_target = 'Meal';
+
+    private static $history_fields = ['Quantity'];
+
+    private static $history_field_labels = ['Quantity' => 'Bestellung'];
+
+    /**
+     * Gericht (und ggf. Besteller) für den Verlauf, z. B. "Bestellung (Pizza)".
+     */
+    public function getHistoryContextLabel(): ?string
+    {
+        $food = $this->Food();
+        $parts = [$food && $food->exists() ? $food->Title : null];
+
+        $current = Security::getCurrentUser();
+        if (!$current || (int) $current->ID !== (int) $this->MemberID) {
+            $member = $this->Member();
+            $parts[] = $member && $member->exists() ? 'für ' . $member->getDisplayName() : null;
+        }
+
+        return implode(', ', array_filter($parts)) ?: null;
+    }
 
     private static $summary_fields = [
         'Member.Title' => 'Benutzer',

@@ -4,9 +4,9 @@ namespace App\Links;
 
 use Override;
 use App\Teams\Organization;
+use SilverStripe\Assets\File;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Permission;
-use SilverStripe\LinkField\Models\Link;
 use SilverStripe\Security\PermissionProvider;
 
 /**
@@ -14,39 +14,36 @@ use SilverStripe\Security\PermissionProvider;
  *
  * @property ?string $Title
  * @property int $SortOrder
+ * @property string $LinkKind
+ * @property ?string $ExternalUrl
+ * @property bool $OpenInNew
  * @property int $ParentID
- * @property int $ButtonID
- * @property int $TypeID
+ * @property int $FileID
  * @method \App\Teams\Organization Parent()
- * @method \SilverStripe\LinkField\Models\Link Button()
- * @method \App\Links\TeamLinkType Type()
- * @mixin \SilverStripe\Assets\AssetControlExtension
- * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
- * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
- * @mixin \SilverStripe\Versioned\RecursivePublishable
- * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ * @method \SilverStripe\Assets\File File()
  */
 class TeamLink extends DataObject implements PermissionProvider
 {
     private static $db = [
         "Title" => "Varchar(255)",
         "SortOrder" => "Int",
+        "LinkKind" => "Enum('external,file', 'external')",
+        "ExternalUrl" => "Varchar(255)",
+        "OpenInNew" => "Boolean",
     ];
 
     private static $has_one = [
         "Parent" => Organization::class,
-        "Button" => Link::class,
-        "Type" => TeamLinkType::class,
+        "File" => File::class,
     ];
 
     private static $owns = [
-        'Button',
+        'File',
     ];
 
     private static $field_labels = [
         "Title" => "Titel",
-        "Button" => "Link",
-        "Type" => "Link-Typ",
+        "ExternalUrl" => "Link",
         "SortOrder" => "Sortierreihenfolge",
         "Parent" => "Organisation",
     ];

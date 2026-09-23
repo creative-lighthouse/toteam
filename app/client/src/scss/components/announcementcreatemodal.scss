@@ -1,0 +1,11 @@
+.announcement-create-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+
+    .announcement-create-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+}

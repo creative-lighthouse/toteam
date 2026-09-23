@@ -38,6 +38,7 @@ class CalendarApiController extends ApiController
         'absences',
         'appointment',
         'appointmentTypes',
+        'appointmentHistory',
         'meal',
         'agendaPoint',
         'members',
@@ -190,6 +191,12 @@ class CalendarApiController extends ApiController
                 ];
             }
 
+            $canRecordRsvp = $this->hasPermissionInAnyOrg(
+                $member,
+                $appointment->Organisations()->column('ID'),
+                OrgPermissions::CALENDAR_RECORD_RSVP
+            );
+
             // Organisation logos (all organisations)
             $orgLogos = [];
             foreach ($appointment->Organisations() as $orgItem) {
@@ -238,6 +245,7 @@ class CalendarApiController extends ApiController
                 'InvitedMemberIDs' => $invitedMemberIDs,
                 'IsInvited' => in_array($member->ID, $invitedMemberIDs, true),
                 'MembersWithoutResponse' => $membersWithoutResponse,
+                'CanRecordRsvp' => $canRecordRsvp,
             ];
         }
 
@@ -356,7 +364,7 @@ class CalendarApiController extends ApiController
     /**
      * Change participation
      * POST /api/v1/calendar/participation/:id
-     * Body: { response: "Accept|Maybe|Decline" }
+     * Body: { response: "Accept|Maybe|Decline", targetMemberId?: int }
      */
     public function participation(HTTPRequest $request): HTTPResponse
     {
@@ -384,7 +392,17 @@ class CalendarApiController extends ApiController
         $body = json_decode($request->getBody(), true);
         $type = $body['response'] ?? null;
 
-        $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
+        $targetMember = $this->resolveRsvpTargetMember(
+            $body['targetMemberId'] ?? null,
+            $member,
+            $appointment->Organisations()->column('ID'),
+            OrgPermissions::CALENDAR_RECORD_RSVP
+        );
+        if ($targetMember instanceof HTTPResponse) {
+            return $targetMember;
+        }
+
+        $participation = $appointment->Participations()->filter(['MemberID' => $targetMember->ID])->first();
 
         if (!$type) {
             // Zurück auf "Ohne Antwort": komplette Teilnahme entfernen
@@ -393,6 +411,7 @@ class CalendarApiController extends ApiController
             }
             return $this->successResponse([
                 'ID'              => null,
+                'MemberID'        => $targetMember->ID,
                 'Type'            => null,
                 'TimeStart'       => null,
                 'TimeEnd'         => null,
@@ -411,7 +430,7 @@ class CalendarApiController extends ApiController
         if (!$participation) {
             $participation = AppointmentParticipation::create();
             $participation->ParentID        = $appointment->ID;
-            $participation->MemberID        = $member->ID;
+            $participation->MemberID        = $targetMember->ID;
             $participation->CustomTimeframe = false;
         }
 
@@ -420,6 +439,7 @@ class CalendarApiController extends ApiController
 
         return $this->successResponse([
             'ID'              => $participation->ID,
+            'MemberID'        => $targetMember->ID,
             'Type'            => $participation->Type,
             'TimeStart'       => $participation->TimeStart,
             'TimeEnd'         => $participation->TimeEnd,
@@ -493,7 +513,7 @@ class CalendarApiController extends ApiController
     /**
      * Change food participation
      * POST /api/v1/calendar/participationFood/:mealId
-     * Body: { response: "Accept|Decline" }
+     * Body: { response: "Accept|Decline", targetMemberId?: int }
      */
     public function participationFood(HTTPRequest $request): HTTPResponse
     {
@@ -525,7 +545,17 @@ class CalendarApiController extends ApiController
         $body = json_decode($request->getBody(), true);
         $type = $body['response'] ?? null;
 
-        $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
+        $targetMember = $this->resolveRsvpTargetMember(
+            $body['targetMemberId'] ?? null,
+            $member,
+            $appointment->Organisations()->column('ID'),
+            OrgPermissions::FOOD_RECORD_RSVP
+        );
+        if ($targetMember instanceof HTTPResponse) {
+            return $targetMember;
+        }
+
+        $mealEater = $meal->Eaters()->filter(['MemberID' => $targetMember->ID])->first();
 
         if (!$type) {
             // Zurück auf "Ohne Antwort": komplette Teilnahme entfernen
@@ -533,8 +563,9 @@ class CalendarApiController extends ApiController
                 $mealEater->delete();
             }
             return $this->successResponse([
-                'ID'   => null,
-                'Type' => null,
+                'ID'       => null,
+                'MemberID' => $targetMember->ID,
+                'Type'     => null,
             ], 'Food participation removed');
         }
 
@@ -545,16 +576,53 @@ class CalendarApiController extends ApiController
         if (!$mealEater) {
             $mealEater = MealEater::create();
             $mealEater->ParentID = $meal->ID;
-            $mealEater->MemberID = $member->ID;
+            $mealEater->MemberID = $targetMember->ID;
         }
 
         $mealEater->Type = $type;
         $mealEater->write();
 
         return $this->successResponse([
-            'ID' => $mealEater->ID,
-            'Type' => $mealEater->Type
+            'ID'       => $mealEater->ID,
+            'MemberID' => $targetMember->ID,
+            'Type'     => $mealEater->Type
         ], 'Food participation updated');
+    }
+
+    /**
+     * Resolves the member a Zu-/Absage should be recorded for: the authenticated
+     * member itself, or — when a targetMemberId is given and the authenticated
+     * member holds the given permission in at least one of the shared orgs — an
+     * arbitrary other member of one of those orgs (to record verbal RSVPs on
+     * their behalf). Returns an HTTPResponse (error) on failure.
+     */
+    private function resolveRsvpTargetMember(
+        $targetMemberId,
+        Member $member,
+        array $orgIDs,
+        string $permissionCode
+    ) {
+        if (!$targetMemberId || (int) $targetMemberId === (int) $member->ID) {
+            return $member;
+        }
+
+        if (!$this->hasPermissionInAnyOrg($member, $orgIDs, $permissionCode)) {
+            return $this->errorResponse('Access denied', 403);
+        }
+
+        $targetMember = Member::get()->byID($targetMemberId);
+        if (!$targetMember) {
+            return $this->errorResponse('Member not found', 404);
+        }
+
+        $memberOrgIDs = OrganizationMembership::get()
+            ->filter(['OrganizationID' => $orgIDs, 'MemberID' => $targetMember->ID, 'Role' => 'member'])
+            ->column('OrganizationID');
+        if (empty($memberOrgIDs)) {
+            return $this->errorResponse('Target member is not part of a shared organisation', 403);
+        }
+
+        return $targetMember;
     }
 
     /**
@@ -675,7 +743,6 @@ class CalendarApiController extends ApiController
             if (!$absence || $absence->MemberID !== $member->ID) {
                 return $this->errorResponse('Nicht gefunden oder keine Berechtigung', 404);
             }
-            $absence->Organisations()->removeAll();
             $absence->delete();
             return $this->successResponse([], 'Abwesenheit gelöscht');
         }
@@ -694,15 +761,6 @@ class CalendarApiController extends ApiController
             $absence->Note = $body['note'] ?? null;
             $absence->write();
 
-            $absence->Organisations()->removeAll();
-            $orgIDs = $body['organizationIds'] ?? [];
-            if (!empty($orgIDs)) {
-                $validIDs = $member->getOrganizationIDs();
-                $filtered = array_values(array_intersect(array_map('intval', $orgIDs), $validIDs));
-                if (!empty($filtered)) {
-                    $absence->Organisations()->addMany($filtered);
-                }
-            }
             return $this->successResponse(['ID' => $absence->ID], 'Abwesenheit aktualisiert');
         }
 
@@ -729,15 +787,6 @@ class CalendarApiController extends ApiController
         $absence->Note       = $body['note'] ?? null;
         $absence->MemberID   = $member->ID;
         $absence->write();
-
-        $orgIDs = $body['organizationIds'] ?? [];
-        if (!empty($orgIDs)) {
-            $validIDs = $member->getOrganizationIDs();
-            $filtered = array_values(array_intersect(array_map('intval', $orgIDs), $validIDs));
-            if (!empty($filtered)) {
-                $absence->Organisations()->addMany($filtered);
-            }
-        }
 
         return $this->successResponse(['ID' => $absence->ID], 'Abwesenheit eingetragen');
     }
@@ -823,7 +872,6 @@ class CalendarApiController extends ApiController
                 'DateStart'       => $absence->DateStart,
                 'DateEnd'         => $absence->DateEnd,
                 'Recurrence'      => $absence->Recurrence,
-                'OrganizationIds' => array_map('intval', $absence->Organisations()->column('ID')),
             ];
         }
 
@@ -896,7 +944,9 @@ class CalendarApiController extends ApiController
             $appt->write();
             $newOrgIDs = array_map('intval', $body['organizationIds'] ?? []);
             if (!empty($newOrgIDs)) {
-                $appt->Organisations()->setByIDList($newOrgIDs);
+                $appt->trackHistoryRelation('Organisations', function () use ($appt, $newOrgIDs) {
+                    $appt->Organisations()->setByIDList($newOrgIDs);
+                });
             }
 
             $effectiveOrgIDs = !empty($newOrgIDs) ? $newOrgIDs : $apptOrgIDs;
@@ -908,7 +958,9 @@ class CalendarApiController extends ApiController
                 array_map('intval', $body['invitedMemberIds'] ?? []),
                 $validMemberIDs
             ));
-            $appt->InvitedMembers()->setByIDList($invitedIDs);
+            $appt->trackHistoryRelation('InvitedMembers', function () use ($appt, $invitedIDs) {
+                $appt->InvitedMembers()->setByIDList($invitedIDs);
+            });
 
             return $this->successResponse(['ID' => $appt->ID], 'Termin aktualisiert');
         }
@@ -991,6 +1043,30 @@ class CalendarApiController extends ApiController
         }
 
         return $this->successResponse(['ID' => $appt->ID], 'Termin erstellt');
+    }
+
+    /**
+     * Änderungsverlauf eines Termins inkl. Zu-/Absagen.
+     * GET /api/v1/calendar/appointmentHistory/:id?before=<EntryID>&limit=20
+     */
+    public function appointmentHistory(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $appointment = Appointment::get()->byID((int) $request->param('ID'));
+        if (!$appointment) {
+            return $this->errorResponse('Termin nicht gefunden', 404);
+        }
+
+        $sharedOrgs = $appointment->Organisations()->filter('ID', $member->getOrganizationIDs() ?: [0]);
+        if (!$sharedOrgs->exists()) {
+            return $this->errorResponse('Access denied', 403);
+        }
+
+        return $this->historyResponse($appointment, $request);
     }
 
     /**
@@ -1263,11 +1339,12 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Fetch all Absence records visible to the given organisation IDs,
-     * with their Organisations relation pre-filtered for the org-scope check.
+     * Fetch all Absence records for members of the given organisations. An
+     * absence always applies to every organisation/calendar its member is
+     * part of, so no further per-org scoping is needed here.
      *
      * @param int[] $organizationIDs
-     * @return \SilverStripe\ORM\DataList
+     * @return \App\Calendar\Absence[]
      */
     private function getRelevantAbsences(array $organizationIDs)
     {
@@ -1275,19 +1352,9 @@ class CalendarApiController extends ApiController
             ->filter(['OrganizationID' => $organizationIDs, 'Role' => 'member'])
             ->column('MemberID');
 
-        $absences = Absence::get()->filter(['MemberID' => $memberIDsInOrgs]);
-
-        // Filter out absences scoped to orgs the current user doesn't share
-        $filtered = [];
-        foreach ($absences as $absence) {
-            $absenceOrgIDs = $absence->Organisations()->column('ID');
-            if (!empty($absenceOrgIDs) && empty(array_intersect($absenceOrgIDs, $organizationIDs))) {
-                continue;
-            }
-            $filtered[] = $absence;
-        }
-
-        return $filtered;
+        // Materialized as an array (not returned lazily) since callers iterate
+        // it repeatedly, e.g. once per day of a month.
+        return Absence::get()->filter(['MemberID' => $memberIDsInOrgs])->toArray();
     }
 
     /**

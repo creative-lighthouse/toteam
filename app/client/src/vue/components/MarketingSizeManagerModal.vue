@@ -1,76 +1,63 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="marketing-size-manager-modal" @cancel.prevent="close">
-      <div class="marketing-size-manager-modal_content" @click.stop>
+  <AppModal ref="modal" class="marketing-size-manager-modal" title="Plakat-Größen verwalten" @close="close">
 
-        <div class="marketing-size-manager-modal_header">
-          <h2 class="hl2 marketing-size-manager-modal_title">Plakat-Größen verwalten</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
-
-        <div class="marketing-size-manager-modal_body">
-
-          <div v-if="manageableOrganizations.length > 1" class="form-field">
-            <label class="form-label" for="marketing-size-org">Organisation</label>
-            <select id="marketing-size-org" v-model="selectedOrgId" class="input" @change="onOrgChange">
-              <option v-for="org in manageableOrganizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
-            </select>
-          </div>
-
-          <form class="marketing-size-manager-modal_new" @submit.prevent="addSize">
-            <input
-              v-model="newTitle"
-              type="text"
-              class="input"
-              placeholder="Neue Größe, z.B. A3"
-            />
-            <AppButton type="submit" variant="primary" size="small" :disabled="!newTitle.trim() || !selectedOrgId || saving">
-              + Hinzufügen
-            </AppButton>
-          </form>
-
-          <div v-if="error" class="marketing-size-manager-modal_error">{{ error }}</div>
-
-          <div v-if="!sizesForOrg.length" class="marketing-size-manager-modal_empty">
-            Für diese Organisation wurden noch keine Plakat-Größen angelegt.
-          </div>
-
-          <ul v-else class="marketing-size-manager-modal_list">
-            <li v-for="size in sizesForOrg" :key="size.ID" class="marketing-size-manager-modal_item">
-              <input
-                v-if="editingId === size.ID"
-                v-model="editingTitle"
-                type="text"
-                class="input"
-                @keyup.enter="saveRename(size)"
-                @keyup.esc="cancelRename"
-              />
-              <span v-else class="marketing-size-manager-modal_item-title">{{ size.Title }}</span>
-
-              <div class="marketing-size-manager-modal_item-actions">
-                <template v-if="editingId === size.ID">
-                  <AppIconButton variant="primary" aria-label="Speichern" title="Speichern" @click="saveRename(size)">
-                    <span class="icon-mask" :style="checkIconStyle" />
-                  </AppIconButton>
-                  <AppIconButton variant="ghost" aria-label="Abbrechen" title="Abbrechen" @click="cancelRename">✕</AppIconButton>
-                </template>
-                <template v-else>
-                  <AppIconButton variant="primary" aria-label="Umbenennen" title="Umbenennen" @click="startRename(size)">
-                    <span class="icon-mask" :style="editIconStyle" />
-                  </AppIconButton>
-                  <AppIconButton variant="danger" aria-label="Löschen" title="Löschen" @click="removeSize(size)">
-                    <span class="icon-mask" :style="trashIconStyle" />
-                  </AppIconButton>
-                </template>
-              </div>
-            </li>
-          </ul>
-
-        </div>
-
+    <div v-if="manageableOrganizations.length > 1" class="modalform">
+      <div class="field">
+        <label for="marketing-size-org">Organisation</label>
+        <OrganizationPicker v-model="selectedOrgId" :orgs="manageableOrganizations" @update:model-value="onOrgChange" />
       </div>
-    </dialog>
-  </Teleport>
+    </div>
+
+    <form class="marketing-size-manager-modal_new" @submit.prevent="addSize">
+      <input
+        v-model="newTitle"
+        type="text"
+        class="input"
+        placeholder="Neue Größe, z.B. A3"
+      />
+      <AppButton type="submit" variant="primary" size="small" :disabled="!newTitle.trim() || !selectedOrgId || saving">
+        + Hinzufügen
+      </AppButton>
+    </form>
+
+    <div v-if="error" class="app-modal_error">{{ error }}</div>
+
+    <div v-if="!sizesForOrg.length" class="marketing-size-manager-modal_empty">
+      Für diese Organisation wurden noch keine Plakat-Größen angelegt.
+    </div>
+
+    <ul v-else class="marketing-size-manager-modal_list">
+      <li v-for="size in sizesForOrg" :key="size.ID" class="marketing-size-manager-modal_item">
+        <input
+          v-if="editingId === size.ID"
+          v-model="editingTitle"
+          type="text"
+          class="input"
+          @keyup.enter="saveRename(size)"
+          @keyup.esc="cancelRename"
+        />
+        <span v-else class="marketing-size-manager-modal_item-title">{{ size.Title }}</span>
+
+        <div class="marketing-size-manager-modal_item-actions">
+          <template v-if="editingId === size.ID">
+            <AppIconButton variant="primary" aria-label="Speichern" title="Speichern" @click="saveRename(size)">
+              <span class="icon-mask" :style="checkIconStyle" />
+            </AppIconButton>
+            <AppIconButton variant="ghost" aria-label="Abbrechen" title="Abbrechen" @click="cancelRename">✕</AppIconButton>
+          </template>
+          <template v-else>
+            <AppIconButton variant="primary" aria-label="Umbenennen" title="Umbenennen" @click="startRename(size)">
+              <span class="icon-mask" :style="editIconStyle" />
+            </AppIconButton>
+            <AppIconButton variant="danger" aria-label="Löschen" title="Löschen" @click="removeSize(size)">
+              <span class="icon-mask" :style="trashIconStyle" />
+            </AppIconButton>
+          </template>
+        </div>
+      </li>
+    </ul>
+
+  </AppModal>
 </template>
 
 <script setup>
@@ -79,6 +66,8 @@ import { useMarketingStore } from '@stores/marketing'
 import { useOrganizationsStore } from '@stores/organizations'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
+import OrganizationPicker from '@components/OrganizationPicker.vue'
 import actionEdit from '../../../icons/actions/action_edit.svg'
 import actionTrash from '../../../icons/actions/action_trash.svg'
 import actionCheck from '../../../icons/actions/action_check.svg'
@@ -94,7 +83,7 @@ const props = defineProps({
 const store = useMarketingStore()
 const orgsStore = useOrganizationsStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 const newTitle = ref('')
@@ -122,12 +111,12 @@ function open() {
     ? remembered
     : (manageableOrganizations.value[0]?.ID ?? 0)
 
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
   editingId.value = null
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function addSize() {

@@ -23,6 +23,7 @@ class OrganizationsApiController extends ApiController
     private static $allowed_actions = [
         'index',
         'detail',
+        'store',
         'join',
         'applicants',
         'accept',
@@ -174,6 +175,78 @@ class OrganizationsApiController extends ApiController
                 'Permissions'      => $member->getOrgPermissionCodes($org),
             ],
         ]);
+    }
+
+    public function store(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $body = $this->getJsonBody();
+        $title = trim($body['Title'] ?? '');
+        if (!$title) {
+            return $this->errorResponse('Titel ist erforderlich', 400);
+        }
+
+        $username = trim($body['Username'] ?? '');
+
+        $org = Organization::create();
+        $org->Title = $title;
+        $org->Description = trim($body['Description'] ?? '');
+        $org->JoinMode = in_array($body['JoinMode'] ?? '', ['open', 'application', 'invite_only', 'hidden'], true)
+            ? $body['JoinMode']
+            : 'invite_only';
+        $org->Username = $username ?: null;
+
+        $result = $org->validate();
+        if (!$result->isValid()) {
+            $messages = array_map(fn($e) => $e['message'], $result->getMessages());
+            return $this->errorResponse(implode(' ', $messages), 400);
+        }
+
+        $org->write();
+
+        $adminRole = null;
+        foreach ($org->OrgRoles() as $role) {
+            if ($role->hasPermission(OrgPermissions::ORG_ADMIN)) {
+                $adminRole = $role;
+                break;
+            }
+        }
+
+        $membership = OrganizationMembership::create();
+        $membership->OrganizationID = $org->ID;
+        $membership->MemberID = $member->ID;
+        $membership->Role = 'member';
+        $membership->write();
+
+        if ($adminRole) {
+            $membership->Roles()->add($adminRole);
+        }
+
+        return $this->successResponse([
+            'organization' => [
+                'ID'                   => $org->ID,
+                'Username'             => $org->Username ?: null,
+                'Title'                => $org->Title,
+                'Description'          => $org->Description,
+                'LogoURL'              => $org->RenderLogo(80),
+                'CoverURL'             => null,
+                'JoinMode'             => $org->JoinMode,
+                'MemberCount'          => 1,
+                'MembershipStatus'     => 'member',
+                'MyRoleNames'          => $adminRole ? [$adminRole->Title] : [],
+                'ApplicantCount'       => 0,
+                'Permissions'          => $member->getOrgPermissionCodes($org),
+                'CalendarManagerRoles' => $org->rolesWithPermission(OrgPermissions::CALENDAR_MANAGE),
+            ],
+        ], 'Organisation erstellt');
     }
 
     public function join(HTTPRequest $request): HTTPResponse

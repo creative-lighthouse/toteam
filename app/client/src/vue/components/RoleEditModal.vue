@@ -1,50 +1,40 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="role-edit-modal" @cancel.prevent="close">
-      <div class="role-edit-modal_content" @click.stop>
+  <AppModal ref="modal" class="role-edit-modal" :title="isEdit ? 'Rolle bearbeiten' : 'Neue Rolle'" @close="close">
+    <form id="role-edit-form" class="modalform" @submit.prevent="submit">
 
-        <div class="role-edit-modal_header">
-          <h2 class="hl2 role-edit-modal_title">{{ isEdit ? 'Rolle bearbeiten' : 'Neue Rolle' }}</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
+      <label class="field">
+        Titel *
+        <input id="role-title" v-model="form.Title" type="text" placeholder="z.B. Kassenwart" required />
+      </label>
+
+      <div v-for="(permissions, category) in orgRolesStore.categories" :key="category" class="role-edit-modal_category">
+        <h3 class="role-edit-modal_category-title">{{ category }}</h3>
+        <div class="role-edit-modal_permissions">
+          <label v-for="(label, code) in permissions" :key="code" class="form-checkbox">
+            <input type="checkbox" :value="code" v-model="form.Permissions" />
+            {{ label }}
+          </label>
         </div>
-
-        <form class="role-edit-modal_body" @submit.prevent="submit">
-
-          <div class="form-field">
-            <label class="form-label" for="role-title">Titel *</label>
-            <input id="role-title" v-model="form.Title" type="text" class="input" placeholder="z.B. Kassenwart" required />
-          </div>
-
-          <div v-for="(permissions, category) in orgRolesStore.categories" :key="category" class="role-edit-modal_category">
-            <h3 class="role-edit-modal_category-title">{{ category }}</h3>
-            <div class="role-edit-modal_permissions">
-              <label v-for="(label, code) in permissions" :key="code" class="form-checkbox">
-                <input type="checkbox" :value="code" v-model="form.Permissions" />
-                {{ label }}
-              </label>
-            </div>
-          </div>
-
-          <div v-if="error" class="role-edit-modal_error">{{ error }}</div>
-
-          <div class="role-edit-modal_actions">
-            <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
-            <AppButton type="submit" variant="primary" :disabled="saving || !form.Title.trim()">
-              {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
-            </AppButton>
-          </div>
-
-        </form>
       </div>
-    </dialog>
-  </Teleport>
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="role-edit-form" variant="primary" :disabled="saving || !form.Title.trim()">
+        {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Erstellen') }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useOrgRolesStore } from '@stores/orgRoles'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 
 const props = defineProps({
   organizationId: { type: Number, required: true },
@@ -53,7 +43,7 @@ const props = defineProps({
 const emit = defineEmits(['saved'])
 const orgRolesStore = useOrgRolesStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 
@@ -78,11 +68,11 @@ function open() {
   Object.assign(form, defaultForm())
   fillFromRole(props.role)
   error.value = null
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function submit() {

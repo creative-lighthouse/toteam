@@ -40,6 +40,7 @@ export class Event {
     this.InvitedMemberIDs = data.InvitedMemberIDs || []
     this.IsInvited = data.IsInvited ?? true
     this.MembersWithoutResponse = data.MembersWithoutResponse || []
+    this.CanRecordRsvp = data.CanRecordRsvp ?? false
 
     // Terminfindung (Scheduling-Poll)
     this.IsPoll = data.IsPoll ?? false

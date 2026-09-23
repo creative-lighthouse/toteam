@@ -31,9 +31,11 @@ class OrgPermissions
 
     public const CALENDAR_MANAGE = 'CALENDAR_MANAGE';
     public const CALENDAR_DELETE = 'CALENDAR_DELETE';
+    public const CALENDAR_RECORD_RSVP = 'CALENDAR_RECORD_RSVP';
 
     public const FOOD_MANAGE_MEALS = 'FOOD_MANAGE_MEALS';
     public const FOOD_APPROVE_SUGGESTIONS = 'FOOD_APPROVE_SUGGESTIONS';
+    public const FOOD_RECORD_RSVP = 'FOOD_RECORD_RSVP';
 
     public const LINKS_MANAGE = 'LINKS_MANAGE';
 
@@ -50,6 +52,8 @@ class OrgPermissions
 
     public const MARKETING_MANAGE_SIZES = 'MARKETING_MANAGE_SIZES';
     public const MARKETING_MANAGE_ENTRIES = 'MARKETING_MANAGE_ENTRIES';
+
+    public const ANNOUNCEMENTS_CREATE = 'ANNOUNCEMENTS_CREATE';
 
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
@@ -81,10 +85,12 @@ class OrgPermissions
             'Kalender' => [
                 self::CALENDAR_MANAGE => 'Termine verwalten',
                 self::CALENDAR_DELETE => 'Termine löschen',
+                self::CALENDAR_RECORD_RSVP => 'Zu-/Absagen für andere eintragen',
             ],
             'Essen' => [
                 self::FOOD_MANAGE_MEALS => 'Mahlzeiten verwalten',
                 self::FOOD_APPROVE_SUGGESTIONS => 'Essens-Vorschläge bestätigen',
+                self::FOOD_RECORD_RSVP => 'Zu-/Absagen für andere eintragen',
             ],
             'Links' => [
                 self::LINKS_MANAGE => 'Links verwalten',
@@ -106,6 +112,9 @@ class OrgPermissions
             'Marketing' => [
                 self::MARKETING_MANAGE_SIZES => 'Plakat-Größen verwalten',
                 self::MARKETING_MANAGE_ENTRIES => 'Fremde Verteil-Einträge bearbeiten/löschen',
+            ],
+            'Mitteilungen' => [
+                self::ANNOUNCEMENTS_CREATE => 'Mitteilungen erstellen',
             ],
         ];
     }

@@ -140,41 +140,7 @@
     </div>
 
     <!-- ── Gericht-vorschlagen Modal ──────────────────────────────────── -->
-    <Transition name="food-modal">
-      <div v-if="modalMealId !== null" class="food-modal-overlay" @click.self="closeModal">
-        <div class="food-modal" role="dialog" aria-modal="true">
-          <div class="food-modal_header">
-            <h3>Gericht vorschlagen</h3>
-            <AppIconButton variant="ghost" aria-label="Schließen" @click="closeModal">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
-              </svg>
-            </AppIconButton>
-          </div>
-          <div class="food-modal_body">
-            <div class="edit-field">
-              <label for="modalTitle">Name des Gerichts *</label>
-              <input id="modalTitle" v-model="modalForm.title" type="text" class="form-control"
-                placeholder="z.B. Nudelsalat" @keyup.enter="submitModal" />
-            </div>
-            <div class="edit-field">
-              <label for="modalPref">Essenspräferenz</label>
-              <select id="modalPref" v-model="modalForm.preference" class="form-control">
-                <option value="None">Keine Angabe</option>
-                <option value="Vegetarian">🥗 Vegetarisch</option>
-                <option value="Vegan">🌱 Vegan</option>
-              </select>
-            </div>
-          </div>
-          <div class="food-modal_actions">
-            <AppButton variant="secondary" @click="closeModal">Abbrechen</AppButton>
-            <AppButton variant="primary" :disabled="!modalForm.title.trim() || modalForm.submitting" @click="submitModal">
-              {{ modalForm.submitting ? 'Wird eingereicht…' : 'Vorschlagen' }}
-            </AppButton>
-          </div>
-        </div>
-      </div>
-    </Transition>
+    <SuggestFoodModal ref="suggestModal" @suggested="onFoodSuggested" />
 
     <!-- ── Sticky bottom tab nav ─────────────────────────────────────── -->
     <nav v-if="canManage || canApprove" class="food-tab-nav">
@@ -191,6 +157,8 @@
         Essen planen
       </button>
     </nav>
+
+    <ContextMenu ref="attendeeMenu" />
   </div>
 </template>
 
@@ -200,9 +168,10 @@ import { useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import AppAvatar from '@components/AppAvatar.vue'
 import AppOrgLogo from '@components/AppOrgLogo.vue'
+import ContextMenu from '@components/ContextMenu.vue'
+import ParticipantCard from '@components/ParticipantCard.vue'
+import SuggestFoodModal from '@components/SuggestFoodModal.vue'
 
 const router = useRouter()
 
@@ -228,8 +197,7 @@ const showPast      = ref(false)
 const showRejected  = ref(false)
 const expanded      = ref(new Set())
 
-const modalMealId = ref(null)
-const modalForm   = ref({ title: '', preference: 'None', submitting: false })
+const suggestModal = ref(null)
 
 // ── Computed ───────────────────────────────────────────────────────────────
 
@@ -274,6 +242,60 @@ async function load() {
   }
 }
 
+const attendeeMenu = ref(null)
+
+function toParticipation(a, type) {
+  return {
+    ID: a.id,
+    MemberID: a.id,
+    MemberName: a.name,
+    ProfileImageURL: a.avatarUrl,
+    Type: type,
+    Allergies: a.allergies,
+  }
+}
+
+function groupedAttendeesFor(meal) {
+  return {
+    Accept: (meal.attendees ?? []).map(a => toParticipation(a, 'Accept')),
+    Decline: (meal.declinedAttendees ?? []).map(a => toParticipation(a, 'Decline')),
+    Pending: (meal.pendingAttendees ?? []).map(a => toParticipation(a, 'Pending')),
+  }
+}
+
+function onFoodAttendeeContextMenu(event, meal, participation) {
+  if (!meal.canRecordRsvp) return
+
+  const options = [
+    { value: 'Accept', label: 'Zusagen' },
+    { value: 'Decline', label: 'Absagen' },
+  ].filter(o => o.value !== participation.Type)
+
+  const menuItems = options.map(o => ({
+    label: o.label,
+    onClick: () => respondForMeal(meal.id, participation.MemberID, o.value),
+  }))
+
+  if (participation.Type !== 'Pending') {
+    menuItems.push({
+      label: 'Antwort entfernen',
+      danger: true,
+      onClick: () => respondForMeal(meal.id, participation.MemberID, null),
+    })
+  }
+
+  attendeeMenu.value?.open(event, menuItems)
+}
+
+async function respondForMeal(mealId, targetMemberId, type) {
+  try {
+    await apiPost(`/calendar/participationFood/${mealId}`, { response: type, targetMemberId })
+    await load()
+  } catch (e) {
+    alert('Fehler: ' + e.message)
+  }
+}
+
 function selectPlanTab() {
   activeTab.value = 'plan'
   if (!pendingLoaded.value) loadPending()
@@ -314,41 +336,24 @@ function toggle(id) {
 }
 
 function openModal(mealId) {
-  modalMealId.value = mealId
-  modalForm.value   = { title: '', preference: 'None', submitting: false }
+  suggestModal.value?.open(mealId)
 }
 
-function closeModal() { modalMealId.value = null }
-
-async function submitModal() {
-  const form = modalForm.value
-  if (!form.title.trim() || form.submitting) return
-  form.submitting = true
-  try {
-    const result  = await apiPost(`/food/suggest/${modalMealId.value}`, {
-      title: form.title.trim(), preference: form.preference,
+function onFoodSuggested({ mealId, food }) {
+  // Update meal food list
+  const all  = [...acceptedMeals.value, ...otherMeals.value, ...pastMeals.value]
+  const mealContext = all.find(m => m.id === mealId)
+  if (mealContext) mealContext.foods.push(food)
+  // Add to myFoods
+  if (mealContext) {
+    myFoods.value.unshift({
+      id: food.id, title: food.title, preference: food.preference,
+      status: 'New',
+      mealId: mealContext.id, mealTitle: mealContext.title, mealTime: mealContext.time,
+      date: mealContext.date, appointmentTitle: mealContext.appointmentTitle,
+      organizationTitle: mealContext.organizationTitle,
+      organizationLogoUrl: mealContext.organizationLogoUrl,
     })
-    const newFood = result.data.food
-    // Update meal food list
-    const all  = [...acceptedMeals.value, ...otherMeals.value, ...pastMeals.value]
-    const meal = all.find(m => m.id === modalMealId.value)
-    if (meal) meal.foods.push(newFood)
-    // Add to myFoods
-    const mealContext = all.find(m => m.id === modalMealId.value)
-    if (mealContext) {
-      myFoods.value.unshift({
-        id: newFood.id, title: newFood.title, preference: newFood.preference,
-        status: 'New',
-        mealId: mealContext.id, mealTitle: mealContext.title, mealTime: mealContext.time,
-        date: mealContext.date, appointmentTitle: mealContext.appointmentTitle,
-        organizationTitle: mealContext.organizationTitle,
-        organizationLogoUrl: mealContext.organizationLogoUrl,
-      })
-    }
-    closeModal()
-  } catch (e) {
-    alert('Fehler beim Vorschlagen: ' + e.message)
-    form.submitting = false
   }
 }
 
@@ -385,16 +390,30 @@ const MealCard = defineComponent({
 
       if (!props.expanded) return h('div', { class: 'meal-card' }, [header])
 
-      // Attendees
-      const attendeesBlock = m.attendees.length
-        ? h('div', { class: 'meal-detail-block' }, [
-            h('h4', `Wer ist dabei (${m.attendees.length})`),
-            h('ul', { class: 'meal-attendee-list' }, m.attendees.map(a =>
-              h('li', { key: a.id, class: 'meal-attendee' }, [
-                h(AppAvatar, { src: a.avatarUrl, alt: a.name, initialsLength: 1, imgClass: 'meal-attendee_avatar' }),
-                h('span', a.name),
-              ])
-            )),
+      // Teilnehmer (gruppiert wie bei Terminen: Zugesagt/Abgesagt/Ohne Antwort)
+      const grouped = groupedAttendeesFor(m)
+      const hasParticipants = grouped.Accept.length || grouped.Decline.length || grouped.Pending.length
+
+      function participantGroup(title, list) {
+        if (!list.length) return null
+        return [
+          h('h5', { class: 'participant-group_title' }, [title, ' ', h('span', `(${list.length})`)]),
+          ...list.map(p => h(ParticipantCard, {
+            key: p.ID,
+            participation: p,
+            onContextmenu: e => onFoodAttendeeContextMenu(e, m, p),
+          })),
+        ]
+      }
+
+      const attendeesBlock = hasParticipants
+        ? h('div', { class: 'meal-detail-block participants-section' }, [
+            h('h4', 'Teilnehmer'),
+            h('div', { class: 'participants-list' }, [
+              ...(participantGroup('Zugesagt', grouped.Accept) || []),
+              ...(participantGroup('Abgesagt', grouped.Decline) || []),
+              ...(participantGroup('Ohne Antwort', grouped.Pending) || []),
+            ]),
           ])
         : null
 

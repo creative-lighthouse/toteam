@@ -4,9 +4,8 @@
 
 .event-modal {
     max-width: 800px;
-    width: 90%;
+    width: calc(100% - 20px);
     max-height: 98dvh;
-    overflow-y: auto;
     padding: 0;
     border-radius: var(--BorderRadiusMedium);
     border: none;
@@ -80,9 +79,6 @@
     }
 
     .dialog-content {
-        padding: 0;
-        gap: 0;
-
         .dialog-infobox {
             .event-participation {
                 border-top: 1px solid var(--ColorLightGray);
@@ -304,6 +300,7 @@
 
             .event-info {
                 margin-bottom: 20px;
+                text-align: left;
 
                 p { margin: 8px 0; }
 
@@ -344,19 +341,6 @@
 
             .participants-section {
                 padding: 15px 0 0 0;
-            }
-
-            form {
-                border: none;
-                max-width: unset;
-                background-color: transparent;
-                box-shadow: none;
-                padding: 0;
-                border-radius: 0;
-
-                fieldset {
-                    flex-direction: row;
-                }
             }
 
             .event-response-actions {

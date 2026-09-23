@@ -27,7 +27,7 @@
 
     <div class="task-card_footer">
       <div class="task-card_meta">
-        <span v-if="task.DeadlineNice" class="task-card_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
+        <span v-if="task.DeadlineNice && task.State !== 'finished'" class="task-card_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
           {{ task.DeadlineNice }}
         </span>
         <span v-if="task.SubTasks?.length" class="task-card_subtasks-count">
@@ -90,7 +90,7 @@ const truncatedDescription = computed(() => {
 })
 
 const isOverdue = computed(() => {
-  if (!props.task.Deadline) return false
+  if (!props.task.Deadline || props.task.State === 'finished') return false
   return new Date(props.task.Deadline) < new Date()
 })
 </script>

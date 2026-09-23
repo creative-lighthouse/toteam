@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Calendar\Appointment;
+use App\HumanResources\Allergy;
 use App\Food\Food;
 use App\Food\Meal;
 use App\Food\MealEater;
@@ -27,11 +28,12 @@ class FoodApiController extends ApiController
         'index',
         'suggest',
         'mealdetail',
-        'mealDescription',
+        'mealUpdate',
         'mealProduct',
         'mealProductOrder',
         'foodStatus',
         'pending',
+        'mealHistory',
     ];
 
     public function index(HTTPRequest $request): HTTPResponse
@@ -213,6 +215,7 @@ class FoodApiController extends ApiController
             $food->write();
 
             $food->Meals()->add($meal);
+            $meal->recordHistorySetChange('Foods', [$food], []);
 
             PushNotificationService::notifyFoodSuggestionPending($food, $meal);
 
@@ -264,8 +267,8 @@ class FoodApiController extends ApiController
 
             $canManage = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_MANAGE_MEALS);
 
-            $mealData               = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
-            $mealData['canManage']  = $canManage;
+            $mealData              = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
+            $mealData['canManage'] = $canManage;
 
             return $this->jsonResponse(['meal' => $mealData]);
         } catch (\Exception $e) {
@@ -273,7 +276,37 @@ class FoodApiController extends ApiController
         }
     }
 
-    public function mealDescription(HTTPRequest $request): HTTPResponse
+    /**
+     * Aktualisiert Titel, Uhrzeit und/oder Beschreibung einer Mahlzeit.
+     * PUT /api/v1/food/mealUpdate/:id
+     * Body: { title?, time?, description? } — nur mitgegebene Felder werden geändert.
+     */
+    /**
+     * Änderungsverlauf einer Mahlzeit inkl. Essens-Zu-/Absagen und Bestellungen.
+     * GET /api/v1/food/mealHistory/:id?before=<EntryID>&limit=20
+     */
+    public function mealHistory(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $meal = Meal::get()->byID((int) $request->param('ID'));
+        if (!$meal || !$meal->exists()) {
+            return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+        }
+
+        $appointment = $meal->Parent();
+        $mealOrgIDs  = $appointment && $appointment->exists() ? $appointment->Organisations()->column('ID') : [];
+        if (empty(array_intersect($mealOrgIDs, $member->getOrganizationIDs()))) {
+            return $this->errorResponse('Zugriff verweigert', 403);
+        }
+
+        return $this->historyResponse($meal, $request);
+    }
+
+    public function mealUpdate(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
         if (!$member) {
@@ -297,10 +330,37 @@ class FoodApiController extends ApiController
         }
 
         $body = $this->getJsonBody();
-        $meal->Description = trim($body['description'] ?? '');
+
+        if (array_key_exists('title', $body)) {
+            $title = trim($body['title']);
+            if (!$title) {
+                return $this->errorResponse('Titel ist erforderlich', 400);
+            }
+            $meal->Title = $title;
+        }
+
+        if (array_key_exists('time', $body)) {
+            $time = trim($body['time']);
+            if (!$time) {
+                return $this->errorResponse('Uhrzeit ist erforderlich', 400);
+            }
+            if (preg_match('/^\d{2}:\d{2}$/', $time)) {
+                $time .= ':00';
+            }
+            $meal->Time = $time;
+        }
+
+        if (array_key_exists('description', $body)) {
+            $meal->Description = trim($body['description']);
+        }
+
         $meal->write();
 
-        return $this->successResponse(['description' => $meal->Description], 'Beschreibung gespeichert');
+        return $this->successResponse([
+            'title'       => $meal->Title,
+            'time'        => $meal->RenderTime(),
+            'description' => $meal->Description,
+        ], 'Mahlzeit aktualisiert');
     }
 
     public function mealProduct(HTTPRequest $request): HTTPResponse
@@ -343,6 +403,7 @@ class FoodApiController extends ApiController
             $food->ParentID    = $org?->ID ?? 0;
             $food->write();
             $food->Meals()->add($meal);
+            $meal->recordHistorySetChange('Foods', [$food], []);
 
             return $this->successResponse([
                 'product' => [
@@ -379,10 +440,32 @@ class FoodApiController extends ApiController
 
             $isOrderable = (bool) ($body['isOrderable'] ?? $food->IsOrderable);
 
+            $oldTitle       = (string) $food->Title;
+            $oldIsOrderable = (bool) $food->IsOrderable;
+            $oldMaxQuantity = (int) $food->MaxQuantity;
+
             $food->Title       = $title;
             $food->IsOrderable = $isOrderable;
             $food->MaxQuantity = $isOrderable ? max(0, (int) ($body['maxQuantity'] ?? $food->MaxQuantity)) : 0;
             $food->write();
+
+            // Ein Gericht kann mehreren Mahlzeiten zugeordnet sein — in jedem Verlauf festhalten
+            $maxLabel = fn (bool $orderable, int $max) => $orderable ? ($max > 0 ? (string) $max : 'Unbegrenzt') : null;
+            foreach ($food->Meals() as $foodMeal) {
+                $foodMeal->recordHistoryValueChange('Food#' . $food->ID . '.Title', 'Gericht', $oldTitle, $food->Title);
+                $foodMeal->recordHistoryValueChange(
+                    'Food#' . $food->ID . '.IsOrderable',
+                    'Bestellbar (' . $food->Title . ')',
+                    $oldIsOrderable ? 'Ja' : 'Nein',
+                    $food->IsOrderable ? 'Ja' : 'Nein'
+                );
+                $foodMeal->recordHistoryValueChange(
+                    'Food#' . $food->ID . '.MaxQuantity',
+                    'Max. Menge (' . $food->Title . ')',
+                    $maxLabel($oldIsOrderable, $oldMaxQuantity),
+                    $maxLabel((bool) $food->IsOrderable, (int) $food->MaxQuantity)
+                );
+            }
 
             return $this->successResponse([
                 'food' => [
@@ -405,7 +488,13 @@ class FoodApiController extends ApiController
                 return $this->errorResponse('Zugriff verweigert', 403);
             }
 
+            // Erst aus dem Verlauf der Mahlzeiten entfernen, damit dort nicht zusätzlich
+            // jede gelöschte Bestellung einzeln auftaucht
+            foreach ($food->Meals() as $foodMeal) {
+                $foodMeal->recordHistorySetChange('Foods', [], [$food]);
+            }
             foreach ($food->Orders() as $order) {
+                $order->MealID = 0;
                 $order->delete();
             }
             $food->Meals()->removeAll();
@@ -509,8 +598,19 @@ class FoodApiController extends ApiController
             return $this->errorResponse('Ungültiger Status', 400);
         }
 
+        $oldStatus = $food->Status;
         $food->Status = $status;
         $food->write();
+
+        $statusLabels = ['New' => 'Offen', 'Accepted' => 'Angenommen', 'Rejected' => 'Abgelehnt'];
+        foreach ($food->Meals() as $foodMeal) {
+            $foodMeal->recordHistoryValueChange(
+                'Food#' . $food->ID . '.Status',
+                'Vorschlag „' . $food->Title . '“',
+                $statusLabels[$oldStatus] ?? $oldStatus,
+                $statusLabels[$status]
+            );
+        }
 
         PushNotificationService::notifyFoodSuggestionDecision($food);
 
@@ -599,12 +699,39 @@ class FoodApiController extends ApiController
                 'id'        => $m->ID,
                 'name'      => trim($m->FirstName . ' ' . $m->Surname),
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
-                'allergies' => $m->Allergies()->column('Title'),
+                'allergies' => $m->Allergies()->filter('Category', Allergy::CATEGORY_FOOD)->column('Title'),
             ];
         }
 
-        $org        = $appointment->Organisations()->first();
-        $canApprove = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
+        $declinedAttendees = [];
+        foreach ($meal->Eaters()->filter('Type', 'Decline') as $eater) {
+            $m = $eater->Member();
+            if (!$m || !$m->exists()) {
+                continue;
+            }
+            $declinedAttendees[] = [
+                'id'        => $m->ID,
+                'name'      => trim($m->FirstName . ' ' . $m->Surname),
+                'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+            ];
+        }
+
+        $pendingAttendees = [];
+        foreach ($meal->getMembersWithoutResponse() as $m) {
+            $pendingAttendees[] = [
+                'id'        => $m->ID,
+                'name'      => trim($m->FirstName . ' ' . $m->Surname),
+                'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+            ];
+        }
+
+        $org           = $appointment->Organisations()->first();
+        $canApprove    = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
+        $canRecordRsvp = $this->hasPermissionInAnyOrg(
+            $member,
+            $appointment->Organisations()->column('ID'),
+            OrgPermissions::FOOD_RECORD_RSVP
+        );
 
         $foods = [];
         foreach ($meal->Foods()->sort('ID ASC') as $food) {
@@ -670,8 +797,11 @@ class FoodApiController extends ApiController
             'organizationLogoUrl'  => $orgLogo,
             'userResponse'         => $memberResponses[$meal->ID] ?? null,
             'attendees'            => $attendees,
+            'declinedAttendees'    => $declinedAttendees,
+            'pendingAttendees'     => $pendingAttendees,
             'foods'                => $foods,
             'canApprove'           => $canApprove,
+            'canRecordRsvp'        => $canRecordRsvp,
         ];
     }
 }

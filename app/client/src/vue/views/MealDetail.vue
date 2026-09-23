@@ -28,34 +28,27 @@
               {{ meal.appointmentTitle }}
               <span v-if="meal.organizationTitle"> • {{ meal.organizationTitle }}</span>
             </p>
-          </div>
-        </div>
 
-        <!-- Description -->
-        <div v-if="meal.description || meal.canManage" class="section_infobox meal-description">
-          <div v-if="!descriptionEditing" class="meal-description_view">
-            <p v-if="meal.description" class="meal-description_text">{{ meal.description }}</p>
-            <p v-else class="meal-card_empty">Keine Beschreibung vorhanden.</p>
-            <AppButton
-              v-if="meal.canManage"
-              size="small"
-              variant="secondary"
-              @click="startDescriptionEdit"
-            >Bearbeiten</AppButton>
+            <p v-if="meal.description" class="meal-detail-hero_description-text">{{ meal.description }}</p>
           </div>
-          <div v-else class="meal-description_edit">
-            <textarea
-              v-model="descriptionDraft"
-              class="form-control meal-description_textarea"
-              rows="4"
-              placeholder="Beschreibung der Mahlzeit…"
-            ></textarea>
-            <div class="meal-description_edit-actions">
-              <AppButton variant="primary" :disabled="descriptionSaving" @click="saveDescription">
-                {{ descriptionSaving ? '…' : 'Speichern' }}
-              </AppButton>
-              <AppButton variant="secondary" @click="cancelDescriptionEdit">Abbrechen</AppButton>
-            </div>
+          <div class="meal-detail-hero_actions">
+            <AppIconButton
+              variant="neutral"
+              aria-label="Verlauf anzeigen"
+              title="Verlauf anzeigen"
+              @click="historyModal?.open()"
+            >
+              <span class="icon-mask" :style="historyIconStyle" />
+            </AppIconButton>
+            <AppIconButton
+              v-if="meal.canManage"
+              variant="primary"
+              aria-label="Mahlzeit bearbeiten"
+              title="Mahlzeit bearbeiten"
+              @click="openEditModal"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </AppIconButton>
           </div>
         </div>
 
@@ -73,26 +66,43 @@
           />
         </div>
 
-        <!-- Attendees -->
-        <div v-if="meal.attendees.length" class="section_infobox">
-          <h3 class="hl3">Wer ist dabei ({{ meal.attendees.length }})</h3>
-          <ul class="meal-attendee-list">
-            <li v-for="a in meal.attendees" :key="a.id" class="meal-attendee">
-              <AppAvatar
-                :src="a.avatarUrl"
-                :alt="a.name"
-                :initials-length="1"
-                img-class="meal-attendee_avatar"
+        <!-- Teilnehmer -->
+        <div v-if="hasAnyParticipants" class="section_infobox participants-section">
+          <h3 class="event-participation_title">Teilnehmer</h3>
+          <div class="participants-list">
+            <template v-if="groupedAttendees.Accept.length">
+              <h5 class="participant-group_title">Zugesagt <span>({{ groupedAttendees.Accept.length }})</span></h5>
+              <ParticipantCard
+                v-for="p in groupedAttendees.Accept"
+                :key="p.ID"
+                :participation="p"
+                @contextmenu="onAttendeeContextMenu($event, p)"
               />
-              <span class="meal-attendee_name">{{ a.name }}</span>
-              <span
-                v-for="allergy in a.allergies"
-                :key="allergy"
-                class="allergy-pill"
-              >{{ allergy }}</span>
-            </li>
-          </ul>
+            </template>
+
+            <template v-if="groupedAttendees.Decline.length">
+              <h5 class="participant-group_title">Abgesagt <span>({{ groupedAttendees.Decline.length }})</span></h5>
+              <ParticipantCard
+                v-for="p in groupedAttendees.Decline"
+                :key="p.ID"
+                :participation="p"
+                @contextmenu="onAttendeeContextMenu($event, p)"
+              />
+            </template>
+
+            <template v-if="groupedAttendees.Pending.length">
+              <h5 class="participant-group_title">Ohne Antwort <span>({{ groupedAttendees.Pending.length }})</span></h5>
+              <ParticipantCard
+                v-for="p in groupedAttendees.Pending"
+                :key="p.ID"
+                :participation="p"
+                @contextmenu="onAttendeeContextMenu($event, p)"
+              />
+            </template>
+          </div>
         </div>
+
+        <ContextMenu ref="attendeeMenu" />
 
         <!-- Geplante Gerichte (orderable + regular combined) -->
         <div class="section_infobox">
@@ -109,7 +119,7 @@
                 v-if="meal.acceptsContributions"
                 size="small"
                 variant="secondary"
-                @click="modalOpen = true"
+                @click="suggestModal?.open(meal.id)"
               >+ Vorschlagen</AppButton>
             </div>
           </div>
@@ -214,7 +224,9 @@
                     variant="primary"
                     aria-label="Gericht bearbeiten"
                     @click="startFoodEdit(item)"
-                  >✎</AppIconButton>
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </AppIconButton>
                   <AppIconButton
                     variant="danger"
                     aria-label="Produkt löschen"
@@ -227,7 +239,9 @@
                     variant="primary"
                     aria-label="Gericht bearbeiten"
                     @click="startFoodEdit(item)"
-                  >✎</AppIconButton>
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </AppIconButton>
                   <AppIconButton
                     variant="danger"
                     aria-label="Gericht löschen"
@@ -271,50 +285,14 @@
       </template>
     </div>
 
-    <!-- Gericht vorschlagen Modal -->
-    <Transition name="food-modal">
-      <div v-if="modalOpen" class="food-modal-overlay" @click.self="modalOpen = false">
-        <div class="food-modal" role="dialog" aria-modal="true">
-          <div class="food-modal_header">
-            <h3>Gericht vorschlagen</h3>
-            <AppIconButton variant="ghost" aria-label="Schließen" @click="modalOpen = false">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/>
-              </svg>
-            </AppIconButton>
-          </div>
-          <div class="food-modal_body">
-            <div class="edit-field">
-              <label for="mealDetailTitle">Name des Gerichts *</label>
-              <input
-                id="mealDetailTitle"
-                v-model="modalForm.title"
-                type="text"
-                class="form-control"
-                placeholder="z.B. Nudelsalat"
-                @keyup.enter="submitSuggestion"
-              />
-            </div>
-            <div class="edit-field">
-              <label for="mealDetailPref">Essenspräferenz</label>
-              <select id="mealDetailPref" v-model="modalForm.preference" class="form-control">
-                <option value="None">Keine Angabe</option>
-                <option value="Vegetarian">🥗 Vegetarisch</option>
-                <option value="Vegan">🌱 Vegan</option>
-              </select>
-            </div>
-          </div>
-          <div class="food-modal_actions">
-            <AppButton variant="secondary" @click="modalOpen = false">Abbrechen</AppButton>
-            <AppButton
-              variant="primary"
-              :disabled="!modalForm.title.trim() || modalForm.submitting"
-              @click="submitSuggestion"
-            >{{ modalForm.submitting ? 'Wird eingereicht…' : 'Vorschlagen' }}</AppButton>
-          </div>
-        </div>
-      </div>
-    </Transition>
+    <SuggestFoodModal ref="suggestModal" @suggested="onFoodSuggested" />
+    <MealEditModal ref="editModal" @saved="onMealSaved" />
+    <HistoryModal
+      v-if="meal"
+      ref="historyModal"
+      :endpoint="`/food/mealHistory/${meal.id}`"
+      created-label="hat die Mahlzeit erstellt"
+    />
   </div>
 </template>
 
@@ -327,8 +305,13 @@ import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
 import AppButtonGroup from '@components/AppButtonGroup.vue'
 import MealCard from '@components/EventDialog/MealCard.vue'
-import AppAvatar from '@components/AppAvatar.vue'
 import AppOrgLogo from '@components/AppOrgLogo.vue'
+import ContextMenu from '@components/ContextMenu.vue'
+import ParticipantCard from '@components/ParticipantCard.vue'
+import MealEditModal from '@components/MealEditModal.vue'
+import SuggestFoodModal from '@components/SuggestFoodModal.vue'
+import HistoryModal from '@components/HistoryModal.vue'
+import actionHistory from '../../../icons/actions/action_history.svg'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')
@@ -342,8 +325,8 @@ const meal      = ref(null)
 const loading   = ref(true)
 const error     = ref(null)
 const responding = ref(false)
-const modalOpen = ref(false)
-const modalForm = ref({ title: '', preference: 'None', submitting: false })
+const attendeeMenu = ref(null)
+const suggestModal = ref(null)
 
 // Products
 const userOrders        = ref({})
@@ -361,31 +344,19 @@ const editFoodTitle       = ref('')
 const editFoodOrderable   = ref(false)
 const editFoodMax         = ref(0)
 const editFoodSaving      = ref(false)
-const descriptionEditing    = ref(false)
-const descriptionDraft      = ref('')
-const descriptionSaving     = ref(false)
+const editModal = ref(null)
+const historyModal = ref(null)
+const historyIconStyle = { maskImage: `url("${actionHistory}")`, WebkitMaskImage: `url("${actionHistory}")` }
 
-function startDescriptionEdit() {
-  descriptionDraft.value  = meal.value.description ?? ''
-  descriptionEditing.value = true
+function openEditModal() {
+  editModal.value?.open(meal.value)
 }
 
-function cancelDescriptionEdit() {
-  descriptionEditing.value = false
-}
-
-async function saveDescription() {
-  if (descriptionSaving.value) return
-  descriptionSaving.value = true
-  try {
-    await apiPut(`/food/mealDescription/${meal.value.id}`, { description: descriptionDraft.value })
-    meal.value.description   = descriptionDraft.value
-    descriptionEditing.value = false
-  } catch (e) {
-    alert('Fehler: ' + e.message)
-  } finally {
-    descriptionSaving.value = false
-  }
+function onMealSaved({ title, time, description }) {
+  meal.value.title       = title
+  meal.value.time        = time
+  meal.value.description = description
+  usePageHeaderStore().setHeader(meal.value.title, '')
 }
 
 async function load() {
@@ -423,23 +394,64 @@ async function respond(type) {
   }
 }
 
-async function submitSuggestion() {
-  const form = modalForm.value
-  if (!form.title.trim() || form.submitting) return
-  form.submitting = true
-  try {
-    const result = await apiPost(`/food/suggest/${meal.value.id}`, {
-      title: form.title.trim(), preference: form.preference,
+function toParticipation(a, type) {
+  return {
+    ID: a.id,
+    MemberID: a.id,
+    MemberName: a.name,
+    ProfileImageURL: a.avatarUrl,
+    Type: type,
+    Allergies: a.allergies,
+  }
+}
+
+const groupedAttendees = computed(() => ({
+  Accept: (meal.value?.attendees ?? []).map(a => toParticipation(a, 'Accept')),
+  Decline: (meal.value?.declinedAttendees ?? []).map(a => toParticipation(a, 'Decline')),
+  Pending: (meal.value?.pendingAttendees ?? []).map(a => toParticipation(a, 'Pending')),
+}))
+
+const hasAnyParticipants = computed(() => {
+  const g = groupedAttendees.value
+  return g.Accept.length > 0 || g.Decline.length > 0 || g.Pending.length > 0
+})
+
+function onAttendeeContextMenu(event, participation) {
+  if (!meal.value.canRecordRsvp) return
+
+  const options = [
+    { value: 'Accept', label: 'Zusagen' },
+    { value: 'Decline', label: 'Absagen' },
+  ].filter(o => o.value !== participation.Type)
+
+  const menuItems = options.map(o => ({
+    label: o.label,
+    onClick: () => respondFor(participation.MemberID, o.value),
+  }))
+
+  if (participation.Type !== 'Pending') {
+    menuItems.push({
+      label: 'Antwort entfernen',
+      danger: true,
+      onClick: () => respondFor(participation.MemberID, null),
     })
-    meal.value.foods.push(result.data.food)
-    modalOpen.value  = false
-    form.title       = ''
-    form.preference  = 'None'
+  }
+
+  attendeeMenu.value?.open(event, menuItems)
+}
+
+async function respondFor(targetMemberId, type) {
+  try {
+    await apiPost(`/calendar/participationFood/${meal.value.id}`, { response: type, targetMemberId })
+    const data = await apiGet(`/food/mealdetail/${route.params.id}`, false)
+    meal.value = data.meal
   } catch (e) {
     alert('Fehler: ' + e.message)
-  } finally {
-    form.submitting = false
   }
+}
+
+function onFoodSuggested({ food }) {
+  meal.value.foods.push(food)
 }
 
 const rsvpClass = computed(() => {

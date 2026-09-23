@@ -1,49 +1,36 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="task-delete-modal" @cancel.prevent="close">
-      <div class="task-delete-modal_content" @click.stop>
+  <AppModal ref="modal" class="task-delete-modal" title="Aufgabe löschen" @close="close">
+    <p>Möchtest du <strong>{{ task.Title }}</strong> wirklich löschen?</p>
 
-        <div class="task-delete-modal_header">
-          <h2 class="hl2 task-delete-modal_title">Aufgabe löschen</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
+    <p v-if="subtaskCount > 0" class="task-delete-modal_subtask-note">
+      Diese Aufgabe hat {{ subtaskCount }} Unteraufgabe{{ subtaskCount !== 1 ? 'n' : '' }}. Was soll damit passieren?
+    </p>
 
-        <div class="task-delete-modal_body">
-          <p>Möchtest du <strong>{{ task.Title }}</strong> wirklich löschen?</p>
+    <div v-if="error" class="app-modal_error">{{ error }}</div>
 
-          <p v-if="subtaskCount > 0" class="task-delete-modal_subtask-note">
-            Diese Aufgabe hat {{ subtaskCount }} Unteraufgabe{{ subtaskCount !== 1 ? 'n' : '' }}. Was soll damit passieren?
-          </p>
+    <template #actions>
+      <AppButton variant="secondary" :disabled="deleting" @click="close">Abbrechen</AppButton>
 
-          <div v-if="error" class="task-delete-modal_error">{{ error }}</div>
-
-          <div class="task-delete-modal_actions">
-            <AppButton variant="secondary" :disabled="deleting" @click="close">Abbrechen</AppButton>
-
-            <template v-if="subtaskCount > 0">
-              <AppButton variant="secondary" :disabled="deleting" @click="confirmDelete('promote')">
-                {{ deleting ? 'Löschen…' : 'Unteraufgaben eigenständig machen' }}
-              </AppButton>
-              <AppButton variant="danger" :disabled="deleting" @click="confirmDelete('delete')">
-                {{ deleting ? 'Löschen…' : 'Alles löschen' }}
-              </AppButton>
-            </template>
-            <AppButton v-else variant="danger" :disabled="deleting" @click="confirmDelete('promote')">
-              {{ deleting ? 'Löschen…' : 'Löschen' }}
-            </AppButton>
-          </div>
-        </div>
-
-      </div>
-    </dialog>
-  </Teleport>
+      <template v-if="subtaskCount > 0">
+        <AppButton variant="secondary" :disabled="deleting" @click="confirmDelete('promote')">
+          {{ deleting ? 'Löschen…' : 'Unteraufgaben eigenständig machen' }}
+        </AppButton>
+        <AppButton variant="danger" :disabled="deleting" @click="confirmDelete('delete')">
+          {{ deleting ? 'Löschen…' : 'Alles löschen' }}
+        </AppButton>
+      </template>
+      <AppButton v-else variant="danger" :disabled="deleting" @click="confirmDelete('promote')">
+        {{ deleting ? 'Löschen…' : 'Löschen' }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useTasksStore } from '@stores/tasks'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 
 const props = defineProps({
   task: { type: Object, required: true },
@@ -51,7 +38,7 @@ const props = defineProps({
 const emit = defineEmits(['deleted'])
 const store = useTasksStore()
 
-const dialogEl = ref(null)
+const modal = ref(null)
 const deleting = ref(false)
 const error = ref(null)
 
@@ -59,11 +46,11 @@ const subtaskCount = computed(() => props.task.SubTasks?.length || 0)
 
 function open() {
   error.value = null
-  dialogEl.value?.showModal()
+  modal.value?.open()
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function confirmDelete(subtasksMode) {

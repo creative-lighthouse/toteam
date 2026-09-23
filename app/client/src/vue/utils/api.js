@@ -17,6 +17,58 @@ const API_BASE = '/api/v1'
  */
 const CACHE_DURATION = 5 * 60 * 1000
 
+// ── Auth token (JWT access token) ─────────────────────────────────────
+// Held only in memory (not localStorage) so it can't be read by a
+// third-party script via XSS. Lost on hard reload — the auth store's
+// bootstrap() call re-obtains one from the httpOnly refresh cookie.
+let accessToken = null
+
+export function setAccessToken(token) {
+  accessToken = token
+}
+
+export function getAccessToken() {
+  return accessToken
+}
+
+function authHeaders(extra = {}) {
+  const headers = { ...extra }
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`
+  }
+  return headers
+}
+
+/**
+ * Calls POST /auth/refresh (using the httpOnly refresh cookie) to obtain a
+ * fresh access token. Returns the new token, or null if refreshing failed
+ * (e.g. no session, or it was revoked).
+ */
+let refreshPromise = null
+async function refreshAccessToken() {
+  // Coalesce concurrent refresh attempts (e.g. several requests hitting 401
+  // at once) into a single network call.
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+    })
+      .then(async (response) => {
+        if (!response.ok) return null
+        const data = await response.json().catch(() => null)
+        if (data?.success && data.accessToken) {
+          setAccessToken(data.accessToken)
+          return data
+        }
+        return null
+      })
+      .catch(() => null)
+      .finally(() => { refreshPromise = null })
+  }
+  return refreshPromise
+}
+
 /**
  * Make an API request with caching
  * @param {string} endpoint - API endpoint
@@ -28,7 +80,7 @@ const CACHE_DURATION = 5 * 60 * 1000
 export async function apiRequest(endpoint, options = {}, useCache = true, cacheDuration = CACHE_DURATION) {
   const url = `${API_BASE}${endpoint}`
   const cacheKey = `${url}_${JSON.stringify(options)}`
-  
+
   // Check cache first for GET requests
   if (useCache && (!options.method || options.method === 'GET')) {
     const cached = await localforage.getItem(cacheKey)
@@ -37,18 +89,27 @@ export async function apiRequest(endpoint, options = {}, useCache = true, cacheD
       return cached.data
     }
   }
-  
+
   try {
-    // Make the request
-    const response = await fetch(url, {
+    const doFetch = () => fetch(url, {
       ...options,
-      headers: {
+      headers: authHeaders({
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         ...options.headers
-      },
+      }),
       credentials: 'same-origin'
     })
+
+    let response = await doFetch()
+
+    // Access token expired/missing — try one silent refresh, then retry once.
+    if (response.status === 401) {
+      const refreshed = await refreshAccessToken()
+      if (refreshed) {
+        response = await doFetch()
+      }
+    }
 
     // The backend always returns a structured { success, error } body for
     // validation failures (400/403/404/...), so parse it and hand it back to
@@ -73,7 +134,7 @@ export async function apiRequest(endpoint, options = {}, useCache = true, cacheD
     return data
   } catch (error) {
     console.error(`[API] Error fetching ${endpoint}:`, error)
-    
+
     // Try to return cached data if available (even if expired)
     if (useCache) {
       const cached = await localforage.getItem(cacheKey)
@@ -82,7 +143,7 @@ export async function apiRequest(endpoint, options = {}, useCache = true, cacheD
         return cached.data
       }
     }
-    
+
     throw error
   }
 }
@@ -115,7 +176,7 @@ export async function apiGetSWR(endpoint, onRevalidated = () => {}, cacheDuratio
 
   const revalidate = async () => {
     const response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json', 'Accept': 'application/json' }),
       credentials: 'same-origin'
     })
     if (!response.ok) {
@@ -168,11 +229,21 @@ export function apiPut(endpoint, data) {
  */
 export async function apiPostForm(endpoint, formData) {
   const url = `${API_BASE}${endpoint}`
-  const response = await fetch(url, {
+  const doFetch = () => fetch(url, {
     method: 'POST',
     body: formData,
+    headers: authHeaders(),
     credentials: 'same-origin',
   })
+
+  let response = await doFetch()
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      response = await doFetch()
+    }
+  }
+
   const data = await response.json().catch(() => null)
   if (!response.ok) {
     if (data) return data
@@ -204,12 +275,12 @@ export async function clearCache() {
 export async function clearCacheForEndpoint(endpoint) {
   const url = `${API_BASE}${endpoint}`
   const keys = await localforage.keys()
-  
+
   for (const key of keys) {
     if (key.startsWith(url)) {
       await localforage.removeItem(key)
     }
   }
-  
+
   console.log(`[API] Cache cleared for ${endpoint}`)
 }

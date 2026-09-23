@@ -17,6 +17,18 @@
             .input {
                 width: auto;
             }
+
+            // Auf schmalen Bildschirmen jeweils volle Breite und
+            // untereinander statt nebeneinander gequetscht.
+            @include media(max-medium) {
+                flex-direction: column;
+                align-items: stretch;
+                width: 100%;
+
+                .input {
+                    width: 100%;
+                }
+            }
         }
 
         &_actions {

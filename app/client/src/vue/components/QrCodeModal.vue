@@ -1,32 +1,22 @@
 <template>
-  <Teleport to="body">
-    <dialog ref="dialogEl" class="qrcode-modal" @cancel.prevent="close">
-      <div class="qrcode-modal_content" @click.stop>
-        <div class="qrcode-modal_header">
-          <h2 class="hl2 qrcode-modal_title">Profil-QR-Code</h2>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="close">✕</AppIconButton>
-        </div>
-        <div class="qrcode-modal_body">
-          <canvas ref="canvasEl" class="qrcode-modal_canvas"></canvas>
-          <p class="qrcode-modal_url">{{ profileUrl }}</p>
-          <AppButton variant="primary" @click="share">{{ shareLabel }}</AppButton>
-        </div>
-      </div>
-    </dialog>
-  </Teleport>
+  <AppModal ref="modal" class="qrcode-modal" title="Profil-QR-Code" @close="close">
+    <canvas ref="canvasEl" class="qrcode-modal_canvas"></canvas>
+    <p class="qrcode-modal_url">{{ profileUrl }}</p>
+    <AppButton variant="primary" @click="share">{{ shareLabel }}</AppButton>
+  </AppModal>
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
 import QRCode from 'qrcode'
 import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppModal from '@components/AppModal.vue'
 
 const props = defineProps({
   username: { type: String, required: true }
 })
 
-const dialogEl  = ref(null)
+const modal     = ref(null)
 const canvasEl  = ref(null)
 const shareLabel = ref('Teilen')
 
@@ -34,7 +24,7 @@ const profileUrl = `${window.location.origin}/app/profile/${encodeURIComponent(p
 
 async function open() {
   shareLabel.value = 'Teilen'
-  dialogEl.value?.showModal()
+  modal.value?.open()
   await nextTick()
   QRCode.toCanvas(canvasEl.value, profileUrl, {
     width: 240,
@@ -44,7 +34,7 @@ async function open() {
 }
 
 function close() {
-  dialogEl.value?.close()
+  modal.value?.close()
 }
 
 async function share() {
