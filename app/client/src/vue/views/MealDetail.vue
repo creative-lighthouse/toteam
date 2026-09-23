@@ -31,16 +31,25 @@
 
             <p v-if="meal.description" class="meal-detail-hero_description-text">{{ meal.description }}</p>
           </div>
-          <AppIconButton
-            v-if="meal.canManage"
-            variant="primary"
-            class="meal-detail-hero_edit"
-            aria-label="Mahlzeit bearbeiten"
-            title="Mahlzeit bearbeiten"
-            @click="openEditModal"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </AppIconButton>
+          <div class="meal-detail-hero_actions">
+            <AppIconButton
+              variant="neutral"
+              aria-label="Verlauf anzeigen"
+              title="Verlauf anzeigen"
+              @click="historyModal?.open()"
+            >
+              <span class="icon-mask" :style="historyIconStyle" />
+            </AppIconButton>
+            <AppIconButton
+              v-if="meal.canManage"
+              variant="primary"
+              aria-label="Mahlzeit bearbeiten"
+              title="Mahlzeit bearbeiten"
+              @click="openEditModal"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </AppIconButton>
+          </div>
         </div>
 
         <!-- RSVP -->
@@ -278,6 +287,12 @@
 
     <SuggestFoodModal ref="suggestModal" @suggested="onFoodSuggested" />
     <MealEditModal ref="editModal" @saved="onMealSaved" />
+    <HistoryModal
+      v-if="meal"
+      ref="historyModal"
+      :endpoint="`/food/mealHistory/${meal.id}`"
+      created-label="hat die Mahlzeit erstellt"
+    />
   </div>
 </template>
 
@@ -295,6 +310,8 @@ import ContextMenu from '@components/ContextMenu.vue'
 import ParticipantCard from '@components/ParticipantCard.vue'
 import MealEditModal from '@components/MealEditModal.vue'
 import SuggestFoodModal from '@components/SuggestFoodModal.vue'
+import HistoryModal from '@components/HistoryModal.vue'
+import actionHistory from '../../../icons/actions/action_history.svg'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')
@@ -328,6 +345,8 @@ const editFoodOrderable   = ref(false)
 const editFoodMax         = ref(0)
 const editFoodSaving      = ref(false)
 const editModal = ref(null)
+const historyModal = ref(null)
+const historyIconStyle = { maskImage: `url("${actionHistory}")`, WebkitMaskImage: `url("${actionHistory}")` }
 
 function openEditModal() {
   editModal.value?.open(meal.value)

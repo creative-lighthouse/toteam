@@ -50,6 +50,7 @@ use SilverStripe\Forms\TimeField;
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] InvitedMembers()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -113,6 +114,44 @@ class Appointment extends DataObject implements PermissionProvider
         "AgendaPoints" => "Tagesordnungspunkte",
         "Location" => "Ort",
         "Description" => "Beschreibung",
+        "Status" => "Status",
+        "EnableMeals" => "Mahlzeiten aktiviert",
+        "EnableAgenda" => "Tagesordnung aktiviert",
+        "Organisations" => "Organisationen",
+        "InvitedMembers" => "Eingeladene Mitglieder",
+    ];
+
+    /**
+     * Felder, deren Änderungen im Verlauf erscheinen (siehe HistoryExtension).
+     * Organisationen/Eingeladene werden im CalendarApiController, Zu- und Absagen
+     * über AppointmentParticipation protokolliert.
+     */
+    private static $history_fields = [
+        'Title',
+        'Status',
+        'DateStart',
+        'DateEnd',
+        'TimeStart',
+        'TimeEnd',
+        'AllDay',
+        'Location',
+        'Description',
+        'Type',
+        'EnableMeals',
+        'EnableAgenda',
+    ];
+
+    private static $history_field_labels = [
+        'DateStart' => 'Datum von',
+        'DateEnd'   => 'Datum bis',
+    ];
+
+    private static $history_value_labels = [
+        'Status' => [
+            'Suggested' => 'Vorschlag',
+            'Scheduled' => 'Geplant',
+            'Cancelled' => 'Abgesagt',
+        ],
     ];
 
     private static $summary_fields = [

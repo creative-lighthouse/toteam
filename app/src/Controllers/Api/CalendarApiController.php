@@ -38,6 +38,7 @@ class CalendarApiController extends ApiController
         'absences',
         'appointment',
         'appointmentTypes',
+        'appointmentHistory',
         'meal',
         'agendaPoint',
         'members',
@@ -943,7 +944,9 @@ class CalendarApiController extends ApiController
             $appt->write();
             $newOrgIDs = array_map('intval', $body['organizationIds'] ?? []);
             if (!empty($newOrgIDs)) {
-                $appt->Organisations()->setByIDList($newOrgIDs);
+                $appt->trackHistoryRelation('Organisations', function () use ($appt, $newOrgIDs) {
+                    $appt->Organisations()->setByIDList($newOrgIDs);
+                });
             }
 
             $effectiveOrgIDs = !empty($newOrgIDs) ? $newOrgIDs : $apptOrgIDs;
@@ -955,7 +958,9 @@ class CalendarApiController extends ApiController
                 array_map('intval', $body['invitedMemberIds'] ?? []),
                 $validMemberIDs
             ));
-            $appt->InvitedMembers()->setByIDList($invitedIDs);
+            $appt->trackHistoryRelation('InvitedMembers', function () use ($appt, $invitedIDs) {
+                $appt->InvitedMembers()->setByIDList($invitedIDs);
+            });
 
             return $this->successResponse(['ID' => $appt->ID], 'Termin aktualisiert');
         }
@@ -1038,6 +1043,30 @@ class CalendarApiController extends ApiController
         }
 
         return $this->successResponse(['ID' => $appt->ID], 'Termin erstellt');
+    }
+
+    /**
+     * Änderungsverlauf eines Termins inkl. Zu-/Absagen.
+     * GET /api/v1/calendar/appointmentHistory/:id?before=<EntryID>&limit=20
+     */
+    public function appointmentHistory(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $appointment = Appointment::get()->byID((int) $request->param('ID'));
+        if (!$appointment) {
+            return $this->errorResponse('Termin nicht gefunden', 404);
+        }
+
+        $sharedOrgs = $appointment->Organisations()->filter('ID', $member->getOrganizationIDs() ?: [0]);
+        if (!$sharedOrgs->exists()) {
+            return $this->errorResponse('Access denied', 403);
+        }
+
+        return $this->historyResponse($appointment, $request);
     }
 
     /**

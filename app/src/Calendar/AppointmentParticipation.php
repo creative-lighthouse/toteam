@@ -7,6 +7,7 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
+use SilverStripe\Security\Security;
 
 /**
  * Class \App\Events\AppointmentParticipation
@@ -22,6 +23,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $MemberID
  * @method \App\Calendar\Appointment Parent()
  * @method \SilverStripe\Security\Member Member()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -56,6 +58,46 @@ class AppointmentParticipation extends DataObject implements PermissionProvider
         "RideSeats"       => "Freie Plätze",
     ];
 
+    /**
+     * Zu-/Absagen und Teilnahme-Details landen im Verlauf des Termins (siehe HistoryExtension).
+     */
+    private static $history_target = 'Parent';
+
+    private static $history_fields = [
+        'Type',
+        'CustomTimeframe',
+        'TimeStart',
+        'TimeEnd',
+        'Notes',
+        'RideType',
+        'RideSeats',
+    ];
+
+    // Beim Zurücksetzen auf "Ohne Antwort" wird die Teilnahme gelöscht — dann nur die Antwort zeigen
+    private static $history_delete_fields = ['Type'];
+
+    private static $history_field_labels = [
+        'CustomTimeframe' => 'Eigener Zeitraum',
+        'TimeStart'       => 'Anwesend von',
+        'TimeEnd'         => 'Anwesend bis',
+        'Notes'           => 'Notiz',
+        'RideType'        => 'Mitfahrgelegenheit',
+    ];
+
+    private static $history_value_labels = [
+        'Type' => [
+            ''        => 'Keine Antwort',
+            'Accept'  => 'Zugesagt',
+            'Maybe'   => 'Vielleicht',
+            'Decline' => 'Abgesagt',
+        ],
+        'RideType' => [
+            'None'  => 'Keine',
+            'Need'  => 'Sucht Mitfahrgelegenheit',
+            'Offer' => 'Bietet Mitfahrgelegenheit',
+        ],
+    ];
+
     private static $summary_fields = [
         "Member.Title" => "Benutzer",
         "RenderType" => "Teilnahme",
@@ -72,6 +114,20 @@ class AppointmentParticipation extends DataObject implements PermissionProvider
         $fields = parent::getCMSFields();
         $fields->removeByName("ParentID");
         return $fields;
+    }
+
+    /**
+     * Name des Teilnehmers für den Verlauf — entfällt, wenn jemand die eigene
+     * Teilnahme ändert (steht dann ohnehin als Autor über dem Eintrag).
+     */
+    public function getHistoryContextLabel(): ?string
+    {
+        $current = Security::getCurrentUser();
+        if ($current && (int) $current->ID === (int) $this->MemberID) {
+            return null;
+        }
+        $member = $this->Member();
+        return $member && $member->exists() ? $member->getDisplayName() : null;
     }
 
     public function RenderType()

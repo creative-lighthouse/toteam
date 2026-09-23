@@ -33,6 +33,7 @@ class FoodApiController extends ApiController
         'mealProductOrder',
         'foodStatus',
         'pending',
+        'mealHistory',
     ];
 
     public function index(HTTPRequest $request): HTTPResponse
@@ -214,6 +215,7 @@ class FoodApiController extends ApiController
             $food->write();
 
             $food->Meals()->add($meal);
+            $meal->recordHistorySetChange('Foods', [$food], []);
 
             PushNotificationService::notifyFoodSuggestionPending($food, $meal);
 
@@ -279,6 +281,31 @@ class FoodApiController extends ApiController
      * PUT /api/v1/food/mealUpdate/:id
      * Body: { title?, time?, description? } — nur mitgegebene Felder werden geändert.
      */
+    /**
+     * Änderungsverlauf einer Mahlzeit inkl. Essens-Zu-/Absagen und Bestellungen.
+     * GET /api/v1/food/mealHistory/:id?before=<EntryID>&limit=20
+     */
+    public function mealHistory(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $meal = Meal::get()->byID((int) $request->param('ID'));
+        if (!$meal || !$meal->exists()) {
+            return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+        }
+
+        $appointment = $meal->Parent();
+        $mealOrgIDs  = $appointment && $appointment->exists() ? $appointment->Organisations()->column('ID') : [];
+        if (empty(array_intersect($mealOrgIDs, $member->getOrganizationIDs()))) {
+            return $this->errorResponse('Zugriff verweigert', 403);
+        }
+
+        return $this->historyResponse($meal, $request);
+    }
+
     public function mealUpdate(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
@@ -376,6 +403,7 @@ class FoodApiController extends ApiController
             $food->ParentID    = $org?->ID ?? 0;
             $food->write();
             $food->Meals()->add($meal);
+            $meal->recordHistorySetChange('Foods', [$food], []);
 
             return $this->successResponse([
                 'product' => [
@@ -438,7 +466,13 @@ class FoodApiController extends ApiController
                 return $this->errorResponse('Zugriff verweigert', 403);
             }
 
+            // Erst aus dem Verlauf der Mahlzeiten entfernen, damit dort nicht zusätzlich
+            // jede gelöschte Bestellung einzeln auftaucht
+            foreach ($food->Meals() as $foodMeal) {
+                $foodMeal->recordHistorySetChange('Foods', [], [$food]);
+            }
             foreach ($food->Orders() as $order) {
+                $order->MealID = 0;
                 $order->delete();
             }
             $food->Meals()->removeAll();
@@ -542,8 +576,19 @@ class FoodApiController extends ApiController
             return $this->errorResponse('Ungültiger Status', 400);
         }
 
+        $oldStatus = $food->Status;
         $food->Status = $status;
         $food->write();
+
+        $statusLabels = ['New' => 'Offen', 'Accepted' => 'Angenommen', 'Rejected' => 'Abgelehnt'];
+        foreach ($food->Meals() as $foodMeal) {
+            $foodMeal->recordHistoryValueChange(
+                'Food#' . $food->ID . '.Status',
+                'Vorschlag „' . $food->Title . '“',
+                $statusLabels[$oldStatus] ?? $oldStatus,
+                $statusLabels[$status]
+            );
+        }
 
         PushNotificationService::notifyFoodSuggestionDecision($food);
 

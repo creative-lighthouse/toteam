@@ -408,7 +408,9 @@
         flex-shrink: 0;
     }
 
-    &_edit {
+    &_actions {
+        display: flex;
+        gap: 6px;
         flex-shrink: 0;
     }
 
