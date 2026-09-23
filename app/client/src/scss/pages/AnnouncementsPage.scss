@@ -2,6 +2,42 @@
 
 .section.section--AnnouncementsPage {
     .section_content{
+        .announcements-toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+
+            .section_filter {
+                flex: 1;
+                margin-bottom: 0;
+            }
+
+            .announcements-toolbar_add {
+                margin-left: auto;
+            }
+        }
+
+        .announcements-archive {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+
+            .announcements-archive_title {
+                align-self: stretch;
+                margin: 0;
+                font-size: 18px;
+                color: var(--ColorGray);
+            }
+
+            .announcements-list--archive {
+                align-self: stretch;
+                opacity: 0.75;
+            }
+        }
+
         .section_filter {
             display: flex;
             gap: 10px;

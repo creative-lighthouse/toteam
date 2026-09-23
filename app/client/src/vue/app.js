@@ -13,5 +13,8 @@ const app = createApp(App)
 app.use(pinia)
 app.use(router)
 
+// iOS Safari only applies :active styles on touch when a touchstart listener exists
+document.addEventListener('touchstart', () => {}, { passive: true })
+
 // Mount app
 app.mount('#app')

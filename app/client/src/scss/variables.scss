@@ -58,6 +58,17 @@
     }
 }
 
+// Hover-Styles nur für Geräte mit Maus/Trackpad. Auf Touch-Geräten würde :hover
+// nach dem Antippen "hängen bleiben", bis man woanders hintippt.
+// $suffix hängt weitere Selektoren an, z. B. `@include hover(':not(:disabled)')`.
+@mixin hover($suffix: '') {
+    @media (hover: hover) {
+        &:hover#{$suffix} {
+            @content;
+        }
+    }
+}
+
 // Gemeinsames Modal-Grundgerüst: feststehender Titel-Header oben (Schließen-Button
 // bleibt beim Scrollen sichtbar) und feststehende, rechtsbündige Aktionsleiste unten
 // (nur der Inhaltsbereich dazwischen scrollt). Wird von allen Formular-Modals per

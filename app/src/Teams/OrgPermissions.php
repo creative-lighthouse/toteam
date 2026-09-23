@@ -53,6 +53,8 @@ class OrgPermissions
     public const MARKETING_MANAGE_SIZES = 'MARKETING_MANAGE_SIZES';
     public const MARKETING_MANAGE_ENTRIES = 'MARKETING_MANAGE_ENTRIES';
 
+    public const ANNOUNCEMENTS_CREATE = 'ANNOUNCEMENTS_CREATE';
+
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
      * @return array<string, array<string, string>> Kategorie => [Code => Label]
@@ -110,6 +112,9 @@ class OrgPermissions
             'Marketing' => [
                 self::MARKETING_MANAGE_SIZES => 'Plakat-Größen verwalten',
                 self::MARKETING_MANAGE_ENTRIES => 'Fremde Verteil-Einträge bearbeiten/löschen',
+            ],
+            'Mitteilungen' => [
+                self::ANNOUNCEMENTS_CREATE => 'Mitteilungen erstellen',
             ],
         ];
     }

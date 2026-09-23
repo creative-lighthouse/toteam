@@ -229,6 +229,7 @@ class Organization extends DataObject implements PermissionProvider
             OrgPermissions::ROOMS_EDIT,
             OrgPermissions::ROOMS_VIEW,
             OrgPermissions::ROOMS_DELETE,
+            OrgPermissions::ANNOUNCEMENTS_CREATE,
         ]);
         $moderator->write();
 

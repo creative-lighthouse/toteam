@@ -8,6 +8,7 @@ use App\Announcements\Announcement;
 use App\Notifications\PendingNotificationJob;
 use App\Notifications\PushNotificationService;
 use SilverStripe\Dev\BuildTask;
+use SilverStripe\ORM\FieldType\DBDatetime;
 use SilverStripe\PolyExecution\PolyOutput;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,6 +24,12 @@ class ProcessPendingNotificationsTask extends BuildTask
         $count = $jobs->count();
 
         foreach ($jobs as $job) {
+            // Mitteilungen mit Veröffentlichungsdatum in der Zukunft erst ab diesem Zeitpunkt melden
+            if ($this->isDeferred($job)) {
+                $count--;
+                continue;
+            }
+
             try {
                 $this->processJob($job);
                 $job->Status = 'done';
@@ -37,6 +44,17 @@ class ProcessPendingNotificationsTask extends BuildTask
 
         $output->writeln('Verarbeitet: ' . $count . ' Job(s).');
         return Command::SUCCESS;
+    }
+
+    private function isDeferred(PendingNotificationJob $job): bool
+    {
+        if ($job->EventType !== 'new_announcement') {
+            return false;
+        }
+        $announcement = Announcement::get()->byID($job->SourceID);
+        return $announcement
+            && $announcement->ReleaseDate
+            && strtotime($announcement->ReleaseDate) > DBDatetime::now()->getTimestamp();
     }
 
     private function processJob(PendingNotificationJob $job): void
