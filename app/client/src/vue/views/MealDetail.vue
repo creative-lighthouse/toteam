@@ -29,7 +29,7 @@
               <span v-if="meal.organizationTitle"> • {{ meal.organizationTitle }}</span>
             </p>
 
-            <p v-if="meal.description" class="meal-detail-hero_description-text">{{ meal.description }}</p>
+            <p v-if="meal.description" class="meal-detail-hero_description-text"><AppLinkifiedText :text="meal.description" /></p>
           </div>
           <div class="meal-detail-hero_actions">
             <AppIconButton
@@ -268,6 +268,7 @@ import { useRoute } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete } from '@utils/api'
 import AppButton from '@components/ui/AppButton.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppButtonGroup from '@components/ui/AppButtonGroup.vue'
 import MealCard from '@components/food/MealCard.vue'

@@ -92,7 +92,7 @@
           </table>
           <div v-if="entry.Notes" class="money-entry-detail_notes">
             <p class="money-entry-detail_notes-label">Anmerkungen</p>
-            <p class="money-entry-detail_notes-text">{{ entry.Notes }}</p>
+            <p class="money-entry-detail_notes-text"><AppLinkifiedText :text="entry.Notes" /></p>
           </div>
         </section>
 
@@ -141,6 +141,7 @@ import { useMoneyStore } from '@stores/money'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import MoneyEntryModal from '@components/money/MoneyEntryModal.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'

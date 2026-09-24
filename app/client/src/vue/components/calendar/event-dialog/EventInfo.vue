@@ -20,12 +20,13 @@
     </p>
     <div v-if="event.Description" class="event-description">
       <strong>Beschreibung:</strong>
-      <p class="event-description_text">{{ event.Description }}</p>
+      <p class="event-description_text"><AppLinkifiedText :text="event.Description" /></p>
     </div>
   </div>
 </template>
 
 <script setup>
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 defineProps({
   event: { type: Object, required: true }
 })

@@ -54,7 +54,7 @@
           </div>
 
           <p class="script-roles-view_role-description-full">
-            {{ role.Description || 'Keine Beschreibung.' }}
+            <AppLinkifiedText :text="role.Description || 'Keine Beschreibung.'" />
           </p>
 
           <div class="script-roles-view_role-members">
@@ -76,6 +76,7 @@
 import { ref } from 'vue'
 import { useSkriptStore } from '@stores/skript'
 import AppButton from '@components/ui/AppButton.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import ScriptRoleEditModal from '@components/skript/ScriptRoleEditModal.vue'
 import actionEdit from '../../../../icons/actions/action_edit.svg'

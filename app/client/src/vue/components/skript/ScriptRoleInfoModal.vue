@@ -9,7 +9,7 @@
       <h3 v-if="roles.length > 1" class="script-role-info-modal_role-title">{{ role.Title }}</h3>
 
       <p class="script-role-info-modal_description">
-        {{ role.Description || 'Keine Beschreibung.' }}
+        <AppLinkifiedText :text="role.Description || 'Keine Beschreibung.'" />
       </p>
 
       <p class="script-role-info-modal_members">
@@ -24,6 +24,7 @@
 <script setup>
 import { ref } from 'vue'
 import AppModal from '@components/ui/AppModal.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 
 const modal = ref(null)
 const roles = ref([])

@@ -16,6 +16,7 @@
         :model-value="store.filterPersonId"
         @update:model-value="select"
         searchable
+        autofocus
         pin-self
         :self-id="authStore.currentUser?.ID"
       />

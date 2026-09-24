@@ -30,13 +30,14 @@
       class="participant-note"
       :class="{ 'participant-note--expanded': noteExpanded }"
       @click="$emit('toggle-note')"
-    >{{ participation.Notes }}</p>
+    ><AppLinkifiedText :text="participation.Notes" /></p>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import HasTransportIcon from '../../../../icons/actions/action_hastransport.svg'
 import NeedsTransportIcon from '../../../../icons/actions/action_needstransport.svg'
 

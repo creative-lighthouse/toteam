@@ -76,11 +76,13 @@
 
     <template v-else>
       <input
-        v-if="searchable && members.length > 5"
+        v-if="searchable"
+        ref="searchInput"
         v-model="query"
-        type="text"
+        type="search"
         class="input member-picker_search"
         placeholder="Person suchen…"
+        aria-label="Person suchen"
       >
 
       <div class="member-picker_list">
@@ -88,6 +90,7 @@
           v-for="m in sortedFilteredMembers"
           :key="m.ID"
           class="member-picker_option"
+          :class="{ 'member-picker_option--self': pinSelf && m.ID === selfId }"
         >
           <input
             :type="multiple ? 'checkbox' : 'radio'"
@@ -114,7 +117,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 
 const props = defineProps({
@@ -134,11 +137,14 @@ const props = defineProps({
   // Zeigt die eigene Person zuerst in der Liste, mit "(Du)"-Hinweis.
   pinSelf: { type: Boolean, default: false },
   selfId: { type: Number, default: null },
+  // Fokussiert das Suchfeld beim Einblenden (Einzelauswahl mit searchable)
+  autofocus: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const query = ref('')
+const searchInput = ref(null)
 const dropdownOpen = ref(false)
 const inputName = `member-picker-${Math.random().toString(36).slice(2)}`
 
@@ -169,13 +175,13 @@ function setMode(next) {
   }
 }
 
+// Mit pinSelf steht die eigene Person immer ganz oben — auch während der Suche,
+// damit man sich selbst jederzeit mit einem Klick auswählen kann
 const sortedFilteredMembers = computed(() => {
   const q = query.value.trim().toLowerCase()
-  let list = q ? props.members.filter(m => m.Name?.toLowerCase().includes(q)) : props.members
-  if (props.pinSelf && props.selfId != null) {
-    list = [...list].sort((a, b) => (a.ID === props.selfId ? -1 : b.ID === props.selfId ? 1 : 0))
-  }
-  return list
+  const self = props.pinSelf && props.selfId != null ? props.members.find(m => m.ID === props.selfId) : null
+  const others = props.members.filter(m => m !== self && (!q || m.Name?.toLowerCase().includes(q)))
+  return self ? [self, ...others] : others
 })
 
 const selectedMembers = computed(() =>
@@ -211,4 +217,9 @@ function toggle(id) {
     emit('update:modelValue', id)
   }
 }
+
+// Suchfeld direkt bereit, z. B. wenn der Picker in einem Dropdown aufklappt
+onMounted(() => {
+  if (props.autofocus) searchInput.value?.focus()
+})
 </script>

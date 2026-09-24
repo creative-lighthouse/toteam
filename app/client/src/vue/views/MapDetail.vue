@@ -55,7 +55,7 @@
                 </div>
               </div>
               <div class="map-controls_info">
-                <p v-if="map.shortText">{{ map.shortText }}</p>
+                <p v-if="map.shortText"><AppLinkifiedText :text="map.shortText" /></p>
               </div>
             </template>
 
@@ -257,6 +257,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useRoomsStore } from '@stores/rooms'
 import RoomDetailModal from '@components/rooms/RoomDetailModal.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import { apiGet, apiPost, apiPostForm } from '@utils/api'
 import MapRenderer from '../../js/maprenderer.js'
 import AppButton from '@components/ui/AppButton.vue'

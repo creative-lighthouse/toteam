@@ -58,7 +58,7 @@
                     </div>
                 </div>
 
-                <p v-if="org.Description" class="org-detail-description">{{ org.Description }}</p>
+                <p v-if="org.Description" class="org-detail-description"><AppLinkifiedText :text="org.Description" /></p>
 
                 <section v-if="org.Members?.length" class="org-detail-members">
                     <h2 class="org-detail-members_title">Mitglieder</h2>
@@ -91,6 +91,7 @@ import { RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost } from '@utils/api'
 import AppButton from '@components/ui/AppButton.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 

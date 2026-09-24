@@ -71,7 +71,7 @@
 
         <!-- Description -->
         <div v-if="task.Description" class="task-detail_description">
-          <p>{{ task.Description }}</p>
+          <p><AppLinkifiedText :text="task.Description" /></p>
         </div>
 
         <!-- People -->
@@ -206,6 +206,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import TaskCard from '@components/tasks/TaskCard.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 import TaskSupportersModal from '@components/tasks/TaskSupportersModal.vue'

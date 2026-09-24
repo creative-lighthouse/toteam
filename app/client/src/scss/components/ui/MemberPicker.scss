@@ -167,16 +167,20 @@
         color: var(--ColorGray);
     }
 
+    // Einzelauswahl: vertikal scrollbare Liste
     &_list {
         display: flex;
+        flex-direction: column;
         gap: 4px;
+        max-height: 280px;
         overflow-y: auto;
     }
 
     .member-picker_option {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
+        flex-shrink: 0;
         gap: 8px;
         padding: 5px 10px 5px 5px;
         border: 1px solid var(--ColorLightGray);
@@ -196,6 +200,11 @@
         &:has(input:checked) {
             border-color: var(--ColorPrimary);
             background-color: var(--ColorPrimaryLight);
+        }
+
+        // Eigene Person (pinSelf) optisch von der restlichen Liste absetzen
+        &--self {
+            margin-bottom: 4px;
         }
     }
 

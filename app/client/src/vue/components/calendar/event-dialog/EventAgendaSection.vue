@@ -18,7 +18,7 @@
         <div class="agenda-point_content">
           <strong class="agenda-point_title">{{ point.Title }}</strong>
           <p v-if="point.Description" class="agenda-point_desc agenda-point_desc--pre">
-            {{ point.Description }}
+            <AppLinkifiedText :text="point.Description" />
           </p>
         </div>
       </div>
@@ -40,6 +40,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import EventAgendaModal from './EventAgendaModal.vue'
 
 const props = defineProps({

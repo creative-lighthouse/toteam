@@ -4,7 +4,7 @@
 
     <template v-else-if="room">
       <p v-if="room.Organization" class="room-detail-modal_org">{{ room.Organization.Title }}</p>
-      <p v-if="room.Description" class="room-detail-modal_description">{{ room.Description }}</p>
+      <p v-if="room.Description" class="room-detail-modal_description"><AppLinkifiedText :text="room.Description" /></p>
 
       <h3 class="hl3 room-detail-modal_tasks-title">Aufgaben</h3>
       <ul v-if="room.Tasks?.length" class="room-detail-modal_tasks">
@@ -39,6 +39,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRoomsStore } from '@stores/rooms'
 import AppButton from '@components/ui/AppButton.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 

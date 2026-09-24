@@ -47,7 +47,7 @@
             </p>
             <div v-if="event.Description" class="event-description">
               <strong>Beschreibung:</strong>
-              <p class="event-description_text">{{ event.Description }}</p>
+              <p class="event-description_text"><AppLinkifiedText :text="event.Description" /></p>
             </div>
           </div>
 
@@ -115,6 +115,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/ui/AppButton.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppButtonGroup from '@components/ui/AppButtonGroup.vue'
