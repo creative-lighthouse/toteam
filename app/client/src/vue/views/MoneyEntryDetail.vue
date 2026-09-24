@@ -15,7 +15,15 @@
           <RouterLink :to="{ name: 'MoneyAccountDetail', params: { id: account.ID } }" class="money-detail_org">
             {{ account.Title }}
           </RouterLink>
-          <div v-if="canEditEntry || canDeleteEntry" class="money-detail_header-actions">
+          <div class="money-detail_header-actions">
+            <AppIconButton
+              variant="neutral"
+              aria-label="Verlauf anzeigen"
+              title="Verlauf anzeigen"
+              @click="historyModal?.open()"
+            >
+              <span class="icon-mask" :style="historyIconStyle" />
+            </AppIconButton>
             <AppIconButton
               v-if="canEditEntry"
               variant="primary"
@@ -116,6 +124,12 @@
       :can-enter-withdrawal="account.Permissions.canEnterWithdrawal"
       @saved="onEntrySaved"
     />
+    <HistoryModal
+      v-if="entry"
+      ref="historyModal"
+      :endpoint="`/money/entryHistory/${entry.ID}`"
+      created-label="hat die Buchung erfasst"
+    />
   </div>
 </template>
 
@@ -128,6 +142,8 @@ import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import MoneyEntryModal from '@components/MoneyEntryModal.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import HistoryModal from '@components/HistoryModal.vue'
+import actionHistory from '../../../icons/actions/action_history.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -136,6 +152,9 @@ const authStore = useAuthStore()
 const pageHeaderStore = usePageHeaderStore()
 
 pageHeaderStore.setHeader('Buchung')
+
+const historyModal = ref(null)
+const historyIconStyle = { maskImage: `url("${actionHistory}")`, WebkitMaskImage: `url("${actionHistory}")` }
 
 const loading = computed(() => store.loading)
 const entry = computed(() => store.currentEntry?.entry ?? null)

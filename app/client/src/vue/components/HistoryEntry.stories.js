@@ -70,6 +70,19 @@ export const Created = {
   },
 }
 
+export const CreatedWithInitialValues = {
+  args: {
+    createdLabel: 'hat die Buchung erfasst',
+    entry: {
+      ID: 6,
+      Type: 'created',
+      Date: '2026-09-24T10:15:00+02:00',
+      Member: member,
+      Changes: [{ Field: 'User', Label: 'Für', Kind: 'value', Format: 'text', Old: null, New: 'Ben Muster' }],
+    },
+  },
+}
+
 export const UnknownMember = {
   args: {
     entry: {

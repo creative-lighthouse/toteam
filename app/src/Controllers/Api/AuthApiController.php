@@ -25,7 +25,7 @@ class AuthApiController extends ApiController
 {
     private static $url_segment = 'api/v1/auth';
 
-    private const REFRESH_COOKIE = 'toteam_refresh';
+    public const REFRESH_COOKIE = 'toteam_refresh';
 
     private static $allowed_actions = [
         'check',

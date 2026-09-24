@@ -25,11 +25,16 @@ use SilverStripe\Security\Security;
  *     private static $history_fields = ['Title', 'Description', 'State', 'Owner'];
  *     private static $history_value_labels = ['State' => ['open' => 'Offen', ...]];
  *     private static $history_field_labels = ['Notes' => 'Notiz']; // optional, sonst fieldLabel()
+ *     private static $history_created_fields = ['User'];            // optional: Anfangswerte im "erstellt"-Eintrag
  *
  * `history_fields` darf DB-Felder und has_one-Relationen (ohne "ID") enthalten, sie
  * werden beim Schreiben automatisch erfasst. many_many-Relationen werden nicht über
  * write() geschrieben und müssen daher explizit mit {@see trackHistoryRelation()}
  * (oder {@see recordHistorySetChange()}) protokolliert werden.
+ *
+ * Für eigene Anzeigewerte (z. B. Beträge als "12,50 €") kann das Modell optional
+ *     public function getHistoryValueLabel(string $field, $value): ?string
+ * definieren — gibt es null zurück, greift die Standard-Formatierung.
  *
  * Unterobjekte ohne eigenen Verlauf (z. B. Teilnahmen an einem Termin) können ihre
  * Änderungen stattdessen in den Verlauf eines übergeordneten Objekts schreiben:
@@ -61,7 +66,7 @@ class HistoryExtension extends Extension
         $this->historyIsNew = false;
 
         if ($isNew && !$this->isHistoryChild()) {
-            HistoryEntry::recordCreated($this->owner, $this->getHistoryMember());
+            HistoryEntry::recordCreated($this->owner, $this->getHistoryMember(), $this->buildCreatedChanges());
             return;
         }
 
@@ -235,6 +240,26 @@ class HistoryExtension extends Extension
         ];
     }
 
+    /**
+     * Anfangswerte der in `history_created_fields` genannten Felder für den
+     * "erstellt"-Eintrag (z. B. für wen eine Buchung erfasst wurde).
+     */
+    private function buildCreatedChanges(): array
+    {
+        $createdFields = $this->owner->config()->get('history_created_fields') ?: [];
+        $changes = [];
+        foreach ($this->getHistoryFieldMap() as $dbField => $name) {
+            if (!in_array($name, $createdFields, true)) {
+                continue;
+            }
+            $value = $this->owner->getField($dbField);
+            if (!$this->isEmptyHistoryValue($value)) {
+                $changes[] = $this->buildValueChange($name, $dbField, null, $value);
+            }
+        }
+        return $changes;
+    }
+
     private function getHistoryFieldLabel(string $name): string
     {
         return $this->owner->config()->get('history_field_labels')[$name] ?? $this->owner->fieldLabel($name);
@@ -270,6 +295,13 @@ class HistoryExtension extends Extension
     {
         if ($value === null || $value === '') {
             $value = null;
+        }
+
+        if ($value !== null && $this->owner->hasMethod('getHistoryValueLabel')) {
+            $custom = $this->owner->getHistoryValueLabel($name, $value);
+            if ($custom !== null) {
+                return ['text', $custom];
+            }
         }
 
         if ($dbField !== $name) {

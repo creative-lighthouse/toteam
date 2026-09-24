@@ -16,6 +16,15 @@
         </div>
       </div>
 
+      <div v-if="!isEdit" class="field">
+        <label for="entry-user">Für</label>
+        <select id="entry-user" v-model="form.UserID" :disabled="loadingMembers">
+          <option v-for="m in memberOptions" :key="m.ID" :value="m.ID">
+            {{ m.ID === selfId ? `${m.Name} (Du)` : m.Name }}
+          </option>
+        </select>
+      </div>
+
       <div class="field">
         <label for="entry-amount">Betrag (€) *</label>
         <input id="entry-amount" v-model="form.ChangeAmount" type="number" step="0.01" min="0.01" placeholder="0,00" required />
@@ -78,6 +87,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useMoneyStore } from '@stores/money'
+import { useAuthStore } from '@stores/auth'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
 
@@ -91,6 +101,33 @@ const props = defineProps({
 })
 const emit = defineEmits(['saved'])
 const store = useMoneyStore()
+const authStore = useAuthStore()
+
+// Mitglieder der Organisation der Kasse — Auswahl, für wen die Buchung erfasst wird
+const members = ref([])
+const membersAccountId = ref(null)
+const loadingMembers = ref(false)
+const selfId = computed(() => authStore.currentUser?.ID ?? null)
+
+// Eigene Person immer zuerst — und auch dann wählbar, wenn die Mitgliederliste
+// (noch) nicht geladen ist
+const memberOptions = computed(() => {
+  const self = members.value.find(m => m.ID === selfId.value)
+    ?? (authStore.currentUser ? { ID: selfId.value, Name: authStore.userName || 'Ich' } : null)
+  const others = members.value.filter(m => m.ID !== selfId.value)
+  return self ? [self, ...others] : others
+})
+
+async function loadMembers() {
+  if (membersAccountId.value === props.accountId) return
+  loadingMembers.value = true
+  try {
+    members.value = await store.fetchAccountMembers(props.accountId)
+    membersAccountId.value = props.accountId
+  } finally {
+    loadingMembers.value = false
+  }
+}
 
 // Wird direkt über das Argument von open() gesetzt statt über einen Prop:
 // ein Prop, der von einer Klick-Handler-Funktion im selben Tick gesetzt wird,
@@ -120,6 +157,7 @@ const defaultForm = () => ({
   ChangeDate: today(),
   BudgetID: '',
   Notes: '',
+  UserID: authStore.currentUser?.ID ?? null,
 })
 
 const form = reactive(defaultForm())
@@ -165,8 +203,9 @@ function open(entryToEdit = null, defaultBudgetId = null) {
   resetFile()
   if (entryToEdit) {
     fillFromEntry(entryToEdit)
-  } else if (defaultBudgetId) {
-    form.BudgetID = defaultBudgetId
+  } else {
+    if (defaultBudgetId) form.BudgetID = defaultBudgetId
+    loadMembers()
   }
   modal.value?.open()
 }
@@ -221,6 +260,7 @@ async function submit() {
     fd.append('ChangeDate', form.ChangeDate)
     fd.append('Notes', form.Notes.trim())
     if (form.BudgetID) fd.append('BudgetID', form.BudgetID)
+    if (!isEdit.value && form.UserID) fd.append('UserID', form.UserID)
     if (receiptFile.value) fd.append('receipt', receiptFile.value)
 
     const response = isEdit.value

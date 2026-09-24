@@ -36,10 +36,12 @@
             </div>
           </div>
 
-          <!-- Einfache Werte: Vorher → Nachher -->
+          <!-- Einfache Werte: Vorher → Nachher (bei "erstellt"-Einträgen nur der Anfangswert) -->
           <span v-else class="history-entry_value">
-            <span class="history-entry_old" :class="{ 'history-entry_empty': change.Old == null }">{{ formatValue(change, change.Old) }}</span>
-            <span class="history-entry_arrow" aria-label="geändert zu">→</span>
+            <template v-if="entry.Type !== 'created'">
+              <span class="history-entry_old" :class="{ 'history-entry_empty': change.Old == null }">{{ formatValue(change, change.Old) }}</span>
+              <span class="history-entry_arrow" aria-label="geändert zu">→</span>
+            </template>
             <span class="history-entry_new" :class="{ 'history-entry_empty': change.New == null }">{{ formatValue(change, change.New) }}</span>
           </span>
         </li>

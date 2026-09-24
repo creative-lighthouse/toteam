@@ -31,6 +31,7 @@ use SilverStripe\Security\PermissionProvider;
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
  * @mixin \SilverStripe\Versioned\RecursivePublishable
  * @mixin \SilverStripe\Versioned\VersionedStateExtension
+ * @mixin \App\History\HistoryExtension
  */
 class MoneyAccount extends DataObject implements PermissionProvider
 {
@@ -75,6 +76,26 @@ class MoneyAccount extends DataObject implements PermissionProvider
         "MoneyBudget" => "Budgets",
     ];
 
+    /**
+     * Felder, deren Änderungen im Verlauf erscheinen (siehe HistoryExtension).
+     * Budgets (inkl. Änderungen) und hinzugefügte/entfernte Buchungen werden über
+     * MoneyBudget bzw. MoneyHistory protokolliert — Detailänderungen an Buchungen
+     * bleiben im Verlauf der jeweiligen Buchung.
+     */
+    private static $history_fields = [
+        'Title',
+        'IBAN',
+        'StartingAmount',
+        'TargetAmount',
+        'RequiresApproval',
+        'RequiresReceiptDeposit',
+        'RequiresReceiptWithdrawal',
+    ];
+
+    private static $history_field_labels = [
+        'MoneyHistory' => 'Buchungen',
+    ];
+
     private static $summary_fields = [
         "Title"
     ];
@@ -84,6 +105,13 @@ class MoneyAccount extends DataObject implements PermissionProvider
     private static $table_name = 'MoneyAccount';
     private static $singular_name = "Konto";
     private static $plural_name = "Konten";
+
+    public function getHistoryValueLabel(string $field, $value): ?string
+    {
+        return in_array($field, ['StartingAmount', 'TargetAmount'], true)
+            ? number_format((float) $value, 2, ',', '.') . ' €'
+            : null;
+    }
 
     #[Override]
     public function getCMSFields()
