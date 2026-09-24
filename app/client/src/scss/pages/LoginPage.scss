@@ -6,14 +6,14 @@ section.section--LoginPage {
         justify-content: center;
         height: calc(100dvh - 50px);
         .section_infobox {
-            max-width: 400px;
+            max-width: var(--WidthNarrow);
             width: 100%;
 
             .login-form {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                max-width: 400px;
+                max-width: var(--WidthNarrow);
                 width: 100%;
                 margin: 0 auto;
                 padding: 20px;

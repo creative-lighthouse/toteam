@@ -1,0 +1,48 @@
+@use "../../base/variables" as *;
+
+// Mehrfachauswahl als Chips (siehe AppChipSelect.vue)
+.app-chip-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    .app-chip-select_chip {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 14px;
+        margin: 0;
+        border: 2px solid var(--ColorGray);
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--ColorGray);
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+        @include hover(':not(.app-chip-select_chip--selected)') {
+            border-color: var(--ColorPrimary);
+        }
+
+        &--selected {
+            background-color: var(--ColorPrimary);
+            border-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+
+        &:has(.app-chip-select_input:focus-visible) {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
+        }
+    }
+
+    .app-chip-select_input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        margin: 0;
+    }
+}

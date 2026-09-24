@@ -1,0 +1,53 @@
+@use "../../base/variables" as *;
+
+.marketing-entry-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+
+    &_hint {
+        font-size: 0.85rem;
+        opacity: 0.6;
+        grid-column: 1 / -1;
+    }
+
+    &_location-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .input {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+
+    &_geo-value {
+        font-size: 0.85rem;
+        opacity: 0.75;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &_geo-clear {
+        background: none;
+        border: none;
+        padding: 0;
+        color: var(--ColorPrimary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    #marketing-entry-form {
+        .marketing-entry-modal_hint {
+            text-align: center;
+        }
+
+        .app-button {
+            width: 100%;
+            grid-column: 1 / -1;
+        }
+    }
+}

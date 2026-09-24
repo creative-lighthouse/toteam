@@ -141,7 +141,7 @@
             />
 
             <!-- Add Appointment Modal -->
-            <AddAppointmentModal
+            <CalendarEntryCreateModal
                 ref="entryModalRef"
                 @appointment-created="refreshEvents"
                 @appointment-updated="refreshEvents"
@@ -165,14 +165,14 @@ import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useAuthStore } from '@stores/auth'
 import { useOrganizationsStore } from '@stores/organizations'
-import EventDialog from '@components/EventDialog/EventDialog.vue'
-import PollDialog from '@components/PollDialog.vue'
-import EventCard from '@components/EventCard.vue'
-import AppMenu from '@components/AppMenu.vue'
-import AddAppointmentModal from '@components/AddAppointmentModal.vue'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import AppAvatar from '@components/AppAvatar.vue'
+import EventDialog from '@components/calendar/event-dialog/EventDialog.vue'
+import PollDialog from '@components/calendar/PollDialog.vue'
+import EventCard from '@components/calendar/EventCard.vue'
+import AppMenu from '@components/layout/AppMenu.vue'
+import CalendarEntryCreateModal from '@components/calendar/CalendarEntryCreateModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import AppAvatar from '@components/ui/AppAvatar.vue'
 import actionForward from '../../../icons/actions/action_forward.svg'
 import actionBack from '../../../icons/actions/action_back.svg'
 

@@ -1,0 +1,35 @@
+@use "../../base/variables" as *;
+
+.org-role-edit-modal {
+    text-align: left;
+    max-width: 480px;
+    max-height: 90vh;
+}
+
+.org-role-edit-modal_category {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--ColorLightGray);
+
+    &:first-of-type {
+        border-top: none;
+        padding-top: 0;
+    }
+}
+
+.org-role-edit-modal_category-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ColorGray);
+}
+
+.org-role-edit-modal_permissions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}

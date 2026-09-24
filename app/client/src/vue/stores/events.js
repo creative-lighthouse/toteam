@@ -378,9 +378,11 @@ export const useEventsStore = defineStore('events', () => {
    * @param {string} title
    * @param {string} time - Format: HH:mm
    */
-  async function updateMeal(mealId, title, time, acceptsContributions) {
+  // data: { title, time, description, acceptsContributions }
+  async function updateMeal(mealId, data) {
     try {
-      const response = await apiPut(`/calendar/meal/${mealId}`, { title, time, acceptsContributions })
+      const response = await apiPut(`/calendar/meal/${mealId}`, data)
+      if (!response?.success) throw new Error(response?.error || 'Mahlzeit konnte nicht gespeichert werden')
 
       for (const event of events.value) {
         if (event.Meals) {
@@ -389,6 +391,7 @@ export const useEventsStore = defineStore('events', () => {
             meal.Title = response.data.Title
             meal.Time = response.data.Time
             meal.RenderTime = response.data.RenderTime
+            meal.Description = response.data.Description
             meal.AcceptsContributions = response.data.AcceptsContributions
             break
           }
@@ -424,9 +427,11 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
-  async function addMeal(appointmentId, title, time, acceptsContributions) {
+  // data: { title, time, description, acceptsContributions }
+  async function addMeal(appointmentId, data) {
     try {
-      const response = await apiPost(`/calendar/meal/${appointmentId}`, { title, time, acceptsContributions })
+      const response = await apiPost(`/calendar/meal/${appointmentId}`, data)
+      if (!response?.success) throw new Error(response?.error || 'Mahlzeit konnte nicht angelegt werden')
 
       const event = getEventById(appointmentId)
       if (event) {

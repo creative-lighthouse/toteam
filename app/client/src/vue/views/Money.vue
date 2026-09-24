@@ -69,9 +69,9 @@ import { useRouter } from 'vue-router'
 import { useMoneyStore } from '@stores/money'
 import { useOrganizationsStore } from '@stores/organizations'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import MoneyAccountModal from '@components/MoneyAccountModal.vue'
-import AppButton from '@components/AppButton.vue'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
+import MoneyAccountModal from '@components/money/MoneyAccountModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 
 const router = useRouter()
 const store = useMoneyStore()

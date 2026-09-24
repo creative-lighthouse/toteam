@@ -4,6 +4,12 @@ import { ref, computed } from 'vue'
 const NOTIFICATIONS_BASE = '/api/notifications'
 const PAGE_SIZE = 20
 
+// TODO(Benachrichtigungen, bekannter Bug): Seit dem Umbau auf JWT-Login (Commit ac247dc)
+// antwortet /api/notifications immer mit 401 — dieser Request schickt kein
+// `Authorization: Bearer …` mit (anders als utils/api.js), und der
+// NotificationApiController prüft noch die alte PHP-Session. Zum Beheben diesen
+// Helper durch apiGet/apiPost aus @utils/api ersetzen (inkl. Token-Refresh) und
+// den Controller auf ApiController::requireAuth() umstellen.
 async function notificationsRequest(endpoint, options = {}) {
     const response = await fetch(`${NOTIFICATIONS_BASE}${endpoint}`, {
         ...options,

@@ -81,14 +81,14 @@
       </template>
     </div>
 
-    <RoleEditModal
+    <OrgRoleEditModal
       v-if="org"
       ref="roleModal"
       :organization-id="org.ID"
       :role="editingRole"
       @saved="onRoleSaved"
     />
-    <MemberRolesModal
+    <OrgMemberRolesModal
       v-if="org"
       ref="memberRolesModal"
       :membership-id="editingMember?.MembershipID ?? 0"
@@ -115,13 +115,13 @@ import { useRoute } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useOrgRolesStore } from '@stores/orgRoles'
 import { apiGet } from '@utils/api'
-import RoleEditModal from '@components/RoleEditModal.vue'
-import MemberRolesModal from '@components/MemberRolesModal.vue'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import AppAvatar from '@components/AppAvatar.vue'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
-import ImageCropModal from '@components/ImageCropModal.vue'
+import OrgRoleEditModal from '@components/organizations/OrgRoleEditModal.vue'
+import OrgMemberRolesModal from '@components/organizations/OrgMemberRolesModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import AppAvatar from '@components/ui/AppAvatar.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import ImageCropModal from '@components/ui/ImageCropModal.vue'
 
 const route = useRoute()
 const orgRolesStore = useOrgRolesStore()

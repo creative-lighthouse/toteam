@@ -1,0 +1,82 @@
+@use "../../base/variables" as *;
+
+// Applicants modal
+.applicants-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+
+    .applicants-modal_state {
+        padding: 24px 20px;
+        color: var(--ColorGray);
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .applicants-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .applicant-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background-color: var(--ColorWhite);
+        margin: 1px 0;
+
+        &:hover {
+            background-color: var(--ColorLightGray);
+        }
+    }
+
+    .applicant-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--ColorPrimaryLight, #e8f0fe);
+            color: var(--ColorPrimary);
+            font-weight: 700;
+            font-size: 16px;
+        }
+    }
+
+    .applicant-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .applicant-name {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .applicant-email {
+            font-size: 12px;
+            color: var(--ColorGray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    .applicant-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+}

@@ -136,6 +136,7 @@ class CalendarApiController extends ApiController
                     'Title'                => $meal->Title,
                     'Time'                 => $meal->Time,
                     'RenderTime'           => $meal->RenderTime(),
+                    'Description'          => $meal->Description ?: '',
                     'UserResponse'         => $mealEater ? $mealEater->Type : null,
                     'AcceptsContributions' => (bool) $meal->AcceptsContributions,
                     'Products'             => $products,
@@ -1070,9 +1071,11 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Create a meal for an appointment (requires CALENDAR_MANAGE).
-     * POST /api/v1/calendar/meal/:appointmentId
-     * Body: { title, time } (time as HH:mm)
+     * Create/update/delete a meal of an appointment.
+     * POST   /api/v1/calendar/meal/:appointmentId — create (requires CALENDAR_MANAGE)
+     * PUT    /api/v1/calendar/meal/:mealId        — update (CALENDAR_MANAGE or FOOD_MANAGE_MEALS)
+     * DELETE /api/v1/calendar/meal/:mealId        — delete (requires CALENDAR_MANAGE)
+     * Body: { title, time (HH:mm), description?, acceptsContributions? }
      */
     public function meal(HTTPRequest $request): HTTPResponse
     {
@@ -1091,8 +1094,10 @@ class CalendarApiController extends ApiController
                 return $this->errorResponse('Mahlzeit nicht gefunden', 404);
             }
 
+            // Bearbeitbar aus dem Termin (Termine verwalten) und von der Mahlzeit-Seite (Mahlzeiten verwalten)
             $apptOrgIDs = $meal->Parent()->Organisations()->column('ID');
-            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE);
+            $hasPermission = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE)
+                || $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::FOOD_MANAGE_MEALS);
 
             if (!$hasPermission) {
                 return $this->errorResponse('Keine Berechtigung', 403);
@@ -1115,6 +1120,9 @@ class CalendarApiController extends ApiController
             $meal->Title = $title;
             $meal->Time  = $time;
             $meal->AcceptsContributions = (bool) ($body['acceptsContributions'] ?? false);
+            if (array_key_exists('description', $body)) {
+                $meal->Description = trim((string) $body['description']);
+            }
             $meal->write();
 
             return $this->successResponse([
@@ -1122,6 +1130,7 @@ class CalendarApiController extends ApiController
                 'Title'                => $meal->Title,
                 'Time'                 => $meal->Time,
                 'RenderTime'           => $meal->RenderTime(),
+                'Description'          => $meal->Description ?: '',
                 'AcceptsContributions' => (bool) $meal->AcceptsContributions,
             ], 'Mahlzeit aktualisiert');
         }
@@ -1184,6 +1193,7 @@ class CalendarApiController extends ApiController
         $meal->Time     = $time;
         $meal->ParentID = $appointment->ID;
         $meal->AcceptsContributions = (bool) ($body['acceptsContributions'] ?? false);
+        $meal->Description = trim((string) ($body['description'] ?? ''));
         $meal->write();
 
         return $this->successResponse([
@@ -1191,6 +1201,7 @@ class CalendarApiController extends ApiController
             'Title'                => $meal->Title,
             'Time'                 => $meal->Time,
             'RenderTime'           => $meal->RenderTime(),
+            'Description'          => $meal->Description ?: '',
             'AcceptsContributions' => (bool) $meal->AcceptsContributions,
             'UserResponse'         => null,
             'Products'             => [],

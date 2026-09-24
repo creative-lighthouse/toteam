@@ -1,23 +1,11 @@
 <template>
   <div class="section section--OrganizationsPage">
     <div class="section_content">
-      <div class="organizations-toolbar">
-        <div class="organizations-search">
-          <input
-            v-model="search"
-            type="search"
-            placeholder="Organisationen durchsuchen…"
-            aria-label="Organisationen durchsuchen"
-          />
-        </div>
-        <AppButton
-          class="organizations-toolbar_action"
-          variant="primary"
-          @click="createModal?.open()"
-        >
-          + Organisation erstellen
-        </AppButton>
-      </div>
+      <AppSearchBar v-model="search" placeholder="Organisationen durchsuchen…">
+        <template #actions>
+          <AppButton variant="primary" @click="createModal?.open()">+ Organisation erstellen</AppButton>
+        </template>
+      </AppSearchBar>
 
       <div v-if="store.loading" class="section_infobox">
         <p>Lade Organisationen...</p>
@@ -55,10 +43,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOrganizationsStore } from '@stores/organizations'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import OrganizationCard from '@components/OrganizationCard.vue'
-import ApplicantsModal from '@components/ApplicantsModal.vue'
-import OrganizationCreateModal from '@components/OrganizationCreateModal.vue'
-import AppButton from '@components/AppButton.vue'
+import OrganizationCard from '@components/organizations/OrganizationCard.vue'
+import ApplicantsModal from '@components/organizations/ApplicantsModal.vue'
+import OrganizationCreateModal from '@components/organizations/OrganizationCreateModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppSearchBar from '@components/ui/AppSearchBar.vue'
 
 const route = useRoute()
 const store = useOrganizationsStore()

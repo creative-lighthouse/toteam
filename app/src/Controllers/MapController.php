@@ -310,7 +310,7 @@ class MapController extends BaseController
 
             // Create upload validator for SilverStripe 6
             $validator = new \SilverStripe\Assets\Upload_Validator();
-            $validator->setAllowedExtensions(['jpg', 'jpeg', 'png', 'gif', 'webp']);
+            $validator->setAllowedExtensions(['jpg', 'jpeg', 'png', 'webp']);
             $validator->setAllowedMaxFileSize(10 * 1024 * 1024); // 10MB
 
             // Create upload handler

@@ -1,0 +1,87 @@
+@use "../../base/variables" as *;
+
+// ── AppIconButton (Icon Button) ─────────────────────────────────────────────
+.app-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    appearance: none;
+    background: transparent;
+    line-height: 1;
+    text-decoration: none; // auch als router-link (AppIconButton mit `to`)
+    padding: 0;
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
+    border-radius: 50%;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, scale 0.1s ease-out;
+
+    // Tap-Feedback wie in nativen Apps
+    &:active:not(:disabled) {
+        scale: 0.88;
+    }
+
+    &--primary {
+        border: 1px solid var(--ColorPrimary);
+        color: var(--ColorPrimary);
+
+        @include hover(':not(:disabled)') {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--danger {
+        border: 1px solid var(--ColorStatusBad);
+        color: var(--ColorStatusBad);
+
+        @include hover(':not(:disabled)') {
+            background-color: var(--ColorStatusBad);
+            color: var(--ColorWhite);
+        }
+    }
+
+    // Randfarbe = Icon-Farbe statt Füllfarbe = Randfarbe, damit der Kreis
+    // wie bei --primary/--danger ein sichtbares Umriss statt einer kaum
+    // erkennbaren hellgrauen Füllung auf weißem Grund ist.
+    &--neutral {
+        border: 1px solid var(--ColorGray);
+        color: var(--ColorGray);
+
+        @include hover(':not(:disabled)') {
+            background-color: var(--ColorPrimary);
+            border-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--ghost {
+        border: 1px solid transparent;
+        color: inherit;
+
+        @include hover(':not(:disabled)') {
+            opacity: 0.7;
+        }
+    }
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    img {
+        width: 72%;
+        height: 72%;
+        object-fit: contain;
+    }
+
+    // Icon-Buttons füllen einen größeren Anteil ihrer runden Fläche als die
+    // 16px-Icons in Text+Icon-Buttons (siehe generische .icon-mask-Regel unten).
+    .icon-mask {
+        width: 72%;
+        height: 72%;
+    }
+}

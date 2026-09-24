@@ -1,0 +1,149 @@
+@use "variables" as *;
+
+// Shared, app-wide form field look (label, input, checkbox row) — used by
+// every modal/form that opts in via the .form-field/.form-label/.input/
+// .form-checkbox classes, so text fields, selects and textareas look the
+// same everywhere instead of each modal styling its own. Individual modals
+// may still layer more specific rules on top (e.g. a fixed width), but the
+// base look — rounded corners, light border, comfortable padding, focus
+// ring — comes from here.
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ColorGray);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.input,
+select.input,
+textarea.input {
+    padding: 9px 12px;
+    border: 1px solid var(--ColorLightGray);
+    border-radius: var(--BorderRadiusSmall);
+    font-size: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--ColorWhite);
+    height: auto;
+    font-family: inherit;
+    color: inherit;
+
+    &:focus {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: 1px;
+        border-color: transparent;
+    }
+}
+
+textarea.input {
+    resize: vertical;
+}
+
+// ── Grid-based form layout (.modalform/.field) ──────────────────────────────
+// A second, simpler system for modal forms that need fields side by side
+// (e.g. start date / end date / all-day on one row) instead of the plain
+// vertical stack above. `.modalform` is a 6-column grid; each `.field` spans
+// all 6 columns by default and styles its own `label`/`input`/`select`/
+// `textarea` directly, so no extra `.form-label`/`.input` classes are needed
+// inside it. Add `.field--2`/`.field--3`/`.field--4` to let 3/2/1.5 fields
+// share a row.
+.modalform {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px 10px;
+    width: 100%;
+    align-items: start;
+
+    .field {
+        grid-column: span 6;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        margin: 0;
+        width: auto;
+        font-size: 12px;
+        color: var(--ColorGray);
+
+        // Feldbeschriftung — egal ob als eigenes <label> im .field oder als
+        // Text direkt im <label class="field">. Als Button gestaltete Labels
+        // (z. B. Datei-Upload "Beleg auswählen") behalten ihren Button-Look.
+        > label:not(.button),
+        &:is(label) {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ColorGray);
+            margin: 0;
+        }
+
+        // Excludes type="file" too: a hidden file input (e.g. MoneyEntryModal's
+        // Beleg upload, styled via a wrapping <label class="button">) relies on
+        // its own zero-size/opacity-0 rule for layout, which has lower CSS
+        // specificity than this selector and would otherwise be overridden by
+        // the width/height set here.
+        input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+        select,
+        textarea {
+            padding: 9px 12px;
+            margin: 0;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusSmall);
+            font-size: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: var(--ColorWhite);
+            font-family: inherit;
+            font-weight: 400;
+            color: var(--ColorBlack);
+            height: auto;
+
+            &:focus {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: 1px;
+                border-color: transparent;
+            }
+
+            &[type="date"],
+            &[type="time"],
+            &[type="datetime-local"] {
+                cursor: pointer;
+            }
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 72px;
+        }
+
+        &--2 { grid-column: span 2; }
+        &--3 { grid-column: span 3; }
+        &--4 { grid-column: span 4; }
+
+        // Ein .field, das aus Label + Toggle-Switch statt Label + Input
+        // besteht (siehe .toggle-switch weiter unten). Nested hier drin, damit
+        // es dieselbe Spezifität wie die Grundregel oben hat und flex-direction
+        // zuverlässig überschreibt.
+        &.toggle-field {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            cursor: pointer;
+        }
+    }
+}

@@ -79,7 +79,6 @@
         <section class="money-section">
           <div class="money-section_heading-row">
             <h3 class="hl3 money-section_title">Budgets</h3>
-            <AppButton v-if="account && (account.Permissions.canEnterDeposit || account.Permissions.canEnterWithdrawal)" title="Ausgabe/Einnahme erfassen" @click="openEntryModal(null)">+ Buchung</AppButton>
           </div>
 
           <div v-if="account.Budgets.length === 0" class="section_infobox"><p>Noch keine Budgets angelegt.</p></div>
@@ -112,37 +111,40 @@
         <section class="money-section">
           <h3 class="hl3 money-section_title">Buchungsverlauf</h3>
 
-          <div v-if="account.History.length > 0" class="money-filter-bar">
-            <div class="money-filter-row">
-              <input type="search" class="input money-filter-search" v-model="filters.search" placeholder="Nach Titel suchen…" aria-label="Suche nach Titel">
+          <AppSearchBar
+            v-if="canEnterEntries || account.History.length > 0"
+            v-model="filters.search"
+            placeholder="Nach Titel suchen…"
+          >
+            <template v-if="canEnterEntries" #actions>
+              <AppButton variant="primary" title="Ausgabe/Einnahme erfassen" @click="openEntryModal(null)">+ Buchung</AppButton>
+            </template>
 
-              <select class="input" v-model="filters.userId" aria-label="Nutzer">
+            <template v-if="account.History.length > 0" #filters>
+              <select v-model="filters.userId" aria-label="Nutzer">
                 <option value="">Alle Nutzer</option>
                 <option v-for="u in historyUsers" :key="u.ID" :value="String(u.ID)">{{ u.Name }}</option>
               </select>
 
-              <select class="input" v-model="filters.budgetId" aria-label="Kategorie">
+              <select v-model="filters.budgetId" aria-label="Kategorie">
                 <option value="">Alle Budgets</option>
                 <option value="none">Ohne Budget</option>
                 <option v-for="b in account.Budgets" :key="b.ID" :value="String(b.ID)">{{ b.Title }}</option>
               </select>
 
-              <select class="input" v-model="filters.status" aria-label="Status">
+              <select v-model="filters.status" aria-label="Status">
                 <option value="">Alle Status</option>
                 <option value="approved">Freigegeben</option>
                 <option value="pending">Ausstehend</option>
               </select>
 
-              <AppButton v-if="hasActiveFilters" variant="secondary" size="small" class="money-filter-reset" @click="resetFilters">Filter zurücksetzen</AppButton>
-            </div>
-
-            <div class="money-filter-row">
-              <span class="money-filter-text">Reihenfolge</span>
-              <select class="input" v-model="sortOrder" aria-label="Reihenfolge">
-                <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              <select v-model="sortOrder" aria-label="Reihenfolge" title="Reihenfolge">
+                <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">Sortiert nach {{ opt.label }}</option>
               </select>
-            </div>
-          </div>
+
+              <AppButton v-if="hasActiveFilters" variant="secondary" size="small" class="money-filter-reset" @click="resetFilters">Filter zurücksetzen</AppButton>
+            </template>
+          </AppSearchBar>
 
           <div v-if="account.History.length === 0" class="section_infobox"><p>Noch keine Buchungen erfasst.</p></div>
           <div v-else-if="filteredHistory.length === 0" class="section_infobox"><p>Keine Buchungen entsprechen den gewählten Filtern.</p></div>
@@ -218,17 +220,18 @@ import { useRoute, useRouter } from 'vue-router'
 import GLightbox from 'glightbox'
 import { useMoneyStore } from '@stores/money'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import MoneyEntryModal from '@components/MoneyEntryModal.vue'
-import MoneyAccountModal from '@components/MoneyAccountModal.vue'
-import MoneyBudgetModal from '@components/MoneyBudgetModal.vue'
-import MoneyEntryRow from '@components/MoneyEntryRow.vue'
-import MoneyBudgetProgress from '@components/MoneyBudgetProgress.vue'
-import MoneySettleModal from '@components/MoneySettleModal.vue'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import HistoryModal from '@components/HistoryModal.vue'
+import MoneyEntryModal from '@components/money/MoneyEntryModal.vue'
+import MoneyAccountModal from '@components/money/MoneyAccountModal.vue'
+import MoneyBudgetModal from '@components/money/MoneyBudgetModal.vue'
+import MoneyEntryRow from '@components/money/MoneyEntryRow.vue'
+import MoneyBudgetProgress from '@components/money/MoneyBudgetProgress.vue'
+import MoneySettleModal from '@components/money/MoneySettleModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppSearchBar from '@components/ui/AppSearchBar.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -259,6 +262,10 @@ const filters = reactive({
   budgetId: '',
   status: '',
 })
+
+const canEnterEntries = computed(() =>
+  !!account.value && (account.value.Permissions.canEnterDeposit || account.value.Permissions.canEnterWithdrawal)
+)
 
 const hasActiveFilters = computed(() => Object.values(filters).some(v => v !== ''))
 

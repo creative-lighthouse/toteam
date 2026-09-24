@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 // Slim, rounded scrollbar used for the task list and kanban columns. `scroll`
 // (rather than `auto`) on the callers keeps the track reserved/visible even
@@ -50,6 +50,9 @@
     }
 
     .section_content {
+        // Ohne feste Breite zieht sich das Element in der Flex-Spalte wegen des
+        // globalen `margin: 0 auto` auf seine Inhaltsbreite zusammen
+        width: 100%;
         display: flex;
         flex-direction: column;
         flex: 1;
@@ -60,73 +63,16 @@
         }
     }
 
+    // Suchleiste (AppSearchBar) soll in der Flex-Spalte der Seite nicht schrumpfen
     .tasks-toolbar {
         flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-    }
-
-    .tasks-toolbar_filters {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        flex: 1;
-        min-width: 0;
-
-        // Stack filters full-width on mobile instead of wrapping inline
-        @include media(max-medium) {
-            flex-direction: column;
-            align-items: stretch;
-            width: 100%;
-
-            .tasks-toolbar_search,
-            .tasks-toolbar_select {
-                width: 100%;
-            }
-        }
-    }
-
-    .tasks-toolbar_search {
-        min-width: 160px;
-        flex: 1;
-    }
-
-    .tasks-toolbar_select,
-    .tasks-toolbar_date {
-        flex-shrink: 0;
-    }
-
-    // "Neue Aufgabe" — sits at the far right of the toolbar, on the same row as the filters
-    .tasks-toolbar_actions {
-        flex-shrink: 0;
-    }
-
-    // Generic .input styles for the toolbar controls
-    .input {
-        padding: 8px 12px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
-        font-size: 14px;
-        background-color: var(--ColorWhite);
-        height: 38px;
-        box-sizing: border-box;
-
-        &:focus {
-            outline: 2px solid var(--ColorPrimary);
-            outline-offset: 1px;
-            border-color: transparent;
-        }
     }
 
     // Segmented view toggle
     .tasks-view-toggle {
         display: flex;
         flex-shrink: 0;
+        margin-left: auto; // rechtsbündig in der Filterzeile der Suchleiste
         border: 1px solid var(--ColorPrimary);
         border-radius: var(--BorderRadiusSmall);
         overflow: hidden;

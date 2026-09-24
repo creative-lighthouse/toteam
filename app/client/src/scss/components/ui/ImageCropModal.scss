@@ -1,0 +1,54 @@
+@use "../../base/variables" as *;
+
+.image-crop-modal {
+    text-align: left;
+    max-width: 360px;
+
+    .app-modal_body {
+        align-items: center;
+    }
+
+    .image-crop-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+        text-align: center;
+    }
+
+    .image-crop-modal_canvas {
+        width: 220px;
+        height: 220px;
+        cursor: grab;
+        touch-action: none;
+        background-color: var(--ColorLightGray);
+        box-shadow: 0 0 0 3px var(--ColorLightGray);
+
+        &:active {
+            cursor: grabbing;
+        }
+
+        // Kreis für Profilbilder (AppAvatar), abgerundetes Quadrat für Organisations-Logos
+        // (AppOrgLogo) — dieselbe 20%-Rundung wie überall sonst bei Org-Icons.
+        &--circle {
+            border-radius: 50%;
+        }
+
+        &--square {
+            border-radius: 20%;
+        }
+    }
+
+    .zoom-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+
+        .zoom-slider {
+            flex: 1;
+            accent-color: var(--ColorPrimary);
+            height: 4px;
+            cursor: pointer;
+        }
+    }
+}

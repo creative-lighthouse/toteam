@@ -250,9 +250,9 @@
       </template>
     </div>
 
-    <SuggestFoodModal ref="suggestModal" @suggested="onFoodSuggested" />
-    <MealFoodCreateModal ref="foodCreateModal" @created="onFoodCreated" />
-    <MealEditModal ref="editModal" @saved="onMealSaved" />
+    <FoodSuggestModal ref="suggestModal" @suggested="onFoodSuggested" />
+    <FoodCreateModal ref="foodCreateModal" @created="onFoodCreated" />
+    <MealFormModal ref="editModal" @saved="onMealSaved" />
     <HistoryModal
       v-if="meal"
       ref="historyModal"
@@ -267,17 +267,17 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete } from '@utils/api'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import AppButtonGroup from '@components/AppButtonGroup.vue'
-import MealCard from '@components/EventDialog/MealCard.vue'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
-import ContextMenu from '@components/ContextMenu.vue'
-import ParticipantCard from '@components/ParticipantCard.vue'
-import MealEditModal from '@components/MealEditModal.vue'
-import SuggestFoodModal from '@components/SuggestFoodModal.vue'
-import MealFoodCreateModal from '@components/MealFoodCreateModal.vue'
-import HistoryModal from '@components/HistoryModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import AppButtonGroup from '@components/ui/AppButtonGroup.vue'
+import MealCard from '@components/food/MealCard.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import ContextMenu from '@components/ui/ContextMenu.vue'
+import ParticipantCard from '@components/calendar/ParticipantCard.vue'
+import MealFormModal from '@components/food/MealFormModal.vue'
+import FoodSuggestModal from '@components/food/FoodSuggestModal.vue'
+import FoodCreateModal from '@components/food/FoodCreateModal.vue'
+import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
 import actionAddFood from '../../../icons/actions/action_addfood.svg'
 
@@ -317,10 +317,11 @@ function openEditModal() {
   editModal.value?.open(meal.value)
 }
 
-function onMealSaved({ title, time, description }) {
-  meal.value.title       = title
-  meal.value.time        = time
-  meal.value.description = description
+function onMealSaved({ title, time, description, acceptsContributions }) {
+  meal.value.title                = title
+  meal.value.time                 = time
+  meal.value.description          = description
+  meal.value.acceptsContributions = acceptsContributions
   usePageHeaderStore().setHeader(meal.value.title, '')
 }
 

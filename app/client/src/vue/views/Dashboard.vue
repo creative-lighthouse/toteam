@@ -165,11 +165,11 @@ import { useAuthStore } from '@stores/auth'
 import { useDashboardStore } from '@stores/dashboard'
 import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import EventCard from '@components/EventCard.vue'
-import AnnouncementCard from '@components/AnnouncementCard.vue'
-import AppButton from '@components/AppButton.vue'
-import AppAvatar from '@components/AppAvatar.vue'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
+import EventCard from '@components/calendar/EventCard.vue'
+import AnnouncementCard from '@components/announcements/AnnouncementCard.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppAvatar from '@components/ui/AppAvatar.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

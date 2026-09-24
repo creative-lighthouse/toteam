@@ -1,0 +1,27 @@
+@use "../../base/variables" as *;
+
+.history-modal {
+    text-align: left;
+    max-width: 560px;
+    width: 100%;
+
+    .history-modal_list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .history-modal_status {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--ColorGray);
+        text-align: center;
+        padding: 12px 0;
+    }
+
+    .history-modal_sentinel {
+        height: 1px;
+    }
+}

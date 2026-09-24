@@ -13,6 +13,11 @@ use SilverStripe\Security\Security;
  * Class \App\Controllers\NotificationApiController
  *
  */
+// TODO(Benachrichtigungen, bekannter Bug): Seit dem Umbau auf JWT-Login liefert jeder
+// Endpoint hier 401, weil Security::getCurrentUser() nur die alte PHP-Session kennt und
+// die Vue-App sich per Bearer-Token anmeldet. Zum Beheben von App\Controllers\ApiController
+// erben und $this->requireAuth() statt Security::getCurrentUser() verwenden (siehe
+// auch app/client/src/vue/stores/notifications.js, das den Token noch nicht mitschickt).
 class NotificationApiController extends Controller
 {
     private static $url_handlers = [

@@ -90,9 +90,9 @@ import { useRoute } from 'vue-router'
 import { RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost } from '@utils/api'
-import AppButton from '@components/AppButton.vue'
-import AppAvatar from '@components/AppAvatar.vue'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppAvatar from '@components/ui/AppAvatar.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

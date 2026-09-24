@@ -53,7 +53,7 @@
                   type="file"
                   id="layerImageUpload"
                   class="layer-image-input"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   @change="onImageSelected"
                 />
                 <label for="layerImageUpload" class="button">Bild auswählen</label>
@@ -94,7 +94,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPostForm } from '@utils/api'
 import MapRenderer from '../../js/maprenderer.js'
-import AppButton from '@components/AppButton.vue'
+import AppButton from '@components/ui/AppButton.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -140,9 +140,9 @@ import GLightbox from 'glightbox'
 import { useMoneyStore } from '@stores/money'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import MoneyEntryModal from '@components/MoneyEntryModal.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import HistoryModal from '@components/HistoryModal.vue'
+import MoneyEntryModal from '@components/money/MoneyEntryModal.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
 
 const route = useRoute()

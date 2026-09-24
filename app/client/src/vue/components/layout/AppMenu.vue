@@ -1,0 +1,285 @@
+<template>
+    <header class="AppMenu" :class="uiStore.navStyle">
+        <!-- Primary Menu -->
+        <ul class="primary_menu">
+            <li>
+                <div class="nav_link" @click="toggleProfileMenu">
+                    <div class="nav_icon nav_icon--profile">
+                        <AppAvatar
+                            :src="authStore.user?.Avatar"
+                            :alt="`Profilbild von ${authStore.user?.FirstName}`"
+                            img-class="profile_image"
+                        />
+                    </div>
+                </div>
+            </li>
+
+            <li v-if="authStore.hasTotem('announcements')">
+                <router-link to="/announcements" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Announcements' }" @click="closeAllMenus">
+                    <div class="nav_icon">
+                        <img
+                        :src="$route.name === 'Announcements' ? nachrichtenTotem : nachrichtenTotemInactive"
+                        alt="Nachrichten Icon"
+                        class="nav_image"
+                        >
+                        <p v-if="announcementsStore.unreadCount > 0" class="nav_badge">{{ announcementsStore.unreadCount }}</p>
+                    </div>
+                </router-link>
+            </li>
+
+            <li>
+                <router-link to="/" class="nav_link nav_link--dashboard" :class="{ 'nav_link--active': $route.name === 'Dashboard' }" @click="closeAllMenus">
+                    <div class="nav_icon">
+                        <img
+                        class="nav_image"
+                        :src="$route.name === 'Dashboard' ? dashboardTotem : dashboardTotemInactive"
+                        alt="ToTeam Logo - Zum Dashboard"
+                        >
+                    </div>
+                </router-link>
+            </li>
+
+            <li v-if="authStore.hasTotem('calendar')">
+                <router-link to="/calendar" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Calendar' }" @click="closeAllMenus">
+                    <div class="nav_icon">
+                        <img
+                        class="nav_image"
+                        :src="$route.name === 'Calendar' ? kalenderTotem : kalenderTotemInactive"
+                        alt="Kalender Icon"
+                        >
+                    </div>
+                </router-link>
+            </li>
+
+            <li>
+                <div class="nav_link" @click="toggleSecondaryMenu">
+                    <div class="nav_icon">
+                        <div class="nav_button" :class="{ active: isSecondaryMenuOpen }">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+
+        <!-- Secondary Menu -->
+        <div class="secondarynav">
+            <ul class="secondary_menu">
+                <li v-if="authStore.hasTotem('food')">
+                    <router-link to="/food" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Food' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="essenTotem" alt="Essen Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Essen <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
+                <li v-if="authStore.hasTotem('links')">
+                    <router-link to="/links" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Links' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="downloadsTotem" alt="Links Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Links & Downloads</p>
+                    </router-link>
+                </li>
+
+                <li v-if="authStore.hasTotem('map')">
+                    <router-link to="/map" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Map' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="kartenTotem" alt="Karte Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Lagepläne <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
+                <li v-if="authStore.hasTotem('tasks')">
+                    <router-link to="/tasks" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Tasks' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="todosTotem" alt="Aufgaben Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Aufgaben <span class="nav_alpha">Beta</span></p>
+                    </router-link>
+                </li>
+
+                <li v-if="authStore.hasTotem('skript')">
+                    <router-link to="/skript" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Skript' || $route.name === 'SkriptDetail' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="skriptTotem" alt="Skript Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Skript</p>
+                    </router-link>
+                </li>
+
+                <li v-if="authStore.hasTotem('marketing')">
+                    <router-link to="/marketing" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Marketing' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="marketingTotem" alt="Marketing Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Marketing <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
+                <li>
+                    <router-link to="/money" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="geldTotem" alt="Geld Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Geld</p>
+                    </router-link>
+                </li>
+
+                <li>
+                    <router-link to="/organizations" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Organizations' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="organizationsTotem" alt="Organisationen Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Organisationen</p>
+                    </router-link>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Profile Menu -->
+        <div class="profilenav">
+            <div class="nav_profile_wrap">
+                <router-link to="/profile" class="nav_profile" @click="closeAllMenus">
+                    <div class="nav_icon nav_icon--profile">
+                        <AppAvatar
+                            :src="authStore.user?.Avatar"
+                            :alt="`Profilbild von ${authStore.user?.FirstName}`"
+                            img-class="profile_image"
+                        />
+                    </div>
+                    <div class="nav_text">
+                        <p class="nav_title">{{ authStore.user?.FirstName }}</p>
+                        <p class="nav_subtitle">Profil ansehen →</p>
+                    </div>
+                </router-link>
+                <button @click="handleLogout" class="nav_logout" title="Abmelden">
+                    <div class="nav_icon nav_icon--logout">
+                        <img :src="actionLogout" alt="Abmelden Icon" class="logout_image">
+                    </div>
+                </button>
+                <button @click="openFeedback" class="nav_feedback" title="Feedback geben">
+                    <div class="nav_icon nav_icon--settings">
+                        <img :src="actionFeedback" alt="Feedback Icon" class="settings_image">
+                    </div>
+                </button>
+                <button @click="openSettings" class="nav_settings" title="Einstellungen">
+                    <div class="nav_icon nav_icon--settings">
+                        <img :src="actionSettings" alt="Einstellungen Icon" class="settings_image">
+                    </div>
+                </button>
+            </div>
+            <p class="version_note"><i>ToTeam Vue</i> <kbd>BETA</kbd></p>
+        </div>
+    </header>
+
+    <SettingsModal ref="settingsModal" />
+    <FeedbackModal ref="feedbackModal" />
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@stores/auth'
+import { useAnnouncementsStore } from '@stores/announcements'
+import { useUiStore } from '@stores/ui'
+import AppAvatar from '@components/ui/AppAvatar.vue'
+import SettingsModal from '@components/layout/SettingsModal.vue'
+import FeedbackModal from '@components/layout/FeedbackModal.vue'
+
+// Import totem icons
+import dashboardTotem from '../../../../icons/totems/dashboard_totem.png'
+import dashboardTotemInactive from '../../../../icons/totems/dashboard_totem_inactive.png'
+import nachrichtenTotem from '../../../../icons/totems/nachrichten_totem.png'
+import nachrichtenTotemInactive from '../../../../icons/totems/nachrichten_totem_inactive.png'
+import kalenderTotem from '../../../../icons/totems/kalender_totem.png'
+import kalenderTotemInactive from '../../../../icons/totems/kalender_totem_inactive.png'
+import essenTotem from '../../../../icons/totems/essen_totem.png'
+import downloadsTotem from '../../../../icons/totems/downloads_totem.png'
+import todosTotem from '../../../../icons/totems/todos_totem.png'
+import skriptTotem from '../../../../icons/totems/skript_totem.png'
+import marketingTotem from '../../../../icons/totems/marketing_totem.png'
+import geldTotem from '../../../../icons/totems/geld_totem.png'
+import kartenTotem from '../../../../icons/totems/karten_totem.png'
+import organizationsTotem from '../../../../icons/totems/organizations_totem.png'
+import actionLogout from '../../../../icons/actions/action_logout.svg'
+import actionSettings from '../../../../icons/actions/action_settings.svg'
+import actionFeedback from '../../../../icons/feedback_admin.svg'
+const router = useRouter()
+const authStore = useAuthStore()
+const announcementsStore = useAnnouncementsStore()
+const uiStore = useUiStore()
+const isSecondaryMenuOpen = ref(false)
+const isProfileMenuOpen = ref(false)
+const settingsModal = ref(null)
+const feedbackModal = ref(null)
+
+function toggleSecondaryMenu() {
+    // Toggle body class like the original JavaScript does
+    document.body.classList.toggle('secnav--open');
+    isSecondaryMenuOpen.value = document.body.classList.contains('secnav--open');
+    closeProfileMenu(); // Ensure profile menu is closed when opening secondary menu
+}
+
+function closeSecondaryMenu() {
+    document.body.classList.remove('secnav--open');
+    isSecondaryMenuOpen.value = false;
+}
+
+function toggleProfileMenu() {
+    // Toggle body class like the original JavaScript does
+    document.body.classList.toggle('profilenav--open');
+    isProfileMenuOpen.value = document.body.classList.contains('profilenav--open');
+    closeSecondaryMenu();
+}
+
+function closeProfileMenu() {
+    document.body.classList.remove('profilenav--open');
+    isProfileMenuOpen.value = false;
+}
+
+function closeAllMenus() {
+    closeSecondaryMenu();
+    closeProfileMenu();
+}
+
+function openSettings() {
+    closeAllMenus()
+    settingsModal.value?.open()
+}
+
+function openFeedback() {
+    closeAllMenus()
+    feedbackModal.value?.open()
+}
+
+async function handleLogout() {
+    await authStore.logout()
+    closeSecondaryMenu()
+    closeProfileMenu()
+    router.push({ name: 'Login' })
+}
+
+onMounted(() => {
+    // Restore saved theme
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('theme--dark')
+    }
+
+    if (authStore.isAuthenticated) {
+        announcementsStore.fetchAnnouncements().catch(err => {
+            console.warn('Could not fetch announcements for badge:', err)
+        })
+    }
+})
+
+onUnmounted(() => {
+    // Clean up body class when component is destroyed
+    closeSecondaryMenu()
+    closeProfileMenu()
+})
+</script>

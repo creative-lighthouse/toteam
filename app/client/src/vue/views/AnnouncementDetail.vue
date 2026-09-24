@@ -50,7 +50,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAnnouncementsStore } from '@stores/announcements'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 
 const route = useRoute()
 const announcementsStore = useAnnouncementsStore()

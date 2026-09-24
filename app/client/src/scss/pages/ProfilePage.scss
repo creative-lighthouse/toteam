@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 section.section--ProfilePage {
     .profile-state {
@@ -23,7 +23,7 @@ section.section--ProfilePage {
             padding: 20px;
             background-color: var(--ColorWhite);
             width: auto;
-            max-width: 350px;
+            max-width: var(--WidthNarrow);
             box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
             overflow: hidden;
 
@@ -137,7 +137,7 @@ section.section--ProfilePage {
                 width: 100%;
                 margin: 8px auto 4px;
                 text-align: left;
-                max-width: 400px;
+                max-width: var(--WidthNarrow);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -204,7 +204,7 @@ section.section--ProfilePage {
 
         .active-sessions {
             width: 100%;
-            max-width: 350px;
+            max-width: var(--WidthNarrow);
             // Matches the site-wide `.section:last-of-type` bottom clearance
             // (main.scss) so this — the last thing on the page — doesn't end
             // up hidden behind the fixed bottom nav bar on mobile.

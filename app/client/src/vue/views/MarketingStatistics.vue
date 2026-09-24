@@ -60,8 +60,8 @@ import { Chart, BarController, CategoryScale, LinearScale, BarElement, Tooltip, 
 import { useMarketingStore } from '@stores/marketing'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { pastelColorForId } from '@utils/colors'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
 import actionBack from '../../../icons/actions/action_back.svg'
 
 Chart.register(BarController, CategoryScale, LinearScale, BarElement, Tooltip, Legend)

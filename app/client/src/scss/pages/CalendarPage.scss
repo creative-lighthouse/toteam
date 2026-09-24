@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 // ── Calendar header ──────────────────────────────────────────────────────────
 
@@ -8,7 +8,7 @@
     align-items: center;
     margin: 0 auto 20px auto;
     gap: 15px;
-    max-width: 600px;
+    max-width: var(--WidthMedium);
     background-color: var(--ColorWhite);
     border-radius: var(--BorderRadiusMedium);
     padding: 10px;
@@ -229,7 +229,7 @@
 
 .events-calendar {
     .calendar-grid {
-        max-width: 600px;
+        max-width: var(--WidthMedium);
         margin: 0 auto;
         border: 1px solid var(--ColorLightGray);
         border-radius: var(--BorderRadiusMedium);
@@ -341,10 +341,6 @@
             @include media(medium) {
                 aspect-ratio: 1.2;
             }
-        }
-
-        @include media(medium) {
-            max-width: 400;
         }
     }
 

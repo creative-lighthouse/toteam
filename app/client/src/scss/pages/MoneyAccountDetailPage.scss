@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 .section.section--MoneyAccountDetailPage {
     padding-bottom: 80px; // room for floating action button
@@ -33,7 +33,6 @@
             color: var(--ColorPrimary);
         }
     }
-
 
     .money-detail_title {
         margin: 0 0 4px;
@@ -138,55 +137,8 @@
         margin: 0 0 8px;
     }
 
-    // ── Filter (Buchungsverlauf) ──────────────────────────────
-    .money-filter-bar {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-
-    .money-filter-row {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-
-        @include media(max-smartphone) {
-            .input {
-                flex: 1 1 auto;
-            }
-        }
-    }
-
-    .money-filter-search {
-        min-width: 160px;
-        flex: 1;
-    }
-
-    .money-filter-text {
-        font-size: 14px;
-        color: var(--ColorGray);
-    }
-
     .money-filter-reset {
         margin: 0;
-    }
-
-    .input {
-        padding: 8px 12px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
-        font-size: 14px;
-        background-color: var(--ColorWhite);
-        height: 38px;
-        box-sizing: border-box;
-
-        &:focus {
-            outline: 2px solid var(--ColorPrimary);
-            outline-offset: 1px;
-            border-color: transparent;
-        }
     }
 
     // ── Budgets ──────────────────────────────────────────────

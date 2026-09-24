@@ -80,7 +80,15 @@ There are no frontend or backend test suites configured.
 - **`stores/`** — Pinia stores (Composition API style, `defineStore('name', () => {...})`): `auth.js`, `announcements.js`, `dashboard.js`, `events.js`, `money.js`, `notifications.js`, `orgRoles.js`, `organizations.js`, `pageHeader.js`, `tasks.js`, `ui.js`
 - **`utils/api.js`** — API helpers `apiGet`, `apiPost`, `apiPut`, `apiDelete`, `apiPostForm` (multipart uploads), `clearCache`/`clearCacheForEndpoint`. API base is hardcoded as `/api/v1` (no env var). Uses **localforage** (store name `toteam`/`api_cache`) for client-side caching with a 5-minute TTL (`CACHE_DURATION`); falls back to stale cached data on network errors.
 - **`views/`** — page-level route components
-- **`components/`** — reusable UI components
+- **`components/`** — grouped by folder: `ui/` for generic building blocks (`App*`, `OrganizationPicker`, `MemberPicker`, `AppFileUpload`, `AppCollapse`, …), `layout/` for the app shell (header, menu, notifications, settings/feedback modals), and one folder per domain (`tasks/`, `money/`, `food/`, `calendar/` incl. `calendar/event-dialog/`, `skript/`, `marketing/`, `maps/`, `organizations/`, `rooms/`, `profile/`, `history/`, `announcements/`). Import via `@components/<folder>/<Name>.vue`. Modals are named `<Object><Action>Modal` (e.g. `TaskCreateModal`, `FoodSuggestModal`); their root CSS class is the kebab-case name (`task-create-modal`).
+
+### Styles (`app/client/src/scss/`)
+
+- `main.scss` / `editor.scss` are the entry points; `main.scss` lists every partial explicitly and its order is the cascade order.
+- `base/` — variables, fonts, normalize, typography, `forms.scss` (the shared `.modalform`/`.field` form system), `dialog.scss` (base `<dialog>` styles), `icon-mask.scss`.
+- `components/` mirrors `vue/components/` 1:1: `components/tasks/TaskCreateModal.vue` → `scss/components/tasks/TaskCreateModal.scss`. PascalCase files belong to exactly one component; kebab-case files are shared partials (e.g. `money/money-modals.scss`).
+- `pages/` — styles scoped to a view (`.section--<Name>Page`), `landingpage/` — the public landing page.
+- Layout widths only use the four tokens from `base/variables.scss`: `--WidthNarrow` (400px, compact cards/forms), `--WidthMedium` (600px, single-column content like the calendar sheet), `--WidthWide` (1200px, default page width of every `.section` and the header) and `--WidthFull` (100%, edge-to-edge views like the map). Set them on the element that needs the limit, not per page. Modals and floating elements (menu, banners, popups) keep their own sizes.
 
 **Data flow:** Vue component → Pinia action → `utils/api.js` helper → fetch with session cookie → `Api*Controller` (extends `ApiController`) → JSON response → Pinia store → reactive component update
 

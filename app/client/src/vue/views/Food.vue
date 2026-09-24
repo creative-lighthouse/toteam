@@ -140,7 +140,7 @@
     </div>
 
     <!-- ── Gericht-vorschlagen Modal ──────────────────────────────────── -->
-    <SuggestFoodModal ref="suggestModal" @suggested="onFoodSuggested" />
+    <FoodSuggestModal ref="suggestModal" @suggested="onFoodSuggested" />
 
     <!-- ── Sticky bottom tab nav ─────────────────────────────────────── -->
     <nav v-if="canManage || canApprove" class="food-tab-nav">
@@ -167,11 +167,11 @@ import { ref, computed, onMounted, defineComponent, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut } from '@utils/api'
-import AppButton from '@components/AppButton.vue'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
-import ContextMenu from '@components/ContextMenu.vue'
-import ParticipantCard from '@components/ParticipantCard.vue'
-import SuggestFoodModal from '@components/SuggestFoodModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import ContextMenu from '@components/ui/ContextMenu.vue'
+import ParticipantCard from '@components/calendar/ParticipantCard.vue'
+import FoodSuggestModal from '@components/food/FoodSuggestModal.vue'
 
 const router = useRouter()
 

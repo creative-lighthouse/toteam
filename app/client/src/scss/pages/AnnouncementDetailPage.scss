@@ -1,8 +1,7 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 .section.section--AnnouncementDetailPage {
     .section_content {
-        max-width: var(--MaxWidth);
         margin: 0 auto;
         padding: 0 20px;
 

@@ -1,0 +1,18 @@
+@use "../../base/variables" as *;
+
+.room-form-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+
+    .room-form-modal_tasks {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .room-form-modal_tasks-loading {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+}

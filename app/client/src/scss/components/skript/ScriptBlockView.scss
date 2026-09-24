@@ -1,0 +1,80 @@
+@use "../../base/variables" as *;
+
+.script-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.9rem;
+
+    // The fixed-width side gutter eats into the already-narrow text column on
+    // mobile — stack the role/line-number above the text instead of beside it.
+    @include media(max-medium) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.15rem;
+    }
+
+    &--nested {
+        display: contents;
+    }
+}
+
+.script-block_gutter {
+    // Fixed width so every row's role dropdown occupies the same column,
+    // regardless of how long its selected role name is — which in turn keeps
+    // the line numbers lined up in their own column right after it.
+    flex: 0 0 7rem;
+    width: 7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-top: 0.15rem;
+    user-select: none;
+
+    @include media(max-medium) {
+        flex: 0 0 auto;
+        width: auto;
+    }
+}
+
+.script-block_line {
+    flex: 0 0 auto;
+    opacity: 0.4;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 1.25rem;
+    text-align: right;
+}
+
+.script-block_content {
+    flex: 1;
+    min-width: 0;
+    margin: 0.15rem 0;
+    line-height: 1.6;
+
+    // Regieanweisung: centered and width-capped instead of attributed to a role.
+    &--direction {
+        max-width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        font-style: italic;
+
+        // The narrower cap wastes too much of the already-tight width on
+        // mobile — go full width there, with a smaller/lighter look to keep
+        // it visually distinct from actual dialogue lines.
+        @include media(max-medium) {
+            max-width: 100%;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    }
+}
+
+// The NodeViewContent element for a heading block IS an <h2>/<h3>/<h4> itself
+// (see contentTag in ScriptBlockView.vue), so it's targeted directly here.
+h2.script-block_content,
+h3.script-block_content,
+h4.script-block_content {
+    text-align: center;
+}
