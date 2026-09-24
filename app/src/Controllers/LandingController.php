@@ -2,7 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Auth\LoginSession;
+use App\Controllers\Api\AuthApiController;
 use SilverStripe\Control\Controller;
+use SilverStripe\Control\Cookie;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Security\Security;
 
@@ -24,7 +27,11 @@ class LandingController extends Controller
 
     public function index(HTTPRequest $request)
     {
-        $loggedIn = (bool) Security::getCurrentUser();
+        // Die Vue-App meldet sich per JWT an (keine PHP-Session), eingeloggt ist
+        // man daher, wenn der Refresh-Cookie zu einer gültigen Sitzung gehört.
+        // Security::getCurrentUser() deckt weiterhin CMS-Logins ab.
+        $loggedIn = Security::getCurrentUser()
+            || LoginSession::findMemberByToken(Cookie::get(AuthApiController::REFRESH_COOKIE));
 
         if ($request->getURL() === '' && $loggedIn) {
             return $this->redirect('/app/dashboard');

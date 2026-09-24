@@ -17,6 +17,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property bool $CanBeOverBudget
  * @property int $ParentID
  * @method \App\Money\MoneyAccount Parent()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -56,6 +57,30 @@ class MoneyBudget extends DataObject implements PermissionProvider
     ];
 
     private static $default_sort = 'Title DESC';
+
+    /**
+     * Hinzufügen/Entfernen und Änderungen landen im Verlauf der Kasse (siehe HistoryExtension).
+     */
+    private static $history_target = 'Parent';
+
+    private static $history_target_set = 'MoneyBudget';
+
+    private static $history_fields = [
+        'Title',
+        'HasBudget',
+        'Budget',
+        'CanBeOverBudget',
+    ];
+
+    public function getHistoryContextLabel(): ?string
+    {
+        return 'Budget „' . $this->Title . '“';
+    }
+
+    public function getHistoryValueLabel(string $field, $value): ?string
+    {
+        return $field === 'Budget' ? number_format((float) $value, 2, ',', '.') . ' €' : null;
+    }
 
     private static $table_name = 'MoneyBudget';
     private static $singular_name = "Budget";

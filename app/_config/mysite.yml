@@ -55,3 +55,19 @@ App\Food\MealProductOrder:
 App\Calendar\AppointmentAgendaPoint:
   extensions:
     - App\History\HistoryExtension
+
+App\Money\MoneyHistory:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Money\MoneySettlement:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Money\MoneyAccount:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Money\MoneyBudget:
+  extensions:
+    - App\History\HistoryExtension

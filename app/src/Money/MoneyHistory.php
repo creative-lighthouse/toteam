@@ -27,6 +27,7 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Assets\File Receipt()
  * @method \App\Money\MoneyBudget Budget()
  * @method \SilverStripe\ORM\DataList|\App\Money\MoneySettlement[] Settlements()
+ * @mixin \App\History\HistoryExtension
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -68,6 +69,36 @@ class MoneyHistory extends DataObject implements PermissionProvider
         "Parent" => "Konto",
         "User" => "Benutzer",
         "Receipt" => "Beleg",
+        "Budget" => "Budget",
+        "Settlements" => "Begleichungen",
+    ];
+
+    /**
+     * Felder, deren Änderungen im Verlauf erscheinen (siehe HistoryExtension).
+     * Begleichungen werden über MoneySettlement protokolliert.
+     */
+    private static $history_fields = [
+        'ChangeType',
+        'ChangeAmount',
+        'ChangeReason',
+        'ChangeDate',
+        'Notes',
+        'Approved',
+        'User',
+        'Budget',
+        'Receipt',
+    ];
+
+    // Für wen die Buchung erfasst wurde, direkt im "erstellt"-Eintrag zeigen
+    private static $history_created_fields = ['User'];
+
+    private static $history_field_labels = [
+        'ChangeType'   => 'Typ',
+        'ChangeAmount' => 'Betrag',
+        'ChangeReason' => 'Grund',
+        'ChangeDate'   => 'Rechnungsdatum',
+        'Approved'     => 'Status',
+        'User'         => 'Für',
     ];
 
     private static $summary_fields = [
@@ -84,6 +115,61 @@ class MoneyHistory extends DataObject implements PermissionProvider
     private static $table_name = 'MoneyHistory';
     private static $singular_name = "Geld-Änderung";
     private static $plural_name = "Geld-Änderungen";
+
+    /**
+     * Anzeigename, z. B. im Kassen-Verlauf: "Getränke (−15,00 €, für Anna Beispiel)".
+     */
+    public function getTitle()
+    {
+        $sign = $this->ChangeType === 'Deposit' ? '+' : '−';
+        $parts = [$sign . number_format((float) $this->ChangeAmount, 2, ',', '.') . ' €'];
+
+        $user = $this->User();
+        if ($user && $user->exists()) {
+            $parts[] = 'für ' . $user->getDisplayName();
+        }
+
+        return $this->ChangeReason . ' (' . implode(', ', $parts) . ')';
+    }
+
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        // Hinzufügen (bzw. Verschieben) von Buchungen im Verlauf der Kasse festhalten —
+        // greift auch beim Anlegen, da ParentID dann von 0 auf X wechselt
+        $changed = $this->getChangedFields(['ParentID'], DataObject::CHANGE_VALUE);
+        if (isset($changed['ParentID'])) {
+            $oldAccount = MoneyAccount::get()->byID((int) $changed['ParentID']['before']);
+            if ($oldAccount) {
+                $oldAccount->recordHistorySetChange('MoneyHistory', [], [$this]);
+            }
+            $newAccount = MoneyAccount::get()->byID((int) $changed['ParentID']['after']);
+            if ($newAccount) {
+                $newAccount->recordHistorySetChange('MoneyHistory', [$this], []);
+            }
+        }
+    }
+
+    public function onBeforeDelete()
+    {
+        parent::onBeforeDelete();
+
+        $account = $this->ParentID ? MoneyAccount::get()->byID($this->ParentID) : null;
+        if ($account) {
+            $account->recordHistorySetChange('MoneyHistory', [], [$this]);
+        }
+    }
+
+    public function getHistoryValueLabel(string $field, $value): ?string
+    {
+        return match ($field) {
+            'ChangeAmount' => number_format((float) $value, 2, ',', '.') . ' €',
+            'ChangeType'   => $value === 'Deposit' ? 'Einnahme' : 'Ausgabe',
+            'Approved'     => $value ? 'Freigegeben' : 'Ausstehend',
+            default        => null,
+        };
+    }
 
     #[Override]
     public function getCMSFields()

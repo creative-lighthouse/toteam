@@ -72,16 +72,17 @@ class HistoryEntry extends DataObject
     }
 
     /**
-     * Legt einen "erstellt"-Eintrag für das Datenobjekt an.
+     * Legt einen "erstellt"-Eintrag für das Datenobjekt an, optional mit den
+     * Anfangswerten ausgewählter Felder (siehe HistoryExtension::$history_created_fields).
      */
-    public static function recordCreated(DataObject $record, ?Member $member): void
+    public static function recordCreated(DataObject $record, ?Member $member, array $changes = []): void
     {
         $entry = static::create();
         $entry->Type = 'created';
         $entry->RecordClass = $record->ClassName;
         $entry->RecordID = $record->ID;
         $entry->MemberID = $member ? $member->ID : 0;
-        $entry->setChangeList([]);
+        $entry->setChangeList(array_values(array_filter($changes, [static::class, 'isEffective'])));
         $entry->write();
     }
 

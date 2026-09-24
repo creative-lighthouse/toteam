@@ -116,6 +116,17 @@ export const useMoneyStore = defineStore('money', () => {
     return response
   }
 
+  // Mitglieder der Organisation einer Kasse — Auswahl, für wen eine Buchung erfasst wird
+  async function fetchAccountMembers(accountId) {
+    try {
+      const response = await apiGet(`/money/accountMembers/${accountId}`, false)
+      return response.members || []
+    } catch (err) {
+      console.error('Failed to fetch account members:', err)
+      return []
+    }
+  }
+
   async function createEntry(formData) {
     const response = await apiPostForm('/money/entryStore', formData)
     if (response.success) {
@@ -172,6 +183,7 @@ export const useMoneyStore = defineStore('money', () => {
     fetchAccount,
     fetchBudgetEntries,
     fetchEntryDetail,
+    fetchAccountMembers,
     createAccount,
     updateAccount,
     removeAccount,

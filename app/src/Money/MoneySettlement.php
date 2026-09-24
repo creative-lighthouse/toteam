@@ -54,6 +54,23 @@ class MoneySettlement extends DataObject implements PermissionProvider
 
     private static $default_sort = 'Date DESC';
 
+    /**
+     * Erfasste/gelöschte Begleichungen erscheinen im Verlauf der Buchung (siehe HistoryExtension).
+     */
+    private static $history_target = 'Entry';
+
+    private static $history_target_set = 'Settlements';
+
+    /**
+     * Anzeigename im Verlauf, z. B. "20,00 € (Bar, 24.09.2026)".
+     */
+    public function getTitle()
+    {
+        $amount = number_format((float) $this->Amount, 2, ',', '.') . ' €';
+        $date = $this->Date ? date('d.m.Y', strtotime((string) $this->Date)) : null;
+        return $amount . ' (' . implode(', ', array_filter([$this->PaymentMethod, $date])) . ')';
+    }
+
     private static $table_name = 'MoneySettlement';
     private static $singular_name = "Begleichung";
     private static $plural_name = "Begleichungen";

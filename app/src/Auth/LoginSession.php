@@ -93,6 +93,25 @@ class LoginSession extends DataObject
         return $token;
     }
 
+    /**
+     * Das Mitglied zu einem Refresh-Token, sofern die Sitzung noch gültig ist.
+     * Rotiert das Token nicht — nur zum Prüfen, ob jemand eingeloggt ist.
+     */
+    public static function findMemberByToken(?string $token): ?Member
+    {
+        if (!$token) {
+            return null;
+        }
+
+        $session = static::get()->filter('RefreshTokenHash', static::hashToken($token))->first();
+        if (!$session || !$session->isValid()) {
+            return null;
+        }
+
+        $member = $session->Member();
+        return $member && $member->exists() ? $member : null;
+    }
+
     public function isValid(): bool
     {
         if ($this->RevokedAt) {

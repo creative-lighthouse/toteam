@@ -22,6 +22,14 @@
           </div>
           <div class="money-detail_header-actions">
             <AppIconButton
+              variant="neutral"
+              aria-label="Verlauf anzeigen"
+              title="Verlauf anzeigen"
+              @click="historyModal?.open()"
+            >
+              <span class="icon-mask" :style="historyIconStyle" />
+            </AppIconButton>
+            <AppIconButton
               v-if="account.Permissions.canManageAccount"
               variant="primary"
               aria-label="Kasse bearbeiten"
@@ -189,6 +197,12 @@
       :account-id="account.ID"
       @saved="onBudgetSaved"
     />
+    <HistoryModal
+      v-if="account"
+      ref="historyModal"
+      :endpoint="`/money/accountHistory/${account.ID}`"
+      created-label="hat die Kasse erstellt"
+    />
     <MoneySettleModal
       v-if="account"
       ref="settleModal"
@@ -212,6 +226,8 @@ import MoneyBudgetProgress from '@components/MoneyBudgetProgress.vue'
 import MoneySettleModal from '@components/MoneySettleModal.vue'
 import AppButton from '@components/AppButton.vue'
 import AppIconButton from '@components/AppIconButton.vue'
+import HistoryModal from '@components/HistoryModal.vue'
+import actionHistory from '../../../icons/actions/action_history.svg'
 import AppOrgLogo from '@components/AppOrgLogo.vue'
 
 const route = useRoute()
@@ -227,6 +243,8 @@ const account = computed(() => store.currentAccount)
 const entryModal = ref(null)
 const accountModal = ref(null)
 const budgetModal = ref(null)
+const historyModal = ref(null)
+const historyIconStyle = { maskImage: `url("${actionHistory}")`, WebkitMaskImage: `url("${actionHistory}")` }
 const settleModal = ref(null)
 const approving = ref(null)
 

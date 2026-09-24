@@ -8,6 +8,7 @@ use App\Money\MoneyBudget;
 use App\Money\MoneyHistory;
 use App\Money\MoneySettlement;
 use App\Teams\Organization;
+use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Upload;
@@ -39,6 +40,9 @@ class MoneyApiController extends ApiController
         'entryApprove',
         'entrySettle',
         'entry',
+        'accountMembers',
+        'entryHistory',
+        'accountHistory',
     ];
 
     private const RECEIPT_MAX_SIZE = 5 * 1024 * 1024;
@@ -365,6 +369,43 @@ class MoneyApiController extends ApiController
         ]);
     }
 
+    /** GET /api/v1/money/accountHistory/$ID?before=<EntryID>&limit=20 */
+    public function accountHistory(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $account = MoneyAccount::get()->byID((int) $request->param('ID'));
+        if (!$account || !$account->exists() || !$account->canViewInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        return $this->historyResponse($account, $request);
+    }
+
+    /** GET /api/v1/money/entryHistory/$ID?before=<EntryID>&limit=20 */
+    public function entryHistory(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $entry = MoneyHistory::get()->byID((int) $request->param('ID'));
+        if (!$entry || !$entry->exists()) {
+            return $this->errorResponse('Buchung nicht gefunden', 404);
+        }
+
+        $account = $entry->Parent();
+        if (!$account || !$account->exists() || !$account->canViewInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        return $this->historyResponse($entry, $request);
+    }
+
     /** GET /api/v1/money/entryDetail/$ID */
     public function entryDetail(HTTPRequest $request): HTTPResponse
     {
@@ -403,6 +444,43 @@ class MoneyApiController extends ApiController
                 ],
             ],
         ]);
+    }
+
+    /**
+     * GET /api/v1/money/accountMembers/$ID — Mitglieder der Organisation einer Kasse,
+     * für die Auswahl, für wen eine Buchung erfasst wird.
+     */
+    public function accountMembers(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $account = MoneyAccount::get()->byID((int) $request->param('ID'));
+        if (!$account || !$account->exists()) {
+            return $this->errorResponse('Kasse nicht gefunden', 404);
+        }
+
+        if (!$account->canEnterDepositInApp($member) && !$account->canEnterWithdrawalInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $members = [];
+        $memberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => (int) $account->ParentID,
+            'Role'           => 'member',
+        ]);
+        foreach ($memberships as $ms) {
+            if ($formatted = $this->formatMember($ms->Member())) {
+                $members[$formatted['ID']] = $formatted;
+            }
+        }
+
+        $members = array_values($members);
+        usort($members, fn ($a, $b) => strcasecmp($a['Name'], $b['Name']));
+
+        return $this->jsonResponse(['members' => $members]);
     }
 
     /** POST /api/v1/money/entryStore (multipart/form-data) */
@@ -446,6 +524,19 @@ class MoneyApiController extends ApiController
 
         $changeDate = trim($_POST['ChangeDate'] ?? '') ?: date('Y-m-d H:i:s');
 
+        // Buchung kann für eine andere Person der Organisation erfasst werden (Standard: sich selbst)
+        $userID = (int) ($_POST['UserID'] ?? 0) ?: (int) $member->ID;
+        if ($userID !== (int) $member->ID) {
+            $isOrgMember = OrganizationMembership::get()->filter([
+                'OrganizationID' => (int) $account->ParentID,
+                'MemberID'       => $userID,
+                'Role'           => 'member',
+            ])->exists() && Member::get()->byID($userID);
+            if (!$isOrgMember) {
+                return $this->errorResponse('Die gewählte Person ist kein Mitglied der Organisation', 400);
+            }
+        }
+
         $budget = null;
         $budgetID = (int) ($_POST['BudgetID'] ?? 0);
         if ($budgetID) {
@@ -486,7 +577,7 @@ class MoneyApiController extends ApiController
         $entry->Notes = trim($_POST['Notes'] ?? '');
         $entry->Approved = !$account->RequiresApproval;
         $entry->ParentID = $account->ID;
-        $entry->UserID = $member->ID;
+        $entry->UserID = $userID;
         $entry->BudgetID = $budget?->ID ?: 0;
         $entry->ReceiptID = $receiptID;
         $entry->write();
@@ -561,16 +652,13 @@ class MoneyApiController extends ApiController
 
         $file = $_FILES['receipt'] ?? null;
         $hasFile = $file && $file['error'] === UPLOAD_ERR_OK;
+        $oldReceipt = null;
         if ($hasFile) {
             $result = $this->storeReceipt($file, $account, $changeDate);
             if (!$result['success']) {
                 return $this->errorResponse($result['error'], 400);
             }
             $oldReceipt = $entry->Receipt();
-            if ($oldReceipt && $oldReceipt->exists()) {
-                $oldReceipt->deleteFile();
-                $oldReceipt->delete();
-            }
             $entry->ReceiptID = $result['fileID'];
         }
 
@@ -583,6 +671,13 @@ class MoneyApiController extends ApiController
         $entry->Notes = trim($_POST['Notes'] ?? '');
         $entry->BudgetID = $budget?->ID ?: 0;
         $entry->write();
+
+        // Alten Beleg erst nach dem Schreiben löschen, damit der Verlauf noch
+        // seinen Dateinamen als Vorher-Wert erfassen kann
+        if ($oldReceipt && $oldReceipt->exists()) {
+            $oldReceipt->deleteFile();
+            $oldReceipt->delete();
+        }
 
         if ($wasApproved) {
             $this->recalculateBalances($account);
