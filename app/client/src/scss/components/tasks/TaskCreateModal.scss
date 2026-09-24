@@ -12,4 +12,10 @@
             color: var(--ColorPrimary);
         }
     }
+
+    .task-create-modal_owner-hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
 }

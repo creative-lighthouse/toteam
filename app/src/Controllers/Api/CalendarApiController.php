@@ -201,15 +201,14 @@ class CalendarApiController extends ApiController
             // Organisation logos (all organisations)
             $orgLogos = [];
             foreach ($appointment->Organisations() as $orgItem) {
-                $logoURL = $orgItem->RenderLogo(40);
-                if ($logoURL) {
-                    $orgLogos[] = [
-                        'ID'      => $orgItem->ID,
-                        'LogoURL' => $logoURL,
-                    ];
-                }
+                // Orgs without a logo are included too, so the frontend can show a placeholder
+                $orgLogos[] = [
+                    'ID'      => $orgItem->ID,
+                    'Title'   => $orgItem->Title,
+                    'LogoURL' => $orgItem->RenderLogo(40),
+                ];
             }
-            $orgLogoURL = !empty($orgLogos) ? $orgLogos[0]['LogoURL'] : null;
+            $orgLogoURL = array_values(array_filter(array_column($orgLogos, 'LogoURL')))[0] ?? null;
 
             $events[] = [
                 'ID' => $appointment->ID,
@@ -308,15 +307,14 @@ class CalendarApiController extends ApiController
 
             $pollOrgLogos = [];
             foreach ($poll->Organisations() as $orgItem) {
-                $logoURL = $orgItem->RenderLogo(40);
-                if ($logoURL) {
-                    $pollOrgLogos[] = [
-                        'ID'      => $orgItem->ID,
-                        'LogoURL' => $logoURL,
-                    ];
-                }
+                // Orgs without a logo are included too, so the frontend can show a placeholder
+                $pollOrgLogos[] = [
+                    'ID'      => $orgItem->ID,
+                    'Title'   => $orgItem->Title,
+                    'LogoURL' => $orgItem->RenderLogo(40),
+                ];
             }
-            $pollOrgLogoURL = !empty($pollOrgLogos) ? $pollOrgLogos[0]['LogoURL'] : null;
+            $pollOrgLogoURL = array_values(array_filter(array_column($pollOrgLogos, 'LogoURL')))[0] ?? null;
 
             $events[] = [
                 // Negative ID, damit Terminfindungs-Pseudo-Events nie mit echten Appointment-IDs kollidieren.

@@ -11,7 +11,7 @@
                 <!-- Month Navigation -->
                 <div class="calendar-header">
                     <AppIconButton variant="neutral" aria-label="Vorheriger Monat" @click="previousMonth">
-                        <img :src="actionBack" alt="" />
+                        <span class="icon-mask" :style="backIconStyle" />
                     </AppIconButton>
                     <h2>{{ monthYearDisplay }}</h2>
                     <AppButton
@@ -22,7 +22,7 @@
                         @click="jumptotoday"
                     >Heute</AppButton>
                     <AppIconButton variant="neutral" aria-label="Nächster Monat" @click="nextMonth">
-                        <img :src="actionForward" alt="" />
+                        <span class="icon-mask" :style="forwardIconStyle" />
                     </AppIconButton>
                 </div>
 
@@ -46,6 +46,7 @@
                         }"
                         @click="selectDayAndFetchAbsences(cell.day, cell.month, cell.year)"
                     >
+                        <span v-if="cell.weekNumber" class="week-number" :title="`KW ${cell.weekNumber}`">{{ cell.weekNumber }}</span>
                         <span class="day-number">{{ cell.day }}</span>
                         <div
                         v-if="getEventsCountForDay(cell.day, cell.month, cell.year) > 0 || getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
@@ -176,6 +177,10 @@ import AppAvatar from '@components/ui/AppAvatar.vue'
 import actionForward from '../../../icons/actions/action_forward.svg'
 import actionBack from '../../../icons/actions/action_back.svg'
 
+// Masked so the arrows take the button's text color (white on hover)
+const backIconStyle = { maskImage: `url("${actionBack}")`, WebkitMaskImage: `url("${actionBack}")` }
+const forwardIconStyle = { maskImage: `url("${actionForward}")`, WebkitMaskImage: `url("${actionForward}")` }
+
 const eventsStore = useEventsStore()
 const authStore = useAuthStore()
 const orgsStore = useOrganizationsStore()
@@ -246,8 +251,22 @@ const calendarDays = computed(() => {
     cells.push({ day: nextDay++, month: nextMonth, year: nextYear, isCurrentMonth: false })
   }
 
+  // Calendar week on the first cell (Monday) of every row
+  for (let i = 0; i < cells.length; i += 7) {
+    cells[i].weekNumber = getISOWeek(cells[i].year, cells[i].month, cells[i].day)
+  }
+
   return cells
 })
+
+// ISO 8601 week number (weeks start on Monday, week 1 contains the first Thursday)
+function getISOWeek(year, month, day) {
+  const date = new Date(Date.UTC(year, month - 1, day))
+  const weekday = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - weekday)
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+  return Math.ceil(((date - yearStart) / 86400000 + 1) / 7)
+}
 
 // Group events by date (using eventsByDate from store)
 const eventsByDate = computed(() => eventsStore.eventsByDate)

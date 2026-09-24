@@ -53,3 +53,17 @@ export const WithoutShortText = {
     },
   },
 }
+
+export const Compact = {
+  args: {
+    compact: true,
+    announcement: {
+      ID: 5,
+      Title: 'Neue Probenzeiten',
+      Created: '24.09.2026, 18:00',
+      ShortText: 'Ab Oktober proben wir dienstags statt donnerstags.',
+      Category: 'Allgemein',
+      Organisations: [{ ID: 1, Title: 'Musterverein e.V.', LogoURL: null }],
+    },
+  },
+}

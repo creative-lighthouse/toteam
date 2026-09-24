@@ -526,15 +526,8 @@ class MoneyApiController extends ApiController
 
         // Buchung kann für eine andere Person der Organisation erfasst werden (Standard: sich selbst)
         $userID = (int) ($_POST['UserID'] ?? 0) ?: (int) $member->ID;
-        if ($userID !== (int) $member->ID) {
-            $isOrgMember = OrganizationMembership::get()->filter([
-                'OrganizationID' => (int) $account->ParentID,
-                'MemberID'       => $userID,
-                'Role'           => 'member',
-            ])->exists() && Member::get()->byID($userID);
-            if (!$isOrgMember) {
-                return $this->errorResponse('Die gewählte Person ist kein Mitglied der Organisation', 400);
-            }
+        if ($userID !== (int) $member->ID && !$this->isAccountOrgMember($account, $userID)) {
+            return $this->errorResponse('Die gewählte Person ist kein Mitglied der Organisation', 400);
         }
 
         $budget = null;
@@ -641,6 +634,12 @@ class MoneyApiController extends ApiController
 
         $changeDate = trim($_POST['ChangeDate'] ?? '') ?: $entry->ChangeDate;
 
+        // Person, für die die Buchung erfasst wurde, kann geändert werden (ohne Angabe: unverändert)
+        $userID = (int) ($_POST['UserID'] ?? 0) ?: (int) $entry->UserID;
+        if ($userID !== (int) $entry->UserID && !$this->isAccountOrgMember($account, $userID)) {
+            return $this->errorResponse('Die gewählte Person ist kein Mitglied der Organisation', 400);
+        }
+
         $budget = null;
         $budgetID = (int) ($_POST['BudgetID'] ?? 0);
         if ($budgetID) {
@@ -669,6 +668,7 @@ class MoneyApiController extends ApiController
         $entry->ChangeType = $changeType;
         $entry->ChangeDate = $changeDate;
         $entry->Notes = trim($_POST['Notes'] ?? '');
+        $entry->UserID = $userID;
         $entry->BudgetID = $budget?->ID ?: 0;
         $entry->write();
 
@@ -857,6 +857,16 @@ class MoneyApiController extends ApiController
             }
         }
         return false;
+    }
+
+    /** Ob die Person Mitglied der Organisation ist, zu der die Kasse gehört */
+    private function isAccountOrgMember(MoneyAccount $account, int $memberID): bool
+    {
+        return OrganizationMembership::get()->filter([
+            'OrganizationID' => (int) $account->ParentID,
+            'MemberID'       => $memberID,
+            'Role'           => 'member',
+        ])->exists() && Member::get()->byID($memberID);
     }
 
     private function amountTooHighError(): HTTPResponse

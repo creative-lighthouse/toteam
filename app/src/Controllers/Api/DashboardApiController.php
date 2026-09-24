@@ -6,6 +6,7 @@ use App\Controllers\ApiController;
 use App\Announcements\Announcement;
 use App\Food\Food;
 use App\SuggestionBox\Suggestion;
+use App\Tasks\Task;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 
@@ -128,7 +129,53 @@ class DashboardApiController extends ApiController
             );
         }
 
+        // Unfinished tasks (incl. subtasks) where the user is owner or supporter,
+        // soonest deadline first — tasks without a deadline go last.
+        $myTasks = [];
+        if (!empty($organizationIDs)) {
+            $baseFilter = [
+                'OrganizationID' => $organizationIDs,
+                'State:not'      => 'finished',
+            ];
+            $ownedIDs     = Task::get()->filter($baseFilter + ['OwnerID' => $member->ID])->column('ID');
+            $supportedIDs = Task::get()->filter($baseFilter + ['Supporters.ID' => $member->ID])->column('ID');
+            $taskIDs      = array_unique(array_merge($ownedIDs, $supportedIDs));
+
+            if (!empty($taskIDs)) {
+                $tasks = Task::get()->byIDs($taskIDs)->toArray();
+                usort($tasks, function (Task $a, Task $b) {
+                    if (!$a->Deadline || !$b->Deadline) {
+                        return $a->Deadline ? -1 : ($b->Deadline ? 1 : $b->ID <=> $a->ID);
+                    }
+                    return strcmp($a->Deadline, $b->Deadline);
+                });
+
+                foreach (array_slice($tasks, 0, 3) as $task) {
+                    $org    = $task->Organization();
+                    $parent = $task->Parent();
+                    $myTasks[] = [
+                        'ID'           => $task->ID,
+                        'Hash'         => $task->Hash,
+                        'Title'        => $task->Title,
+                        'State'        => $task->State ?: 'open',
+                        'Deadline'     => $task->Deadline,
+                        'DeadlineNice' => $task->Deadline ? $task->dbObject('Deadline')->Date() : null,
+                        'Parent'       => $parent && $parent->exists() ? [
+                            'ID'    => $parent->ID,
+                            'Title' => $parent->Title,
+                        ] : null,
+                        'Organization' => $org && $org->exists() ? [
+                            'ID'      => $org->ID,
+                            'Title'   => $org->Title,
+                            'LogoURL' => $org->RenderLogo(40),
+                        ] : null,
+                    ];
+                }
+            }
+        }
+
         return $this->jsonResponse([
+            'myTasks'                   => $myTasks,
             'latestAnnouncements'       => $latestAnnouncements,
             'newFeedback'               => $newFeedback,
             'myUpcomingContributions'   => $myUpcomingContributions,

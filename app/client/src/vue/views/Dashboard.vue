@@ -24,11 +24,13 @@
       <!-- Aktuelle Ankündigungen -->
       <div v-if="dashboardStore.hasLatestAnnouncements" class="section_infobox">
         <h2 class="hl2 dashboard-announcements_title">Aktuelle Ankündigungen</h2>
-        <div class="announcements-list">
+        <div class="announcements-list announcements-list--compact">
           <AnnouncementCard
             v-for="announcement in dashboardStore.latestAnnouncements"
             :key="announcement.ID"
             :announcement="announcement"
+            compact
+            :hide-org-logo="!authStore.hasMultipleOrganizations"
             @click="openAnnouncement"
           />
         </div>
@@ -40,7 +42,7 @@
         <h2 class="hl2">Das steht heute an</h2>
         <ul class="infobox_list infobox_list--events">
           <li v-for="event in todaysEvents" :key="event.ID">
-            <EventCard :event="event" :date-display="formatDate(event.DateStart)" @click="openEvent" />
+            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
             <ul v-if="event.Meals?.length" class="event-meals-list">
               <li v-for="meal in event.Meals" :key="meal.ID">
                 <router-link :to="`/food/meal/${meal.ID}`" class="event-meal-link">
@@ -69,6 +71,7 @@
           <li v-for="item in dashboardStore.myUpcomingContributions" :key="`${item.foodId}-${item.mealId}`">
             <router-link :to="`/food/meal/${item.mealId}`" class="contribution-item">
               <AppOrgLogo
+                v-if="authStore.hasMultipleOrganizations"
                 :src="item.organizationLogoUrl"
                 :alt="item.organizationTitle"
                 :size="32"
@@ -91,12 +94,30 @@
         </div>
       </div>
 
+      <!-- Meine Aufgaben -->
+      <div v-if="dashboardStore.hasMyTasks && authStore.hasTotem('tasks')" class="section_infobox">
+        <h2 class="hl2">Meine Aufgaben</h2>
+        <div class="dashboard-tasks">
+          <TaskCard
+            v-for="task in dashboardStore.myTasks"
+            :key="task.ID"
+            :task="task"
+            compact
+            :hide-org-logo="!authStore.hasMultipleOrganizations"
+            @click="openTask"
+          />
+        </div>
+        <div class="section_infobox_footer">
+          <router-link to="/tasks">Zu den Aufgaben →</router-link>
+        </div>
+      </div>
+
       <!-- Deine nächsten Termine -->
       <div v-if="upcomingAccepted.length" class="section_infobox">
         <h2 class="hl2">Deine nächsten Termine</h2>
         <ul class="infobox_list infobox_list--events">
           <li v-for="event in upcomingAccepted" :key="event.ID">
-            <EventCard :event="event" :date-display="formatDate(event.DateStart)" @click="openEvent" />
+            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
           </li>
         </ul>
         <div class="section_infobox_footer">
@@ -109,7 +130,7 @@
         <h2 class="hl2">Offene Termine ohne Rückmeldung</h2>
         <ul class="infobox_list infobox_list--events">
           <li v-for="event in pendingFeedback" :key="event.ID">
-            <EventCard :event="event" :date-display="formatDate(event.DateStart)" @click="openEvent" />
+            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
           </li>
         </ul>
         <div class="section_infobox_footer">
@@ -166,6 +187,7 @@ import { useDashboardStore } from '@stores/dashboard'
 import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/calendar/EventCard.vue'
+import TaskCard from '@components/tasks/TaskCard.vue'
 import AnnouncementCard from '@components/announcements/AnnouncementCard.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
@@ -179,6 +201,10 @@ usePageHeaderStore().setHeader('Dashboard', 'Willkommen auf deinem ToTeam Dashbo
 
 function openEvent(event) {
   router.push({ name: 'Calendar', query: { date: event.DateStart, eventID: event.ID } })
+}
+
+function openTask(task) {
+  router.push({ name: 'TaskDetail', params: { hash: task.Hash } })
 }
 
 function openAnnouncement(announcement) {

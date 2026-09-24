@@ -6,12 +6,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const latestAnnouncements     = ref([])
   const newFeedback             = ref([])
   const myUpcomingContributions = ref([])
+  const myTasks                 = ref([])
   const loading = ref(false)
   const error   = ref(null)
 
   const hasLatestAnnouncements     = computed(() => latestAnnouncements.value.length > 0)
   const hasNewFeedback             = computed(() => newFeedback.value.length > 0)
   const hasUpcomingContributions   = computed(() => myUpcomingContributions.value.length > 0)
+  const hasMyTasks                 = computed(() => myTasks.value.length > 0)
 
   async function fetchDashboardData(forceRefresh = false) {
     try {
@@ -27,6 +29,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       latestAnnouncements.value     = response.latestAnnouncements     || []
       newFeedback.value             = response.newFeedback             || []
       myUpcomingContributions.value = response.myUpcomingContributions || []
+      myTasks.value                 = response.myTasks                 || []
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err)
       error.value = err.message
@@ -43,11 +46,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
     latestAnnouncements,
     newFeedback,
     myUpcomingContributions,
+    myTasks,
     loading,
     error,
     hasLatestAnnouncements,
     hasNewFeedback,
     hasUpcomingContributions,
+    hasMyTasks,
     fetchDashboardData,
     refresh,
   }

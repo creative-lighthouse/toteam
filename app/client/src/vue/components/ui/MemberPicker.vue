@@ -74,6 +74,48 @@
       </div>
     </template>
 
+    <!-- Kompakte Einzelauswahl (dropdown): gewählte Person als Chip + Suche
+         mit ausklappendem Dropdown statt der kompletten Liste, z.B. für den
+         Verantwortlichen im Aufgaben-Formular. -->
+    <template v-else-if="!multiple && dropdown">
+      <div v-if="selectedMember" class="member-picker_chips">
+        <span class="member-picker_chip">
+          <AppAvatar
+            :src="selectedMember.Avatar"
+            :alt="selectedMember.Name"
+            img-class="member-picker_chip-avatar"
+            placeholder-class="member-picker_chip-avatar--placeholder"
+          />
+          {{ selectedMember.Name }}<template v-if="pinSelf && selectedMember.ID === selfId"> (Du)</template>
+        </span>
+      </div>
+
+      <div class="member-picker_search-wrap">
+        <input
+          ref="searchInput"
+          v-model="query"
+          type="text"
+          class="input member-picker_search"
+          :placeholder="selectedMember ? 'Andere Person suchen…' : 'Person suchen…'"
+          :disabled="disabled"
+          @focus="dropdownOpen = true"
+          @blur="dropdownOpen = false"
+          @keydown.enter.prevent="addFirstMatch"
+          @keydown.escape="dropdownOpen = false"
+        >
+        <ul v-if="dropdownOpen && matches.length" class="member-picker_dropdown">
+          <li v-for="m in matches" :key="m.ID">
+            <button type="button" @mousedown.prevent="toggle(m.ID)">
+              {{ m.Name }}<template v-if="pinSelf && m.ID === selfId"> (Du)</template>
+            </button>
+          </li>
+        </ul>
+        <p v-else-if="dropdownOpen && query && !matches.length" class="member-picker_dropdown-empty">
+          Keine Treffer
+        </p>
+      </div>
+    </template>
+
     <template v-else>
       <input
         v-if="searchable"
@@ -139,6 +181,9 @@ const props = defineProps({
   selfId: { type: Number, default: null },
   // Fokussiert das Suchfeld beim Einblenden (Einzelauswahl mit searchable)
   autofocus: { type: Boolean, default: false },
+  // Einzelauswahl als Chip + Such-Dropdown statt kompletter Liste (siehe oben)
+  dropdown: { type: Boolean, default: false },
+  disabled: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -188,12 +233,22 @@ const selectedMembers = computed(() =>
   props.members.filter(m => (props.modelValue || []).includes(m.ID))
 )
 
+const selectedMember = computed(() =>
+  props.multiple ? null : props.members.find(m => m.ID === props.modelValue) ?? null
+)
+
+// Dropdown-Treffer: noch nicht gewählte Personen passend zur Suche; mit
+// pinSelf steht die eigene Person zuerst
 const matches = computed(() => {
   const q = query.value.trim().toLowerCase()
-  return props.members
-    .filter(m => !(props.modelValue || []).includes(m.ID))
+  const list = props.members
+    .filter(m => !isSelected(m.ID))
     .filter(m => !q || m.Name?.toLowerCase().includes(q))
-    .slice(0, 30)
+  if (props.pinSelf && props.selfId != null) {
+    const selfIdx = list.findIndex(m => m.ID === props.selfId)
+    if (selfIdx > 0) list.unshift(...list.splice(selfIdx, 1))
+  }
+  return list.slice(0, 30)
 })
 
 function addFirstMatch() {
@@ -215,6 +270,10 @@ function toggle(id) {
     query.value = ''
   } else {
     emit('update:modelValue', id)
+    if (props.dropdown) {
+      query.value = ''
+      searchInput.value?.blur()
+    }
   }
 }
 

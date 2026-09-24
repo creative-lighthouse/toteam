@@ -11,13 +11,16 @@
         ]"
       />
 
-      <div v-if="!isEdit" class="field">
-        <label for="entry-user">Für</label>
-        <select id="entry-user" v-model="form.UserID" :disabled="loadingMembers">
-          <option v-for="m in memberOptions" :key="m.ID" :value="m.ID">
-            {{ m.ID === selfId ? `${m.Name} (Du)` : m.Name }}
-          </option>
-        </select>
+      <div class="field">
+        <label>Für</label>
+        <MemberPicker
+          v-model="form.UserID"
+          :members="memberOptions"
+          dropdown
+          pin-self
+          :self-id="selfId"
+          :disabled="loadingMembers"
+        />
       </div>
 
       <div class="field">
@@ -81,6 +84,7 @@ import AppButton from '@components/ui/AppButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppFileUpload from '@components/ui/AppFileUpload.vue'
 import AppSegmentedToggle from '@components/ui/AppSegmentedToggle.vue'
+import MemberPicker from '@components/ui/MemberPicker.vue'
 
 const props = defineProps({
   accountId: { type: Number, required: true },
@@ -106,7 +110,12 @@ const memberOptions = computed(() => {
   const self = members.value.find(m => m.ID === selfId.value)
     ?? (authStore.currentUser ? { ID: selfId.value, Name: authStore.userName || 'Ich' } : null)
   const others = members.value.filter(m => m.ID !== selfId.value)
-  return self ? [self, ...others] : others
+  const options = self ? [self, ...others] : others
+  // Beim Bearbeiten die bisherige Person auch dann anbieten, wenn sie nicht
+  // (mehr) Mitglied ist — sonst würde die Buchung beim Speichern ungewollt umgebucht
+  const entryUser = currentEntry.value?.User
+  if (entryUser && !options.some(m => m.ID === entryUser.ID)) options.push(entryUser)
+  return options
 })
 
 async function loadMembers() {
@@ -186,6 +195,7 @@ function fillFromEntry(entry) {
   form.ChangeDate = entry.ChangeDate ? entry.ChangeDate.slice(0, 10) : today()
   form.BudgetID = entry.Budget?.ID ?? ''
   form.Notes = entry.Notes || ''
+  form.UserID = entry.User?.ID ?? form.UserID
   existingReceiptURL.value = entry.ReceiptURL || null
 }
 
@@ -197,10 +207,10 @@ function open(entryToEdit = null, defaultBudgetId = null) {
   resetFile()
   if (entryToEdit) {
     fillFromEntry(entryToEdit)
-  } else {
-    if (defaultBudgetId) form.BudgetID = defaultBudgetId
-    loadMembers()
+  } else if (defaultBudgetId) {
+    form.BudgetID = defaultBudgetId
   }
+  loadMembers()
   modal.value?.open()
 }
 
@@ -233,7 +243,7 @@ async function submit() {
     fd.append('ChangeDate', form.ChangeDate)
     fd.append('Notes', form.Notes.trim())
     if (form.BudgetID) fd.append('BudgetID', form.BudgetID)
-    if (!isEdit.value && form.UserID) fd.append('UserID', form.UserID)
+    if (form.UserID) fd.append('UserID', form.UserID)
     if (receiptFile.value) fd.append('receipt', receiptFile.value)
 
     const response = isEdit.value

@@ -405,18 +405,19 @@ class AuthApiController extends ApiController
     private function serializeMember(Member $member): array
     {
         return [
-            'ID'             => $member->ID,
-            'Email'          => $member->Email,
-            'FirstName'      => $member->FirstName,
-            'Surname'        => $member->Surname,
-            'Avatar'         => $member->RenderProfileImage(),
-            'Hash'           => $member->Hash,
-            'Username'       => $member->Username ?: null,
-            'NameVisibility' => $member->NameVisibility ?: 'full',
-            'FoodPreference' => $member->FoodPreference ?: 'None',
-            'DateOfBirth'    => $member->DateOfBirth,
-            'Joindate'       => $member->Joindate,
-            'EnabledTotems'  => $member->getEnabledTotems(),
+            'ID'                => $member->ID,
+            'Email'             => $member->Email,
+            'FirstName'         => $member->FirstName,
+            'Surname'           => $member->Surname,
+            'Avatar'            => $member->RenderProfileImage(),
+            'Hash'              => $member->Hash,
+            'Username'          => $member->Username ?: null,
+            'NameVisibility'    => $member->NameVisibility ?: 'full',
+            'FoodPreference'    => $member->FoodPreference ?: 'None',
+            'DateOfBirth'       => $member->DateOfBirth,
+            'Joindate'          => $member->Joindate,
+            'EnabledTotems'     => $member->getEnabledTotems(),
+            'OrganizationCount' => count($member->getOrganizationIDs()),
         ];
     }
 }

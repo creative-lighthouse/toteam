@@ -142,6 +142,92 @@
     }
 
     // ── Budgets ──────────────────────────────────────────────
+    // Accordion: Kopfzeile (Titel + Gesamtbudget + Chevron) klappt die Liste auf
+    .money-budgets_toggle {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        padding: 4px 0;
+        margin: 0 0 8px;
+        border: none;
+        background: none;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        &:disabled {
+            cursor: default;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
+            border-radius: var(--BorderRadiusSmall);
+        }
+    }
+
+    .money-budgets_title {
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    // Balken + Betrag in einer Zeile neben dem Titel
+    .money-budgets_total {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .money-budgets_progress {
+            flex: 1;
+            min-width: 40px;
+        }
+    }
+
+    // Chevron aus zwei Rahmenkanten (wie AppCollapse), dreht beim Öffnen nach oben
+    .money-budgets_chevron {
+        width: 8px;
+        height: 8px;
+        margin: 0 4px 0 auto;
+        border-right: 2px solid var(--ColorGray);
+        border-bottom: 2px solid var(--ColorGray);
+        transform: translateY(-2px) rotate(45deg);
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    // Höhe animieren ohne feste Maximalhöhe: Grid-Zeile von 0fr auf 1fr
+    .money-budgets_content {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.2s ease;
+    }
+
+    .money-budgets_inner {
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .money-budgets--open {
+        .money-budgets_chevron {
+            transform: translateY(2px) rotate(-135deg);
+        }
+
+        .money-budgets_content {
+            grid-template-rows: 1fr;
+        }
+
+        // Platz für die Schatten der Budget-Karten, die sonst abgeschnitten
+        // würden — nur offen, sonst schaut eingeklappt ein Streifen heraus
+        .money-budgets_inner {
+            padding: 2px;
+            margin: -2px;
+        }
+    }
+
     .money-budget-list {
         display: flex;
         flex-direction: column;

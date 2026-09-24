@@ -265,6 +265,17 @@
             transition: opacity 0.2s ease, transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
             width: 100%;
             outline: 1px solid var(--ColorLightGray);
+            position: relative;
+
+            // Calendar week, top left corner of the first cell of each row
+            .week-number {
+                position: absolute;
+                top: 3px;
+                left: 4px;
+                font-size: 9px;
+                line-height: 1;
+                opacity: 0.5;
+            }
 
             &.calendar-day--outside {
                 background-color: var(--ColorWhite);

@@ -97,3 +97,17 @@ export const WithOrganization = {
     },
   },
 }
+
+export const Compact = {
+  args: {
+    compact: true,
+    task: {
+      ID: 5,
+      Title: 'Getränke bestellen',
+      State: 'in_progress',
+      DeadlineNice: '26.09.2026',
+      Deadline: '2026-09-26',
+      Parent: { ID: 2, Title: 'Sommerfest organisieren' },
+    },
+  },
+}

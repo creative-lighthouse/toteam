@@ -1,0 +1,12 @@
+.task-owner-modal {
+    text-align: left;
+    max-width: 420px;
+    max-height: 90vh;
+
+    .task-owner-modal_loading {
+        font-size: 14px;
+        color: var(--ColorGray);
+        text-align: center;
+        padding: 12px 0;
+    }
+}

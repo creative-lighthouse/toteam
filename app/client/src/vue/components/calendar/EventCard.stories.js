@@ -89,3 +89,19 @@ export const NoResponseYet = {
     },
   },
 }
+
+export const Compact = {
+  args: {
+    compact: true,
+    dateDisplay: 'Do., 24.09.26',
+    event: {
+      ID: 7,
+      Title: 'Probe',
+      TimeStart: '18:00:00',
+      TimeEnd: '20:00:00',
+      Location: 'Vereinsheim',
+      UserParticipation: { Type: 'Accept' },
+      Participations: [],
+    },
+  },
+}

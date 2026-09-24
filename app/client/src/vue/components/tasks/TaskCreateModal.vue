@@ -11,13 +11,19 @@
         <OrganizationPicker v-model="form.OrganizationID" :orgs="store.organizations" />
       </div>
 
-      <label class="field">
-        Verantwortlicher *
-        <select v-model="form.OwnerID" :disabled="!form.OrganizationID || loadingOwners">
-          <option value="0" disabled>{{ loadingOwners ? 'Lade Mitglieder…' : 'Bitte wählen' }}</option>
-          <option v-for="owner in ownerOptions" :key="owner.ID" :value="owner.ID">{{ owner.Name }}</option>
-        </select>
-      </label>
+      <div class="field">
+        <label>Verantwortlicher *</label>
+        <p v-if="!form.OrganizationID" class="task-create-modal_owner-hint">Bitte zuerst eine Organisation wählen.</p>
+        <p v-else-if="loadingOwners" class="task-create-modal_owner-hint">Lade Mitglieder…</p>
+        <MemberPicker
+          v-else
+          v-model="form.OwnerID"
+          :members="ownerOptions"
+          dropdown
+          pin-self
+          :self-id="authStore.user?.ID ?? null"
+        />
+      </div>
 
       <label class="field">
         Titel *
@@ -84,6 +90,7 @@ import AppButton from '@components/ui/AppButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import OrganizationPicker from '@components/ui/OrganizationPicker.vue'
 import DateTimeRangeField from '@components/ui/DateTimeRangeField.vue'
+import MemberPicker from '@components/ui/MemberPicker.vue'
 
 const props = defineProps({
   // When set, the modal creates a subtask of this task instead of a top-level task

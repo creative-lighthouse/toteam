@@ -90,6 +90,14 @@ dialog.app-modal[open] {
                 background-color: var(--ColorPrimary);
             }
         }
+
+        // Das Such-Dropdown des MemberPicker ist absolut positioniert und wird
+        // vom scrollenden Body abgeschnitten. Bei sonst kurzen Modals (z.B.
+        // Unterstützer verwalten) passt es so trotzdem komplett hinein
+        // (Suchfeld + max. 220px Dropdown), auf kleinen Displays höchstens 60vh.
+        &:has(.member-picker_search-wrap) {
+            min-height: min(320px, 60vh);
+        }
     }
 
     &_actions {
