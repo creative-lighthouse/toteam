@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiPost, setAccessToken } from '@utils/api'
+import { apiPost, setAccessToken, refreshAccessToken } from '@utils/api'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -36,9 +36,11 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
 
-      const response = await apiPost('/auth/refresh', {})
+      // Shared, cross-tab-locked refresh (see utils/api.js) — also stores the
+      // new access token, so the first API call doesn't have to refresh again
+      const response = await refreshAccessToken()
 
-      if (response.success) {
+      if (response?.success) {
         user.value = response.user
         isAuthenticated.value = true
       } else {
