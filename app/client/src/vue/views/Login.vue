@@ -267,7 +267,7 @@ import { ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import AppButton from '@components/AppButton.vue'
+import AppButton from '@components/ui/AppButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

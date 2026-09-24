@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 .section.section--MoneyPage {
     .money-hint {
@@ -107,9 +107,17 @@
         display: flex;
         width: 100%;
         height: 6px;
-        background-color: var(--ColorLightGray);
+        // Weiß, da die Leiste meist direkt auf dem grauen Seitenhintergrund
+        // liegt (Sparziel, Budget-Detail, Gesamtbudget) — in weißen Karten
+        // stattdessen grau (siehe unten)
+        background-color: var(--ColorWhite);
         border-radius: 50px;
         overflow: hidden;
+
+        .money-account-card &,
+        .money-budget & {
+            background-color: var(--ColorLightGray);
+        }
     }
 
     &_fill {

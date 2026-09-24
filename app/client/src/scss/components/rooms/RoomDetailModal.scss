@@ -1,0 +1,91 @@
+@use "../../base/variables" as *;
+
+.room-detail-modal {
+    text-align: left;
+    max-width: 480px;
+    max-height: 90vh;
+
+    .room-detail-modal_loading {
+        padding: 32px 20px;
+        text-align: center;
+        color: var(--ColorGray);
+    }
+
+    .room-detail-modal_org {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .room-detail-modal_description {
+        margin: 0;
+        color: var(--ColorFont);
+    }
+
+    .room-detail-modal_tasks-title {
+        margin: 8px 0 0;
+    }
+
+    .room-detail-modal_tasks {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .room-detail-modal_task {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background: transparent;
+        cursor: pointer;
+        text-align: left;
+        font-size: 14px;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: var(--ColorVeryLightGray);
+        }
+    }
+
+    .room-detail-modal_task-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .room-detail-modal_task-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+    }
+
+    .room-detail-modal_no-tasks {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+}

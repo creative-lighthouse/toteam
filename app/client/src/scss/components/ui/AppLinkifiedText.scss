@@ -1,0 +1,13 @@
+// Automatisch erkannte Links in Freitexten (siehe AppLinkifiedText.vue)
+.linkified-text_link {
+    color: var(--ColorPrimary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    // Lange URLs umbrechen statt das Layout zu sprengen
+    overflow-wrap: anywhere;
+    word-break: break-word;
+
+    &:hover {
+        color: var(--ColorPrimaryDark);
+    }
+}

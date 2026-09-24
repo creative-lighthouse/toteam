@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 .section.section--DashboardPage {
     .section_content{
@@ -377,6 +377,15 @@
         }
 
         .contribution-item_pref { font-size: 0.9rem; flex-shrink: 0; }
+
+        // ── My tasks block ────────────────────────────────────────────────────
+
+        .dashboard-tasks {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
         .dashboard-refresh {
             display: flex;

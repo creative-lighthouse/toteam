@@ -65,6 +65,7 @@ class LinksApiController extends ApiController
                     $adminOrgs[] = [
                         'ID'    => $org->ID,
                         'Title' => $org->Title,
+                        'LogoURL' => $org->RenderLogo(40),
                     ];
                 }
             }
@@ -174,7 +175,7 @@ class LinksApiController extends ApiController
                 // File upload
                 $file   = File::create();
                 $upload = Upload::create();
-                $upload->getValidator()->setAllowedMaxFileSize(20 * 1024 * 1024); // 20 MB
+                $upload->getValidator()->setAllowedMaxFileSize(10 * 1024 * 1024); // 10 MB
                 $result = $upload->loadIntoFile($_FILES['file'], $file, '/TeamLinks/');
 
                 if (!$result) {

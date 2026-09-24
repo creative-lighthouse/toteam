@@ -22,9 +22,9 @@
 import { onMounted } from 'vue'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import AppMenu from './components/AppMenu.vue'
-import AppHeader from './components/AppHeader.vue'
-import PwaInstallBanner from './components/PwaInstallBanner.vue'
+import AppMenu from '@components/layout/AppMenu.vue'
+import AppHeader from '@components/layout/AppHeader.vue'
+import PwaInstallBanner from '@components/layout/PwaInstallBanner.vue'
 
 const authStore = useAuthStore()
 const pageHeaderStore = usePageHeaderStore()

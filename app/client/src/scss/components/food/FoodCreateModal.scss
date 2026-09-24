@@ -1,0 +1,11 @@
+.food-create-modal {
+    text-align: left;
+    max-width: 420px;
+    max-height: 90vh;
+
+    .food-create-modal_hint {
+        font-size: 12px;
+        font-weight: normal;
+        color: var(--ColorGray);
+    }
+}

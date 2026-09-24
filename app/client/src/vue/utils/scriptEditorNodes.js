@@ -4,7 +4,7 @@ import BulletList from '@tiptap/extension-bullet-list'
 import OrderedList from '@tiptap/extension-ordered-list'
 import { DOMSerializer } from '@tiptap/pm/model'
 import { VueNodeViewRenderer } from '@tiptap/vue-3'
-import ScriptBlockView from '@components/ScriptBlockView.vue'
+import ScriptBlockView from '@components/skript/ScriptBlockView.vue'
 
 // The node types that count as one "Absatz" (block): each becomes exactly one
 // ScriptParagraph row, gets its own gutter number, and can be tagged with

@@ -1,0 +1,22 @@
+@use "../../base/variables" as *;
+
+.org-member-roles-modal {
+    text-align: left;
+    max-width: 480px;
+    max-height: 90vh;
+}
+
+.org-member-roles-modal_list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.org-member-roles-modal_empty {
+    font-size: 14px;
+    color: var(--ColorGray);
+    text-align: center;
+    padding: 12px 0;
+}

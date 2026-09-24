@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 .section.section--SkriptDetailPage {
     // Fills the viewport below the fixed 70px app header and above the
@@ -142,6 +142,16 @@
         border-radius: 0.5rem;
         padding: 1rem;
         box-sizing: border-box;
+
+        // Sticky offsets are measured from inside the padding, so top: 0 would
+        // leave a 1rem gap above the editor toolbar that text scrolls through.
+        // Pull it up by exactly the padding to close that gap. Not on mobile,
+        // where this box doesn't scroll itself (overflow: visible below).
+        @include media(medium) {
+            .script-editor_toolbar {
+                top: -1rem;
+            }
+        }
 
         @include media(max-medium) {
             overflow: visible;

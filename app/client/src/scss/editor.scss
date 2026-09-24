@@ -1,4 +1,4 @@
-@use "fonts";
-@use "normalize";
-@use "variables" as *;
-@use "typography";
+@use "base/fonts.scss";
+@use "base/normalize.scss";
+@use "base/variables" as *;
+@use "base/typography.scss";

@@ -1,0 +1,109 @@
+@use "../../base/variables" as *;
+
+// Suchleiste für Übersichtsseiten (siehe AppSearchBar.vue)
+.app-search-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+
+    .app-search-bar_row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        @include media(max-smartphone) {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+
+    .app-search-bar_field {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .app-search-bar_icon {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        transform: translateY(-50%);
+        color: var(--ColorGray);
+        pointer-events: none;
+    }
+
+    .app-search-bar_input {
+        width: 100%;
+        height: 42px;
+        padding: 0 14px 0 40px;
+        margin: 0;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusMedium);
+        font-size: 15px;
+        font-family: inherit;
+        background-color: var(--ColorWhite);
+        box-sizing: border-box;
+
+        &:focus {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+    }
+
+    .app-search-bar_actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+
+        .app-button {
+            margin: 0;
+        }
+
+        @include media(max-smartphone) {
+            .app-button {
+                flex: 1;
+            }
+        }
+    }
+
+    .app-search-bar_filters {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        // Einheitlicher Look für Filter-Selects/-Inputs im filters-Slot
+        // (Selektor bewusst spezifischer als die alten seitenlokalen .input-Regeln)
+        > select,
+        > input,
+        > .input {
+            height: 38px;
+            padding: 0 12px;
+            margin: 0;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusMedium);
+            font-size: 14px;
+            font-family: inherit;
+            background-color: var(--ColorWhite);
+            box-sizing: border-box;
+            flex-shrink: 0;
+
+            &:focus {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: 1px;
+                border-color: transparent;
+            }
+        }
+
+        @include media(max-smartphone) {
+            > select,
+            > input,
+            > .input {
+                flex: 1 1 100%;
+            }
+        }
+    }
+}

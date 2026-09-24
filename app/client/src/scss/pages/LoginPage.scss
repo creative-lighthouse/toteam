@@ -6,13 +6,21 @@ section.section--LoginPage {
         justify-content: center;
         height: calc(100dvh - 50px);
         .section_infobox {
-            max-width: 400px;
+            max-width: var(--WidthNarrow);
             width: 100%;
 
             .login-form {
-                max-width: 400px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                max-width: var(--WidthNarrow);
                 width: 100%;
                 margin: 0 auto;
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-radius: var(--BorderRadiusMedium);
+                background-color: #f9f9f9;
+                box-shadow: var(--BoxShadowLight);
 
                 .error-message {
                     padding: 1rem;

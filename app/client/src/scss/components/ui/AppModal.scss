@@ -1,0 +1,167 @@
+@use "../../base/variables" as *;
+
+// Gemeinsame Modal-Hülle (Topbar mit Titel + Schließen-X, Inhaltsbereich,
+// optionale Bottombar mit Aktionen). Jedes einzelne Modal steuert nur noch
+// Breite/Höhe über eine eigene Modifier-Klasse und den Inhalt über die
+// Slots — Kopf- und Aktionsleiste kommen zentral von hier.
+
+// Höhere Spezifität (Tag + Klasse) als eine einzelne Modal-Klasse wie
+// .meal-form-modal, die selbst noch `overflow-y: auto` setzt — dieses
+// `overflow: hidden` muss unabhängig von der Ladereihenfolge der einzelnen
+// Modal-SCSS-Dateien gewinnen, sonst öffnet sich wieder ein Scrollbalken für
+// den ganzen Dialog statt nur für .app-modal_body (siehe unten).
+dialog.app-modal {
+    overflow: hidden;
+}
+
+// Neutralisiert die alte `dialog .dialog-content { padding: 15px; gap: 15px }`
+// Regel aus layout/dialog.scss (Typ + Klasse), die `.app-modal_content`
+// (nur eine Klasse) sonst unabhängig von der Ladereihenfolge nach
+// Spezifität schlägt — dadurch bekäme jedes Modal einen ungewollten
+// 15px-Rahmen/-Abstand um Header/Body/Actions statt der beabsichtigten
+// nahtlosen Hülle. Am auffälligsten bei den "flush"-Modals (z.B.
+// Termindetails), die bewusst randlos gestaltet sind.
+dialog.app-modal .app-modal_content {
+    padding: 0;
+    gap: 0;
+}
+
+// WICHTIG: `display` darf nur gelten, während der Dialog tatsächlich offen
+// ist (`[open]`). Eine Autoren-Regel wie `.app-modal { display: flex }`
+// ohne diese Einschränkung würde IMMER gewinnen — Autoren-Stylesheets
+// schlagen das User-Agent-Stylesheet unabhängig von der Spezifität — und
+// damit die eingebaute `dialog:not([open]) { display: none }`-Regel des
+// Browsers aushebeln, wodurch jedes <dialog class="app-modal"> dauerhaft
+// sichtbar bliebe, unabhängig vom tatsächlichen offen/geschlossen-Zustand.
+dialog.app-modal[open] {
+    // Nur der Body scrollt — Header, Tabs und Actions bleiben fest stehen.
+    // Die jeweilige Modal-Klasse (z.B. .meal-form-modal) gibt weiterhin die
+    // maximale Höhe des Dialogs vor (max-height); dieses Flex-Layout sorgt
+    // nur dafür, dass innerhalb dieser Höhe ausschließlich .app-modal_body
+    // wächst/schrumpft und einen eigenen Scrollbalken bekommt, statt dass
+    // der ganze Dialog (inkl. Header/Actions) einen gemeinsamen bekommt.
+    display: flex;
+    flex-direction: column;
+}
+
+.app-modal {
+    max-width: 480px;
+
+    &_content {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 0;
+        gap: 0;
+    }
+
+    &_header {
+        @include modal-header;
+        flex-shrink: 0;
+    }
+
+    &_body {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 10px;
+        background-color: var(--ColorWhite);
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        // Eigener, dezenterer Scrollbalken statt des groben Browser-Standards.
+        scrollbar-width: thin;
+        scrollbar-color: var(--ColorGray) transparent;
+
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: var(--ColorGray);
+            border-radius: var(--BorderRadiusSmall);
+
+            &:hover {
+                background-color: var(--ColorPrimary);
+            }
+        }
+
+        // Das Such-Dropdown des MemberPicker ist absolut positioniert und wird
+        // vom scrollenden Body abgeschnitten. Bei sonst kurzen Modals (z.B.
+        // Unterstützer verwalten) passt es so trotzdem komplett hinein
+        // (Suchfeld + max. 220px Dropdown), auf kleinen Displays höchstens 60vh.
+        &:has(.member-picker_search-wrap) {
+            min-height: min(320px, 60vh);
+        }
+    }
+
+    &_actions {
+        @include modal-actions;
+        flex-shrink: 0;
+
+        // Falls das #actions-Slot zwar deklariert ist, sein Inhalt aber je
+        // nach Zustand komplett wegfällt (z.B. abhängig vom aktiven Tab),
+        // keine leere Leiste anzeigen.
+        &:empty {
+            display: none;
+        }
+    }
+
+    &_error {
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+        background-color: var(--ColorStatusBadAccent);
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    &_tabs {
+        display: flex;
+        flex-shrink: 0;
+        gap: 4px;
+        justify-content: center;
+        background-color: var(--ColorWhite);
+        border-bottom: 2px solid var(--ColorLightGray);
+        padding: 0 12px;
+    }
+
+    &_tab {
+        background: none;
+        border: none;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: var(--ColorGray);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+
+        &--active {
+            color: var(--ColorPrimary);
+            border-bottom-color: var(--ColorPrimary);
+            font-weight: 600;
+        }
+
+        &:hover:not(.app-modal_tab--active) {
+            color: var(--ColorPrimary);
+        }
+
+        @include media(max-medium) {
+            font-size: 12px;
+            padding: 8px 5px;
+        }
+    }
+}
+
+// Für große, freiform gestaltete Dialoge (z.B. Termindetails), die ihren
+// Inhalt selbst strukturieren (siehe .dialog-infobox in EventDialog.scss)
+// statt der generischen Body-Polsterung/Abstände von .app-modal_body.
+.app-modal--flush .app-modal_body {
+    padding: 0;
+    gap: 0;
+    background-color: transparent;
+}

@@ -2,21 +2,24 @@
   <div class="section section--TasksPage">
     <div class="section_content">
 
-      <!-- Toolbar: View toggle + Filters + Search -->
-      <div class="tasks-toolbar">
-        <div class="tasks-toolbar_filters">
-          <!-- Search -->
-          <input
-            type="search"
-            class="tasks-toolbar_search input"
-            placeholder="Aufgaben suchen…"
-            :value="store.filterSearch"
-            @input="store.setSearchFilter($event.target.value)"
-          />
+      <!-- Toolbar: Suche + "Neue Aufgabe", darunter die Filter -->
+      <AppSearchBar
+        class="tasks-toolbar"
+        :model-value="store.filterSearch"
+        placeholder="Aufgaben suchen…"
+        @update:model-value="store.setSearchFilter"
+      >
+        <!-- Add task (desktop/tablet only — mobile uses the floating action button) -->
+        <template v-if="!isMobile" #actions>
+          <AppButton variant="primary" @click="createModal?.open()">
+            <span class="icon-mask" :style="addTaskIconStyle"></span>
+            Neue Aufgabe
+          </AppButton>
+        </template>
 
+        <template #filters>
           <!-- Organisation filter -->
           <select
-            class="tasks-toolbar_select input"
             :value="store.filterOrganization?.ID ?? ''"
             @change="onOrgChange($event.target.value)"
           >
@@ -30,7 +33,6 @@
 
           <!-- State filter -->
           <select
-            class="tasks-toolbar_select input"
             :value="store.filterState ?? ''"
             @change="store.setStateFilter($event.target.value || null)"
           >
@@ -64,14 +66,8 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="7" rx="1"/></svg>
             </button>
           </div>
-        </div>
-
-        <!-- Add task (desktop/tablet only — mobile uses the floating action button) -->
-        <AppButton v-if="!isMobile" variant="primary" class="tasks-toolbar_actions" @click="createModal?.open()">
-          <span class="icon-mask" :style="addTaskIconStyle"></span>
-          Neue Aufgabe
-        </AppButton>
-      </div>
+        </template>
+      </AppSearchBar>
 
       <!-- Loading -->
       <div v-if="store.loading" class="section_infobox">
@@ -158,10 +154,11 @@ import { useRouter } from 'vue-router'
 import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { getCookie, setCookie } from '@utils/cookies'
-import TaskCard from '@components/TaskCard.vue'
-import TaskCreateModal from '@components/TaskCreateModal.vue'
-import TaskPersonFilter from '@components/TaskPersonFilter.vue'
-import AppButton from '@components/AppButton.vue'
+import TaskCard from '@components/tasks/TaskCard.vue'
+import TaskCreateModal from '@components/tasks/TaskCreateModal.vue'
+import TaskPersonFilter from '@components/tasks/TaskPersonFilter.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppSearchBar from '@components/ui/AppSearchBar.vue'
 import AddTaskIcon from '../../../icons/actions/action_addtask.svg'
 
 const addTaskIconStyle = { maskImage: `url("${AddTaskIcon}")`, WebkitMaskImage: `url("${AddTaskIcon}")` }

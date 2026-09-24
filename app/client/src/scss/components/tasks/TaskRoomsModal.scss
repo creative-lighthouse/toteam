@@ -1,0 +1,40 @@
+@use "../../base/variables" as *;
+
+// "Räume verwalten" — attach/detach a task to rooms in its organization
+.task-rooms-modal {
+    text-align: left;
+    max-width: 420px;
+    max-height: 90vh;
+
+    .task-rooms-modal_loading {
+        font-size: 14px;
+        color: var(--ColorGray);
+        text-align: center;
+        padding: 12px 0;
+    }
+
+    .task-rooms-modal_list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 45vh;
+        overflow-y: auto;
+    }
+
+    .task-rooms-modal_option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--BorderRadiusSmall);
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--ColorLightGray);
+        }
+
+        input[type="checkbox"] {
+            flex-shrink: 0;
+        }
+    }
+}

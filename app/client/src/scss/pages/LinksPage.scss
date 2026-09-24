@@ -1,34 +1,6 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 .section--LinksPage {
-    .links-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        margin-bottom: 16px;
-    }
-
-    .links-search {
-        margin-bottom: 0;
-        width: 100%;
-        margin-right: 0;
-
-        input[type="search"] {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--ColorLightGray);
-            border-radius: var(--BorderRadiusMedium);
-            font-size: 15px;
-            background-color: var(--ColorWhite);
-            box-sizing: border-box;
-
-            &:focus {
-                outline: 2px solid var(--ColorPrimary);
-                outline-offset: 1px;
-                border-color: transparent;
-            }
-        }
-    }
 
     .links-list {
         display: flex;
@@ -146,29 +118,11 @@
     }
 
     // Link modal — Grundgerüst (Header/Body/Footer, .modalform/.field) kommt
-    // von AppModal/forminputs.scss; hier nur noch Inhalte, die dieses Modal
+    // von AppModal/base/forms.scss; hier nur noch Inhalte, die dieses Modal
     // speziell braucht.
     .link-modal {
+        text-align: left;
         max-width: 480px;
-
-        .link-modal_kind-toggle {
-            display: flex;
-            gap: 10px;
-
-            .button {
-                flex: 1;
-                background-color: transparent;
-                border: 1px solid var(--ColorPrimary);
-                color: var(--ColorPrimary);
-                font-size: 13px;
-                padding: 8px 12px;
-
-                &.active {
-                    background-color: var(--ColorPrimary);
-                    color: var(--ColorWhite);
-                }
-            }
-        }
 
         .link-modal_file-hint {
             font-size: 13px;

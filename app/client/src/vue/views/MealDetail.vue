@@ -29,7 +29,7 @@
               <span v-if="meal.organizationTitle"> • {{ meal.organizationTitle }}</span>
             </p>
 
-            <p v-if="meal.description" class="meal-detail-hero_description-text">{{ meal.description }}</p>
+            <p v-if="meal.description" class="meal-detail-hero_description-text"><AppLinkifiedText :text="meal.description" /></p>
           </div>
           <div class="meal-detail-hero_actions">
             <AppIconButton
@@ -105,56 +105,25 @@
         <ContextMenu ref="attendeeMenu" />
 
         <!-- Geplante Gerichte (orderable + regular combined) -->
-        <div class="section_infobox">
+        <div class="section_infobox meal-foods-section" :class="{ 'meal-foods-section--full': !hasAnyParticipants }">
           <div class="meal-detail-block_heading-row">
             <h3 class="hl3">Geplante Gerichte ({{ meal.foods.length }})</h3>
             <div class="meal-detail-heading-actions">
-              <AppButton
+              <AppIconButton
                 v-if="meal.canManage"
-                size="small"
-                variant="secondary"
-                @click="addProductOpen = !addProductOpen"
-              >{{ addProductOpen ? '× Abbrechen' : '+ Gericht' }}</AppButton>
+                variant="primary"
+                aria-label="Gericht hinzufügen"
+                title="Gericht hinzufügen"
+                @click="foodCreateModal?.open(meal.id)"
+              >
+                <span class="icon-mask" :style="addFoodIconStyle" />
+              </AppIconButton>
               <AppButton
                 v-if="meal.acceptsContributions"
                 size="small"
                 variant="secondary"
                 @click="suggestModal?.open(meal.id)"
               >+ Vorschlagen</AppButton>
-            </div>
-          </div>
-
-          <!-- Add product form (admin/mod) -->
-          <div v-if="addProductOpen" class="meal-product-add-form">
-            <input
-              v-model="addProductTitle"
-              type="text"
-              placeholder="Bezeichnung (z.B. Nudelsalat)"
-              class="form-control"
-              @keyup.enter="submitProduct"
-            />
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="addProductOrderable" aria-label="Bestellbar (Menge pro Person begrenzbar)" />
-              Bestellbar (Menge pro Person begrenzbar)
-            </label>
-            <div v-if="addProductOrderable" class="meal-product-add-row">
-              <label>
-                Max. pro Person (0 = unbegrenzt)
-                <input
-                  v-model.number="addProductMax"
-                  type="number"
-                  min="0"
-                  placeholder="0 = unbegrenzt"
-                  class="form-control"
-                />
-              </label>
-            </div>
-            <div class="meal-product-add-row">
-              <AppButton
-                variant="primary"
-                :disabled="!addProductTitle.trim() || addProductSaving"
-                @click="submitProduct"
-              >{{ addProductSaving ? '…' : 'Speichern' }}</AppButton>
             </div>
           </div>
 
@@ -278,15 +247,12 @@
           <p v-else class="meal-card_empty">Noch keine Gerichte geplant.</p>
         </div>
 
-        <div class="section_infobox_footer">
-          <router-link to="/food">← Zum Essensplan</router-link>
-        </div>
-
       </template>
     </div>
 
-    <SuggestFoodModal ref="suggestModal" @suggested="onFoodSuggested" />
-    <MealEditModal ref="editModal" @saved="onMealSaved" />
+    <FoodSuggestModal ref="suggestModal" @suggested="onFoodSuggested" />
+    <FoodCreateModal ref="foodCreateModal" @created="onFoodCreated" />
+    <MealFormModal ref="editModal" @saved="onMealSaved" />
     <HistoryModal
       v-if="meal"
       ref="historyModal"
@@ -301,17 +267,20 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete } from '@utils/api'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import AppButtonGroup from '@components/AppButtonGroup.vue'
-import MealCard from '@components/EventDialog/MealCard.vue'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
-import ContextMenu from '@components/ContextMenu.vue'
-import ParticipantCard from '@components/ParticipantCard.vue'
-import MealEditModal from '@components/MealEditModal.vue'
-import SuggestFoodModal from '@components/SuggestFoodModal.vue'
-import HistoryModal from '@components/HistoryModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import AppButtonGroup from '@components/ui/AppButtonGroup.vue'
+import MealCard from '@components/food/MealCard.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import ContextMenu from '@components/ui/ContextMenu.vue'
+import ParticipantCard from '@components/calendar/ParticipantCard.vue'
+import MealFormModal from '@components/food/MealFormModal.vue'
+import FoodSuggestModal from '@components/food/FoodSuggestModal.vue'
+import FoodCreateModal from '@components/food/FoodCreateModal.vue'
+import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
+import actionAddFood from '../../../icons/actions/action_addfood.svg'
 
 const route = useRoute()
 usePageHeaderStore().setHeader('Mahlzeit', '')
@@ -332,11 +301,7 @@ const suggestModal = ref(null)
 const userOrders        = ref({})
 const ordersSaving      = ref(false)
 const ordersSaveTimer   = ref(null)
-const addProductOpen    = ref(false)
-const addProductTitle   = ref('')
-const addProductOrderable = ref(false)
-const addProductMax     = ref(0)
-const addProductSaving  = ref(false)
+const foodCreateModal   = ref(null)
 const deletingProductId     = ref(null)
 const decidingFoodId        = ref(null)
 const editingFoodId       = ref(null)
@@ -347,15 +312,17 @@ const editFoodSaving      = ref(false)
 const editModal = ref(null)
 const historyModal = ref(null)
 const historyIconStyle = { maskImage: `url("${actionHistory}")`, WebkitMaskImage: `url("${actionHistory}")` }
+const addFoodIconStyle = { maskImage: `url("${actionAddFood}")`, WebkitMaskImage: `url("${actionAddFood}")` }
 
 function openEditModal() {
   editModal.value?.open(meal.value)
 }
 
-function onMealSaved({ title, time, description }) {
-  meal.value.title       = title
-  meal.value.time        = time
-  meal.value.description = description
+function onMealSaved({ title, time, description, acceptsContributions }) {
+  meal.value.title                = title
+  meal.value.time                 = time
+  meal.value.description          = description
+  meal.value.acceptsContributions = acceptsContributions
   usePageHeaderStore().setHeader(meal.value.title, '')
 }
 
@@ -506,27 +473,10 @@ async function saveOrders() {
   }
 }
 
-async function submitProduct() {
-  if (!addProductTitle.value.trim() || addProductSaving.value) return
-  addProductSaving.value = true
-  try {
-    const result = await apiPost(`/food/mealProduct/${meal.value.id}`, {
-      title: addProductTitle.value.trim(),
-      isOrderable: addProductOrderable.value,
-      maxQuantity: addProductMax.value ?? 0,
-    })
-    meal.value.foods.push(result.data.product)
-    if (result.data.product.isOrderable) {
-      userOrders.value = { ...userOrders.value, [result.data.product.id]: 0 }
-    }
-    addProductTitle.value = ''
-    addProductOrderable.value = false
-    addProductMax.value   = 0
-    addProductOpen.value  = false
-  } catch (e) {
-    alert('Fehler: ' + e.message)
-  } finally {
-    addProductSaving.value = false
+function onFoodCreated(product) {
+  meal.value.foods.push(product)
+  if (product.isOrderable) {
+    userOrders.value = { ...userOrders.value, [product.id]: 0 }
   }
 }
 

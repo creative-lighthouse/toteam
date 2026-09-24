@@ -1,0 +1,75 @@
+@use "../../base/variables" as *;
+
+// ── AppButton (Default / Small) ─────────────────────────────────────────────
+.app-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+    font-weight: bold;
+    text-decoration: none;
+    text-wrap: nowrap;
+    cursor: pointer;
+    appearance: none;
+    box-shadow: none;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+
+    &--default {
+        font-size: 16px;
+        padding: 9px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        border: 1px solid transparent;
+    }
+
+    &--small {
+        font-size: 13px;
+        padding: 6px 14px;
+        border-radius: var(--BorderRadiusLarge);
+        border: 1px solid transparent;
+    }
+
+    &--primary {
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+        border-color: var(--ColorPrimary);
+
+        @include hover(':not(:disabled)') {
+            background-color: var(--ColorPrimaryDark);
+            border-color: var(--ColorPrimaryDark);
+        }
+    }
+
+    &--secondary {
+        background-color: transparent;
+        color: var(--ColorPrimary);
+        border-color: var(--ColorPrimary);
+
+        @include hover(':not(:disabled)') {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    &--danger {
+        background-color: var(--ColorStatusBad);
+        color: var(--ColorWhite);
+        border-color: var(--ColorStatusBad);
+
+        @include hover(':not(:disabled)') {
+            background-color: color-mix(in srgb, var(--ColorStatusBad) 85%, black);
+            border-color: color-mix(in srgb, var(--ColorStatusBad) 85%, black);
+        }
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    @include media(max-desktop) {
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+}

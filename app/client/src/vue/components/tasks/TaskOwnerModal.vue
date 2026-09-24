@@ -1,0 +1,100 @@
+<template>
+  <AppModal ref="modal" class="task-owner-modal" title="Verantwortlichen ändern" @close="close">
+    <form id="task-owner-form" @submit.prevent="submit">
+
+      <div v-if="loadingMembers" class="task-owner-modal_loading">Lade Mitglieder…</div>
+
+      <div v-else-if="memberOptions.length === 0" class="task-owner-modal_loading">
+        Keine Mitglieder in dieser Organisation.
+      </div>
+
+      <MemberPicker
+        v-else
+        v-model="selected"
+        :members="memberOptions"
+        pin-self
+        :self-id="authStore.user?.ID ?? null"
+        autofocus
+      />
+
+      <div v-if="error" class="app-modal_error">{{ error }}</div>
+    </form>
+
+    <template #actions>
+      <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
+      <AppButton type="submit" form="task-owner-form" variant="primary" :disabled="saving || loadingMembers || !selected">
+        {{ saving ? 'Speichern…' : 'Speichern' }}
+      </AppButton>
+    </template>
+  </AppModal>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { useTasksStore } from '@stores/tasks'
+import { useAuthStore } from '@stores/auth'
+import AppButton from '@components/ui/AppButton.vue'
+import AppModal from '@components/ui/AppModal.vue'
+import MemberPicker from '@components/ui/MemberPicker.vue'
+
+const props = defineProps({
+  taskId: { type: Number, required: true },
+  organizationId: { type: Number, required: true },
+  currentOwnerId: { type: Number, default: 0 },
+})
+const emit = defineEmits(['saved'])
+const store = useTasksStore()
+const authStore = useAuthStore()
+
+const modal = ref(null)
+const saving = ref(false)
+const loadingMembers = ref(false)
+const error = ref(null)
+const memberOptions = ref([])
+const selected = ref(null)
+
+async function open() {
+  error.value = null
+  selected.value = props.currentOwnerId || null
+  loadingMembers.value = true
+  try {
+    memberOptions.value = await store.fetchOrgMembers(props.organizationId)
+  } finally {
+    loadingMembers.value = false
+  }
+  modal.value?.open()
+}
+
+function close() {
+  modal.value?.close()
+}
+
+async function submit() {
+  const id = parseInt(selected.value)
+  if (!id) return
+  if (id === props.currentOwnerId) {
+    close()
+    return
+  }
+
+  saving.value = true
+  error.value = null
+
+  try {
+    const response = await store.updateTask(props.taskId, { OwnerID: id })
+
+    if (response.success) {
+      emit('saved', response.data.task)
+      close()
+    } else {
+      error.value = response.error || 'Verantwortlicher konnte nicht geändert werden.'
+    }
+  } catch (err) {
+    error.value = err.message || 'Unbekannter Fehler.'
+  } finally {
+    saving.value = false
+  }
+}
+
+defineExpose({ open, close })
+</script>

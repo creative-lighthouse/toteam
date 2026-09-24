@@ -1,0 +1,56 @@
+@use "../../base/variables" as *;
+
+// Grid layout (.modalform/.field) and field styling come from
+// base/forms.scss — only content-specific widgets that aren't
+// part of that generic system live here.
+.calendar-entry-create-modal {
+    // Löschen-Icon links, Speichern bleibt rechts (Actions sind flex-end)
+    .calendar-entry-create-modal_delete {
+        margin-right: auto;
+        align-self: center;
+    }
+
+    .dialog-infobox {
+        .invited-members-loading {
+            font-size: 0.85rem;
+            color: var(--ColorGray, #777);
+        }
+
+        .field--poll-options {
+            .poll-options-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-bottom: 8px;
+            }
+
+            // Selbe Feld-Klassen/Grid wie im "Termin"-Tab (nested .modalform),
+            // nur mit dem Löschen-Button oben rechts in der Ecke statt in
+            // derselben Zeile wie die Felder.
+            .poll-option {
+                position: relative;
+                padding: 15px;
+                margin-bottom: 8px;
+                background-color: var(--ColorVeryLightGray);
+                border-radius: var(--BorderRadiusSmall);
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+
+                .app-icon-button {
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
+                }
+            }
+        }
+
+        .form-error {
+            color: #c0392b;
+            font-size: 0.85rem;
+            grid-column: 1 / -1;
+        }
+    }
+}

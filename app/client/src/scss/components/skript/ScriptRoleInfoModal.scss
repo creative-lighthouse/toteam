@@ -1,0 +1,42 @@
+@use "../../base/variables" as *;
+
+.script-role-info-modal {
+    text-align: left;
+    max-width: 420px;
+    max-height: 90vh;
+}
+
+.script-role-info-modal_role {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    & + & {
+        padding-top: 16px;
+        border-top: 1px solid var(--ColorLightGray);
+    }
+}
+
+.script-role-info-modal_role-title {
+    margin: 0;
+    font-size: 16px;
+}
+
+.script-role-info-modal_description {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.script-role-info-modal_members {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.script-role-info-modal_members-label {
+    font-weight: 600;
+    margin-right: 0.35rem;
+}
+
+.script-role-info-modal_members-empty {
+    opacity: 0.6;
+}

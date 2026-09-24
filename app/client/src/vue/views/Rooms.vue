@@ -2,26 +2,24 @@
   <div class="section section--RoomsPage">
     <div class="section_content">
 
-      <div class="rooms-toolbar">
-        <input
-          type="search"
-          class="rooms-toolbar_search input"
-          placeholder="Räume suchen…"
-          :value="store.filterSearch"
-          @input="store.setSearchFilter($event.target.value)"
-        />
-
-        <select
-          class="rooms-toolbar_select input"
-          :value="store.filterOrganization?.ID ?? ''"
-          @change="onOrgChange($event.target.value)"
-        >
-          <option value="">Alle Organisationen</option>
-          <option v-for="org in store.organizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
-        </select>
-
-        <AppButton variant="primary" @click="formModal?.open()">+ Neuer Raum</AppButton>
-      </div>
+      <AppSearchBar
+        :model-value="store.filterSearch"
+        placeholder="Räume suchen…"
+        @update:model-value="store.setSearchFilter"
+      >
+        <template #actions>
+          <AppButton variant="primary" @click="formModal?.open()">+ Neuer Raum</AppButton>
+        </template>
+        <template #filters>
+          <select
+            :value="store.filterOrganization?.ID ?? ''"
+            @change="onOrgChange($event.target.value)"
+          >
+            <option value="">Alle Organisationen</option>
+            <option v-for="org in store.organizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
+          </select>
+        </template>
+      </AppSearchBar>
 
       <div v-if="store.loading" class="section_infobox">
         <p>Lade Räume…</p>
@@ -59,9 +57,10 @@
 import { ref, onMounted } from 'vue'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useRoomsStore } from '@stores/rooms'
-import AppButton from '@components/AppButton.vue'
-import RoomFormModal from '@components/RoomFormModal.vue'
-import RoomDetailModal from '@components/RoomDetailModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppSearchBar from '@components/ui/AppSearchBar.vue'
+import RoomFormModal from '@components/rooms/RoomFormModal.vue'
+import RoomDetailModal from '@components/rooms/RoomDetailModal.vue'
 
 usePageHeaderStore().setHeader('Räume', 'Räume deiner Organisationen und ihre Aufgaben.')
 

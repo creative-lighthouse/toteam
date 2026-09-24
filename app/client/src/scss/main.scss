@@ -1,24 +1,32 @@
 @use "glightbox/dist/css/glightbox.css";
 @use 'swiper/swiper-bundle.css';
 
-@use "variables" as *;
-@use "fonts.scss";
-@use "normalize.scss";
-@use "typography.scss";
-@use "forms.scss";
-@use "components/forminputs.scss";
-@use "components/buttons.scss";
-@use "components/apporglogo.scss";
+@use "base/variables" as *;
+@use "base/fonts.scss";
+@use "base/normalize.scss";
+@use "base/typography.scss";
+@use "base/forms.scss";
+@use "components/ui/AppToggle.scss";
+@use "components/ui/AppButton.scss";
+@use "components/ui/AppIconButton.scss";
+@use "base/icon-mask.scss";
+@use "components/ui/AppButtonGroup.scss";
+@use "components/ui/AppOrgLogo.scss";
 
-@use "layout/AppMenu.scss";
-@use "layout/AppHeader.scss";
-@use "layout/AppNotifications.scss";
-@use "layout/dialog.scss";
-@use "layout/EventDialog.scss";
-@use "components/appmodal.scss";
+@use "components/layout/AppMenu.scss";
+@use "components/layout/AppHeader.scss";
+@use "components/layout/AppNotifications.scss";
+@use "base/dialog.scss";
+@use "components/organizations/ApplicantsModal.scss";
+@use "components/ui/QrCodeModal.scss";
+@use "components/profile/EditProfileModal.scss";
+@use "components/layout/SettingsModal.scss";
+@use "components/layout/FeedbackModal.scss";
+@use "components/calendar/event-dialog/EventDialog.scss";
+@use "components/ui/AppModal.scss";
 
 @use "pages/DashboardPage.scss";
-@use "pages/RegistrationPage.scss";
+
 @use "pages/AnnouncementsPage.scss";
 @use "pages/AnnouncementDetailPage.scss";
 @use "pages/ProfilePage.scss";
@@ -42,51 +50,62 @@
 @use "pages/MarketingPage.scss";
 @use "pages/MarketingStatisticsPage.scss";
 
-
 @use "landingpage/landingpage.scss";
 @use "landingpage/membergraphic.scss";
 @use "landingpage/calendargraphic.scss";
 
-@use "components/map-renderer.scss";
-@use "components/eventcard.scss";
-@use "components/announcementcard.scss";
-@use "components/organizationcard.scss";
-@use "components/participantcard.scss";
-@use "components/contextmenu.scss";
-@use "components/orgpicker.scss";
-@use "components/memberpicker.scss";
-@use "components/mealcard.scss";
-@use "components/eventagendamodal.scss";
-@use "components/eventmealmodal.scss";
-@use "components/mealeditmodal.scss";
-@use "components/suggestfoodmodal.scss";
-@use "components/addappointmentmodal.scss";
-@use "components/pwainstallbanner.scss";
-@use "components/taskcard.scss";
-@use "components/taskprogressbar.scss";
-@use "components/taskcreatemodal.scss";
-@use "components/tasksupportersmodal.scss";
-@use "components/taskdeletemodal.scss";
-@use "components/history.scss";
-@use "components/roommodals.scss";
-@use "components/moneymodals.scss";
-@use "components/orgrolesmodals.scss";
-@use "components/imagecropmodal.scss";
-@use "components/scripteditor.scss";
-@use "components/scriptblockview.scss";
-@use "components/scriptroledropdown.scss";
-@use "components/scriptparagraphrow.scss";
-@use "components/scripttocsidebar.scss";
-@use "components/scriptrolesview.scss";
-@use "components/scriptroleeditmodal.scss";
-@use "components/scriptcreatemodal.scss";
-@use "components/scriptroleinfomodal.scss";
-@use "components/scriptmemberpickerdropdown.scss";
-@use "components/marketingentrymodal.scss";
-@use "components/marketingsizemanagermodal.scss";
-@use "components/announcementcreatemodal.scss";
-@use "components/organizationcreatemodal.scss";
-
+@use "pages/MapViewPage.scss";
+@use "components/calendar/EventCard.scss";
+@use "components/announcements/AnnouncementCard.scss";
+@use "components/organizations/OrganizationCard.scss";
+@use "components/calendar/ParticipantCard.scss";
+@use "components/ui/ContextMenu.scss";
+@use "components/ui/OrganizationPicker.scss";
+@use "components/ui/MemberPicker.scss";
+@use "components/food/MealCard.scss";
+@use "components/calendar/event-dialog/EventAgendaModal.scss";
+@use "components/food/MealFormModal.scss";
+@use "components/food/FoodSuggestModal.scss";
+@use "components/food/FoodCreateModal.scss";
+@use "components/ui/AppFileUpload.scss";
+@use "components/ui/AppCollapse.scss";
+@use "components/ui/AppSegmentedToggle.scss";
+@use "components/ui/AppChipSelect.scss";
+@use "components/ui/AppSearchBar.scss";
+@use "components/ui/AppLinkifiedText.scss";
+@use "components/maps/MapCreateModal.scss";
+@use "components/calendar/CalendarEntryCreateModal.scss";
+@use "components/layout/PwaInstallBanner.scss";
+@use "components/tasks/TaskCard.scss";
+@use "components/tasks/TaskProgressBar.scss";
+@use "components/tasks/TaskCreateModal.scss";
+@use "components/tasks/TaskSupportersModal.scss";
+@use "components/tasks/TaskOwnerModal.scss";
+@use "components/tasks/TaskDeleteModal.scss";
+@use "components/history/HistoryModal.scss";
+@use "components/history/HistoryEntry.scss";
+@use "components/rooms/RoomFormModal.scss";
+@use "components/rooms/RoomDetailModal.scss";
+@use "components/tasks/TaskRoomsModal.scss";
+@use "components/money/money-modals.scss";
+@use "components/money/MoneySettleModal.scss";
+@use "components/organizations/OrgRoleEditModal.scss";
+@use "components/organizations/OrgMemberRolesModal.scss";
+@use "components/ui/ImageCropModal.scss";
+@use "components/skript/ScriptEditor.scss";
+@use "components/skript/ScriptBlockView.scss";
+@use "components/skript/ScriptRoleDropdown.scss";
+@use "components/skript/ScriptParagraphRow.scss";
+@use "components/skript/ScriptTocSidebar.scss";
+@use "components/skript/ScriptRolesView.scss";
+@use "components/skript/ScriptRoleEditModal.scss";
+@use "components/skript/ScriptCreateModal.scss";
+@use "components/skript/ScriptRoleInfoModal.scss";
+@use "components/skript/ScriptMemberPickerDropdown.scss";
+@use "components/marketing/MarketingEntryModal.scss";
+@use "components/marketing/MarketingSizeManagerModal.scss";
+@use "components/announcements/AnnouncementCreateModal.scss";
+@use "components/organizations/OrganizationCreateModal.scss";
 
 html{
     overflow-y: scroll;
@@ -138,7 +157,7 @@ body {
         padding-top: 70px;
 
         .section {
-            max-width: var(--MaxWidth);
+            max-width: var(--WidthWide);
             margin: 50px auto;
             padding: 0 10px;
 

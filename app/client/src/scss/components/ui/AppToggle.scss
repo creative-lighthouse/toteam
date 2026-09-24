@@ -1,0 +1,58 @@
+@use "../../base/variables" as *;
+
+// ── Toggle-Switch (An/Aus-Schalter) ─────────────────────────────────────────
+// Generisches An/Aus-Element für Checkbox-artige Felder in Modal-Formularen
+// (z.B. "Ganztägig"), damit sie nicht wie eine normale, unscheinbare Checkbox
+// aussehen. Markup: <span class="toggle-switch"><input type="checkbox"
+// class="toggle-switch_input">v-model...<span class="toggle-switch_track">
+// </span></span>.
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+
+    // Größe/Abstände explizit auf 0: ragt die unsichtbare Checkbox aus dem
+    // Schalter heraus, vergrößert sie den Scrollbereich des Modal-Bodys.
+    &_input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    &_track {
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        background-color: var(--ColorGray, #aaa);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: var(--ColorWhite);
+            transition: transform 0.2s ease;
+        }
+    }
+
+    &_input:checked + &_track {
+        background-color: var(--ColorPrimary);
+
+        &::after {
+            transform: translateX(20px);
+        }
+    }
+}

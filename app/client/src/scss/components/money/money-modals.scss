@@ -1,0 +1,16 @@
+@use "../../base/variables" as *;
+
+.money-entry-modal,
+.money-account-modal,
+.money-budget-modal,
+.money-settle-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+
+    .money-field-error {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ColorStatusBad);
+    }
+}

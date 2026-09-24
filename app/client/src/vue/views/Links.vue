@@ -3,23 +3,11 @@
     <div class="section_content">
 
       <!-- Search + Add button row -->
-      <div class="links-toolbar">
-        <div class="links-search">
-          <input
-            v-model="search"
-            type="search"
-            placeholder="Links durchsuchen…"
-          />
-        </div>
-        <AppButton
-          v-if="adminOrgIDs.length > 0"
-          size="small"
-          variant="primary"
-          @click="openAddModal"
-        >
-          + Link hinzufügen
-        </AppButton>
-      </div>
+      <AppSearchBar v-model="search" placeholder="Links durchsuchen…">
+        <template v-if="adminOrgIDs.length > 0" #actions>
+          <AppButton variant="primary" @click="openAddModal">+ Link hinzufügen</AppButton>
+        </template>
+      </AppSearchBar>
 
       <!-- Loading -->
       <div v-if="loading" class="section_infobox">
@@ -87,7 +75,7 @@
               aria-label="Löschen"
               @click="deleteLink(link)"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              <span class="icon-mask" :style="trashIconStyle" />
             </AppIconButton>
           </div>
         </div>
@@ -109,41 +97,24 @@
     >
       <form id="link-form" class="modalform" @submit.prevent="submitModal">
 
+        <!-- Org selector (only when adding) -->
+        <div v-if="!editingLink" class="field">
+          <label>Organisation *</label>
+          <OrganizationPicker v-model="form.orgId" :orgs="adminOrgs" />
+        </div>
+
         <label class="field">
           Titel *
           <input v-model="form.title" type="text" required placeholder="z.B. Vereinssatzung" />
         </label>
 
-        <!-- Org selector (only when adding) -->
-        <label v-if="!editingLink" class="field">
-          Organisation *
-          <select v-model="form.orgId" required>
-            <option value="" disabled>Bitte wählen…</option>
-            <option v-for="org in adminOrgs" :key="org.ID" :value="org.ID">
-              {{ org.Title }}
-            </option>
-          </select>
-        </label>
-
         <!-- Kind toggle (only when adding) -->
-        <div v-if="!editingLink" class="field link-modal_kind-toggle">
-          <button
-            type="button"
-            class="button"
-            :class="{ active: form.kind === 'external' }"
-            @click="form.kind = 'external'"
-          >
-            Externe URL
-          </button>
-          <button
-            type="button"
-            class="button"
-            :class="{ active: form.kind === 'file' }"
-            @click="form.kind = 'file'"
-          >
-            Datei hochladen
-          </button>
-        </div>
+        <AppSegmentedToggle
+          v-if="!editingLink"
+          v-model="form.kind"
+          label="Art"
+          :options="[{ value: 'external', label: 'Externe URL' }, { value: 'file', label: 'Datei hochladen' }]"
+        />
 
         <!-- URL input (when external or editing an external link) -->
         <label v-if="form.kind === 'external'" class="field">
@@ -160,10 +131,14 @@
         <AppToggle v-if="form.kind === 'external'" v-model="form.openInNew" label="In neuem Tab öffnen" />
 
         <!-- File input (when adding a file) -->
-        <label v-if="!editingLink && form.kind === 'file'" class="field">
-          Datei *
-          <input ref="fileInputEl" type="file" @change="onFileChange" />
-        </label>
+        <AppFileUpload
+          v-if="!editingLink && form.kind === 'file'"
+          v-model="form.file"
+          label="Datei"
+          required
+          :max-size="LINK_FILE_MAX_SIZE"
+          hint="Max. 10 MB"
+        />
 
         <!-- File links: note about editing -->
         <p v-if="editingLink && editingLink.LinkKind === 'file'" class="link-modal_file-hint">
@@ -190,10 +165,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete, apiPostForm, clearCacheForEndpoint } from '@utils/api'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import AppModal from '@components/AppModal.vue'
-import AppToggle from '@components/AppToggle.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppSearchBar from '@components/ui/AppSearchBar.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import AppModal from '@components/ui/AppModal.vue'
+import AppToggle from '@components/ui/AppToggle.vue'
+import AppSegmentedToggle from '@components/ui/AppSegmentedToggle.vue'
+import AppFileUpload from '@components/ui/AppFileUpload.vue'
+import OrganizationPicker from '@components/ui/OrganizationPicker.vue'
+import actionTrash from '../../../icons/actions/action_trash.svg'
+
+const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 
 usePageHeaderStore().setHeader('Links', 'Wichtige Links und Ressourcen für dein Team.')
 
@@ -211,11 +193,13 @@ const submitting = ref(false)
 const modalError = ref(null)
 
 const modal = ref(null)
-const fileInputEl = ref(null)
+
+// Deckt sich mit dem Upload-Limit in LinksApiController
+const LINK_FILE_MAX_SIZE = 10 * 1024 * 1024
 
 const form = ref({
   title: '',
-  orgId: '',
+  orgId: null,
   kind: 'external',
   url: '',
   openInNew: false,
@@ -272,7 +256,7 @@ function openAddModal() {
   editingLink.value = null
   form.value = {
     title: '',
-    orgId: adminOrgs.value.length === 1 ? adminOrgs.value[0].ID : '',
+    orgId: adminOrgs.value.length === 1 ? adminOrgs.value[0].ID : null,
     kind: 'external',
     url: '',
     openInNew: false,
@@ -302,10 +286,6 @@ function closeModal() {
   modalError.value = null
 }
 
-function onFileChange(e) {
-  form.value.file = e.target.files[0] || null
-}
-
 async function submitModal() {
   modalError.value = null
 
@@ -315,6 +295,7 @@ async function submitModal() {
   }
 
   submitting.value = true
+  let response = null
   try {
     if (editingLink.value) {
       // Edit existing link
@@ -325,7 +306,7 @@ async function submitModal() {
         payload.url = form.value.url
         payload.openInNew = form.value.openInNew
       }
-      await apiPut(`/links/update/${editingLink.value.ID}`, payload)
+      response = await apiPut(`/links/update/${editingLink.value.ID}`, payload)
     } else {
       // Create new link
       if (!form.value.orgId) {
@@ -343,19 +324,25 @@ async function submitModal() {
         fd.append('orgId', form.value.orgId)
         fd.append('openInNew', form.value.openInNew ? '1' : '0')
         fd.append('file', form.value.file)
-        await apiPostForm('/links', fd)
+        response = await apiPostForm('/links', fd)
       } else {
         if (!form.value.url.trim()) {
           modalError.value = 'Bitte gib eine URL ein.'
           return
         }
-        await apiPost('/links', {
+        response = await apiPost('/links', {
           title: form.value.title,
           orgId: form.value.orgId,
           url: form.value.url,
           openInNew: form.value.openInNew,
         })
       }
+    }
+
+    // Die API-Helfer werfen bei 4xx nicht, sondern liefern { success: false, error }
+    if (!response?.success) {
+      modalError.value = response?.error || 'Der Link konnte nicht gespeichert werden.'
+      return
     }
 
     // Success — refresh

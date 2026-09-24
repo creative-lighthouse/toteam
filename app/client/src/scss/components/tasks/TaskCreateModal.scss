@@ -1,0 +1,21 @@
+.task-create-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+
+    .task-create-modal_parent-hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+
+        strong {
+            color: var(--ColorPrimary);
+        }
+    }
+
+    .task-create-modal_owner-hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+}

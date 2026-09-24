@@ -1,0 +1,87 @@
+// Datei-Upload für Modal-Formulare (siehe AppFileUpload.vue). Das Feld selbst
+// (Label-Stil, Abstände) kommt aus .modalform .field (base/forms.scss).
+.app-file-upload {
+    border-radius: var(--BorderRadiusSmall);
+    transition: background-color 0.15s ease, outline-color 0.15s ease;
+    outline: 2px dashed transparent;
+    outline-offset: 4px;
+
+    &--dragging {
+        outline-color: var(--ColorPrimary);
+        background-color: var(--ColorVeryLightGray);
+    }
+
+    .app-file-upload_input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+    }
+
+    .app-file-upload_button {
+        display: inline-block;
+        text-align: center;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .app-file-upload_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .app-file-upload_selected {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorWhite);
+    }
+
+    .app-file-upload_preview {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: var(--BorderRadiusSmall);
+        flex-shrink: 0;
+    }
+
+    .app-file-upload_file {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: left;
+    }
+
+    .app-file-upload_name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ColorBlack);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .app-file-upload_size,
+    .app-file-upload_hint {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--ColorGray);
+    }
+
+    .app-file-upload_error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+}

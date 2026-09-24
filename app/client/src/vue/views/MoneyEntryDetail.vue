@@ -38,7 +38,7 @@
               aria-label="Buchung löschen"
               @click="remove"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              <span class="icon-mask" :style="trashIconStyle" />
             </AppIconButton>
           </div>
         </div>
@@ -92,7 +92,7 @@
           </table>
           <div v-if="entry.Notes" class="money-entry-detail_notes">
             <p class="money-entry-detail_notes-label">Anmerkungen</p>
-            <p class="money-entry-detail_notes-text">{{ entry.Notes }}</p>
+            <p class="money-entry-detail_notes-text"><AppLinkifiedText :text="entry.Notes" /></p>
           </div>
         </section>
 
@@ -140,10 +140,14 @@ import GLightbox from 'glightbox'
 import { useMoneyStore } from '@stores/money'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import MoneyEntryModal from '@components/MoneyEntryModal.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import HistoryModal from '@components/HistoryModal.vue'
+import MoneyEntryModal from '@components/money/MoneyEntryModal.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
+import actionTrash from '../../../icons/actions/action_trash.svg'
+
+const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 
 const route = useRoute()
 const router = useRouter()

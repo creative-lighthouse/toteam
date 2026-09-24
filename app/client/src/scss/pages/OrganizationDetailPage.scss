@@ -1,9 +1,9 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 section.section--OrganizationDetailPage {
     padding: 0;
     margin: 0 auto 100px;
-    max-width: var(--MaxWidth);
+    max-width: var(--WidthWide);
 
     .org-detail-notfound {
         text-align: center;
@@ -135,7 +135,7 @@ section.section--OrganizationDetailPage {
         line-height: 1.65;
         color: var(--ColorBlack);
         margin: 0 0 32px;
-        max-width: 720px;
+        max-width: var(--WidthMedium);
     }
 
     .org-detail-members {

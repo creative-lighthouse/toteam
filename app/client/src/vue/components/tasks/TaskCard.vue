@@ -1,0 +1,131 @@
+<template>
+  <div
+    class="task-card"
+    :class="[`task-card--${task.State || 'open'}`, { 'task-card--has-subtasks': task.SubTasks?.length, 'task-card--compact': compact }]"
+    @click="$emit('click', task)"
+  >
+    <!-- Compact: title + badge/deadline in two lines, e.g. on the dashboard -->
+    <template v-if="compact">
+      <div class="task-card_compact-info">
+        <span class="task-card_title">{{ task.Title }}</span>
+        <span class="task-card_meta">
+          <span class="task-card_state-badge" :class="`task-card_state-badge--${task.State || 'open'}`">
+            {{ stateLabel }}
+          </span>
+          <span v-if="task.DeadlineNice && task.State !== 'finished'" class="task-card_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
+            {{ task.DeadlineNice }}
+          </span>
+          <span v-if="task.Parent" class="task-card_parent">in <span class="task-card_parent-title">{{ task.Parent.Title }}</span></span>
+        </span>
+      </div>
+      <AppOrgLogo
+        v-if="task.Organization && !hideOrgLogo"
+        :src="task.Organization.LogoURL"
+        :alt="task.Organization.Title"
+        :title="task.Organization.Title"
+        :size="22"
+        class="task-card_org-logo"
+      />
+    </template>
+
+    <template v-else>
+      <div class="task-card_header">
+        <span class="task-card_state-badge" :class="`task-card_state-badge--${task.State || 'open'}`">
+          {{ stateLabel }}
+        </span>
+        <template v-if="task.Organization && !hideOrgLogo">
+          <AppOrgLogo
+            :src="task.Organization.LogoURL"
+            :alt="task.Organization.Title"
+            :title="task.Organization.Title"
+            :size="22"
+            class="task-card_org-logo"
+          />
+        </template>
+      </div>
+
+      <h3 class="hl3 task-card_title">{{ task.Title }}</h3>
+
+      <p v-if="task.Description" class="task-card_description">{{ truncatedDescription }}</p>
+
+      <TaskProgressBar v-if="task.SubTasks?.length" class="task-card_progress" :subtasks="task.SubTasks" :show-legend="false" />
+
+      <div class="task-card_footer">
+        <div class="task-card_meta">
+          <span v-if="task.DeadlineNice && task.State !== 'finished'" class="task-card_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
+            {{ task.DeadlineNice }}
+          </span>
+          <span v-if="task.SubTasks?.length" class="task-card_subtasks-count">
+            {{ task.SubTasks.length }} Unteraufgabe{{ task.SubTasks.length !== 1 ? 'n' : '' }}
+          </span>
+        </div>
+
+        <div class="task-card_avatars">
+          <AppAvatar
+            v-if="task.Owner"
+            :src="task.Owner.Avatar"
+            :alt="task.Owner.Name"
+            :title="task.Owner.Name"
+            img-class="task-card_avatar task-card_avatar--owner"
+            placeholder-class="task-card_avatar--owner task-card_avatar--placeholder"
+          />
+          <AppAvatar
+            v-for="s in task.Supporters?.slice(0, 3)"
+            :key="s.ID"
+            :src="s.Avatar"
+            :alt="s.Name"
+            :title="s.Name"
+            img-class="task-card_avatar"
+          />
+          <span v-if="(task.Supporters?.length ?? 0) > 3" class="task-card_avatar-overflow">
+            +{{ task.Supporters.length - 3 }}
+          </span>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import TaskProgressBar from '@components/tasks/TaskProgressBar.vue'
+import AppAvatar from '@components/ui/AppAvatar.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+
+const props = defineProps({
+  task: {
+    type: Object,
+    required: true
+  },
+  compact: {
+    type: Boolean,
+    default: false
+  },
+  // Hide the organization logo, e.g. when the user only belongs to one org
+  hideOrgLogo: {
+    type: Boolean,
+    default: false
+  }
+})
+
+defineEmits(['click'])
+
+const STATE_LABELS = {
+  open:        'Offen',
+  in_progress: 'In Bearbeitung',
+  feedback:    'Feedback',
+  finished:    'Abgeschlossen',
+}
+
+const stateLabel = computed(() => STATE_LABELS[props.task.State] || 'Offen')
+
+const truncatedDescription = computed(() => {
+  const desc = props.task.Description || ''
+  return desc.length > 120 ? desc.slice(0, 120) + '…' : desc
+})
+
+const isOverdue = computed(() => {
+  if (!props.task.Deadline || props.task.State === 'finished') return false
+  return new Date(props.task.Deadline) < new Date()
+})
+</script>

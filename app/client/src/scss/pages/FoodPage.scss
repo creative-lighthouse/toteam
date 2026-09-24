@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 // ── Food tab nav ──────────────────────────────────────────────────────────────
 
@@ -263,6 +263,7 @@
 
 .meal-detail-heading-actions {
     display: flex;
+    align-items: center;
     gap: 6px;
 }
 
@@ -367,15 +368,25 @@
 // ── MealDetail page ───────────────────────────────────────────────────────────
 
 .section--MealDetail {
+    // Hero und eigene Antwort über die volle Breite, darunter Gerichte und
+    // Teilnehmer nebeneinander. Auf kleinen Bildschirmen (Flex-Spalte) bleibt
+    // die DOM-Reihenfolge: Antwort → Teilnehmer → Gerichte.
     .section_content {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        flex-direction: column;
+        grid-template-areas:
+            "hero hero"
+            "rsvp rsvp"
+            "foods participants";
         gap: 10px;
 
-        .meal-detail-hero {
-            grid-column: 1 / 3;
-        }
+        .meal-detail-hero { grid-area: hero; }
+        .meal-rsvp { grid-area: rsvp; }
+        .participants-section { grid-area: participants; }
+        .meal-foods-section { grid-area: foods; }
+
+        // Ohne Teilnehmerliste nehmen die Gerichte die volle Breite ein
+        .meal-foods-section--full { grid-column: 1 / -1; }
 
         @include media(max-medium) {
             display: flex;
@@ -387,10 +398,6 @@
         padding: 20px;
         background-color: var(--ColorWhite);
         border-radius: var(--BorderRadiusMedium);
-    }
-
-    .section_infobox_footer {
-        margin-top: 20px;
     }
 }
 
@@ -473,27 +480,6 @@
 }
 
 // ── Meal products ─────────────────────────────────────────────────────────────
-
-.meal-product-add-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 12px;
-    padding: 12px;
-    background: var(--ColorVeryLightGray);
-    border-radius: var(--BorderRadiusSmall);
-
-    .form-control {
-        padding: 7px 10px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
-        font-size: 0.875rem;
-        width: 100%;
-        box-sizing: border-box;
-
-        &:focus { outline: 2px solid var(--ColorPrimary); border-color: transparent; }
-    }
-}
 
 .meal-product-add-row {
     display: flex;

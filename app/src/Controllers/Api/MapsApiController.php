@@ -183,7 +183,7 @@ class MapsApiController extends ApiController
             $orgs = Organization::get()->filter('ID', $managedOrgIDs ?: [0])->sort('Title ASC');
             $data = [];
             foreach ($orgs as $org) {
-                $data[] = ['id' => $org->ID, 'title' => $org->Title];
+                $data[] = ['id' => $org->ID, 'title' => $org->Title, 'logoUrl' => $org->RenderLogo(40)];
             }
 
             return $this->jsonResponse(['organizations' => $data]);
@@ -293,7 +293,7 @@ class MapsApiController extends ApiController
             }
 
             $validator = new Upload_Validator();
-            $validator->setAllowedExtensions(['jpg', 'jpeg', 'png', 'gif', 'webp']);
+            $validator->setAllowedExtensions(['jpg', 'jpeg', 'png', 'webp']);
             $validator->setAllowedMaxFileSize(10 * 1024 * 1024);
 
             $upload = new Upload();
@@ -495,7 +495,7 @@ class MapsApiController extends ApiController
             }
 
             $validator = new Upload_Validator();
-            $validator->setAllowedExtensions(['jpg', 'jpeg', 'png', 'gif', 'webp']);
+            $validator->setAllowedExtensions(['jpg', 'jpeg', 'png', 'webp']);
             $validator->setAllowedMaxFileSize(10 * 1024 * 1024);
 
             $upload = new Upload();

@@ -84,10 +84,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
-import QrCodeModal from '@components/QrCodeModal.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import AppAvatar from '@components/AppAvatar.vue'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
+import QrCodeModal from '@components/ui/QrCodeModal.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import AppAvatar from '@components/ui/AppAvatar.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 
 const route    = useRoute()
 const loading  = ref(true)

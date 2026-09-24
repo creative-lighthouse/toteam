@@ -16,6 +16,10 @@ export const useAuthStore = defineStore('auth', () => {
     return `${user.value.FirstName} ${user.value.Surname}`
   })
 
+  // Whether the user is an active member of more than one organization — used
+  // to hide redundant org logos. Defaults to true when unknown.
+  const hasMultipleOrganizations = computed(() => (user.value?.OrganizationCount ?? 2) > 1)
+
   // Whether a given Totem (feature module, e.g. 'calendar', 'food') is enabled
   // for the current user's organization(s). Defaults to visible when unknown.
   function hasTotem(totemKey) {
@@ -226,6 +230,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Getters
     currentUser,
     userName,
+    hasMultipleOrganizations,
     // Actions
     checkAuth,
     requestCode,

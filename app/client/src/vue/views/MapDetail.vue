@@ -55,7 +55,7 @@
                 </div>
               </div>
               <div class="map-controls_info">
-                <p v-if="map.shortText">{{ map.shortText }}</p>
+                <p v-if="map.shortText"><AppLinkifiedText :text="map.shortText" /></p>
               </div>
             </template>
 
@@ -74,7 +74,7 @@
                     id="bgImageUpload"
                     type="file"
                     class="layer-image-input"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     @change="onBgImageSelected"
                   />
                   <label for="bgImageUpload" class="button button--small">
@@ -176,7 +176,7 @@
                         :id="`li-${editLayer.id}`"
                         type="file"
                         class="layer-image-input"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         @change="onLayerImageSelected($event, editLayer.id, i)"
                       />
                       <label :for="`li-${editLayer.id}`" class="button button--small">
@@ -256,11 +256,12 @@ import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useRoomsStore } from '@stores/rooms'
-import RoomDetailModal from '@components/RoomDetailModal.vue'
+import RoomDetailModal from '@components/rooms/RoomDetailModal.vue'
+import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import { apiGet, apiPost, apiPostForm } from '@utils/api'
 import MapRenderer from '../../js/maprenderer.js'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
 
 const route = useRoute()
 const router = useRouter()

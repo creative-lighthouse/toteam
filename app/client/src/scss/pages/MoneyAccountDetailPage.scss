@@ -1,4 +1,4 @@
-@use "../variables" as *;
+@use "../base/variables" as *;
 
 .section.section--MoneyAccountDetailPage {
     padding-bottom: 80px; // room for floating action button
@@ -33,7 +33,6 @@
             color: var(--ColorPrimary);
         }
     }
-
 
     .money-detail_title {
         margin: 0 0 4px;
@@ -138,58 +137,97 @@
         margin: 0 0 8px;
     }
 
-    // ── Filter (Buchungsverlauf) ──────────────────────────────
-    .money-filter-bar {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-
-    .money-filter-row {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-
-        @include media(max-smartphone) {
-            .input {
-                flex: 1 1 auto;
-            }
-        }
-    }
-
-    .money-filter-search {
-        min-width: 160px;
-        flex: 1;
-    }
-
-    .money-filter-text {
-        font-size: 14px;
-        color: var(--ColorGray);
-    }
-
     .money-filter-reset {
         margin: 0;
     }
 
-    .input {
-        padding: 8px 12px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
-        font-size: 14px;
-        background-color: var(--ColorWhite);
-        height: 38px;
-        box-sizing: border-box;
+    // ── Budgets ──────────────────────────────────────────────
+    // Accordion: Kopfzeile (Titel + Gesamtbudget + Chevron) klappt die Liste auf
+    .money-budgets_toggle {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        padding: 4px 0;
+        margin: 0 0 8px;
+        border: none;
+        background: none;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
 
-        &:focus {
+        &:disabled {
+            cursor: default;
+        }
+
+        &:focus-visible {
             outline: 2px solid var(--ColorPrimary);
-            outline-offset: 1px;
-            border-color: transparent;
+            outline-offset: 2px;
+            border-radius: var(--BorderRadiusSmall);
         }
     }
 
-    // ── Budgets ──────────────────────────────────────────────
+    .money-budgets_title {
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    // Balken + Betrag in einer Zeile neben dem Titel
+    .money-budgets_total {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .money-budgets_progress {
+            flex: 1;
+            min-width: 40px;
+        }
+    }
+
+    // Chevron aus zwei Rahmenkanten (wie AppCollapse), dreht beim Öffnen nach oben
+    .money-budgets_chevron {
+        width: 8px;
+        height: 8px;
+        margin: 0 4px 0 auto;
+        border-right: 2px solid var(--ColorGray);
+        border-bottom: 2px solid var(--ColorGray);
+        transform: translateY(-2px) rotate(45deg);
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    // Höhe animieren ohne feste Maximalhöhe: Grid-Zeile von 0fr auf 1fr
+    .money-budgets_content {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.2s ease;
+    }
+
+    .money-budgets_inner {
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .money-budgets--open {
+        .money-budgets_chevron {
+            transform: translateY(2px) rotate(-135deg);
+        }
+
+        .money-budgets_content {
+            grid-template-rows: 1fr;
+        }
+
+        // Platz für die Schatten der Budget-Karten, die sonst abgeschnitten
+        // würden — nur offen, sonst schaut eingeklappt ein Streifen heraus
+        .money-budgets_inner {
+            padding: 2px;
+            margin: -2px;
+        }
+    }
+
     .money-budget-list {
         display: flex;
         flex-direction: column;

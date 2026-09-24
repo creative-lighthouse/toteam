@@ -43,7 +43,7 @@
               aria-label="Kasse löschen"
               @click="removeAccount"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              <span class="icon-mask" :style="trashIconStyle" />
             </AppIconButton>
           </div>
         </div>
@@ -76,35 +76,53 @@
         </section>
 
         <!-- Budgets -->
-        <section class="money-section">
-          <div class="money-section_heading-row">
-            <h3 class="hl3 money-section_title">Budgets</h3>
-            <AppButton v-if="account && (account.Permissions.canEnterDeposit || account.Permissions.canEnterWithdrawal)" title="Ausgabe/Einnahme erfassen" @click="openEntryModal(null)">+ Buchung</AppButton>
-          </div>
+        <section class="money-section money-budgets" :class="{ 'money-budgets--open': isBudgetsOpen, 'money-budgets--empty': !hasBudgets }">
+          <!-- Kopfzeile: Titel + Gesamtbudget-Leiste + Chevron, klappt die Liste auf/zu -->
+          <button
+            type="button"
+            class="money-budgets_toggle"
+            :aria-expanded="isBudgetsOpen"
+            aria-controls="money-budgets-content"
+            :disabled="!hasBudgets"
+            @click="budgetsOpen = !budgetsOpen"
+          >
+            <span class="hl3 money-section_title money-budgets_title">Budget</span>
+            <span v-if="totalBudget" class="money-budgets_total">
+              <MoneyBudgetProgress :budget="totalBudget" class="money-budgets_progress" />
+              <span class="money-budget_amount">
+                {{ formatCurrency(totalBudget.Spent) }} / {{ formatCurrency(totalBudget.Budget) }}
+              </span>
+            </span>
+            <span v-if="hasBudgets" class="money-budgets_chevron" aria-hidden="true"></span>
+          </button>
 
-          <div v-if="account.Budgets.length === 0" class="section_infobox"><p>Noch keine Budgets angelegt.</p></div>
+          <div id="money-budgets-content" class="money-budgets_content" :inert="!isBudgetsOpen">
+            <div class="money-budgets_inner">
+              <div v-if="account.Budgets.length === 0" class="section_infobox"><p>Noch keine Budgets angelegt.</p></div>
 
-          <div v-else class="money-budget-list">
-            <div
-              v-for="budget in account.Budgets"
-              :key="budget.ID"
-              class="money-budget"
-              role="button"
-              tabindex="0"
-              @click="openBudget(budget.ID)"
-              @keydown.enter.space.prevent="openBudget(budget.ID)"
-            >
-              <div class="money-budget_header">
-                <span class="money-budget_title">{{ budget.Title }}</span>
-                <span class="money-budget_amount">
-                  {{ formatCurrency(budget.Spent) }}<span v-if="budget.HasBudget"> / {{ formatCurrency(budget.Budget) }}</span>
-                </span>
+              <div v-else class="money-budget-list">
+                <div
+                  v-for="budget in account.Budgets"
+                  :key="budget.ID"
+                  class="money-budget"
+                  role="button"
+                  tabindex="0"
+                  @click="openBudget(budget.ID)"
+                  @keydown.enter.space.prevent="openBudget(budget.ID)"
+                >
+                  <div class="money-budget_header">
+                    <span class="money-budget_title">{{ budget.Title }}</span>
+                    <span class="money-budget_amount">
+                      {{ formatCurrency(budget.Spent) }}<span v-if="budget.HasBudget"> / {{ formatCurrency(budget.Budget) }}</span>
+                    </span>
+                  </div>
+                  <MoneyBudgetProgress :budget="budget" class="money-progress--budget" />
+                </div>
               </div>
-              <MoneyBudgetProgress :budget="budget" class="money-progress--budget" />
+              <div class="money-section_bottom-row">
+                <AppButton v-if="account.Permissions.canManageBudgets" size="small" variant="secondary" @click="openBudgetModal(null)">+ Budget</AppButton>
+              </div>
             </div>
-          </div>
-          <div class="money-section_bottom-row">
-            <AppButton v-if="account.Permissions.canManageBudgets" size="small" variant="secondary" @click="openBudgetModal(null)">+ Budget</AppButton>
           </div>
         </section>
 
@@ -112,37 +130,40 @@
         <section class="money-section">
           <h3 class="hl3 money-section_title">Buchungsverlauf</h3>
 
-          <div v-if="account.History.length > 0" class="money-filter-bar">
-            <div class="money-filter-row">
-              <input type="search" class="input money-filter-search" v-model="filters.search" placeholder="Nach Titel suchen…" aria-label="Suche nach Titel">
+          <AppSearchBar
+            v-if="canEnterEntries || account.History.length > 0"
+            v-model="filters.search"
+            placeholder="Nach Titel, Person oder Betrag suchen…"
+          >
+            <template v-if="canEnterEntries" #actions>
+              <AppButton variant="primary" title="Ausgabe/Einnahme erfassen" @click="openEntryModal(null)">+ Buchung</AppButton>
+            </template>
 
-              <select class="input" v-model="filters.userId" aria-label="Nutzer">
+            <template v-if="account.History.length > 0" #filters>
+              <select v-model="filters.userId" aria-label="Nutzer">
                 <option value="">Alle Nutzer</option>
                 <option v-for="u in historyUsers" :key="u.ID" :value="String(u.ID)">{{ u.Name }}</option>
               </select>
 
-              <select class="input" v-model="filters.budgetId" aria-label="Kategorie">
+              <select v-model="filters.budgetId" aria-label="Kategorie">
                 <option value="">Alle Budgets</option>
                 <option value="none">Ohne Budget</option>
                 <option v-for="b in account.Budgets" :key="b.ID" :value="String(b.ID)">{{ b.Title }}</option>
               </select>
 
-              <select class="input" v-model="filters.status" aria-label="Status">
+              <select v-model="filters.status" aria-label="Status">
                 <option value="">Alle Status</option>
                 <option value="approved">Freigegeben</option>
                 <option value="pending">Ausstehend</option>
               </select>
 
-              <AppButton v-if="hasActiveFilters" variant="secondary" size="small" class="money-filter-reset" @click="resetFilters">Filter zurücksetzen</AppButton>
-            </div>
-
-            <div class="money-filter-row">
-              <span class="money-filter-text">Reihenfolge</span>
-              <select class="input" v-model="sortOrder" aria-label="Reihenfolge">
-                <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              <select v-model="sortOrder" aria-label="Reihenfolge" title="Reihenfolge">
+                <option v-for="opt in SORT_OPTIONS" :key="opt.value" :value="opt.value">Sortiert nach {{ opt.label }}</option>
               </select>
-            </div>
-          </div>
+
+              <AppButton v-if="hasActiveFilters" variant="secondary" size="small" class="money-filter-reset" @click="resetFilters">Filter zurücksetzen</AppButton>
+            </template>
+          </AppSearchBar>
 
           <div v-if="account.History.length === 0" class="section_infobox"><p>Noch keine Buchungen erfasst.</p></div>
           <div v-else-if="filteredHistory.length === 0" class="section_infobox"><p>Keine Buchungen entsprechen den gewählten Filtern.</p></div>
@@ -218,17 +239,21 @@ import { useRoute, useRouter } from 'vue-router'
 import GLightbox from 'glightbox'
 import { useMoneyStore } from '@stores/money'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import MoneyEntryModal from '@components/MoneyEntryModal.vue'
-import MoneyAccountModal from '@components/MoneyAccountModal.vue'
-import MoneyBudgetModal from '@components/MoneyBudgetModal.vue'
-import MoneyEntryRow from '@components/MoneyEntryRow.vue'
-import MoneyBudgetProgress from '@components/MoneyBudgetProgress.vue'
-import MoneySettleModal from '@components/MoneySettleModal.vue'
-import AppButton from '@components/AppButton.vue'
-import AppIconButton from '@components/AppIconButton.vue'
-import HistoryModal from '@components/HistoryModal.vue'
+import MoneyEntryModal from '@components/money/MoneyEntryModal.vue'
+import MoneyAccountModal from '@components/money/MoneyAccountModal.vue'
+import MoneyBudgetModal from '@components/money/MoneyBudgetModal.vue'
+import MoneyEntryRow from '@components/money/MoneyEntryRow.vue'
+import MoneyBudgetProgress from '@components/money/MoneyBudgetProgress.vue'
+import MoneySettleModal from '@components/money/MoneySettleModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import AppSearchBar from '@components/ui/AppSearchBar.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
-import AppOrgLogo from '@components/AppOrgLogo.vue'
+import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import actionTrash from '../../../icons/actions/action_trash.svg'
+
+const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 
 const route = useRoute()
 const router = useRouter()
@@ -239,6 +264,31 @@ pageHeaderStore.setHeader('Kasse')
 
 const loading = computed(() => store.loading)
 const account = computed(() => store.currentAccount)
+
+// Budgets-Accordion: standardmäßig eingeklappt. Ohne Budgets immer offen, damit
+// der Hinweis und "+ Budget" sichtbar bleiben.
+const budgetsOpen = ref(false)
+const hasBudgets = computed(() => (account.value?.Budgets?.length ?? 0) > 0)
+const isBudgetsOpen = computed(() => budgetsOpen.value || !hasBudgets.value)
+
+// Summe aller Budgets mit festgelegtem Limit, im selben Format wie ein einzelnes
+// Budget — damit MoneyBudgetProgress die Gesamtleiste genauso darstellt.
+// Budgets ohne Limit (HasBudget: false) zählen nicht mit, sonst liefe die
+// Gesamtleiste durch deren Ausgaben scheinbar über.
+const totalBudget = computed(() => {
+  const limited = (account.value?.Budgets || []).filter(b => b.HasBudget)
+  if (!limited.length) return null
+  const sum = key => limited.reduce((acc, b) => acc + (Number(b[key]) || 0), 0)
+  const budget = sum('Budget')
+  const spent = sum('Spent')
+  return {
+    HasBudget: true,
+    Budget: budget,
+    Spent: spent,
+    PendingAmount: sum('PendingAmount'),
+    Remaining: budget - spent,
+  }
+})
 
 const entryModal = ref(null)
 const accountModal = ref(null)
@@ -259,6 +309,10 @@ const filters = reactive({
   budgetId: '',
   status: '',
 })
+
+const canEnterEntries = computed(() =>
+  !!account.value && (account.value.Permissions.canEnterDeposit || account.value.Permissions.canEnterWithdrawal)
+)
 
 const hasActiveFilters = computed(() => Object.values(filters).some(v => v !== ''))
 
@@ -286,10 +340,40 @@ const historyUsers = computed(() => {
     .sort((a, b) => a.Name.localeCompare(b.Name))
 })
 
+// Betrag in den gängigen Schreibweisen, damit z. B. "12,5", "12,50", "12.50"
+// und "1.234,50" alle dieselbe Buchung finden
+function amountVariants(amount) {
+  const value = Math.abs(Number(amount) || 0)
+  const fixed = value.toFixed(2)
+  return [
+    new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value),
+    fixed.replace('.', ','),
+    fixed,
+    String(value),
+    String(value).replace('.', ','),
+  ]
+}
+
+// Suche über Titel, Person und Betrag. Enthält die Eingabe nur Ziffern/Trenner
+// (optional mit €/Vorzeichen), wird zusätzlich der Betrag verglichen.
+function matchesSearch(entry, search) {
+  const q = search.trim().toLowerCase()
+  if (!q) return true
+
+  if (entry.ChangeReason?.toLowerCase().includes(q)) return true
+  if (entry.User?.Name?.toLowerCase().includes(q)) return true
+
+  const amountQuery = q.replace(/[€\s+-]/g, '')
+  if (/^[\d.,]+$/.test(amountQuery)) {
+    return amountVariants(entry.ChangeAmount).some(v => v.includes(amountQuery))
+  }
+  return false
+}
+
 const filteredHistory = computed(() => {
   const history = account.value?.History ?? []
   const filtered = history.filter(entry => {
-    if (filters.search && !entry.ChangeReason.toLowerCase().includes(filters.search.toLowerCase())) return false
+    if (filters.search && !matchesSearch(entry, filters.search)) return false
     if (filters.userId && String(entry.User?.ID) !== filters.userId) return false
     if (filters.budgetId === 'none' && entry.Budget) return false
     if (filters.budgetId && filters.budgetId !== 'none' && String(entry.Budget?.ID) !== filters.budgetId) return false

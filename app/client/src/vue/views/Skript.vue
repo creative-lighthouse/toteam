@@ -47,8 +47,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSkriptStore } from '@stores/skript'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import AppButton from '@components/AppButton.vue'
-import ScriptCreateModal from '@components/ScriptCreateModal.vue'
+import AppButton from '@components/ui/AppButton.vue'
+import ScriptCreateModal from '@components/skript/ScriptCreateModal.vue'
 
 const router = useRouter()
 const store = useSkriptStore()

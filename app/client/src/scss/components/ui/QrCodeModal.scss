@@ -1,0 +1,23 @@
+@use "../../base/variables" as *;
+
+// QR-Code modal
+.qrcode-modal {
+    max-width: 320px;
+
+    .app-modal_body {
+        align-items: center;
+    }
+
+    .qrcode-modal_canvas {
+        border-radius: var(--BorderRadiusSmall);
+        display: block;
+    }
+
+    .qrcode-modal_url {
+        font-size: 12px;
+        color: var(--ColorGray);
+        word-break: break-all;
+        text-align: center;
+        margin: 0;
+    }
+}
