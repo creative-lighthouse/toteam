@@ -264,8 +264,15 @@ class AuthApiController extends ApiController
             return $this->errorResponse('Keine aktive Sitzung.', 401);
         }
 
-        $session = LoginSession::get()->filter('RefreshTokenHash', LoginSession::hashToken($token))->first();
-        if (!$session || !$session->isValid()) {
+        [$session, $isPreviousToken] = LoginSession::findByToken($token);
+        if (!$session) {
+            // Cookie hier bewusst NICHT löschen: kam die Anfrage aus einem Tab mit
+            // veraltetem Token, hat der Browser womöglich schon ein neueres, gültiges
+            // gespeichert — ein Löschen würde dann alle Tabs ausloggen.
+            return $this->errorResponse('Sitzung abgelaufen oder widerrufen.', 401);
+        }
+
+        if (!$session->isValid()) {
             Cookie::force_expiry(self::REFRESH_COOKIE, '/');
             return $this->errorResponse('Sitzung abgelaufen oder widerrufen.', 401);
         }
@@ -276,8 +283,11 @@ class AuthApiController extends ApiController
             return $this->errorResponse('Sitzung abgelaufen oder widerrufen.', 401);
         }
 
-        $newToken = $session->rotate();
-        $this->setRefreshCookie($newToken);
+        // Ein anderer Tab hat gerade erst rotiert: nur ein Access-Token ausgeben und den
+        // Cookie nicht anfassen — der Browser hat das neue Token bereits von dort erhalten
+        if (!$isPreviousToken) {
+            $this->setRefreshCookie($session->rotate());
+        }
 
         return $this->jsonResponse([
             'success' => true,
@@ -295,11 +305,8 @@ class AuthApiController extends ApiController
             return $this->errorResponse('Method not allowed', 405);
         }
 
-        $token = Cookie::get(self::REFRESH_COOKIE);
-        if ($token) {
-            $session = LoginSession::get()->filter('RefreshTokenHash', LoginSession::hashToken($token))->first();
-            $session?->revoke();
-        }
+        [$session] = LoginSession::findByToken(Cookie::get(self::REFRESH_COOKIE));
+        $session?->revoke();
         Cookie::force_expiry(self::REFRESH_COOKIE, '/');
 
         return $this->successResponse([], 'Abgemeldet.');
@@ -315,8 +322,7 @@ class AuthApiController extends ApiController
             return $this->errorResponse('Unauthorized', 401);
         }
 
-        $currentToken = Cookie::get(self::REFRESH_COOKIE);
-        $currentHash = $currentToken ? LoginSession::hashToken($currentToken) : null;
+        [$currentSession] = LoginSession::findByToken(Cookie::get(self::REFRESH_COOKIE));
 
         $sessions = [];
         foreach (LoginSession::get()->filter(['MemberID' => $member->ID, 'RevokedAt' => null]) as $session) {
@@ -328,7 +334,7 @@ class AuthApiController extends ApiController
                 'DeviceLabel' => $session->DeviceLabel,
                 'IPAddress'   => $session->IPAddress,
                 'LastUsedAt'  => $session->LastUsedAt,
-                'IsCurrent'   => $currentHash !== null && $session->RefreshTokenHash === $currentHash,
+                'IsCurrent'   => $currentSession !== null && (int) $currentSession->ID === (int) $session->ID,
             ];
         }
 

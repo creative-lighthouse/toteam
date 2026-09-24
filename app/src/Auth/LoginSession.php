@@ -25,12 +25,23 @@ class LoginSession extends DataObject
 {
     private const REFRESH_TOKEN_TTL_DAYS = 60;
 
+    /**
+     * So lange nach einer Rotation wird das vorherige Refresh-Token noch akzeptiert.
+     * Alle Tabs teilen sich denselben Cookie: refreshen zwei Tabs (fast) gleichzeitig,
+     * schickt der zweite noch das alte Token mit — ohne Karenzzeit würde er abgewiesen
+     * und die Sitzung wirkte in allen Tabs ausgeloggt.
+     */
+    public const ROTATION_GRACE_SECONDS = 120;
+
     private static $table_name = 'LoginSession';
     private static $singular_name = 'Login-Sitzung';
     private static $plural_name = 'Login-Sitzungen';
 
     private static $db = [
         'RefreshTokenHash' => 'Varchar(255)',
+        // Vorheriges Token nach einer Rotation — bleibt für ROTATION_GRACE_SECONDS gültig
+        'PreviousTokenHash' => 'Varchar(255)',
+        'RotatedAt'        => 'Datetime',
         'DeviceLabel'      => 'Varchar(255)',
         'UserAgent'        => 'Varchar(255)',
         'IPAddress'        => 'Varchar(64)',
@@ -45,6 +56,7 @@ class LoginSession extends DataObject
 
     private static $indexes = [
         'RefreshTokenHash' => true,
+        'PreviousTokenHash' => true,
     ];
 
     private static $default_sort = 'LastUsedAt DESC';
@@ -85,6 +97,8 @@ class LoginSession extends DataObject
         $token = bin2hex(random_bytes(32));
         $now = new \DateTime();
 
+        $this->PreviousTokenHash = $this->RefreshTokenHash;
+        $this->RotatedAt = $now->format('Y-m-d H:i:s');
         $this->RefreshTokenHash = static::hashToken($token);
         $this->LastUsedAt = $now->format('Y-m-d H:i:s');
         $this->ExpiresAt = (clone $now)->modify('+' . self::REFRESH_TOKEN_TTL_DAYS . ' days')->format('Y-m-d H:i:s');
@@ -94,16 +108,39 @@ class LoginSession extends DataObject
     }
 
     /**
+     * Sucht die Sitzung zu einem Refresh-Token — das aktuelle oder, innerhalb der
+     * Karenzzeit nach einer Rotation, das vorherige.
+     *
+     * @return array{0: ?LoginSession, 1: bool} [Sitzung, ob es das vorherige Token war]
+     */
+    public static function findByToken(?string $token): array
+    {
+        if (!$token) {
+            return [null, false];
+        }
+
+        $hash = static::hashToken($token);
+        $session = static::get()->filter('RefreshTokenHash', $hash)->first();
+        if ($session) {
+            return [$session, false];
+        }
+
+        $session = static::get()->filter('PreviousTokenHash', $hash)->first();
+        if ($session && $session->RotatedAt
+            && time() - strtotime((string) $session->RotatedAt) <= self::ROTATION_GRACE_SECONDS) {
+            return [$session, true];
+        }
+
+        return [null, false];
+    }
+
+    /**
      * Das Mitglied zu einem Refresh-Token, sofern die Sitzung noch gültig ist.
      * Rotiert das Token nicht — nur zum Prüfen, ob jemand eingeloggt ist.
      */
     public static function findMemberByToken(?string $token): ?Member
     {
-        if (!$token) {
-            return null;
-        }
-
-        $session = static::get()->filter('RefreshTokenHash', static::hashToken($token))->first();
+        [$session] = static::findByToken($token);
         if (!$session || !$session->isValid()) {
             return null;
         }

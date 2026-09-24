@@ -45,11 +45,11 @@ function authHeaders(extra = {}) {
  * (e.g. no session, or it was revoked).
  */
 let refreshPromise = null
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   // Coalesce concurrent refresh attempts (e.g. several requests hitting 401
   // at once) into a single network call.
   if (!refreshPromise) {
-    refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
+    const doRefresh = () => fetch(`${API_BASE}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
@@ -64,7 +64,16 @@ async function refreshAccessToken() {
         return null
       })
       .catch(() => null)
-      .finally(() => { refreshPromise = null })
+
+    // All tabs share the same (rotating) refresh cookie. The Web Lock makes
+    // tabs refresh one after another, so each one sends the cookie the previous
+    // tab just received instead of an already-rotated one (the backend
+    // additionally tolerates the previous token for a short grace period).
+    const locked = navigator.locks?.request
+      ? navigator.locks.request('toteam-auth-refresh', doRefresh)
+      : doRefresh()
+
+    refreshPromise = locked.finally(() => { refreshPromise = null })
   }
   return refreshPromise
 }
