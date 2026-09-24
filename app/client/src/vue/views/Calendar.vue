@@ -138,7 +138,6 @@
                 @close="closePollDialog"
                 @edit-poll="onEditPoll"
                 @finalized="onPollFinalized"
-                @deleted="onPollDeleted"
             />
 
             <!-- Add Appointment Modal -->
@@ -515,11 +514,6 @@ function onEditPoll(event) {
 }
 
 async function onPollFinalized() {
-  closePollDialog()
-  await refreshEvents()
-}
-
-async function onPollDeleted() {
   closePollDialog()
   await refreshEvents()
 }

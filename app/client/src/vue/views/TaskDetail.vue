@@ -58,7 +58,7 @@
 
             <!-- Delete button -->
             <AppIconButton v-if="task.CanDelete" variant="danger" aria-label="Aufgabe löschen" title="Aufgabe löschen" @click="deleteModal?.open()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <span class="icon-mask" :style="trashIconStyle" />
             </AppIconButton>
           </div>
         </div>
@@ -230,10 +230,12 @@ import HistoryModal from '@components/history/HistoryModal.vue'
 import actionAddRoom from '../../../icons/actions/action_addroom.svg'
 import actionAddTask from '../../../icons/actions/action_addtask.svg'
 import actionHistory from '../../../icons/actions/action_history.svg'
+import actionTrash from '../../../icons/actions/action_trash.svg'
 
 const addRoomIconStyle = { maskImage: `url("${actionAddRoom}")`, WebkitMaskImage: `url("${actionAddRoom}")` }
 const addTaskIconStyle = { maskImage: `url("${actionAddTask}")`, WebkitMaskImage: `url("${actionAddTask}")` }
 const historyIconStyle = { maskImage: `url("${actionHistory}")`, WebkitMaskImage: `url("${actionHistory}")` }
+const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 
 const route = useRoute()
 const router = useRouter()

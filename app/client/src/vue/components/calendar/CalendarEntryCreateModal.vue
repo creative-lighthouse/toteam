@@ -139,7 +139,7 @@
                                 :disabled="poll.options.length <= 2"
                                 @click="removePollOption(index)"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                <span class="icon-mask" :style="trashIconStyle" />
                             </AppIconButton>
                         </div>
                     </div>
@@ -155,37 +155,52 @@
 
     <template #actions>
       <template v-if="activeTab === 'absence'">
+        <AppIconButton
+          v-if="editMode === 'absence'"
+          variant="danger"
+          class="calendar-entry-create-modal_delete"
+          aria-label="Abwesenheit löschen"
+          title="Löschen"
+          :disabled="absenceSubmitting"
+          @click="deleteAbsence"
+        >
+          <span class="icon-mask" :style="trashIconStyle" />
+        </AppIconButton>
         <AppButton type="submit" form="absence-form" variant="primary" :disabled="absenceSubmitting">
           {{ absenceSubmitting ? 'Wird gespeichert…' : (editMode === 'absence' ? 'Speichern' : 'Abwesenheit eintragen') }}
         </AppButton>
-        <AppButton
-          v-if="editMode === 'absence'"
-          variant="danger"
-          :disabled="absenceSubmitting"
-          @click="deleteAbsence"
-        >Löschen</AppButton>
       </template>
       <template v-else-if="activeTab === 'appointment' && canManageContent">
+        <AppIconButton
+          v-if="editMode === 'appointment'"
+          variant="danger"
+          class="calendar-entry-create-modal_delete"
+          aria-label="Termin löschen"
+          title="Löschen"
+          :disabled="apptSubmitting"
+          @click="deleteAppointment"
+        >
+          <span class="icon-mask" :style="trashIconStyle" />
+        </AppIconButton>
         <AppButton type="submit" form="appointment-form" variant="primary" :disabled="apptSubmitting">
           {{ apptSubmitting ? 'Wird gespeichert…' : (editMode === 'appointment' ? 'Speichern' : 'Termin erstellen') }}
         </AppButton>
-        <AppButton
-          v-if="editMode === 'appointment'"
-          variant="danger"
-          :disabled="apptSubmitting"
-          @click="deleteAppointment"
-        >Löschen</AppButton>
       </template>
       <template v-else-if="activeTab === 'poll' && canManageContent">
+        <AppIconButton
+          v-if="editMode === 'poll'"
+          variant="danger"
+          class="calendar-entry-create-modal_delete"
+          aria-label="Terminfindung löschen"
+          title="Löschen"
+          :disabled="pollSubmitting"
+          @click="deletePoll"
+        >
+          <span class="icon-mask" :style="trashIconStyle" />
+        </AppIconButton>
         <AppButton type="submit" form="poll-form" variant="primary" :disabled="pollSubmitting">
           {{ pollSubmitting ? 'Wird gespeichert…' : (editMode === 'poll' ? 'Speichern' : 'Terminfindung erstellen') }}
         </AppButton>
-        <AppButton
-          v-if="editMode === 'poll'"
-          variant="danger"
-          :disabled="pollSubmitting"
-          @click="deletePoll"
-        >Löschen</AppButton>
       </template>
     </template>
   </AppModal>
@@ -202,6 +217,9 @@ import AppModal from '@components/ui/AppModal.vue'
 import InviteePicker from '@components/ui/InviteePicker.vue'
 import DateTimeRangeField from '@components/ui/DateTimeRangeField.vue'
 import AppToggle from '@components/ui/AppToggle.vue'
+import actionTrash from '../../../../icons/actions/action_trash.svg'
+
+const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 
 const emit = defineEmits([
   'appointment-created', 'absence-created', 'poll-created',

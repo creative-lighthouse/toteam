@@ -566,28 +566,12 @@
                         }
                     }
 
-                    .poll-option_counts {
-                        display: flex;
-                        gap: 8px;
-                        font-size: 13px;
-                        font-weight: 600;
+                    // Neben Datum/Uhrzeit; bricht auf schmalen Displays in eine eigene Zeile um
+                    .poll-option_vote {
+                        flex: 1 1 320px;
+                        width: auto;
+                        max-width: 420px;
                     }
-
-                    .poll-count--yes { color: var(--ColorStatusGood); }
-                    .poll-count--maybe { color: var(--ColorStatusWarning); }
-                    .poll-count--no { color: var(--ColorStatusBad); }
-                }
-
-                .poll-option_toggle-participants {
-                    align-self: center;
-                    background: none;
-                    border: none;
-                    color: var(--ColorPrimary);
-                    font-size: 13px;
-                    cursor: pointer;
-                    padding: 4px 0;
-
-                    &:hover { text-decoration: underline; }
                 }
 
                 .poll-option_participants {

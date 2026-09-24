@@ -25,14 +25,6 @@
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </AppIconButton>
-            <AppIconButton
-              variant="danger"
-              :disabled="finalizing"
-              aria-label="Terminfindung löschen"
-              @click="deletePoll"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            </AppIconButton>
           </div>
 
           <div v-if="event.Location || event.Description" class="event-info">
@@ -60,34 +52,31 @@
                   <strong>{{ option.RenderDate }}</strong>
                   <span class="poll-option_time">{{ option.RenderTime }}</span>
                 </div>
-                <div class="poll-option_counts">
-                  <span class="poll-count poll-count--yes">✓ {{ option.VotedYes }}</span>
-                  <span class="poll-count poll-count--maybe">? {{ option.VotedMaybe }}</span>
-                  <span class="poll-count poll-count--no">✗ {{ option.VotedNo }}</span>
-                </div>
-              </div>
-
-              <AppButtonGroup
-                :options="participationOptions"
-                :model-value="option.UserVote"
-                :disabled="votingOptionId === option.OptionID"
-                @select="(type) => vote(option, type)"
-              />
-
-              <button
-                type="button"
-                class="poll-option_toggle-participants"
-                @click="toggleExpanded(option.OptionID)"
-              >{{ expandedOptionId === option.OptionID ? 'Teilnehmer ausblenden' : 'Teilnehmer anzeigen' }}</button>
-
-              <div v-if="expandedOptionId === option.OptionID" class="poll-option_participants">
-                <ParticipantCard
-                  v-for="p in option.Participations"
-                  :key="p.ID"
-                  :participation="p"
+                <!-- Abstimmung inkl. Anzahl je Antwort, z.B. "Zusagen (3)" -->
+                <AppButtonGroup
+                  :options="participationOptionsFor(option)"
+                  :model-value="option.UserVote"
+                  :disabled="votingOptionId === option.OptionID"
+                  size="compact"
+                  class="poll-option_vote"
+                  @select="(type) => vote(option, type)"
                 />
-                <p v-if="!option.Participations?.length" class="event-section-empty">Noch keine Antworten.</p>
               </div>
+
+              <AppCollapse
+                title="Teilnehmer"
+                :subtitle="`(${option.Participations?.length ?? 0})`"
+                class="poll-option_participants-collapse"
+              >
+                <div class="poll-option_participants">
+                  <ParticipantCard
+                    v-for="p in option.Participations"
+                    :key="p.ID"
+                    :participation="p"
+                  />
+                  <p v-if="!option.Participations?.length" class="event-section-empty">Noch keine Antworten.</p>
+                </div>
+              </AppCollapse>
 
               <div v-if="canManageContent" class="poll-option_finalize">
                 <AppButton
@@ -121,6 +110,7 @@ import AppModal from '@components/ui/AppModal.vue'
 import AppButtonGroup from '@components/ui/AppButtonGroup.vue'
 import ParticipantCard from '@components/calendar/ParticipantCard.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import AppCollapse from '@components/ui/AppCollapse.vue'
 import ScheduleIcon from '../../../../icons/actions/action_schedule.svg'
 
 const scheduleIconStyle = {
@@ -132,7 +122,7 @@ const props = defineProps({
   event: { type: Object, required: true }
 })
 
-const emit = defineEmits(['close', 'edit-poll', 'finalized', 'deleted'])
+const emit = defineEmits(['close', 'edit-poll', 'finalized'])
 
 const orgsStore = useOrganizationsStore()
 const eventsStore = useEventsStore()
@@ -140,13 +130,18 @@ const modal = ref(null)
 const statusMessage = ref(null)
 const votingOptionId = ref(null)
 const finalizing = ref(false)
-const expandedOptionId = ref(null)
 
-const participationOptions = [
-  { value: 'Decline', label: 'Absagen', tone: 'negative' },
-  { value: 'Maybe', label: 'Vielleicht', tone: 'warning' },
-  { value: 'Accept', label: 'Zusagen', tone: 'positive' },
-]
+// Anzahl direkt aus den Participations zählen statt aus VotedYes/-Maybe/-No:
+// die Participations aktualisiert der Store nach dem Abstimmen sofort, die
+// Zähler vom Server erst beim nächsten Laden
+function participationOptionsFor(option) {
+  const count = type => (option.Participations || []).filter(p => p.Type === type).length
+  return [
+    { value: 'Decline', label: `Absagen (${count('Decline')})`, tone: 'negative' },
+    { value: 'Maybe', label: `Vielleicht (${count('Maybe')})`, tone: 'warning' },
+    { value: 'Accept', label: `Zusagen (${count('Accept')})`, tone: 'positive' },
+  ]
+}
 
 const canManageContent = computed(() => {
   const orgIds = props.event.OrganizationIDs ?? []
@@ -168,9 +163,6 @@ function showStatusMessage(text, type = 'success') {
   setTimeout(() => { statusMessage.value = null }, 3000)
 }
 
-function toggleExpanded(optionId) {
-  expandedOptionId.value = expandedOptionId.value === optionId ? null : optionId
-}
 
 async function vote(option, type) {
   votingOptionId.value = option.OptionID
@@ -192,18 +184,6 @@ async function finalize(option) {
   } catch (err) {
     showStatusMessage(err.message || 'Fehler beim Festlegen', 'error')
   } finally {
-    finalizing.value = false
-  }
-}
-
-async function deletePoll() {
-  if (!confirm('Terminfindung wirklich löschen?')) return
-  finalizing.value = true
-  try {
-    await eventsStore.deleteSchedulingPoll(props.event.PollID)
-    emit('deleted')
-  } catch (err) {
-    showStatusMessage(err.message || 'Fehler beim Löschen', 'error')
     finalizing.value = false
   }
 }

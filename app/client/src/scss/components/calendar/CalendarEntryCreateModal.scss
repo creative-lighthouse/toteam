@@ -4,6 +4,12 @@
 // base/forms.scss — only content-specific widgets that aren't
 // part of that generic system live here.
 .calendar-entry-create-modal {
+    // Löschen-Icon links, Speichern bleibt rechts (Actions sind flex-end)
+    .calendar-entry-create-modal_delete {
+        margin-right: auto;
+        align-self: center;
+    }
+
     .dialog-infobox {
         .invited-members-loading {
             font-size: 0.85rem;
