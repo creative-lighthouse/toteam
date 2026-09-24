@@ -54,23 +54,17 @@
         <textarea id="entry-notes" v-model="form.Notes" rows="3" placeholder="Weitere Details zu dieser Buchung…"></textarea>
       </label>
 
-      <div class="field">
-        <label>
-          Beleg{{ requiresReceipt && !existingReceiptURL ? ' *' : '' }}
-        </label>
-        <label class="button button--secondary money-entry-modal_file-label">
-          {{ receiptFile || existingReceiptURL ? 'Anderen Beleg wählen' : 'Beleg fotografieren / auswählen' }}
-          <input
-            type="file"
-            accept="image/*,application/pdf"
-            class="file-input-hidden"
-            @change="onFileSelected"
-          />
-        </label>
-        <img v-if="receiptPreview" :src="receiptPreview" alt="Beleg-Vorschau" class="money-entry-modal_preview" />
-        <p v-else-if="receiptFile" class="money-entry-modal_filename">{{ receiptFile.name }}</p>
-        <p v-else-if="existingReceiptURL" class="money-entry-modal_filename">Aktueller Beleg bleibt erhalten, falls kein neuer gewählt wird.</p>
-      </div>
+      <AppFileUpload
+        v-model="receiptFile"
+        label="Beleg"
+        :required="requiresReceipt && !existingReceiptURL"
+        :accept="RECEIPT_TYPES.join(',')"
+        :max-size="RECEIPT_MAX_SIZE"
+        button-label="Beleg fotografieren / auswählen"
+        change-label="Anderen Beleg wählen"
+        hint="JPG, PNG oder PDF, max. 5 MB"
+        :existing-hint="existingReceiptURL ? 'Aktueller Beleg bleibt erhalten, falls kein neuer gewählt wird.' : ''"
+      />
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -90,6 +84,7 @@ import { useMoneyStore } from '@stores/money'
 import { useAuthStore } from '@stores/auth'
 import AppButton from '@components/AppButton.vue'
 import AppModal from '@components/AppModal.vue'
+import AppFileUpload from '@components/AppFileUpload.vue'
 
 const props = defineProps({
   accountId: { type: Number, required: true },
@@ -141,8 +136,11 @@ const modal = ref(null)
 const saving = ref(false)
 const error = ref(null)
 const receiptFile = ref(null)
-const receiptPreview = ref(null)
 const existingReceiptURL = ref(null)
+
+// Deckt sich mit RECEIPT_ALLOWED_MIMES / RECEIPT_MAX_SIZE in MoneyApiController
+const RECEIPT_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
+const RECEIPT_MAX_SIZE = 5 * 1024 * 1024
 
 // Deckt sich mit MAX_AMOUNT in MoneyApiController — Feedback direkt im Formular statt
 // erst nach einem fehlschlagenden Server-Roundtrip.
@@ -219,29 +217,8 @@ function formatCurrency(value) {
 }
 
 function resetFile() {
-  if (receiptPreview.value) URL.revokeObjectURL(receiptPreview.value)
   receiptFile.value = null
-  receiptPreview.value = null
   existingReceiptURL.value = null
-}
-
-function onFileSelected(e) {
-  const file = e.target.files[0]
-  if (!file) return
-
-  if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
-    error.value = 'Nur PNG, JPEG und PDF sind erlaubt.'
-    return
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    error.value = 'Die Datei darf maximal 5 MB groß sein.'
-    return
-  }
-
-  error.value = null
-  if (receiptPreview.value) URL.revokeObjectURL(receiptPreview.value)
-  receiptFile.value = file
-  receiptPreview.value = file.type === 'application/pdf' ? null : URL.createObjectURL(file)
 }
 
 async function submit() {

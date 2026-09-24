@@ -87,34 +87,3 @@
     }
 }
 
-// ── Beleg-Upload (nur money-entry-modal) ────────────────────
-.money-entry-modal {
-    .file-input-hidden {
-        position: absolute;
-        opacity: 0;
-        width: 0;
-        height: 0;
-        overflow: hidden;
-    }
-
-    &_file-label {
-        display: inline-block;
-        text-align: center;
-        cursor: pointer;
-        margin: 0;
-    }
-
-    &_preview {
-        margin-top: 8px;
-        max-width: 200px;
-        max-height: 200px;
-        border-radius: var(--BorderRadiusSmall);
-        object-fit: contain;
-    }
-
-    &_filename {
-        margin: 8px 0 0;
-        font-size: 13px;
-        color: var(--ColorGray);
-    }
-}

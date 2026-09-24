@@ -5,7 +5,6 @@
 @use "fonts.scss";
 @use "normalize.scss";
 @use "typography.scss";
-@use "forms.scss";
 @use "components/forminputs.scss";
 @use "components/buttons.scss";
 @use "components/apporglogo.scss";
@@ -60,6 +59,10 @@
 @use "components/eventmealmodal.scss";
 @use "components/mealeditmodal.scss";
 @use "components/suggestfoodmodal.scss";
+@use "components/mealfoodcreatemodal.scss";
+@use "components/appfileupload.scss";
+@use "components/appcollapse.scss";
+@use "components/mapcreatemodal.scss";
 @use "components/addappointmentmodal.scss";
 @use "components/pwainstallbanner.scss";
 @use "components/taskcard.scss";

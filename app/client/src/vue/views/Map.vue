@@ -12,8 +12,10 @@
 
       <template v-else>
         <div v-if="canManageAny" class="map-list_actions">
-          <AppButton to="/map/new" variant="primary">+ Neuen Lageplan erstellen</AppButton>
-          <AppButton to="/rooms" variant="secondary">Räume verwalten</AppButton>
+          <AppButton variant="primary" @click="createModal?.open()">+ Neuen Lageplan erstellen</AppButton>
+          <AppIconButton to="/rooms" variant="neutral" aria-label="Räume verwalten" title="Räume verwalten">
+            <span class="icon-mask" :style="roomIconStyle" />
+          </AppIconButton>
         </div>
 
         <ul v-if="maps.length" class="map-list">
@@ -43,15 +45,25 @@
         </div>
       </template>
     </div>
+
+    <MapCreateModal ref="createModal" @created="onMapCreated" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet } from '@utils/api'
 import AppButton from '@components/AppButton.vue'
+import AppIconButton from '@components/AppIconButton.vue'
 import AppOrgLogo from '@components/AppOrgLogo.vue'
+import MapCreateModal from '@components/MapCreateModal.vue'
+import actionRoom from '../../../icons/actions/action_room.svg'
+
+const router = useRouter()
+const createModal = ref(null)
+const roomIconStyle = { maskImage: `url("${actionRoom}")`, WebkitMaskImage: `url("${actionRoom}")` }
 
 usePageHeaderStore().setHeader('Lagepläne', 'Finde Orte und POIs auf der Karte.')
 
@@ -72,6 +84,10 @@ async function loadMaps() {
   } finally {
     loading.value = false
   }
+}
+
+function onMapCreated(mapId) {
+  router.push(`/map/${mapId}`)
 }
 
 onMounted(loadMaps)

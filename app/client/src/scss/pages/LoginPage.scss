@@ -10,9 +10,17 @@ section.section--LoginPage {
             width: 100%;
 
             .login-form {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
                 max-width: 400px;
                 width: 100%;
                 margin: 0 auto;
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-radius: var(--BorderRadiusMedium);
+                background-color: #f9f9f9;
+                box-shadow: var(--BoxShadowLight);
 
                 .error-message {
                     padding: 1rem;

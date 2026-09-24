@@ -12,13 +12,6 @@ dialog{
     background-color: var(--ColorLightGray);
     overflow-y: scroll;
 
-    form{
-        padding: 0;
-        border: none;
-        box-shadow: none;
-        background-color: transparent;
-    }
-
     .dialog-header{
         display: flex;
         flex-direction: column;

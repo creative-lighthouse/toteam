@@ -2,8 +2,16 @@
 
 .section.section--MapPage {
     .section_content {
+        .map-list_actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
         .map-list {
             display: grid;
+            gap: 20px;
             list-style: none;
             margin: 0;
             padding: 0;
@@ -72,3 +80,4 @@
         }
     }
 }
+

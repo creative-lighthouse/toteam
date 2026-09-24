@@ -59,30 +59,14 @@ textarea.input {
 // all 6 columns by default and styles its own `label`/`input`/`select`/
 // `textarea` directly, so no extra `.form-label`/`.input` classes are needed
 // inside it. Add `.field--2`/`.field--3`/`.field--4` to let 3/2/1.5 fields
-// share a row. Named `.modalform` (not `.form`) so it stays clearly distinct
-// from the plain `form { ... }` element styling in forms.scss (the login-page
-// "card" look) instead of fighting it for the same name.
+// share a row.
 .modalform {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 20px 10px;
-
-    // Neutralizes the legacy bare `form { ... }` "card" look (border,
-    // background, box-shadow, centered max-width) from forms.scss whenever
-    // this class is put directly on a <form> element.
     width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background-color: transparent;
-    box-shadow: none;
     align-items: start;
 
-    // Nested under .modalform (not a bare top-level .field rule) so this
-    // reliably outranks the legacy `form .field { ... }` stack-layout rule in
-    // forms.scss (login form) wherever both happen to apply to the same
-    // element — two classes beat one tag + one class.
     .field {
         grid-column: span 6;
         display: flex;
@@ -91,8 +75,14 @@ textarea.input {
         min-width: 0;
         margin: 0;
         width: auto;
+        font-size: 12px;
+        color: var(--ColorGray);
 
-        > label {
+        // Feldbeschriftung — egal ob als eigenes <label> im .field oder als
+        // Text direkt im <label class="field">. Als Button gestaltete Labels
+        // (z. B. Datei-Upload "Beleg auswählen") behalten ihren Button-Look.
+        > label:not(.button),
+        &:is(label) {
             font-size: 13px;
             font-weight: 600;
             color: var(--ColorGray);
@@ -116,7 +106,8 @@ textarea.input {
             box-sizing: border-box;
             background-color: var(--ColorWhite);
             font-family: inherit;
-            color: inherit;
+            font-weight: 400;
+            color: var(--ColorBlack);
             height: auto;
 
             &:focus {
@@ -168,11 +159,18 @@ textarea.input {
     height: 24px;
     flex-shrink: 0;
 
+    // Größe/Abstände explizit auf 0: ragt die unsichtbare Checkbox aus dem
+    // Schalter heraus, vergrößert sie den Scrollbereich des Modal-Bodys.
     &_input {
         position: absolute;
+        top: 0;
+        left: 0;
         opacity: 0;
         width: 0;
         height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
     }
 
     &_track {

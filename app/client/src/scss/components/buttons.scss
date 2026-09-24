@@ -84,6 +84,7 @@
     appearance: none;
     background: transparent;
     line-height: 1;
+    text-decoration: none; // auch als router-link (AppIconButton mit `to`)
     padding: 0;
     width: 26px;
     height: 26px;

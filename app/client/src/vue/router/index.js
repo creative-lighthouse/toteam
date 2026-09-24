@@ -12,7 +12,6 @@ import PublicProfile from '@views/PublicProfile.vue'
 import MealDetail from '@views/MealDetail.vue'
 import Map from '@views/Map.vue'
 import MapDetail from '@views/MapDetail.vue'
-import MapCreate from '@views/MapCreate.vue'
 import MapLayerEdit from '@views/MapLayerEdit.vue'
 import Rooms from '@views/Rooms.vue'
 import Links from '@views/Links.vue'
@@ -96,10 +95,10 @@ const routes = [
     meta: { requiresAuth: true, totem: 'map' }
   },
   {
+    // Früher eigene Seite, jetzt ein Modal in der Übersicht — alte Links/Lesezeichen
+    // nicht als Lageplan mit der ID "new" öffnen
     path: '/map/new',
-    name: 'MapCreate',
-    component: MapCreate,
-    meta: { requiresAuth: true, totem: 'map' }
+    redirect: '/map'
   },
   {
     path: '/map/:mapId/layer/:layerId/edit',

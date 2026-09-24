@@ -183,7 +183,7 @@ class MapsApiController extends ApiController
             $orgs = Organization::get()->filter('ID', $managedOrgIDs ?: [0])->sort('Title ASC');
             $data = [];
             foreach ($orgs as $org) {
-                $data[] = ['id' => $org->ID, 'title' => $org->Title];
+                $data[] = ['id' => $org->ID, 'title' => $org->Title, 'logoUrl' => $org->RenderLogo(40)];
             }
 
             return $this->jsonResponse(['organizations' => $data]);

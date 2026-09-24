@@ -1,0 +1,13 @@
+.map-create-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90vh;
+
+    .map-create-modal_status {
+        margin: 0;
+        padding: 12px 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+        text-align: center;
+    }
+}
