@@ -3,14 +3,14 @@
 .org-member-roles-modal {
     text-align: left;
     max-width: 480px;
-    max-height: 90vh;
+    max-height: 90dvh;
 }
 
 .org-member-roles-modal_list {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-height: 50vh;
+    max-height: 50dvh;
     overflow-y: auto;
 }
 

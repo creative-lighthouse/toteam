@@ -14,6 +14,15 @@ dialog.app-modal {
     overflow: hidden;
 }
 
+// Standard-Maximalhöhe für alle Modals ohne eigene. `dvh` statt `vh` bzw. der
+// Browser-Vorgabe (100% des großen Viewports): auf iOS wächst sonst das Modal
+// über den sichtbaren Bereich hinaus, sobald die Safari-Adressleiste
+// eingeblendet ist. `:where()` hält die Spezifität bei 0, damit die
+// Modifier-Klassen der einzelnen Modals (z.B. 98dvh bei EventDialog) gewinnen.
+:where(dialog.app-modal) {
+    max-height: 90dvh;
+}
+
 // Neutralisiert die alte `dialog .dialog-content { padding: 15px; gap: 15px }`
 // Regel aus layout/dialog.scss (Typ + Klasse), die `.app-modal_content`
 // (nur eine Klasse) sonst unabhängig von der Ladereihenfolge nach
@@ -94,9 +103,9 @@ dialog.app-modal[open] {
         // Das Such-Dropdown des MemberPicker ist absolut positioniert und wird
         // vom scrollenden Body abgeschnitten. Bei sonst kurzen Modals (z.B.
         // Unterstützer verwalten) passt es so trotzdem komplett hinein
-        // (Suchfeld + max. 220px Dropdown), auf kleinen Displays höchstens 60vh.
+        // (Suchfeld + max. 220px Dropdown), auf kleinen Displays höchstens 60dvh.
         &:has(.member-picker_search-wrap) {
-            min-height: min(320px, 60vh);
+            min-height: min(320px, 60dvh);
         }
     }
 
