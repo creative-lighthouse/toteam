@@ -84,7 +84,7 @@
                 </span>
               </div>
               <span v-if="item.foodPreference !== 'None'" class="contribution-item_pref">
-                {{ item.foodPreference === 'Vegetarian' ? '🥗' : '🌱' }}
+                {{ item.foodPreference === 'Vegetarian' ? 'Vegetarisch' : 'Vegan' }}
               </span>
             </router-link>
           </li>

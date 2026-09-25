@@ -199,7 +199,7 @@ class MoneyApiController extends ApiController
             $receipt = $entry->Receipt();
             if ($receipt && $receipt->exists()) {
                 $receipt->deleteFile();
-                $receipt->delete();
+                $receipt->doArchive();
             }
             foreach ($entry->Settlements() as $settlement) {
                 $settlement->delete();
@@ -676,7 +676,7 @@ class MoneyApiController extends ApiController
         // seinen Dateinamen als Vorher-Wert erfassen kann
         if ($oldReceipt && $oldReceipt->exists()) {
             $oldReceipt->deleteFile();
-            $oldReceipt->delete();
+            $oldReceipt->doArchive();
         }
 
         if ($wasApproved) {
@@ -787,7 +787,7 @@ class MoneyApiController extends ApiController
         $entry->delete();
         if ($receipt && $receipt->exists()) {
             $receipt->deleteFile();
-            $receipt->delete();
+            $receipt->doArchive();
         }
 
         return $this->successResponse([
@@ -831,7 +831,7 @@ class MoneyApiController extends ApiController
         $entry->delete();
         if ($receipt && $receipt->exists()) {
             $receipt->deleteFile();
-            $receipt->delete();
+            $receipt->doArchive();
         }
 
         if ($wasApproved) {

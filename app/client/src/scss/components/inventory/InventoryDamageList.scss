@@ -1,0 +1,111 @@
+@use "../../base/variables" as *;
+
+// Schadensmeldungen: offene in Danger-Farbe, behobene zurückgenommen
+.inventory-damage-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+
+    .inventory-damage-list_item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 12px;
+        border-left: 4px solid var(--ColorStatusBad);
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorStatusBadAccent);
+
+        &--resolved {
+            border-left-color: var(--ColorLightGray);
+            background-color: var(--ColorVeryLightGray);
+            opacity: 0.8;
+        }
+    }
+
+    .inventory-damage-list_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+    }
+
+    .inventory-damage-list_target {
+        font-size: 14px;
+    }
+
+    .inventory-damage-list_unusable {
+        padding: 1px 8px;
+        border-radius: 50px;
+        background-color: var(--ColorStatusBad);
+        color: var(--ColorWhite);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .inventory-damage-list_resolved {
+        font-size: 12px;
+        font-weight: 700;
+        color: #2e7d32;
+    }
+
+    .inventory-damage-list_description {
+        margin: 0;
+        font-size: 14px;
+        white-space: pre-line;
+    }
+
+    .inventory-damage-list_images {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+
+        img {
+            display: block;
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: var(--BorderRadiusSmall);
+        }
+    }
+
+    .inventory-damage-list_meta,
+    .inventory-damage-list_note {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-damage-list_note {
+        font-style: italic;
+    }
+
+    .inventory-damage-list_actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
+.inventory-damage-resolve-modal {
+    max-width: 440px;
+    text-align: left;
+
+    .inventory-damage-resolve-modal_target {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+}
+
+.inventory-damage-report-modal {
+    max-width: 520px;
+    text-align: left;
+}

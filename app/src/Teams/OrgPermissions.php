@@ -55,6 +55,13 @@ class OrgPermissions
 
     public const ANNOUNCEMENTS_CREATE = 'ANNOUNCEMENTS_CREATE';
 
+    public const INVENTORY_CREATE = 'INVENTORY_CREATE';
+    public const INVENTORY_EDIT = 'INVENTORY_EDIT';
+    public const INVENTORY_DELETE = 'INVENTORY_DELETE';
+    public const INVENTORY_MANAGE_TYPES = 'INVENTORY_MANAGE_TYPES';
+    public const INVENTORY_REQUEST_RENTAL = 'INVENTORY_REQUEST_RENTAL';
+    public const INVENTORY_APPROVE_RENTALS = 'INVENTORY_APPROVE_RENTALS';
+
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
      * @return array<string, array<string, string>> Kategorie => [Code => Label]
@@ -115,6 +122,14 @@ class OrgPermissions
             ],
             'Mitteilungen' => [
                 self::ANNOUNCEMENTS_CREATE => 'Mitteilungen erstellen',
+            ],
+            'Inventar' => [
+                self::INVENTORY_CREATE => 'Inventar anlegen',
+                self::INVENTORY_EDIT => 'Inventar bearbeiten',
+                self::INVENTORY_DELETE => 'Inventar löschen',
+                self::INVENTORY_MANAGE_TYPES => 'Inventar-Arten verwalten',
+                self::INVENTORY_REQUEST_RENTAL => 'Ausleihe beantragen',
+                self::INVENTORY_APPROVE_RENTALS => 'Ausleih-Anträge genehmigen & verwalten',
             ],
         ];
     }

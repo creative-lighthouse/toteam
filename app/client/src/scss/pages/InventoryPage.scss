@@ -1,0 +1,219 @@
+@use "../base/variables" as *;
+
+.section.section--InventoryPage {
+
+    .inventory-page_topbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .inventory-page_topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .inventory-page_tabs {
+        display: inline-flex;
+        padding: 4px;
+        gap: 4px;
+        border-radius: var(--BorderRadiusMedium);
+        background-color: var(--ColorWhite);
+        box-shadow: var(--BoxShadowLight);
+    }
+
+    .inventory-page_tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border: none;
+        border-radius: var(--BorderRadiusSmall);
+        background: transparent;
+        color: var(--ColorGray);
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+
+        @include hover(':not(.inventory-page_tab--active)') {
+            color: var(--ColorPrimary);
+        }
+
+        &--active {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+
+        .icon-mask {
+            width: 18px;
+            height: 18px;
+        }
+
+        // Auf schmalen Handys enger, damit Tabs und Buttons in eine Zeile passen
+        @include media(max-smartphone) {
+            gap: 4px;
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+    }
+
+    .inventory-page_rentals-button {
+        position: relative;
+    }
+
+    .inventory-page_pending-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        margin-left: 6px;
+        padding: 0 6px;
+        border-radius: 50px;
+        background-color: var(--ColorStatusBad);
+        color: var(--ColorWhite);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .inventory-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .inventory-entry {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 10px 14px 10px 10px;
+        background-color: var(--ColorWhite);
+        border: none;
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: var(--BoxShadowLight);
+        cursor: pointer;
+        text-align: left;
+        transition: transform 0.15s ease;
+
+        @include hover {
+            transform: translateY(-1px);
+        }
+    }
+
+    .inventory-entry_thumb {
+        width: 56px;
+        height: 56px;
+        flex-shrink: 0;
+        border-radius: var(--BorderRadiusSmall);
+        object-fit: cover;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--ColorPrimaryLight);
+            color: var(--ColorPrimary);
+            font-weight: 700;
+            font-size: 18px;
+        }
+    }
+
+    .inventory-entry_info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .inventory-entry_headline {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .inventory-entry_number {
+        flex-shrink: 0;
+        font-family: monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+    }
+
+    .inventory-entry_title {
+        margin: 0;
+        font-size: 16px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // Teile der Meta-Zeile ("Kabel · 5 m · Organisation"): Vue entfernt Leerzeichen
+    // zwischen den <span>s, daher der Abstand vor dem "·" per CSS
+    .inventory-entry_meta > span + span {
+        margin-left: 0.3em;
+    }
+
+    .inventory-entry_meta {
+        margin: 2px 0 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.section.section--InventoryPage .inventory-entry_private {
+    color: var(--ColorPrimary);
+    font-weight: 600;
+}
+
+.section.section--InventoryPage {
+
+    // Feste Spalte ganz rechts: die Anzahl steht in jeder Zeile an derselben Stelle,
+    // auch wenn davor unterschiedlich viele Status-Icons stehen
+    .inventory-entry_quantity {
+        flex-shrink: 0;
+        width: 44px;
+        text-align: right;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+    }
+
+    .inventory-entry_states {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+}
+
+// Status als Icon (Liste). Farben wie bei .inventory-status-badge
+.inventory-state-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 6px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+
+    .icon-mask {
+        width: 18px;
+        height: 18px;
+    }
+
+    &--defective  { background-color: var(--ColorStatusBadAccent); color: var(--ColorStatusBad); }
+    &--in_repair  { background-color: var(--ColorStatusWarningAccent); color: #b07800; }
+    &--rented_out { background-color: var(--ColorPrimaryLight); color: var(--ColorPrimary); }
+}

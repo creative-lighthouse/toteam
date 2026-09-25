@@ -1,0 +1,38 @@
+@use "../../base/variables" as *;
+
+.share-link-modal {
+    max-width: 400px;
+    text-align: left;
+
+    .app-modal_body {
+        align-items: center;
+    }
+
+    .share-link-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .share-link-modal_loading {
+        padding: 24px;
+        color: var(--ColorGray);
+    }
+
+    .share-link-modal_canvas {
+        display: block;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    .share-link-modal_url {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ColorGray);
+        word-break: break-all;
+        text-align: center;
+    }
+
+    .share-link-modal_revoke {
+        margin-right: auto;
+    }
+}

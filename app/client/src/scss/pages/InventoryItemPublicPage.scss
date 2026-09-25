@@ -1,0 +1,122 @@
+@use "../base/variables" as *;
+
+.section.section--InventoryItemPublicPage {
+
+    .inventory-public {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+        max-width: var(--WidthMedium);
+        margin: 0 auto;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: var(--BoxShadowLight);
+    }
+
+    .inventory-public_images {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+
+        img {
+            display: block;
+            width: 160px;
+            height: 160px;
+            object-fit: cover;
+            border-radius: var(--BorderRadiusSmall);
+        }
+    }
+
+    .inventory-public_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .inventory-public_number {
+        font-family: monospace;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+    }
+
+    .inventory-public_type {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ColorGray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .inventory-public_description {
+        margin: 0;
+        white-space: pre-line;
+    }
+
+    .inventory-public_facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 16px;
+        margin: 0;
+
+        dt {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ColorGray);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        dd {
+            margin: 2px 0 0;
+        }
+    }
+
+    .inventory-public_subtitle {
+        margin: 0;
+    }
+
+    .inventory-public_documents {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        li {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-size: 14px;
+        }
+    }
+
+    .inventory-public_doc-size {
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-public_actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid var(--ColorLightGray);
+    }
+
+    .inventory-public_login-hint {
+        flex: 1 1 100%;
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+}

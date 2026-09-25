@@ -1,0 +1,148 @@
+@use "../../base/variables" as *;
+
+.inventory-rental-request-modal {
+    text-align: left;
+    max-width: 560px;
+
+    .inventory-rental-request-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+
+    .inventory-rental-request-modal_count {
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+
+    .inventory-rental-request-modal_search {
+        margin-bottom: 6px;
+    }
+
+    .inventory-rental-request-modal_items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 260px;
+        overflow-y: auto;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorWhite);
+    }
+
+    .inventory-rental-request-modal_item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        border-bottom: 1px solid var(--ColorVeryLightGray);
+
+        input {
+            flex-shrink: 0;
+            margin: 0;
+        }
+
+        &--disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+    }
+
+    li:last-child .inventory-rental-request-modal_item {
+        border-bottom: none;
+    }
+
+    .inventory-rental-request-modal_item-number {
+        flex-shrink: 0;
+        font-family: monospace;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+    }
+
+    .inventory-rental-request-modal_item-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .inventory-rental-request-modal_item-type,
+    .inventory-rental-request-modal_item-reason {
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-rental-request-modal_item-reason {
+        color: var(--ColorStatusBad);
+        font-weight: 700;
+    }
+
+    .inventory-rental-request-modal_warning {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+}
+
+.inventory-rental-request-modal .inventory-rental-request-modal_item-private {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ColorPrimary);
+}
+
+.inventory-rental-request-modal {
+
+    .inventory-rental-request-modal_row {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid var(--ColorVeryLightGray);
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .inventory-rental-request-modal_item {
+            flex: 1;
+            min-width: 0;
+            border-bottom: none;
+        }
+    }
+
+    .inventory-rental-request-modal_quantity {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+        padding-right: 10px;
+        font-size: 13px;
+        color: var(--ColorGray);
+
+        .input {
+            width: 64px;
+            padding: 4px 6px;
+            font-size: 14px;
+        }
+    }
+}
+
+// Zwischenüberschrift je Quelle (Organisation, eigenes/fremdes privates Equipment)
+.inventory-rental-request-modal .inventory-rental-request-modal_section {
+    margin: 10px 0 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ColorGray);
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    &:first-of-type {
+        margin-top: 0;
+    }
+}

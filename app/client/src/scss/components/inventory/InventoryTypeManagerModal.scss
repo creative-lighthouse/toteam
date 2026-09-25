@@ -1,0 +1,56 @@
+@use "../../base/variables" as *;
+
+.inventory-type-manager-modal {
+    text-align: left;
+    max-width: 480px;
+
+    .inventory-type-manager-modal_empty {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-type-manager-modal_list {
+        // Nicht stauchen lassen: .app-modal_body ist ein Flex-Container, und mit
+        // overflow: hidden würde die Liste sonst abgeschnitten statt gescrollt
+        flex-shrink: 0;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        overflow: hidden;
+    }
+
+    .inventory-type-manager-modal_item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+
+        & + & {
+            border-top: 1px solid var(--ColorLightGray);
+        }
+    }
+
+    .inventory-type-manager-modal_item-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .inventory-type-manager-modal_item-title {
+        font-weight: 700;
+    }
+
+    .inventory-type-manager-modal_item-meta {
+        font-size: 12px;
+        color: var(--ColorGray);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

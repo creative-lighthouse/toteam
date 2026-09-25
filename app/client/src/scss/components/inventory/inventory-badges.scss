@@ -1,0 +1,35 @@
+@use "../../base/variables" as *;
+
+// Gemeinsame Status-Badges des Inventar-Totems: Zustand eines Objekts
+// (.inventory-status-badge) und Status einer Ausleihe (.inventory-rental-badge).
+// Werden in Übersichtsseiten und Modals gleichermaßen verwendet.
+
+.inventory-status-badge,
+.inventory-rental-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    background-color: var(--ColorVeryLightGray);
+    color: var(--ColorGray);
+}
+
+.inventory-status-badge {
+    &--available  { background-color: var(--ColorStatusGoodAccent); color: #2e7d32; }
+    &--defective  { background-color: var(--ColorStatusBadAccent); color: var(--ColorStatusBad); }
+    &--in_repair  { background-color: var(--ColorStatusWarningAccent); color: #b07800; }
+    &--retired    { background-color: var(--ColorVeryLightGray); color: var(--ColorGray); }
+    &--rented_out { background-color: var(--ColorPrimaryLight); color: var(--ColorPrimary); }
+}
+
+.inventory-rental-badge {
+    &--requested   { background-color: var(--ColorStatusWarningAccent); color: #b07800; }
+    &--approved    { background-color: var(--ColorStatusGoodAccent); color: #2e7d32; }
+    &--handed_over { background-color: var(--ColorPrimaryLight); color: var(--ColorPrimary); }
+    &--rejected    { background-color: var(--ColorStatusBadAccent); color: var(--ColorStatusBad); }
+}

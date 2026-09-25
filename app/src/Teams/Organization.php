@@ -50,6 +50,7 @@ class Organization extends DataObject implements PermissionProvider
         'tasks'         => 'EnableTasks',
         'skript'        => 'EnableSkript',
         'marketing'     => 'EnableMarketing',
+        'inventory'     => 'EnableInventory',
     ];
 
     private static $db = [
@@ -66,6 +67,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableTasks"         => "Boolean(1)",
         "EnableSkript"        => "Boolean(1)",
         "EnableMarketing"     => "Boolean(1)",
+        "EnableInventory"     => "Boolean(1)",
     ];
 
     private static $defaults = [
@@ -77,6 +79,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableTasks"         => true,
         "EnableSkript"        => true,
         "EnableMarketing"     => true,
+        "EnableInventory"     => true,
     ];
 
     private static $has_one = [
@@ -118,6 +121,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableTasks"         => "Aufgaben",
         "EnableSkript"        => "Skript",
         "EnableMarketing"     => "Marketing",
+        "EnableInventory"     => "Inventar",
     ];
 
     private static $table_name = 'Organization';
@@ -230,6 +234,12 @@ class Organization extends DataObject implements PermissionProvider
             OrgPermissions::ROOMS_VIEW,
             OrgPermissions::ROOMS_DELETE,
             OrgPermissions::ANNOUNCEMENTS_CREATE,
+            OrgPermissions::INVENTORY_CREATE,
+            OrgPermissions::INVENTORY_EDIT,
+            OrgPermissions::INVENTORY_DELETE,
+            OrgPermissions::INVENTORY_MANAGE_TYPES,
+            OrgPermissions::INVENTORY_REQUEST_RENTAL,
+            OrgPermissions::INVENTORY_APPROVE_RENTALS,
         ]);
         $moderator->write();
 
@@ -241,6 +251,7 @@ class Organization extends DataObject implements PermissionProvider
             OrgPermissions::TASKS_CREATE,
             OrgPermissions::TASKS_EDIT,
             OrgPermissions::TASKS_DELETE,
+            OrgPermissions::INVENTORY_REQUEST_RENTAL,
         ]);
         $member->write();
     }

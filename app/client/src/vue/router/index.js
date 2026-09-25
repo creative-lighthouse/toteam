@@ -13,7 +13,6 @@ import MealDetail from '@views/MealDetail.vue'
 import Map from '@views/Map.vue'
 import MapDetail from '@views/MapDetail.vue'
 import MapLayerEdit from '@views/MapLayerEdit.vue'
-import Rooms from '@views/Rooms.vue'
 import Links from '@views/Links.vue'
 import Organizations from '@views/Organizations.vue'
 import OrganizationDetail from '@views/OrganizationDetail.vue'
@@ -29,6 +28,10 @@ import Skript from '@views/Skript.vue'
 import SkriptDetail from '@views/SkriptDetail.vue'
 import Marketing from '@views/Marketing.vue'
 import MarketingStatistics from '@views/MarketingStatistics.vue'
+import Inventory from '@views/Inventory.vue'
+import InventoryRentals from '@views/InventoryRentals.vue'
+import InventoryItemPublic from '@views/InventoryItemPublic.vue'
+import RoomPublic from '@views/RoomPublic.vue'
 import Test from '@views/Test.vue'
 
 const routes = [
@@ -113,10 +116,10 @@ const routes = [
     meta: { requiresAuth: true, totem: 'map' }
   },
   {
+    // Räume sind ins Inventar-Totem umgezogen
     path: '/rooms',
     name: 'Rooms',
-    component: Rooms,
-    meta: { requiresAuth: true, totem: 'map' }
+    redirect: { name: 'Inventory', query: { tab: 'rooms' } },
   },
   {
     path: '/links',
@@ -201,6 +204,34 @@ const routes = [
     name: 'MarketingStatistics',
     component: MarketingStatistics,
     meta: { requiresAuth: true, totem: 'marketing' }
+  },
+  {
+    path: '/inventory',
+    name: 'Inventory',
+    component: Inventory,
+    meta: { requiresAuth: true, totem: 'inventory' }
+  },
+  {
+    // Öffentlicher Teilen-Link eines Objekts — auch ohne Anmeldung (und ohne Totem-Prüfung)
+    path: '/inventory/share/:token',
+    name: 'InventoryShare',
+    component: InventoryItemPublic,
+    meta: { requiresAuth: false }
+  },
+  {
+    // Öffentlicher Teilen-Link eines Raums — auch ohne Anmeldung
+    // Höchstens drei Pfadteile nach /app — mehr nimmt VueAppController nicht an
+    path: '/rooms/share/:token',
+    name: 'RoomShare',
+    component: RoomPublic,
+    meta: { requiresAuth: false }
+  },
+  {
+    // Optionale ID öffnet direkt die Detailansicht einer Ausleihe (Link aus Benachrichtigungen)
+    path: '/inventory/rentals/:id?',
+    name: 'InventoryRentals',
+    component: InventoryRentals,
+    meta: { requiresAuth: true, totem: 'inventory' }
   },
   {
     path: '/login',

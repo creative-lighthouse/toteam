@@ -1,0 +1,53 @@
+@use "../../base/variables" as *;
+
+.scan-nfc-modal {
+    max-width: 400px;
+    text-align: left;
+
+    .scan-nfc-modal_status {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 28px 16px;
+        border-radius: var(--BorderRadiusMedium);
+        background-color: var(--ColorVeryLightGray);
+        color: var(--ColorGray);
+        text-align: center;
+
+        p {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        &--scanning {
+            background-color: var(--ColorPrimaryLight);
+            color: var(--ColorPrimary);
+
+            .scan-nfc-modal_icon {
+                animation: scan-nfc-pulse 1.4s ease-in-out infinite;
+            }
+        }
+
+        &--busy {
+            background-color: var(--ColorStatusGoodAccent);
+            color: #2e7d32;
+        }
+
+        &--error {
+            background-color: var(--ColorStatusBadAccent);
+            color: var(--ColorStatusBad);
+        }
+    }
+
+    .scan-nfc-modal_icon {
+        width: 56px;
+        height: 56px;
+    }
+}
+
+@keyframes scan-nfc-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.6; }
+}
