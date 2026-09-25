@@ -55,9 +55,14 @@
       <div class="member-picker_search-wrap">
         <input
           v-model="query"
-          type="text"
+          type="search"
           class="input member-picker_search"
-          placeholder="Name eingeben, um Personen hinzuzufügen…"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          data-1p-ignore
+          placeholder="Personen suchen und hinzufügen…"
           @focus="dropdownOpen = true"
           @blur="dropdownOpen = false"
           @keydown.enter.prevent="addFirstMatch"
@@ -94,8 +99,13 @@
         <input
           ref="searchInput"
           v-model="query"
-          type="text"
+          type="search"
           class="input member-picker_search"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          data-1p-ignore
           :placeholder="selectedMember ? 'Andere Person suchen…' : 'Person suchen…'"
           :disabled="disabled"
           @focus="dropdownOpen = true"
@@ -123,6 +133,11 @@
         v-model="query"
         type="search"
         class="input member-picker_search"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        data-1p-ignore
         placeholder="Person suchen…"
         aria-label="Person suchen"
       >
