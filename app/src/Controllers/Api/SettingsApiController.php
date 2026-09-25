@@ -32,13 +32,14 @@ class SettingsApiController extends ApiController
                 'NotifyMeals'         => (bool) $member->NotifyMeals,
                 'NotifyMaps'          => (bool) $member->NotifyMaps,
                 'NotifyApplications'  => (bool) $member->NotifyApplications,
+                'NotifyInventory'     => (bool) $member->NotifyInventory,
             ]);
         }
 
         if ($request->httpMethod() === 'PATCH' || $request->httpMethod() === 'POST') {
             $data = $this->getJsonBody();
 
-            $allowed = ['NotifyEvents', 'NotifyAnnouncements', 'NotifyMeals', 'NotifyMaps', 'NotifyApplications'];
+            $allowed = ['NotifyEvents', 'NotifyAnnouncements', 'NotifyMeals', 'NotifyMaps', 'NotifyApplications', 'NotifyInventory'];
             $changed = false;
 
             foreach ($allowed as $field) {

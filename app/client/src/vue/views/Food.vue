@@ -427,7 +427,7 @@ const MealCard = defineComponent({
               }),
               h('span', { class: 'meal-food_title' }, f.title),
               f.preference !== 'None'
-                ? h('span', { class: 'meal-food_pref' }, f.preference === 'Vegetarian' ? '🥗 Vegetarisch' : '🌱 Vegan')
+                ? h('span', { class: 'meal-food_pref' }, f.preference === 'Vegetarian' ? 'Vegetarisch' : 'Vegan')
                 : null,
               f.supplier ? h('span', { class: 'meal-food_supplier' }, `von ${f.supplier}`) : null,
             ])

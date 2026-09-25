@@ -13,7 +13,7 @@
       <template v-else>
         <div v-if="canManageAny" class="map-list_actions">
           <AppButton variant="primary" @click="createModal?.open()">+ Neuen Lageplan erstellen</AppButton>
-          <AppIconButton to="/rooms" variant="neutral" aria-label="Räume verwalten" title="Räume verwalten">
+          <AppIconButton :to="{ name: 'Inventory', query: { tab: 'rooms' } }" variant="neutral" aria-label="Räume verwalten" title="Räume verwalten">
             <span class="icon-mask" :style="roomIconStyle" />
           </AppIconButton>
         </div>

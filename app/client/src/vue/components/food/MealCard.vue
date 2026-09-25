@@ -6,7 +6,7 @@
 
         <span v-if="supplier" class="meal-card_supplier">von {{ supplier }}
             <span v-if="preference && preference !== 'None'" class="meal-card_pref">
-                {{ preference === 'Vegetarian' ? '(🥗 Vegetarisch)' : '(🌱 Vegan)' }}
+                {{ preference === 'Vegetarian' ? '(Vegetarisch)' : '(Vegan)' }}
             </span>
         </span>
         <span v-else class="meal-card_supplier"></span>

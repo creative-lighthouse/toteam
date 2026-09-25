@@ -34,6 +34,7 @@ use App\Teams\OrgPermissions;
  * @property bool $NotifyMeals
  * @property bool $NotifyMaps
  * @property bool $NotifyApplications
+ * @property bool $NotifyInventory
  * @property int $ProfileImageID
  * @method \SilverStripe\Assets\Image ProfileImage()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] OrganizationMemberships()
@@ -58,6 +59,7 @@ class MemberExtension extends Extension
         "NotifyMeals"    => "Boolean(1)",
         "NotifyMaps"         => "Boolean(1)",
         "NotifyApplications" => "Boolean(1)",
+        "NotifyInventory"    => "Boolean(1)",
     ];
 
     private static $defaults = [
@@ -66,6 +68,7 @@ class MemberExtension extends Extension
         "NotifyMeals"        => true,
         "NotifyMaps"         => true,
         "NotifyApplications" => true,
+        "NotifyInventory"    => true,
     ];
 
     private static $has_one = [

@@ -72,6 +72,14 @@ App\Money\MoneyBudget:
   extensions:
     - App\History\HistoryExtension
 
+App\Inventory\InventoryItem:
+  extensions:
+    - App\History\HistoryExtension
+
+App\Inventory\InventoryRental:
+  extensions:
+    - App\History\HistoryExtension
+
 # GIF-Dateien sind in der ganzen App nicht erlaubt (Uploads über die App und im CMS).
 # SilverStripe prüft die Endung beim Speichern jeder Datei gegen diese Liste.
 SilverStripe\Assets\File:

@@ -12,6 +12,7 @@
         <AppToggle v-model="prefs.NotifyMeals" label="Essensvorschläge" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyMaps" label="Lagepläne" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyApplications" label="Organisationsbewerbungen" field-class="settings-toggle" @update:model-value="savePrefs" />
+        <AppToggle v-model="prefs.NotifyInventory" label="Inventar-Ausleihen" field-class="settings-toggle" @update:model-value="savePrefs" />
       </template>
     </section>
 
@@ -41,6 +42,8 @@ const prefs = reactive({
   NotifyAnnouncements: true,
   NotifyMeals: true,
   NotifyMaps: true,
+  NotifyApplications: true,
+  NotifyInventory: true,
 })
 
 const darkMode = ref(false)

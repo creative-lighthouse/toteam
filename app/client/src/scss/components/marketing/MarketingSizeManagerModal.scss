@@ -1,7 +1,7 @@
 .marketing-size-manager-modal {
     text-align: left;
     max-width: 420px;
-    max-height: 90vh;
+    max-height: 90dvh;
 
     &_new {
         display: flex;
@@ -18,6 +18,9 @@
     }
 
     &_list {
+        // Nicht stauchen lassen: .app-modal_body ist ein Flex-Container, und mit
+        // overflow: hidden würde die Liste sonst abgeschnitten statt gescrollt
+        flex-shrink: 0;
         list-style: none;
         margin: 0;
         padding: 0;

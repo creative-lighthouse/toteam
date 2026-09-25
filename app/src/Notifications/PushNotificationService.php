@@ -12,6 +12,8 @@ use App\Teams\OrgPermissions;
 use App\Events\EventDay;
 use App\Calendar\Appointment;
 use App\Calendar\SchedulingPoll;
+use App\Inventory\InventoryDamageReport;
+use App\Inventory\InventoryRental;
 use SilverStripe\Security\Member;
 use SilverStripe\Core\Environment;
 
@@ -305,6 +307,143 @@ class PushNotificationService
         if ($supplier->NotifyMeals) {
             self::sendToMember($supplier, $title, $body, $url);
         }
+    }
+
+    /**
+     * Benachrichtigt über einen neuen Ausleih-Antrag: bei Org-Inventar alle Mitglieder
+     * mit INVENTORY_APPROVE_RENTALS (außer der antragstellenden Person), bei privatem
+     * Equipment nur dessen Besitzer.
+     */
+    public static function notifyRentalRequested(InventoryRental $rental): void
+    {
+        // Genehmiger der verleihenden Organisation (bei freigegebenen Objekten
+        // nicht unbedingt die Organisation, für die ausgeliehen wird)
+        $org = $rental->getSourceOrganization();
+        if (!$rental->isPrivateLending() && !$org) {
+            return;
+        }
+
+        $requester = $rental->Member();
+        $title     = '📦 Neuer Ausleih-Antrag';
+        $body      = ($requester && $requester->exists() ? $requester->getDisplayName() : 'Jemand')
+            . ' möchte ' . $rental->getContentSummary() . ' ausleihen ('
+            . self::formatDateRange($rental->StartDate, $rental->EndDate) . ').';
+        $url       = '/app/inventory/rentals/' . $rental->ID;
+
+        // Privates Equipment: nur der Besitzer entscheidet und wird benachrichtigt
+        if ($rental->isPrivateLending()) {
+            $lender = $rental->Lender();
+            if ($lender && $lender->exists()) {
+                $body = str_replace(' ausleihen (', ' von dir ausleihen (', $body);
+                if ($rental->isPrivateUse()) {
+                    $body = rtrim($body, '.') . ' für private Zwecke.';
+                }
+                self::saveNotification($lender->ID, 'inventory', $title, $body, $url);
+                if ($lender->NotifyInventory) {
+                    self::sendToMember($lender, $title, $body, $url);
+                }
+            }
+            return;
+        }
+
+        // Ausleihe für private Zwecke bzw. durch eine andere Organisation (freigegebene Objekte)
+        $context = $rental->Organization();
+        if ($rental->isPrivateUse()) {
+            $body = rtrim($body, '.') . ' für private Zwecke.';
+        } elseif ($context && $context->exists() && (int) $context->ID !== (int) $org->ID) {
+            $body = rtrim($body, '.') . ' für ' . $context->Title . '.';
+        }
+
+        $candidateMemberships = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'Role'           => 'member',
+        ])->exclude('MemberID', $rental->MemberID ?: 0);
+
+        foreach ($candidateMemberships as $candidateMembership) {
+            $approver = $candidateMembership->Member();
+            if (!$approver || !$approver->hasOrgPermission($org, OrgPermissions::INVENTORY_APPROVE_RENTALS)) {
+                continue;
+            }
+
+            self::saveNotification($approver->ID, 'inventory', $title, $body, $url);
+
+            if ($approver->NotifyInventory) {
+                self::sendToMember($approver, $title, $body, $url);
+            }
+        }
+    }
+
+    /**
+     * Benachrichtigt den Verleiher über einen gemeldeten Schaden: bei privatem
+     * Equipment den Besitzer, sonst die Genehmiger der verleihenden Organisation
+     * (jeweils nicht die meldende Person selbst).
+     */
+    public static function notifyDamageReported(InventoryDamageReport $report): void
+    {
+        $rental = $report->Rental();
+        if (!$rental->exists()) {
+            return;
+        }
+
+        $reporter = $report->ReportedBy();
+        $title = $report->MakesUnusable ? '⚠️ Schaden gemeldet – unbenutzbar' : '⚠️ Schaden gemeldet';
+        $body  = ($reporter->exists() ? $reporter->getDisplayName() : 'Jemand') . ' hat einen Schaden an „'
+            . $report->getTargetTitle() . '“ gemeldet.';
+        $url   = '/app/inventory/rentals/' . $rental->ID;
+
+        $recipients = [];
+        if ($rental->isPrivateLending()) {
+            $recipients[] = $rental->Lender();
+        } elseif ($org = $rental->getSourceOrganization()) {
+            foreach (OrganizationMembership::get()->filter(['OrganizationID' => $org->ID, 'Role' => 'member']) as $membership) {
+                $candidate = $membership->Member();
+                if ($candidate && $candidate->hasOrgPermission($org, OrgPermissions::INVENTORY_APPROVE_RENTALS)) {
+                    $recipients[] = $candidate;
+                }
+            }
+        }
+
+        foreach ($recipients as $recipient) {
+            if (!$recipient || !$recipient->exists() || (int) $recipient->ID === (int) $report->ReportedByID) {
+                continue;
+            }
+            self::saveNotification($recipient->ID, 'inventory', $title, $body, $url);
+            if ($recipient->NotifyInventory) {
+                self::sendToMember($recipient, $title, $body, $url);
+            }
+        }
+    }
+
+    /**
+     * Benachrichtigt die antragstellende Person über Genehmigung oder Ablehnung.
+     */
+    public static function notifyRentalDecision(InventoryRental $rental): void
+    {
+        $requester = $rental->Member();
+        if (!$requester || !$requester->exists()) {
+            return;
+        }
+
+        $approved = $rental->Status === 'approved';
+        $title    = $approved ? '✅ Ausleihe genehmigt' : '❌ Ausleihe abgelehnt';
+        $body     = 'Deine Ausleihe (' . self::formatDateRange($rental->StartDate, $rental->EndDate) . ') wurde '
+            . ($approved ? 'genehmigt' : 'abgelehnt') . '.';
+        if ($approved && $rental->UsageCondition !== 'free') {
+            $body .= ' Auflage: ' . (InventoryRental::CONDITION_LABELS[$rental->UsageCondition] ?? $rental->UsageCondition) . '.';
+        }
+        $url      = '/app/inventory/rentals/' . $rental->ID;
+
+        self::saveNotification($requester->ID, 'inventory', $title, $body, $url);
+
+        if ($requester->NotifyInventory) {
+            self::sendToMember($requester, $title, $body, $url);
+        }
+    }
+
+    private static function formatDateRange(?string $start, ?string $end): string
+    {
+        $format = fn (?string $date) => $date ? date('d.m.Y', strtotime($date)) : '?';
+        return $start === $end ? $format($start) : $format($start) . ' – ' . $format($end);
     }
 
     /**

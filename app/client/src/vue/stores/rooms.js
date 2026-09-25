@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiGet, apiGetSWR, apiPost, apiPut, apiDelete, clearCacheForEndpoint } from '@utils/api'
+import { apiGet, apiGetSWR, apiPost, apiPut, apiDelete, apiPostForm, clearCacheForEndpoint } from '@utils/api'
 
 export const useRoomsStore = defineStore('rooms', () => {
   const rooms = ref([])
@@ -10,6 +10,9 @@ export const useRoomsStore = defineStore('rooms', () => {
 
   const filterOrganization = ref(null)
   const filterSearch = ref('')
+  // null = alle, 'rentable' = reservierbare, 'occupied' = heute belegte
+  const filterAvailability = ref(null)
+  const filterType = ref(null)
 
   const filteredRooms = computed(() => {
     let result = rooms.value
@@ -18,9 +21,19 @@ export const useRoomsStore = defineStore('rooms', () => {
       result = result.filter(r => r.Organization?.ID === filterOrganization.value.ID)
     }
 
+    if (filterType.value) {
+      result = result.filter(r => r.TypeID === filterType.value)
+    }
+
+    if (filterAvailability.value === 'rentable') {
+      result = result.filter(r => r.IsRentable)
+    } else if (filterAvailability.value === 'occupied') {
+      result = result.filter(r => r.IsOccupied)
+    }
+
     if (filterSearch.value.trim()) {
       const q = filterSearch.value.toLowerCase()
-      result = result.filter(r => r.Title?.toLowerCase().includes(q))
+      result = result.filter(r => r.Title?.toLowerCase().includes(q) || r.Description?.toLowerCase().includes(q))
     }
 
     return result
@@ -100,8 +113,36 @@ export const useRoomsStore = defineStore('rooms', () => {
     return response
   }
 
+  async function uploadFiles(id, { images = [], documents = [] }) {
+    if (!images.length && !documents.length) return { success: true }
+    const formData = new FormData()
+    images.forEach(f => formData.append('images[]', f))
+    documents.forEach(f => formData.append('documents[]', f))
+    const response = await apiPostForm(`/rooms/uploadFiles/${id}`, formData)
+    await clearCacheForEndpoint('/rooms')
+    return response
+  }
+
+  async function removeFile(id, fileId) {
+    const response = await apiPost(`/rooms/removeFile/${id}`, { FileID: fileId })
+    if (response.success) await clearCacheForEndpoint('/rooms')
+    return response
+  }
+
+  /** Öffentlichen Teilen-Link anlegen (bzw. vorhandenen holen) oder mit revoke deaktivieren */
+  async function shareRoom(id, revoke = false) {
+    return apiPost(`/rooms/share/${id}`, { Revoke: revoke })
+  }
+
+  /** Öffentliche Ansicht über den Teilen-Link ({ isMember, room }) */
+  async function fetchPublicRoom(token) {
+    return apiGet(`/rooms/public/${encodeURIComponent(token)}`, false)
+  }
+
   function setOrganizationFilter(org) { filterOrganization.value = org }
   function setSearchFilter(q) { filterSearch.value = q }
+  function setAvailabilityFilter(value) { filterAvailability.value = value }
+  function setTypeFilter(value) { filterType.value = value }
 
   async function refresh() {
     await fetchRooms(true)
@@ -114,6 +155,8 @@ export const useRoomsStore = defineStore('rooms', () => {
     error,
     filterOrganization,
     filterSearch,
+    filterAvailability,
+    filterType,
     filteredRooms,
     fetchRooms,
     fetchRoomDetail,
@@ -121,8 +164,14 @@ export const useRoomsStore = defineStore('rooms', () => {
     createRoom,
     updateRoom,
     deleteRoom,
+    uploadFiles,
+    removeFile,
+    shareRoom,
+    fetchPublicRoom,
     setOrganizationFilter,
     setSearchFilter,
+    setAvailabilityFilter,
+    setTypeFilter,
     refresh,
   }
 })

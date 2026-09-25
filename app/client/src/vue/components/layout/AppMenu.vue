@@ -121,6 +121,15 @@
                     </router-link>
                 </li>
 
+                <li v-if="authStore.hasTotem('inventory')">
+                    <router-link to="/inventory" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Inventory' || $route.name === 'InventoryRentals' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="inventarTotem" alt="Inventar Icon" class="nav_image">
+                        </div>
+                        <p class="nav_title">Inventar <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
                 <li>
                     <router-link to="/money" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
                         <div class="nav_icon">
@@ -203,6 +212,7 @@ import downloadsTotem from '../../../../icons/totems/downloads_totem.png'
 import todosTotem from '../../../../icons/totems/todos_totem.png'
 import skriptTotem from '../../../../icons/totems/skript_totem.png'
 import marketingTotem from '../../../../icons/totems/marketing_totem.png'
+import inventarTotem from '../../../../icons/totems/inventar_totem.png'
 import geldTotem from '../../../../icons/totems/geld_totem.png'
 import kartenTotem from '../../../../icons/totems/karten_totem.png'
 import organizationsTotem from '../../../../icons/totems/organizations_totem.png'

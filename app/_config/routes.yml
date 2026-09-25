@@ -30,3 +30,4 @@ SilverStripe\Control\Director:
     'api/v1/feedback//$Action/$ID': 'App\Controllers\Api\FeedbackApiController'
     'api/v1/skript//$Action/$ID': 'App\Controllers\Api\SkriptApiController'
     'api/v1/marketing//$Action/$ID': 'App\Controllers\Api\MarketingApiController'
+    'api/v1/inventory//$Action/$ID': 'App\Controllers\Api\InventoryApiController'

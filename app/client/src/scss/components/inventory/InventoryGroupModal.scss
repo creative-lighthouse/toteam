@@ -1,0 +1,76 @@
+@use "../../base/variables" as *;
+
+.inventory-group-modal {
+    text-align: left;
+    max-width: 560px;
+
+    .inventory-group-modal_summary {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-group-modal_list {
+        // Nicht stauchen lassen: .app-modal_body ist ein Flex-Container, und mit
+        // overflow: hidden würde die Liste sonst abgeschnitten statt gescrollt
+        flex-shrink: 0;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        overflow: hidden;
+    }
+
+    .inventory-group-modal_list li + li {
+        border-top: 1px solid var(--ColorVeryLightGray);
+    }
+
+    .inventory-group-modal_item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 8px 12px;
+        border: none;
+        background: var(--ColorWhite);
+        cursor: pointer;
+        text-align: left;
+        font-size: 14px;
+
+        @include hover {
+            background-color: var(--ColorVeryLightGray);
+        }
+    }
+
+    .inventory-group-modal_number {
+        flex-shrink: 0;
+        font-family: monospace;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+    }
+
+    .inventory-group-modal_facts {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        color: var(--ColorGray);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .inventory-group-modal_add {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+
+        .input {
+            width: 72px;
+        }
+    }
+}

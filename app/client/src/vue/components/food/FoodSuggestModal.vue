@@ -16,8 +16,8 @@
         Essenspräferenz
         <select id="food-suggest-pref" v-model="form.preference">
           <option value="None">Keine Angabe</option>
-          <option value="Vegetarian">🥗 Vegetarisch</option>
-          <option value="Vegan">🌱 Vegan</option>
+          <option value="Vegetarian">Vegetarisch</option>
+          <option value="Vegan">Vegan</option>
         </select>
       </label>
 

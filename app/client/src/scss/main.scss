@@ -19,6 +19,10 @@
 @use "base/dialog.scss";
 @use "components/organizations/ApplicantsModal.scss";
 @use "components/ui/QrCodeModal.scss";
+@use "components/ui/WriteNFCModal.scss";
+@use "components/ui/ScanNFCModal.scss";
+@use "components/ui/AppLightbox.scss";
+@use "components/ui/ShareLinkModal.scss";
 @use "components/profile/EditProfileModal.scss";
 @use "components/layout/SettingsModal.scss";
 @use "components/layout/FeedbackModal.scss";
@@ -43,12 +47,14 @@
 @use "pages/MoneyPage.scss";
 @use "pages/MoneyAccountDetailPage.scss";
 @use "pages/OrganizationManagePage.scss";
-@use "pages/RoomsPage.scss";
 @use "pages/TestPage.scss";
 @use "pages/SkriptPage.scss";
 @use "pages/SkriptDetailPage.scss";
 @use "pages/MarketingPage.scss";
 @use "pages/MarketingStatisticsPage.scss";
+@use "pages/InventoryPage.scss";
+@use "pages/InventoryRentalsPage.scss";
+@use "pages/InventoryItemPublicPage.scss";
 
 @use "landingpage/landingpage.scss";
 @use "landingpage/membergraphic.scss";
@@ -106,6 +112,15 @@
 @use "components/marketing/MarketingSizeManagerModal.scss";
 @use "components/announcements/AnnouncementCreateModal.scss";
 @use "components/organizations/OrganizationCreateModal.scss";
+@use "components/inventory/inventory-badges.scss";
+@use "components/inventory/InventoryItemFormModal.scss";
+@use "components/inventory/InventoryTypeModal.scss";
+@use "components/inventory/InventoryItemDetailModal.scss";
+@use "components/inventory/InventoryRentalRequestModal.scss";
+@use "components/inventory/InventoryRentalDetailModal.scss";
+@use "components/inventory/InventoryTypeManagerModal.scss";
+@use "components/inventory/InventoryGroupModal.scss";
+@use "components/inventory/InventoryDamageList.scss";
 
 html{
     overflow-y: scroll;

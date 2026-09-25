@@ -1,0 +1,284 @@
+@use "../../base/variables" as *;
+
+.inventory-rental-detail-modal {
+    text-align: left;
+    max-width: 560px;
+
+    .inventory-rental-detail-modal_loading {
+        padding: 32px 20px;
+        text-align: center;
+        color: var(--ColorGray);
+    }
+
+    .inventory-rental-detail-modal_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .inventory-rental-detail-modal_dates {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .inventory-rental-detail-modal_facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 16px;
+        margin: 0;
+
+        dt {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ColorGray);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        dd {
+            margin: 2px 0 0;
+        }
+    }
+
+    .inventory-rental-detail-modal_fact--wide {
+        grid-column: 1 / -1;
+    }
+
+    .inventory-rental-detail-modal_person {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .inventory-rental-detail-modal_avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .inventory-rental-detail-modal_subtitle {
+        margin: 8px 0 0;
+    }
+
+    .inventory-rental-detail-modal_items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: var(--BorderRadiusSmall);
+            background-color: var(--ColorVeryLightGray);
+            font-size: 14px;
+        }
+    }
+
+    .inventory-rental-detail-modal_item--conflict {
+        background-color: var(--ColorStatusBadAccent) !important;
+    }
+
+    .inventory-rental-detail-modal_item-number {
+        flex-shrink: 0;
+        font-family: monospace;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+    }
+
+    .inventory-rental-detail-modal_item-title {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .inventory-rental-detail-modal_item-conflict {
+        flex-shrink: 0;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ColorStatusBad);
+    }
+
+    .inventory-rental-detail-modal_decision {
+        padding: 10px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        border-left: 4px solid var(--ColorStatusGood);
+        background-color: var(--ColorStatusGoodAccent);
+
+        p {
+            margin: 0;
+        }
+
+        p + p {
+            margin-top: 4px;
+        }
+
+        &--rejected {
+            border-left-color: var(--ColorStatusBad);
+            background-color: var(--ColorStatusBadAccent);
+        }
+    }
+
+    .inventory-rental-detail-modal_decision-title {
+        font-weight: 700;
+    }
+
+    .inventory-rental-detail-modal_decision-date {
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+
+    .inventory-rental-detail-modal_condition--conditional,
+    .inventory-rental-detail-modal_condition--do_not_use {
+        color: #b07800;
+    }
+
+    .inventory-rental-detail-modal_decision-comment {
+        font-style: italic;
+    }
+
+    .inventory-rental-detail-modal_timeline {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-rental-detail-modal_decide {
+        padding-top: 12px;
+        border-top: 1px solid var(--ColorLightGray);
+    }
+
+    .inventory-rental-detail-modal_hint {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-rental-detail-modal_history {
+        margin-right: auto;
+    }
+}
+
+.inventory-rental-detail-modal .inventory-rental-detail-modal_item-quantity {
+    flex-shrink: 0;
+    font-weight: 700;
+    color: var(--ColorPrimary);
+}
+
+.inventory-rental-detail-modal {
+
+    .inventory-rental-detail-modal_items li.inventory-rental-detail-modal_group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .inventory-rental-detail-modal_group-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .inventory-rental-detail-modal_numbers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .inventory-rental-detail-modal_number {
+        padding: 2px 8px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: 50px;
+        background-color: var(--ColorWhite);
+        font-family: monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+
+        &--swappable {
+            cursor: pointer;
+            appearance: auto;
+        }
+
+        &--conflict {
+            border-color: var(--ColorStatusBad);
+            color: var(--ColorStatusBad);
+        }
+    }
+}
+
+.inventory-rental-detail-modal {
+
+    .inventory-rental-detail-modal_mileage {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        li {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 4px 10px;
+            padding: 6px 10px;
+            border-radius: var(--BorderRadiusSmall);
+            background-color: var(--ColorVeryLightGray);
+            font-size: 14px;
+        }
+
+        strong {
+            margin-left: auto;
+            color: var(--ColorPrimary);
+        }
+    }
+
+    .inventory-rental-detail-modal_mileage-title {
+        font-weight: 700;
+    }
+
+    .inventory-rental-detail-modal_mileage-form {
+        padding-top: 12px;
+        border-top: 1px solid var(--ColorLightGray);
+    }
+}
+
+.inventory-rental-detail-modal {
+
+    .inventory-rental-detail-modal_damage-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin: 0;
+        padding: 10px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorStatusBad);
+        color: var(--ColorWhite);
+        font-size: 14px;
+        font-weight: 700;
+
+        .icon-mask {
+            width: 20px;
+            height: 20px;
+            margin-top: -1px;
+        }
+    }
+
+    .inventory-rental-detail-modal_subtitle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 8px;
+
+        .inventory-rental-detail-modal_subtitle {
+            margin: 0;
+        }
+    }
+}
