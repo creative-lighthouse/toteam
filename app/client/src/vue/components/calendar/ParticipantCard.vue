@@ -12,9 +12,17 @@
         {{ participation.MemberName }}
     </span>
     <div class="participant-timeandride">
-        <span v-if="rideIcon" class="participant-ride" :class="{ 'participant-ride--needed': participation.RideType === 'Need' }" :title="rideTitle">
+        <!-- Icon + Zahl allein wären für Screenreader nur "2" — daher als Text beschrieben -->
+        <span
+            v-if="rideIcon"
+            class="participant-ride"
+            :class="{ 'participant-ride--needed': participation.RideType === 'Need' }"
+            :title="rideTitle"
+            role="img"
+            :aria-label="rideSeats !== null ? `${rideTitle}, ${rideSeats} freie Plätze` : rideTitle"
+        >
             <span class="participant-ride_icon" :style="rideIconStyle" aria-hidden="true"></span>
-            <span v-if="rideSeats !== null" class="participant-ride_seats">{{ rideSeats }}</span>
+            <span v-if="rideSeats !== null" class="participant-ride_seats" aria-hidden="true">{{ rideSeats }}</span>
         </span>
         <span class="participant-status" v-if="participation.Type !== 'Decline' && participation.CustomTimeframe && participation.TimeStart && participation.TimeEnd">
             {{ formatTime(participation.TimeStart) }} – {{ formatTime(participation.TimeEnd) }}

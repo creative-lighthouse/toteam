@@ -61,8 +61,25 @@
         }
     }
 
+    // Ohne Lieferant: Titel nutzt auch dessen Spalte; nur Titel: ganze Zeile
+    &--no-supplier &_title {
+        grid-column: 1 / 3;
+    }
+
+    &--title-only &_title {
+        grid-column: 1 / -1;
+    }
+
     @include media(max-medium) {
         grid-template-columns: 1fr 150px;
+
+        &--no-supplier &_title {
+            grid-column: 1;
+        }
+
+        &--title-only &_title {
+            grid-column: 1 / -1;
+        }
 
         &_trailing {
             grid-column: 2 / -1;

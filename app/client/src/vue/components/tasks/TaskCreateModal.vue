@@ -112,7 +112,9 @@ const defaultForm = () => ({
   OrganizationID: props.parentTask
     ? props.parentTask.Organization?.ID ?? 0
     : (store.filterOrganization?.ID ?? (store.organizations.length === 1 ? store.organizations[0].ID : 0)),
-  OwnerID: 0,
+  // Unteraufgabe: Verantwortliche/r der Eltern-Aufgabe vorausgewählt (sofern
+  // noch Mitglied der Organisation — sonst greift unten der Standard)
+  OwnerID: props.parentTask?.Owner?.ID ?? 0,
   State: 'open',
   Deadline: '',
 })

@@ -2,7 +2,11 @@
   <div
     class="announcement-card"
     :class="{ 'announcement-card--compact': compact }"
+    role="button"
+    tabindex="0"
     @click="$emit('click', announcement)"
+    @keydown.enter.prevent="$emit('click', announcement)"
+    @keydown.space.prevent="$emit('click', announcement)"
   >
     <!-- Compact: title + category/date/short text in two lines, e.g. on the dashboard -->
     <template v-if="compact">

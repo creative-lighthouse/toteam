@@ -1,6 +1,7 @@
 <template>
   <div v-if="progress" class="task-progress" :class="{ 'task-progress--compact': !showLegend }">
-    <div class="task-progress_bar">
+    <!-- Farben allein reichen nicht: für Screenreader als Text zusammengefasst -->
+    <div class="task-progress_bar" role="img" :aria-label="progress.summary">
       <div
         v-for="seg in progress.segments"
         :key="seg.state"
@@ -10,7 +11,7 @@
         :title="`${seg.label}: ${seg.count}`"
       ></div>
     </div>
-    <div v-if="showLegend" class="task-progress_legend">
+    <div v-if="showLegend" class="task-progress_legend" aria-hidden="true">
       <span v-for="seg in progress.segments" v-show="seg.count > 0" :key="seg.state" class="task-progress_legend-item">
         <span class="task-progress_legend-dot" :class="`task-progress_segment--${seg.state}`"></span>
         {{ seg.label }} ({{ seg.count }})
@@ -44,6 +45,11 @@ const progress = computed(() => {
       count: counts[s.value] || 0,
       percent: total ? ((counts[s.value] || 0) / total) * 100 : 0,
     })),
+    // z.B. "Unteraufgaben: 2 von 5 Erledigt, 1 In Arbeit, 2 Offen"
+    summary: `Unteraufgaben: ${[...store.STATES].reverse()
+      .filter(s => counts[s.value])
+      .map((s, i) => (i === 0 ? `${counts[s.value]} von ${total} ${s.label}` : `${counts[s.value]} ${s.label}`))
+      .join(', ')}`,
   }
 })
 </script>

@@ -1,6 +1,12 @@
 <template>
     <!-- Eine Gericht-Zeile einer Mahlzeit mit Bestell-Stepper (Termin-Dialog, Mahlzeit-Detailansicht) -->
-    <div class="meal-food-row">
+    <div
+        class="meal-food-row"
+        :class="{
+            'meal-food-row--no-supplier': !supplier,
+            'meal-food-row--title-only': !supplier && !orderable && !$slots.trailing,
+        }"
+    >
         <span class="meal-food-row_title">
             <slot name="leading" />{{ title }}
         </span>
@@ -10,22 +16,21 @@
                 {{ preference === 'Vegetarian' ? '(Vegetarisch)' : '(Vegan)' }}
             </span>
         </span>
-        <span v-else class="meal-food-row_supplier"></span>
 
-        <div class="meal-food-row_trailing">
+        <div v-if="orderable || $slots.trailing" class="meal-food-row_trailing">
             <div v-if="orderable" class="meal-product-qty">
                 <span v-if="maxQuantity > 0" class="meal-food-row_max">(max. {{ maxQuantity }})</span>
                 <template v-if="canOrder">
                     <AppIconButton
                         variant="neutral"
-                        aria-label="Menge verringern"
+                        :aria-label="`Menge von ${title} verringern`"
                         :disabled="disabled || quantity <= 0"
                         @click="$emit('decrement')"
                     >−</AppIconButton>
-                    <span class="meal-product-qty_val">{{ quantity }}</span>
+                    <span class="meal-product-qty_val" aria-live="polite" :aria-label="`${quantity} × ${title}`">{{ quantity }}</span>
                     <AppIconButton
                         variant="neutral"
-                        aria-label="Menge erhöhen"
+                        :aria-label="`Menge von ${title} erhöhen`"
                         :disabled="disabled || (maxQuantity > 0 && quantity >= maxQuantity)"
                         @click="$emit('increment')"
                     >+</AppIconButton>

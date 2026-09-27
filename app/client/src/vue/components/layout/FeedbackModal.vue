@@ -1,11 +1,12 @@
 <template>
   <AppModal ref="modal" class="feedback-modal" title="Feedback geben" @close="close">
     <template v-if="!submitted">
-      <div class="feedback-type_group">
+      <div class="feedback-type_group" role="group" aria-label="Art des Feedbacks">
         <button
           type="button"
           class="feedback-type_option"
           :class="{ 'feedback-type_option--active': type === 'BugReport' }"
+          :aria-pressed="type === 'BugReport'"
           @click="type = 'BugReport'"
         >
           <img :src="iconBug" alt="" class="feedback-type_icon">
@@ -15,6 +16,7 @@
           type="button"
           class="feedback-type_option"
           :class="{ 'feedback-type_option--active': type === 'FeatureRequest' }"
+          :aria-pressed="type === 'FeatureRequest'"
           @click="type = 'FeatureRequest'"
         >
           <img :src="iconFeature" alt="" class="feedback-type_icon">

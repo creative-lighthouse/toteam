@@ -13,6 +13,7 @@
         v-model="newTitle"
         type="text"
         class="input"
+        aria-label="Neue Plakat-Größe"
         placeholder="Neue Größe, z.B. A3"
       />
       <AppButton type="submit" variant="primary" size="small" :disabled="!newTitle.trim() || !selectedOrgId || saving">
@@ -33,6 +34,7 @@
           v-model="editingTitle"
           type="text"
           class="input"
+          :aria-label="`Neuer Name für „${size.Title}“`"
           @keyup.enter="saveRename(size)"
           @keyup.esc="cancelRename"
         />
@@ -40,16 +42,16 @@
 
         <div class="marketing-size-manager-modal_item-actions">
           <template v-if="editingId === size.ID">
-            <AppIconButton variant="primary" aria-label="Speichern" title="Speichern" @click="saveRename(size)">
+            <AppIconButton variant="primary" :aria-label="`Neuen Namen für „${size.Title}“ speichern`" title="Speichern" @click="saveRename(size)">
               <span class="icon-mask" :style="checkIconStyle" />
             </AppIconButton>
             <AppIconButton variant="ghost" aria-label="Abbrechen" title="Abbrechen" @click="cancelRename">✕</AppIconButton>
           </template>
           <template v-else>
-            <AppIconButton variant="primary" aria-label="Umbenennen" title="Umbenennen" @click="startRename(size)">
+            <AppIconButton variant="primary" :aria-label="`„${size.Title}“ umbenennen`" title="Umbenennen" @click="startRename(size)">
               <span class="icon-mask" :style="editIconStyle" />
             </AppIconButton>
-            <AppIconButton variant="danger" aria-label="Löschen" title="Löschen" @click="removeSize(size)">
+            <AppIconButton variant="danger" :aria-label="`„${size.Title}“ löschen`" title="Löschen" @click="removeSize(size)">
               <span class="icon-mask" :style="trashIconStyle" />
             </AppIconButton>
           </template>

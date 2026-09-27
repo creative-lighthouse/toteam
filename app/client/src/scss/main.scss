@@ -167,7 +167,8 @@ body {
         "content"
         "footer";
     width: 100%;
-    overflow-x: hidden;
+    // clip statt hidden: kein eigener Scroll-Container, sonst greift position: sticky darunter nicht
+    overflow-x: clip;
     background-color: var(--ColorLightGray);
 
     .area_header {
@@ -315,7 +316,7 @@ body {
     "content"
     "footer";
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   background-color: var(--ColorLightGray, #f5f5f5);
 }
 

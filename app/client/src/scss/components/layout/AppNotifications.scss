@@ -107,7 +107,8 @@
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        padding: 12px 14px;
+        // Innenabstand liegt im Inhalts-Button, damit die ganze Zeile klickbar bleibt
+        padding: 0 14px 0 0;
         background-color: rgba(255, 255, 255, 0.08);
 
         &--linked {
@@ -123,12 +124,34 @@
         }
     }
 
+    // Button: Browser-Styles zurücksetzen
     .AppNotifications_item_content {
         flex: 1;
         display: flex;
         flex-direction: column;
         gap: 3px;
         min-width: 0;
+        padding: 12px 0 12px 14px;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: inherit;
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorWhite);
+            outline-offset: -2px;
+        }
+    }
+
+    .AppNotifications_sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
     }
 
     .AppNotifications_item_title {
@@ -161,7 +184,8 @@
         width: 20px;
         height: 20px;
         flex-shrink: 0;
-        margin-top: 2px;
+        // Oberkante auf Höhe des Titels (der Innenabstand liegt im Inhalts-Button)
+        margin-top: 12px;
         display: flex;
         align-items: center;
         justify-content: center;

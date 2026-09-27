@@ -160,7 +160,7 @@
 
                             <AppIconButton
                                 variant="danger"
-                                aria-label="Option entfernen"
+                                :aria-label="`Terminoption ${index + 1} entfernen`"
                                 :disabled="poll.options.length <= 2"
                                 @click="removePollOption(index)"
                             >

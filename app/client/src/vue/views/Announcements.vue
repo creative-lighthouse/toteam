@@ -3,20 +3,24 @@
     <div class="section_content">
       <div class="announcements-toolbar">
         <!-- Category Filter -->
-        <div class="section_filter">
+        <div class="section_filter" role="group" aria-label="Nach Kategorie filtern">
           <button
+            type="button"
             @click="announcementsStore.setCategory(null)"
             class="button"
             :class="{ active: !announcementsStore.selectedCategory }"
+            :aria-pressed="!announcementsStore.selectedCategory"
           >
             Alle
           </button>
           <button
             v-for="category in announcementsStore.usedCategories"
             :key="category.ID"
+            type="button"
             @click="announcementsStore.setCategory(category)"
             class="button"
             :class="{ active: announcementsStore.selectedCategory?.ID === category.ID }"
+            :aria-pressed="announcementsStore.selectedCategory?.ID === category.ID"
           >
             {{ category.Title }}
           </button>

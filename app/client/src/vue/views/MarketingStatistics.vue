@@ -8,12 +8,12 @@
         </AppIconButton>
 
         <div class="marketing-stats-toolbar_filters">
-          <select v-model="yearFilter" class="input" @change="onFilterChange">
+          <select v-model="yearFilter" class="input" aria-label="Nach Jahr filtern" @change="onFilterChange">
             <option :value="null">Alle Jahre</option>
             <option v-for="year in store.years" :key="year" :value="year">{{ year }}</option>
           </select>
 
-          <select v-if="store.organizations.length > 1" v-model="orgFilter" class="input" @change="onFilterChange">
+          <select v-if="store.organizations.length > 1" v-model="orgFilter" class="input" aria-label="Nach Organisation filtern" @change="onFilterChange">
             <option :value="null">Alle Organisationen</option>
             <option v-for="org in store.organizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
           </select>

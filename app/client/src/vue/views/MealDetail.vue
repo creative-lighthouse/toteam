@@ -187,6 +187,8 @@
                     class="food-status-dot"
                     :class="`food-status-dot--${(item.status || 'new').toLowerCase()}`"
                     :title="statusLabel(item.status)"
+                    role="img"
+                    :aria-label="statusLabel(item.status)"
                   ></span>
                 </template>
 

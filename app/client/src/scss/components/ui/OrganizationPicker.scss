@@ -34,11 +34,24 @@
             background-color: var(--ColorWhite);
             transition: border-color 0.15s ease, background-color 0.15s ease;
 
+            position: relative;
+
             input[type="checkbox"],
             input[type="radio"] {
+                // Nur optisch ausgeblendet (nicht display:none): so bleiben die
+                // Optionen per Tastatur (Tab, Pfeiltasten, Leertaste) und für
+                // Screenreader bedienbar — der Fokus zeigt sich am Chip
+                position: absolute;
+                width: 1px;
+                height: 1px;
                 margin: 0;
-                flex-shrink: 0;
-                display: none;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            &:has(input:focus-visible) {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: 2px;
             }
 
             &:has(input:checked) {

@@ -4,6 +4,9 @@
 // Mahlzeiten des Events nach Tag. Auf schmalen Displays untereinander; die
 // offenen Vorschläge bleiben dann oben haften, damit man sie nach unten ziehen kann.
 .food-planner {
+    --FoodPlannerDayTitleHeight: 18px;
+    --FoodPlannerDayGap: 10px;
+
     text-align: left;
 
     .food-planner_toolbar {
@@ -47,11 +50,15 @@
         }
     }
 
+    // Desktop: bündig mit der ersten Mahlzeit (Tages-Überschrift + Abstand darüber),
+    // bleibt beim Scrollen der Mahlzeiten stehen und scrollt bei vielen Vorschlägen selbst
     .food-planner_pool {
         position: sticky;
         top: 70px;
-        max-height: calc(100vh - 200px);
+        margin-top: calc(var(--FoodPlannerDayTitleHeight) + var(--FoodPlannerDayGap));
+        max-height: calc(100dvh - 200px);
         overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 12px;
         background-color: var(--ColorWhite);
         box-shadow: var(--BoxShadowLight);
@@ -59,6 +66,7 @@
         @include media(max-medium) {
             top: 60px;
             z-index: 5;
+            margin-top: 0;
             max-height: 40vh;
         }
     }
@@ -105,12 +113,13 @@
     .food-planner_day {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: var(--FoodPlannerDayGap);
     }
 
     .food-planner_day-title {
         margin: 0;
         font-size: 13px;
+        line-height: var(--FoodPlannerDayTitleHeight);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

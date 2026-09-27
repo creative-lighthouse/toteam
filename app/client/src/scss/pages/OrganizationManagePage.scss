@@ -39,6 +39,12 @@
         margin: 0 0 16px;
     }
 
+    // Das Datei-Feld steckt unsichtbar im Button-Label — dort den Tastatur-Fokus zeigen
+    .button:has(.file-input-hidden:focus-visible) {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: 2px;
+    }
+
     .file-input-hidden {
         position: absolute;
         opacity: 0;

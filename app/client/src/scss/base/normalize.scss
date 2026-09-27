@@ -98,10 +98,8 @@
    * active/hover state.
    */
   
-  a:active,
-  a:hover {
-    outline: 0;
-  }
+  /* Entfernt: "a:active, a:hover { outline: 0 }" — nahm fokussierten Links beim
+     Hovern den Tastatur-Fokusrahmen. */
   
   /* Text-level semantics
      ========================================================================== */

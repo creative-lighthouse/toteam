@@ -27,6 +27,12 @@
         border: 0;
     }
 
+    // Die Checkbox selbst ist unsichtbar — der Tastatur-Fokus zeigt sich an der Spur
+    &_input:focus-visible + &_track {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: 2px;
+    }
+
     &_track {
         position: absolute;
         inset: 0;

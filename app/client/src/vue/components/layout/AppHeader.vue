@@ -8,7 +8,8 @@
             </button>
         </div>
         <div class="AppHeader_content">
-            <h1 ref="titleEl" class="AppHeader_title">{{ title }}</h1>
+            <!-- tabindex="-1": bekommt nach einem Seitenwechsel den Fokus (App.vue), damit Screenreader die neue Seite ansagen -->
+            <h1 ref="titleEl" class="AppHeader_title" tabindex="-1">{{ title }}</h1>
             <slot></slot>
         </div>
         <div class="AppHeader_actions">

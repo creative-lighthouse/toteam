@@ -25,7 +25,7 @@
             {{ usageLabel(type) }}<template v-if="fieldLabels(type)"> · {{ fieldLabels(type) }}</template>
           </span>
         </div>
-        <AppIconButton variant="primary" aria-label="Bearbeiten" title="Bearbeiten" @click="typeModal?.openForEdit(type)">
+        <AppIconButton variant="primary" :aria-label="`Art „${type.Title}“ bearbeiten`" title="Bearbeiten" @click="typeModal?.openForEdit(type)">
           <span class="icon-mask" :style="editIconStyle" />
         </AppIconButton>
       </li>

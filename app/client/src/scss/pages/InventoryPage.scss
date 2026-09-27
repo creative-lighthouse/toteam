@@ -217,3 +217,9 @@
     &--in_repair  { background-color: var(--ColorStatusWarningAccent); color: #b07800; }
     &--rented_out { background-color: var(--ColorPrimaryLight); color: var(--ColorPrimary); }
 }
+
+// Tastatur-Fokus auf den Inventar-Tabs
+.section--InventoryPage .inventory-page_tab:focus-visible {
+    outline: 2px solid var(--ColorPrimary);
+    outline-offset: 2px;
+}

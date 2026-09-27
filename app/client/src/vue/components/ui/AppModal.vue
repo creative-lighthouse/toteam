@@ -10,18 +10,29 @@
           <AppIconButton variant="ghost" aria-label="Schließen" @click="$emit('close')">✕</AppIconButton>
         </div>
 
-        <div v-if="tabs.length > 1" class="app-modal_tabs">
+        <!-- Tabs: ein Tab-Stopp, links/rechts (bzw. Pos1/Ende) wechselt direkt den Tab -->
+        <div v-if="tabs.length > 1" class="app-modal_tabs" role="tablist" @keydown="onTabKeydown">
           <button
             v-for="t in tabs"
+            :id="`${uid}-tab-${t.id}`"
             :key="t.id"
             type="button"
+            role="tab"
             class="app-modal_tab"
             :class="{ 'app-modal_tab--active': t.id === tab }"
+            :aria-selected="t.id === tab"
+            :aria-controls="`${uid}-panel`"
+            :tabindex="t.id === tab ? 0 : -1"
             @click="$emit('update:tab', t.id)"
           >{{ t.label }}</button>
         </div>
 
-        <div class="app-modal_body">
+        <div
+          :id="`${uid}-panel`"
+          class="app-modal_body"
+          :role="tabs.length > 1 ? 'tabpanel' : undefined"
+          :aria-labelledby="tabs.length > 1 ? `${uid}-tab-${tab}` : undefined"
+        >
           <slot />
         </div>
 
@@ -35,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeUnmount, inject } from 'vue'
+import { ref, nextTick, onBeforeUnmount, inject } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import { MORPHED_MODAL_CLASS, isMorphing } from '@utils/viewTransition'
 import { MODAL_FOCUS_FALLBACK } from '@utils/modalFocus'
@@ -46,7 +57,7 @@ import { MODAL_FOCUS_FALLBACK } from '@utils/modalFocus'
 // Klasse wie "money-account-modal") hier manuell auf das <dialog> gebunden.
 defineOptions({ inheritAttrs: false })
 
-defineProps({
+const props = defineProps({
   title: { type: String, default: '' },
   // Optionale Tabs { id, label }[]. Die Tableiste wird nur angezeigt, wenn
   // mehr als ein Tab übergeben wird — bei 0 oder 1 Tab(s) bleibt sie
@@ -55,7 +66,33 @@ defineProps({
   tab: { type: [String, Number], default: null },
 })
 
-defineEmits(['close', 'update:tab'])
+const emit = defineEmits(['close', 'update:tab'])
+
+const uid = `app-modal-${Math.random().toString(36).slice(2)}`
+
+function onTabKeydown(event) {
+  const index = props.tabs.findIndex(t => t.id === props.tab)
+  const last = props.tabs.length - 1
+  const target = {
+    ArrowRight: index >= last ? 0 : index + 1,
+    ArrowLeft: index <= 0 ? last : index - 1,
+    Home: 0,
+    End: last,
+  }[event.key]
+  if (target === undefined) return
+  event.preventDefault()
+  const next = props.tabs[target]
+  emit('update:tab', next.id)
+  nextTick(() => document.getElementById(`${uid}-tab-${next.id}`)?.focus())
+}
+
+// Name des Dialogs für Screenreader: die Überschrift im Kopf (Titel oder eigener Header-Slot)
+function labelDialog(el) {
+  const heading = el.querySelector('.app-modal_header h1, .app-modal_header h2, .app-modal_header h3')
+  if (!heading) return
+  if (!heading.id) heading.id = `${uid}-title`
+  el.setAttribute('aria-labelledby', heading.id)
+}
 
 const dialogEl = ref(null)
 
@@ -119,6 +156,7 @@ function open() {
   if (!el.open) {
     const active = document.activeElement
     returnFocusEl = active && active !== document.body && !el.contains(active) ? active : null
+    labelDialog(el)
     el.showModal()
   }
 }

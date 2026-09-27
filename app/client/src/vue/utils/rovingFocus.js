@@ -6,6 +6,8 @@
 //   <div class="participants-list" v-roving-focus="{ selector: '.participant', label: 'Teilnehmer' }">
 //
 // Kombinierbar mit v-context-menu auf den Einträgen (Menütaste/Umschalt+F10).
+// Mit dem Wert null ist die Direktive aus (z.B. bei Radio-Buttons, die das nativ können).
+// `role: null` lässt die Rolle des Containers unangetastet (setzt der Aufrufer selbst).
 
 const KEYS = {
   ArrowDown: 1,
@@ -15,7 +17,8 @@ const KEYS = {
 }
 
 function items(el, state) {
-  return [...el.querySelectorAll(state.selector)]
+  // Deaktivierte Einträge (z.B. Checkboxen bei "Alle") lassen sich nicht fokussieren
+  return [...el.querySelectorAll(state.selector)].filter(item => !item.disabled)
 }
 
 /** Genau ein Eintrag mit tabindex 0, alle anderen -1 */
@@ -31,12 +34,13 @@ function apply(el, state) {
 
 export const vRovingFocus = {
   mounted(el, binding) {
-    const { selector, label = '' } = binding.value ?? {}
+    if (!binding.value) return
+    const { selector, label = '', role = 'group' } = binding.value
     const state = { selector, current: null }
 
     // Gruppe statt Liste: die Listen enthalten Zwischenüberschriften ("Zugesagt (3)"),
     // die in einer ARIA-Liste von manchen Screenreadern verschluckt würden
-    el.setAttribute('role', 'group')
+    if (role) el.setAttribute('role', role)
     if (label) el.setAttribute('aria-label', label)
 
     state.onKeydown = (event) => {
@@ -70,7 +74,7 @@ export const vRovingFocus = {
 
     // Einträge kommen und gehen (neue Antworten, Umgruppieren) — tabindex nachziehen
     state.observer = new MutationObserver(() => apply(el, state))
-    state.observer.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex'] })
+    state.observer.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex', 'disabled'] })
 
     el.addEventListener('keydown', state.onKeydown)
     el.addEventListener('focusin', state.onFocusIn)
