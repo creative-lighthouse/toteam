@@ -16,6 +16,7 @@
     <span class="toggle-switch">
       <input
         type="checkbox"
+        role="switch"
         class="toggle-switch_input"
         :checked="modelValue"
         @change="$emit('update:modelValue', $event.target.checked)"

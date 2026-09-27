@@ -10,24 +10,26 @@ export const useEventsStore = defineStore('events', () => {
   const loading = ref(false)
   const error = ref(null)
 
-  // Computed - Events gruppiert nach Datum
+  // Computed - Events gruppiert nach Datum; mehrtägige Events stehen an jedem ihrer Tage
   const eventsByDate = computed(() => {
     const grouped = {}
     events.value.forEach(event => {
-      if (!grouped[event.DateStart]) {
-        grouped[event.DateStart] = []
-      }
-      grouped[event.DateStart].push(event)
+      event.getDateKeys().forEach(key => {
+        if (!grouped[key]) {
+          grouped[key] = []
+        }
+        grouped[key].push(event)
+      })
     })
     return grouped
   })
 
-  // Computed - Zukünftige Events
+  // Computed - Zukünftige und laufende Events
   const upcomingEvents = computed(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     return events.value
-      .filter(e => new Date(e.DateStart) >= today)
+      .filter(e => new Date(e.DateEnd || e.DateStart) >= today)
       .sort((a, b) => a.DateStart.localeCompare(b.DateStart))
   })
 
@@ -54,9 +56,11 @@ export const useEventsStore = defineStore('events', () => {
       // Konvertiere API-Daten zu Event-Instanzen
       const newEvents = (response.events || []).map(data => Event.fromAPI(data))
 
-      // Ersetze alle Events des geladenen Monats, behalte andere Monate
+      // Ersetze alle Events des geladenen Monats, behalte andere Monate. Mehrtägige Events
+      // aus dem Vormonat kommen in mehreren Monatsantworten vor und werden per ID ersetzt.
       const monthPrefix = `${year}-${String(month).padStart(2, '0')}`
-      const otherMonthEvents = events.value.filter(e => !e.DateStart.startsWith(monthPrefix))
+      const newIds = new Set(newEvents.map(e => e.ID))
+      const otherMonthEvents = events.value.filter(e => !e.DateStart.startsWith(monthPrefix) && !newIds.has(e.ID))
 
       events.value = [...otherMonthEvents, ...newEvents].sort((a, b) =>
         a.DateStart.localeCompare(b.DateStart)
@@ -211,6 +215,7 @@ export const useEventsStore = defineStore('events', () => {
                 ID: response.data.ID,
                 MemberID: u?.ID ?? null,
                 MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
+                Username: u?.Username ?? null,
                 ProfileImageURL: u?.Avatar ?? null,
                 Type: response.data.Type,
                 TimeStart: response.data.TimeStart,
@@ -565,6 +570,7 @@ export const useEventsStore = defineStore('events', () => {
           ID: response.data.ID,
           MemberID: u?.ID ?? null,
           MemberName: u ? `${u.FirstName} ${u.Surname}` : '',
+          Username: u?.Username ?? null,
           ProfileImageURL: u?.Avatar ?? null,
           Type: response.data.Type,
           IsCurrentUser: true,

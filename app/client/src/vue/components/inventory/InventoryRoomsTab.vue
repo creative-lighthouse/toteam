@@ -18,11 +18,12 @@
         <AppIconButton v-if="nfcSupported" variant="neutral" aria-label="NFC-Tag scannen" title="NFC-Tag scannen" @click="emit('scan-nfc')">
           <span class="icon-mask" :style="nfcIconStyle" />
         </AppIconButton>
-        <AppButton variant="primary" @click="formModal?.open()">+ Neuer Raum</AppButton>
+        <AppButton variant="primary" @click="formModal?.open()">+ Neu</AppButton>
       </template>
       <template #filters>
         <select
           v-if="store.organizations.length > 1"
+          aria-label="Räume nach Organisation filtern"
           :value="store.filterOrganization?.ID ?? ''"
           @change="onOrgChange($event.target.value)"
         >
@@ -31,13 +32,14 @@
         </select>
         <select
           v-if="inventoryStore.roomTypes.length"
+          aria-label="Räume nach Art filtern"
           :value="store.filterType ?? ''"
           @change="store.setTypeFilter($event.target.value ? parseInt($event.target.value) : null)"
         >
           <option value="">Alle Arten</option>
           <option v-for="type in inventoryStore.roomTypes" :key="type.ID" :value="type.ID">{{ type.Title }}</option>
         </select>
-        <select :value="store.filterAvailability ?? ''" @change="store.setAvailabilityFilter($event.target.value || null)">
+        <select aria-label="Räume nach Verfügbarkeit filtern" :value="store.filterAvailability ?? ''" @change="store.setAvailabilityFilter($event.target.value || null)">
           <option value="">Alle Räume</option>
           <option value="rentable">Reservierbar</option>
           <option value="occupied">Heute belegt</option>

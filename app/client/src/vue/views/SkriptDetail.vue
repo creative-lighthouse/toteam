@@ -16,11 +16,13 @@
         <div class="skript-detail_toolbar no-print">
           <div class="skript-detail_modes-row">
             <!-- Desktop/Tablet: Button-Leiste -->
-            <div class="skript-detail_modes" role="tablist">
+            <!-- Umschalter für den Modus (keine Tabs): Gruppe mit aria-pressed -->
+            <div class="skript-detail_modes" role="group" aria-label="Modus">
               <button
                 type="button"
                 class="skript-detail_mode-btn"
                 :class="{ 'skript-detail_mode-btn--active': store.activeMode === 'view' }"
+                :aria-pressed="store.activeMode === 'view'"
                 @click="switchMode('view')"
               >Ansicht</button>
               <button
@@ -28,18 +30,21 @@
                 type="button"
                 class="skript-detail_mode-btn"
                 :class="{ 'skript-detail_mode-btn--active': store.activeMode === 'edit' }"
+                :aria-pressed="store.activeMode === 'edit'"
                 @click="switchMode('edit')"
               >Bearbeiten</button>
               <button
                 type="button"
                 class="skript-detail_mode-btn"
                 :class="{ 'skript-detail_mode-btn--active': store.activeMode === 'focus' }"
+                :aria-pressed="store.activeMode === 'focus'"
                 @click="switchMode('focus')"
               >Fokus</button>
               <button
                 type="button"
                 class="skript-detail_mode-btn"
                 :class="{ 'skript-detail_mode-btn--active': store.activeMode === 'learn' }"
+                :aria-pressed="store.activeMode === 'learn'"
                 @click="switchMode('learn')"
               >Lernen</button>
               <button
@@ -47,6 +52,7 @@
                 type="button"
                 class="skript-detail_mode-btn"
                 :class="{ 'skript-detail_mode-btn--active': store.activeMode === 'roles' }"
+                :aria-pressed="store.activeMode === 'roles'"
                 @click="switchMode('roles')"
               >Rollen</button>
             </div>

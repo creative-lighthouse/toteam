@@ -20,6 +20,7 @@
         <template #filters>
           <!-- Organisation filter -->
           <select
+            aria-label="Aufgaben nach Organisation filtern"
             :value="store.filterOrganization?.ID ?? ''"
             @change="onOrgChange($event.target.value)"
           >
@@ -33,6 +34,7 @@
 
           <!-- State filter -->
           <select
+            aria-label="Aufgaben nach Status filtern"
             :value="store.filterState ?? ''"
             @change="store.setStateFilter($event.target.value || null)"
           >
@@ -46,10 +48,12 @@
           <TaskPersonFilter />
 
           <!-- View mode toggle (desktop/tablet only) -->
-          <div v-if="!isMobile" class="tasks-view-toggle">
+          <div v-if="!isMobile" class="tasks-view-toggle" role="group" aria-label="Ansicht">
             <button
               class="tasks-view-toggle_btn"
+              type="button"
               :class="{ 'tasks-view-toggle_btn--active': viewMode === 'list' }"
+              :aria-pressed="viewMode === 'list'"
               @click="viewMode = 'list'"
               title="Listenansicht"
               aria-label="Listenansicht"
@@ -58,7 +62,9 @@
             </button>
             <button
               class="tasks-view-toggle_btn"
+              type="button"
               :class="{ 'tasks-view-toggle_btn--active': viewMode === 'kanban' }"
+              :aria-pressed="viewMode === 'kanban'"
               @click="viewMode = 'kanban'"
               title="Kanban-Ansicht"
               aria-label="Kanban-Ansicht"

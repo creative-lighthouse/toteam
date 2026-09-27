@@ -200,3 +200,9 @@
         }
     }
 }
+
+// Per Tastatur erreichbar (role="button")
+.task-card:focus-visible {
+    outline: 2px solid var(--ColorPrimary);
+    outline-offset: 2px;
+}

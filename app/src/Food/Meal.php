@@ -34,6 +34,12 @@ use SilverStripe\Security\Security;
  */
 class Meal extends DataObject implements PermissionProvider
 {
+    /**
+     * Höchstlänge des Titels — längere Namen sprengen Karten und Listen.
+     * (Die Spalte bleibt Varchar(255), damit ältere, längere Titel erhalten bleiben.)
+     */
+    public const TITLE_MAX_LENGTH = 30;
+
     private static $db = [
         "Title"                => "Varchar(255)",
         "Time"                 => "Time",

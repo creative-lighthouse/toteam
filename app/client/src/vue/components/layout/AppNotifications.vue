@@ -34,18 +34,19 @@
                             'AppNotifications_item--read': notification.isRead,
                             'AppNotifications_item--linked': notification.url
                         }"
-                        @click="navigateTo(notification)"
                     >
-                        <div class="AppNotifications_item_content">
+                        <!-- Inhalt als Button: öffnet das Ziel (und markiert als gelesen), auch per Tastatur -->
+                        <button type="button" class="AppNotifications_item_content" @click="navigateTo(notification)">
+                            <span v-if="!notification.isRead" class="AppNotifications_sr-only">Ungelesen: </span>
                             <span class="AppNotifications_item_title">{{ notification.title }}</span>
                             <span class="AppNotifications_item_body">{{ notification.body }}</span>
                             <span class="AppNotifications_item_date">{{ formatDate(notification.created) }}</span>
-                        </div>
+                        </button>
                         <AppIconButton
                             v-if="!notification.isRead"
                             variant="ghost"
                             class="AppNotifications_item_close"
-                            aria-label="Als gelesen markieren"
+                            :aria-label="`„${notification.title}“ als gelesen markieren`"
                             @click.stop="store.markAsRead(notification.id)"
                         >×</AppIconButton>
                     </li>

@@ -4,7 +4,7 @@
       <img
         v-if="org.CoverURL"
         :src="org.CoverURL"
-        :alt="`${org.Title} Cover`"
+        alt=""
         class="organization-card_cover-img"
       >
       <div v-else class="organization-card_cover-placeholder" />
@@ -12,7 +12,8 @@
       <div class="organization-card_logo-wrap">
         <AppOrgLogo
           :src="org.LogoURL"
-          :alt="`${org.Title} Logo`"
+          alt=""
+          :name="org.Title"
           class="organization-card_logo"
         />
       </div>
@@ -20,7 +21,11 @@
 
     <div class="organization-card_body">
       <div class="organization-card_meta">
-        <h3 class="hl3 organization-card_title">{{ org.Title }}</h3>
+        <!-- Der Titel ist der eigentliche Link (die Karte enthält eigene Buttons, kann also selbst keiner sein) -->
+        <h3 class="hl3 organization-card_title">
+          <router-link v-if="org.Username" :to="`/organizations/${org.Username}`" class="organization-card_link" @click.stop>{{ org.Title }}</router-link>
+          <template v-else>{{ org.Title }}</template>
+        </h3>
         <span class="organization-card_count">{{ org.MemberCount }} {{ org.MemberCount === 1 ? 'Mitglied' : 'Mitglieder' }}</span>
       </div>
 

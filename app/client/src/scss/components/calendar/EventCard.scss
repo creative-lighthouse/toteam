@@ -11,6 +11,11 @@
         box-shadow: var(--BoxShadowMenu);
     }
 
+    &:focus-visible {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: 2px;
+    }
+
     &.event-card--timed {
         border-left: 4px solid var(--ColorPrimaryDark);
     }

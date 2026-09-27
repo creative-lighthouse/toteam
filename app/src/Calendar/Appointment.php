@@ -19,6 +19,7 @@ use SilverStripe\Security\Security;
 use App\Calendar\AppointmentAgendaPoint;
 use App\Calendar\AppointmentParticipation;
 use App\Calendar\AppointmentType;
+use App\Teams\OrgEvent;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\DateField;
 use SilverStripe\Forms\FieldGroup;
@@ -43,8 +44,10 @@ use SilverStripe\Forms\TimeField;
  * @property bool $EnableAgenda
  * @property int $ImageID
  * @property int $TypeID
+ * @property int $EventID
  * @method \SilverStripe\Assets\Image Image()
  * @method \App\Calendar\AppointmentType Type()
+ * @method \App\Teams\OrgEvent Event()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentParticipation[] Participations()
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
@@ -80,6 +83,8 @@ class Appointment extends DataObject implements PermissionProvider
     private static $has_one = [
         "Image" => Image::class,
         "Type" => AppointmentType::class,
+        // Optionales Event der Organisation, zu dem der Termin gehört (z.B. "Halloweenhaus 2026")
+        "Event" => OrgEvent::class,
     ];
 
     private static $many_many = [
@@ -108,6 +113,7 @@ class Appointment extends DataObject implements PermissionProvider
         "TimeEnd" => "Uhrzeit bis",
         "AllDay" => "Ganztägig",
         "Type" => "Termin-Typ",
+        "Event" => "Event",
         "Image" => "Bild",
         "Participations" => "Teilnahmen",
         "Meals" => "Mahlzeiten",
@@ -137,6 +143,7 @@ class Appointment extends DataObject implements PermissionProvider
         'Location',
         'Description',
         'Type',
+        'Event',
         'EnableMeals',
         'EnableAgenda',
     ];

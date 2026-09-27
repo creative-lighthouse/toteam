@@ -12,9 +12,17 @@
         {{ participation.MemberName }}
     </span>
     <div class="participant-timeandride">
-        <span v-if="rideIcon" class="participant-ride" :class="{ 'participant-ride--needed': participation.RideType === 'Need' }" :title="rideTitle">
+        <!-- Icon + Zahl allein wären für Screenreader nur "2" — daher als Text beschrieben -->
+        <span
+            v-if="rideIcon"
+            class="participant-ride"
+            :class="{ 'participant-ride--needed': participation.RideType === 'Need' }"
+            :title="rideTitle"
+            role="img"
+            :aria-label="rideSeats !== null ? `${rideTitle}, ${rideSeats} freie Plätze` : rideTitle"
+        >
             <span class="participant-ride_icon" :style="rideIconStyle" aria-hidden="true"></span>
-            <span v-if="rideSeats !== null" class="participant-ride_seats">{{ rideSeats }}</span>
+            <span v-if="rideSeats !== null" class="participant-ride_seats" aria-hidden="true">{{ rideSeats }}</span>
         </span>
         <span class="participant-status" v-if="participation.Type !== 'Decline' && participation.CustomTimeframe && participation.TimeStart && participation.TimeEnd">
             {{ formatTime(participation.TimeStart) }} – {{ formatTime(participation.TimeEnd) }}
@@ -24,6 +32,13 @@
           :key="allergy"
           class="allergy-pill"
         >{{ allergy }}</span>
+        <img
+          v-if="statusIcon"
+          :src="statusIcon.src"
+          :alt="statusIcon.label"
+          :title="statusIcon.label"
+          class="participant-status-icon"
+        >
     </div>
     <p
       v-if="participation.Notes"
@@ -40,6 +55,9 @@ import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import HasTransportIcon from '../../../../icons/actions/action_hastransport.svg'
 import NeedsTransportIcon from '../../../../icons/actions/action_needstransport.svg'
+import AcceptIcon from '../../../../icons/states/participation_accept.svg'
+import MaybeIcon from '../../../../icons/states/participation_maybe.svg'
+import DeclineIcon from '../../../../icons/states/participation_decline.svg'
 
 const props = defineProps({
   participation: {
@@ -53,6 +71,14 @@ const props = defineProps({
 })
 
 defineEmits(['toggle-note'])
+
+// Status zusätzlich als Icon — nicht nur über die Randfarbe (Farbenblindheit)
+const STATUS_ICONS = {
+  Accept: { src: AcceptIcon, label: 'Zugesagt' },
+  Maybe: { src: MaybeIcon, label: 'Vielleicht' },
+  Decline: { src: DeclineIcon, label: 'Abgesagt' },
+}
+const statusIcon = computed(() => STATUS_ICONS[props.participation.Type] ?? null)
 
 function formatTime(timeStr) {
   if (!timeStr) return ''

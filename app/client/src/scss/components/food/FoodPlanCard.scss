@@ -1,0 +1,93 @@
+@use "../../base/variables" as *;
+
+// Ein Gericht im Essensplaner (FoodPlanCard.vue)
+.food-plan-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--BorderRadiusSmall);
+    background-color: var(--ColorVeryLightGray);
+    text-align: left;
+    cursor: grab;
+
+    &--locked {
+        cursor: default;
+    }
+
+    // Bearbeitbar per langem Drücken: kein iOS-Menü und keine Textmarkierung dabei
+    &--editable {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    // Platzhalter an der alten Stelle, solange die Kopie dem Zeiger folgt
+    &--dragging {
+        opacity: 0.35;
+    }
+
+    // Die Kopie, die dem Zeiger folgt (pointerDrag.js)
+    &.pointer-drag-ghost {
+        opacity: 0.95;
+        background-color: var(--ColorWhite);
+        box-shadow: var(--BoxShadowMenu);
+        cursor: grabbing;
+    }
+
+    .food-plan-card_handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 24px;
+        height: 32px;
+        margin-left: -4px;
+        color: var(--ColorGray);
+        // Auf Touch-Geräten startet nur der Griff das Ziehen — und scrollt dabei nicht
+        touch-action: none;
+        cursor: grab;
+    }
+
+    .food-plan-card_info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .food-plan-card_title {
+        margin: 0;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .food-plan-card_pref {
+        margin-left: 4px;
+        padding: 0 6px;
+        border-radius: 50px;
+        background-color: var(--ColorWhite);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ColorGray);
+    }
+
+    .food-plan-card_meta {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    // Alternative zum Ziehen: Zuordnen über eine Auswahl (auch per Tastatur)
+    .food-plan-card_assign {
+        flex-shrink: 0;
+        max-width: 130px;
+        padding: 4px 6px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorWhite);
+        font-size: 12px;
+    }
+
+    .food-plan-card_reject {
+        flex-shrink: 0;
+    }
+}

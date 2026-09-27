@@ -30,6 +30,7 @@
               {{ task.Organization.Title }}
             </span>
             <select
+              aria-label="Status"
               class="task-card_state-badge task-detail_status-select"
               :class="`task-card_state-badge--${task.State || 'open'}`"
               :value="task.State || 'open'"
@@ -66,7 +67,7 @@
         <h2 class="hl2 task-detail_title">{{ task.Title }}</h2>
 
         <p v-if="task.DeadlineNice && task.State !== 'finished'" class="task-detail_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
-          Fällig: {{ task.DeadlineNice }}
+          Fällig: {{ task.DeadlineNice }}<template v-if="isOverdue"> (überfällig)</template>
         </p>
 
         <!-- Description -->

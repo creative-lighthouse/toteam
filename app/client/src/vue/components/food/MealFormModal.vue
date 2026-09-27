@@ -12,10 +12,13 @@
 <template>
   <AppModal ref="modal" class="meal-form-modal" :title="isEdit ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen'" @close="close">
     <form id="meal-form" class="modalform" @submit.prevent="submit">
-      <label class="field">
-        Titel *
-        <input v-model="form.title" type="text" placeholder="z.B. Mittagessen" maxlength="255" required>
-      </label>
+      <AppTextField
+        v-model="form.title"
+        label="Titel *"
+        :maxlength="TITLE_MAX_LENGTH"
+        placeholder="z.B. Mittagessen"
+        required
+      />
 
       <label class="field">
         Uhrzeit *
@@ -47,6 +50,7 @@ import { ref, computed } from 'vue'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/ui/AppButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
+import AppTextField from '@components/ui/AppTextField.vue'
 import AppToggle from '@components/ui/AppToggle.vue'
 
 const props = defineProps({
@@ -68,6 +72,9 @@ const error = ref(null)
 // ist im Kind beim synchronen open()-Aufruf noch nicht aktualisiert.
 const mealId = ref(null)
 const isEdit = computed(() => mealId.value !== null)
+
+// Wie Meal::TITLE_MAX_LENGTH im Backend — längere Namen sprengen Karten und Listen
+const TITLE_MAX_LENGTH = 30
 
 const defaultForm = () => ({ title: '', time: '', description: '', acceptsContributions: false })
 const form = ref(defaultForm())

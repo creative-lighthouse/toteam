@@ -240,11 +240,17 @@
         outline: 1px solid var(--ColorLightGray);
         box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 
-        &.calendar-grid--loading {
-            .calendar-day {
-                opacity: 0;
-                pointer-events: none;
-            }
+        // Während die Termine laden, bleibt das Raster sichtbar und klickbar;
+        // nur die Termin-Punkte werden durch ein pulsierendes Skeleton ersetzt
+        // Liegt im Grid von .event-dots und spannt über alle vier Spalten
+        .event-dot-skeleton {
+            grid-column: 1 / -1;
+            justify-self: center;
+            width: 60%;
+            height: 6px;
+            border-radius: 50px;
+            background-color: var(--ColorLightGray);
+            animation: calendar-skeleton-pulse 1.2s ease-in-out infinite;
         }
 
         .calendar-weekday {
@@ -266,6 +272,14 @@
             width: 100%;
             outline: 1px solid var(--ColorLightGray);
             position: relative;
+            cursor: pointer;
+
+            // Tastatur-Fokus: kräftiger Rahmen nach innen (der normale Rahmen ist schon ein outline)
+            &:focus-visible {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: -2px;
+                z-index: 1;
+            }
 
             // Calendar week, top left corner of the first cell of each row
             .week-number {
@@ -361,6 +375,13 @@
 
         h3 {
             margin-bottom: 10px;
+        }
+
+        // Bekommt nach Auswahl eines Tages per Tastatur den Fokus
+        .selected-day-events_title:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 4px;
+            border-radius: 2px;
         }
 
         .events-list {
@@ -465,13 +486,39 @@
         margin-left: auto;
     }
 
+    // Eigene Abwesenheit: ein Button (Browser-Button-Styles zurücksetzen)
     &--own {
+        // Etwas Innenabstand für Hover/Fokus, per negativem Rand bündig mit den anderen Einträgen
+        width: calc(100% + 12px);
+        padding: 4px 6px;
+        margin: 0 -6px;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
         cursor: pointer;
         border-radius: var(--BorderRadiusSmall, 6px);
         transition: background-color 0.15s ease;
 
-        &:hover {
+        @include hover {
             background-color: var(--ColorPrimaryLight);
         }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+        }
+    }
+}
+
+@keyframes calendar-skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .event-dot-skeleton {
+        animation: none;
     }
 }

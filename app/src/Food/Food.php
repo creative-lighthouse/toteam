@@ -6,6 +6,7 @@ use Override;
 use App\Food\Meal;
 use App\Food\MealProductOrder;
 use App\Teams\Organization;
+use App\Teams\OrgEvent;
 use SilverStripe\Assets\Image;
 use App\HumanResources\Allergy;
 use SilverStripe\ORM\DataObject;
@@ -27,7 +28,9 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @property int $ParentID
  * @property int $ImageID
  * @property int $SupplierID
+ * @property int $EventID
  * @method \App\Teams\Organization Parent()
+ * @method \App\Teams\OrgEvent Event()
  * @method \SilverStripe\Assets\Image Image()
  * @method \SilverStripe\Security\Member Supplier()
  * @method \SilverStripe\ORM\DataList|\App\Food\MealProductOrder[] Orders()
@@ -59,6 +62,9 @@ class Food extends DataObject implements PermissionProvider
         "Parent" => Organization::class,
         "Image" => Image::class,
         "Supplier" => Member::class,
+        // Event, für das der Vorschlag gemacht wurde — der Essensplaner ordnet ihn
+        // dann genau einer Mahlzeit eines Termins dieses Events zu
+        "Event" => OrgEvent::class,
     ];
 
     private static $owns = [

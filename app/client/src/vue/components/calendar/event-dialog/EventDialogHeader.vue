@@ -1,7 +1,8 @@
 <template>
   <AppOrgLogo
-    v-if="event.OrganizationLogoURL"
-    :src="event.OrganizationLogoURL"
+    v-if="primaryOrg"
+    :src="primaryOrg.LogoURL"
+    :name="primaryOrg.Title"
     alt=""
     :size="32"
   />
@@ -13,9 +14,16 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 
-defineProps({
+const props = defineProps({
   event: { type: Object, required: true }
 })
+
+// Erste Organisation des Termins (ohne Logo zeigt AppOrgLogo die Initiale — wie in der EventCard)
+const primaryOrg = computed(() =>
+  props.event.OrganizationLogos?.[0]
+    || (props.event.OrganizationLogoURL ? { LogoURL: props.event.OrganizationLogoURL, Title: '' } : null)
+)
 </script>

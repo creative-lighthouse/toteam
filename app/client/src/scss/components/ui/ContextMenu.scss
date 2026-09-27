@@ -33,3 +33,10 @@
         }
     }
 }
+
+// Einträge mit Kontextmenü (v-context-menu) sind per Tab erreichbar —
+// Menütaste bzw. Umschalt+F10 öffnet dann das Menü
+[data-context-menu]:focus-visible {
+    outline: 2px solid var(--ColorPrimary);
+    outline-offset: 2px;
+}

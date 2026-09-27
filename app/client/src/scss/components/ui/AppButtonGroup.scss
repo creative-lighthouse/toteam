@@ -47,9 +47,14 @@
 
         svg { flex-shrink: 0; }
 
-        &:disabled { cursor: not-allowed; opacity: 0.5; }
+        &[aria-disabled="true"] { cursor: not-allowed; opacity: 0.5; }
 
-        @include hover(':not(:disabled):not(.is-selected)') {
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
+        }
+
+        @include hover(':not([aria-disabled="true"]):not(.is-selected)') {
             background-color: var(--ColorVeryLightGray);
             color: var(--ColorFont);
         }
@@ -59,7 +64,7 @@
         }
 
         &.is-hint {
-            @include hover(':not(:disabled)') { filter: brightness(0.97); }
+            @include hover(':not([aria-disabled="true"])') { filter: brightness(0.97); }
         }
 
         &--positive.is-hint {

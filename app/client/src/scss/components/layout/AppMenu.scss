@@ -546,3 +546,39 @@
         }
     }
 }
+
+// Menü-Schalter (Profil, Weitere Bereiche) sind Buttons — Browser-Styles zurücksetzen
+.AppMenu .nav_toggle {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+// Sichtbarer Tastatur-Fokus im ganzen Menü
+.AppMenu {
+    .nav_link,
+    .nav_profile,
+    .nav_logout,
+    .nav_settings,
+    .nav_feedback {
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
+            border-radius: var(--BorderRadiusSmall);
+        }
+    }
+}
+
+// Nur für Screenreader (z.B. "ungelesen" hinter der Zahl im Badge)
+.nav_sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}

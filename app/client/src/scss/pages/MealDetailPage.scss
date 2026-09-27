@@ -1,0 +1,294 @@
+@use "../base/variables" as *;
+
+// Detailansicht einer Mahlzeit (MealDetail.vue, Route /food/meal/:id)
+
+.meal-detail-block {
+    h4 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ColorGray);
+        margin: 0 0 8px 0;
+    }
+}
+
+.meal-food-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    justify-content: stretch;
+}
+
+.meal-food {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+    width: 100%;
+
+    .meal-food-row {
+        width: 100%;
+    }
+
+    &_title { font-weight: 500; }
+    &_pref { font-size: 0.75rem; }
+    &_supplier { font-size: 0.75rem; color: var(--ColorGray); font-style: italic; }
+    &_right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+    &_full-row { flex-basis: 100%; margin-top: 2px; }
+    &_approve-actions {
+        display: flex;
+        gap: 6px;
+
+        .button { margin: 0; }
+    }
+}
+
+.meal-detail-heading-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+// ── Food status dot ───────────────────────────────────────────────────────────
+
+.food-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+
+    &--new      { background: #f59e0b; }
+    &--accepted { background: #10b981; }
+    &--rejected { background: #ef4444; }
+}
+
+.meal-detail-block_heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+
+    h4 { margin: 0; }
+}
+
+// ── MealDetail page ───────────────────────────────────────────────────────────
+
+.section--MealDetail {
+    // Hero und eigene Antwort über die volle Breite, darunter Gerichte und
+    // Teilnehmer nebeneinander. Auf kleinen Bildschirmen (Flex-Spalte) bleibt
+    // die DOM-Reihenfolge: Antwort → Teilnehmer → Gerichte.
+    .section_content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "hero hero"
+            "rsvp rsvp"
+            "foods participants";
+        gap: 10px;
+
+        .meal-detail-hero { grid-area: hero; }
+        .meal-rsvp { grid-area: rsvp; }
+        .participants-section { grid-area: participants; }
+        .meal-foods-section { grid-area: foods; }
+
+        // Ohne Teilnehmerliste nehmen die Gerichte die volle Breite ein
+        .meal-foods-section--full { grid-column: 1 / -1; }
+
+        @include media(max-medium) {
+            display: flex;
+            flex-direction: column;
+        }
+    }
+
+    .section_infobox {
+        padding: 20px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+    }
+}
+
+.meal-detail-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--ColorWhite);
+    border-radius: var(--BorderRadiusMedium);
+    box-shadow: var(--BoxShadowLight);
+
+    &_logo {
+        background: var(--ColorLightGray);
+        flex-shrink: 0;
+    }
+
+    &_actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    &_info { flex: 1; min-width: 0; }
+
+    &_date {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ColorPrimary);
+        margin: 0 0 4px 0;
+    }
+
+    &_title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+    }
+
+    &_sub {
+        font-size: 0.8rem;
+        color: var(--ColorGray);
+        margin: 0;
+    }
+
+    &_description-text {
+        margin: 8px 0 0 0;
+        font-size: 0.85rem;
+        color: var(--ColorGray);
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+}
+
+.meal-rsvp {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    &_status {
+        font-size: 0.9rem;
+        color: var(--ColorGray);
+
+        strong { margin-left: 4px; }
+        .text-accept  { color: #10b981; }
+        .text-decline { color: #ef4444; }
+        .text-pending { color: var(--ColorGray); }
+    }
+
+    &_actions {
+        display: flex;
+        gap: 8px;
+
+        .button { margin: 0; }
+    }
+}
+
+// ── Meal products ─────────────────────────────────────────────────────────────
+
+.meal-product-add-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+
+    label {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+
+        input { width: 100%; }
+    }
+
+    .button { margin: 0; flex-shrink: 0; }
+}
+
+.meal-product-item {
+    background: var(--ColorVeryLightGray);
+    border-radius: var(--BorderRadiusSmall);
+    padding: 10px 12px;
+
+    &_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    &_meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    &_title {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    &_max {
+        font-size: 0.72rem;
+        color: var(--ColorGray);
+    }
+
+    &_actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    &_summary {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 8px;
+    }
+
+    &_total {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--ColorPrimary);
+    }
+
+    &_order {
+        font-size: 0.75rem;
+        color: var(--ColorGray);
+
+        &::before { content: '·'; margin-right: 4px; }
+    }
+}
+
+.meal-food-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-basis: 100%;
+    padding: 10px;
+    background: var(--ColorVeryLightGray);
+    border-radius: var(--BorderRadiusSmall);
+
+    .form-control {
+        padding: 7px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+    }
+}
+
+.meal-detail-empty {
+    color: var(--ColorGray);
+    font-size: 0.875rem;
+    margin: 0;
+}

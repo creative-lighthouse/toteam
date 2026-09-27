@@ -10,18 +10,29 @@
           <AppIconButton variant="ghost" aria-label="Schließen" @click="$emit('close')">✕</AppIconButton>
         </div>
 
-        <div v-if="tabs.length > 1" class="app-modal_tabs">
+        <!-- Tabs: ein Tab-Stopp, links/rechts (bzw. Pos1/Ende) wechselt direkt den Tab -->
+        <div v-if="tabs.length > 1" class="app-modal_tabs" role="tablist" @keydown="onTabKeydown">
           <button
             v-for="t in tabs"
+            :id="`${uid}-tab-${t.id}`"
             :key="t.id"
             type="button"
+            role="tab"
             class="app-modal_tab"
             :class="{ 'app-modal_tab--active': t.id === tab }"
+            :aria-selected="t.id === tab"
+            :aria-controls="`${uid}-panel`"
+            :tabindex="t.id === tab ? 0 : -1"
             @click="$emit('update:tab', t.id)"
           >{{ t.label }}</button>
         </div>
 
-        <div class="app-modal_body">
+        <div
+          :id="`${uid}-panel`"
+          class="app-modal_body"
+          :role="tabs.length > 1 ? 'tabpanel' : undefined"
+          :aria-labelledby="tabs.length > 1 ? `${uid}-tab-${tab}` : undefined"
+        >
           <slot />
         </div>
 
@@ -35,8 +46,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick, onBeforeUnmount, inject } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
+import { MORPHED_MODAL_CLASS, isMorphing } from '@utils/viewTransition'
+import { MODAL_FOCUS_FALLBACK } from '@utils/modalFocus'
 
 // Root ist ein <Teleport>, kein normales DOM-Element — Vues automatisches
 // Attribute-/Class-Fallthrough greift dabei nicht (landet ansonsten ins
@@ -44,7 +57,7 @@ import AppIconButton from '@components/ui/AppIconButton.vue'
 // Klasse wie "money-account-modal") hier manuell auf das <dialog> gebunden.
 defineOptions({ inheritAttrs: false })
 
-defineProps({
+const props = defineProps({
   title: { type: String, default: '' },
   // Optionale Tabs { id, label }[]. Die Tableiste wird nur angezeigt, wenn
   // mehr als ein Tab übergeben wird — bei 0 oder 1 Tab(s) bleibt sie
@@ -53,17 +66,150 @@ defineProps({
   tab: { type: [String, Number], default: null },
 })
 
-defineEmits(['close', 'update:tab'])
+const emit = defineEmits(['close', 'update:tab'])
+
+const uid = `app-modal-${Math.random().toString(36).slice(2)}`
+
+function onTabKeydown(event) {
+  const index = props.tabs.findIndex(t => t.id === props.tab)
+  const last = props.tabs.length - 1
+  const target = {
+    ArrowRight: index >= last ? 0 : index + 1,
+    ArrowLeft: index <= 0 ? last : index - 1,
+    Home: 0,
+    End: last,
+  }[event.key]
+  if (target === undefined) return
+  event.preventDefault()
+  const next = props.tabs[target]
+  emit('update:tab', next.id)
+  nextTick(() => document.getElementById(`${uid}-tab-${next.id}`)?.focus())
+}
+
+// Name des Dialogs für Screenreader: die Überschrift im Kopf (Titel oder eigener Header-Slot)
+function labelDialog(el) {
+  const heading = el.querySelector('.app-modal_header h1, .app-modal_header h2, .app-modal_header h3')
+  if (!heading) return
+  if (!heading.id) heading.id = `${uid}-title`
+  el.setAttribute('aria-labelledby', heading.id)
+}
 
 const dialogEl = ref(null)
 
+const CLOSING_CLASS = 'app-modal--closing'
+const CLOSE_DURATION = 180 // ms, passend zur Animation in AppModal.scss
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+
+// Spielt die Schließ-Animation auf `el` ab und ruft danach `done` auf. Der
+// Timeout ist die Absicherung, falls `animationend` nicht feuert.
+function animateOut(el, done) {
+  if (prefersReducedMotion()) {
+    done()
+    return
+  }
+  let finished = false
+  const finish = () => {
+    if (finished) return
+    finished = true
+    el.removeEventListener('animationend', onEnd)
+    done()
+  }
+  const onEnd = (event) => { if (event.target === el) finish() }
+  el.addEventListener('animationend', onEnd)
+  el.classList.add(CLOSING_CLASS)
+  setTimeout(finish, CLOSE_DURATION + 80)
+}
+
+// ── Fokus zurückgeben ────────────────────────────────────────────────────────
+// Wird das <dialog> per v-if entfernt statt per close() geschlossen, gibt der
+// Browser den Fokus nicht an das auslösende Element zurück — er landet auf
+// <body>. Deshalb merkt sich das Modal beim Öffnen das fokussierte Element und
+// gibt den Fokus nach dem Schließen (und nach der Schließ-Animation, solange die
+// Kopie modal offen ist, wäre der Rest der Seite noch gesperrt) selbst zurück.
+const GHOST_CLASS = 'app-modal--ghost'
+let returnFocusEl = null
+
+// Seiten können per provide(MODAL_FOCUS_FALLBACK, () => element) ein Ziel
+// angeben, falls es kein auslösendes Element (mehr) gibt — z.B. wenn ein Termin
+// per Link statt aus der Liste geöffnet wurde
+const focusFallback = inject(MODAL_FOCUS_FALLBACK, null)
+
+function restoreFocus(target) {
+  // Ist inzwischen ein anderes Modal offen (z.B. Skeleton → Termin), behält das den Fokus
+  if (document.querySelector(`dialog.app-modal[open]:not(.${GHOST_CLASS})`)) return
+  const el = target?.isConnected ? target : focusFallback?.()
+  el?.focus({ preventScroll: true })
+}
+
+// Zählt Öffnen/Schließen mit: wird während der Schließ-Animation wieder
+// geöffnet, darf das verzögerte close() den Dialog nicht mehr zumachen
+let closeToken = 0
+
 function open() {
-  dialogEl.value?.showModal()
+  const el = dialogEl.value
+  if (!el) return
+  closeToken++
+  el.classList.remove(CLOSING_CLASS, MORPHED_MODAL_CLASS)
+  if (!el.open) {
+    const active = document.activeElement
+    returnFocusEl = active && active !== document.body && !el.contains(active) ? active : null
+    labelDialog(el)
+    el.showModal()
+  }
 }
 
 function close() {
-  dialogEl.value?.close()
+  const el = dialogEl.value
+  if (!el?.open || el.classList.contains(CLOSING_CLASS)) return
+  const token = ++closeToken
+  animateOut(el, () => {
+    if (token !== closeToken) return
+    el.close()
+    el.classList.remove(CLOSING_CLASS)
+    restoreFocus(returnFocusEl)
+  })
 }
+
+// Viele Modals werden nicht per close() geschlossen, sondern von der
+// Elternkomponente per v-if entfernt — dann ist das <dialog> sofort weg. Damit
+// auch dort animiert wird, bleibt eine statische Kopie für die Dauer der
+// Schließ-Animation stehen und wird danach entfernt.
+onBeforeUnmount(() => {
+  const el = dialogEl.value
+  const focusTarget = returnFocusEl
+  if (!el?.open) return
+  // Ohne Kopie: Fokus zurückgeben, sobald das <dialog> aus dem DOM ist
+  if (prefersReducedMotion() || isMorphing()) {
+    requestAnimationFrame(() => restoreFocus(focusTarget))
+    return
+  }
+  const ghost = el.cloneNode(true)
+  ghost.classList.add(GHOST_CLASS)
+  // Die Kopie erbt das open-Attribut — showModal() würde darauf einen Fehler
+  // werfen und die Kopie als offenen, nicht-modalen Dialog stehen lassen
+  ghost.removeAttribute('open')
+  ghost.removeAttribute('id')
+  ghost.setAttribute('aria-hidden', 'true')
+  ghost.inert = true
+  document.body.appendChild(ghost)
+  try {
+    ghost.showModal()
+    // Scrollposition übernehmen, sonst springt der Inhalt der Kopie nach oben
+    const body = el.querySelector('.app-modal_body')
+    const ghostBody = ghost.querySelector('.app-modal_body')
+    if (body && ghostBody) ghostBody.scrollTop = body.scrollTop
+    animateOut(ghost, () => {
+      ghost.remove()
+      restoreFocus(focusTarget)
+    })
+  } catch {
+    ghost.remove()
+    requestAnimationFrame(() => restoreFocus(focusTarget))
+  }
+})
 
 defineExpose({ open, close })
 </script>

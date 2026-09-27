@@ -73,7 +73,7 @@
   <label v-if="time === 'toggle'" :class="toggleFieldClass">
     <span>{{ toggleLabel }}</span>
     <span class="toggle-switch">
-      <input type="checkbox" v-model="localAllDay" class="toggle-switch_input">
+      <input type="checkbox" role="switch" v-model="localAllDay" class="toggle-switch_input">
       <span class="toggle-switch_track"></span>
     </span>
   </label>

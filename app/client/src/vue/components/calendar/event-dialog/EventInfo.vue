@@ -2,13 +2,19 @@
   <div class="event-info">
     <p v-if="event.EventTitle"><strong>Event:</strong> {{ event.EventTitle }}</p>
     <p v-if="event.Type"><strong>Typ:</strong> {{ event.Type }}</p>
-    <p><strong>Datum:</strong> {{ formatDate(event.DateStart) }}</p>
-    <p v-if="event.TimeStart && event.TimeEnd">
-      <strong>Zeit:</strong> {{ formatTime(event.TimeStart) }} - {{ formatTime(event.TimeEnd) }}
-    </p>
-    <p v-else>
-      <strong>Ganztägig</strong>
-    </p>
+    <template v-if="isMultiDay(event)">
+      <p><strong>Zeitraum:</strong> {{ formatEventRange(event, { long: true }) }}</p>
+      <p v-if="event.AllDay"><strong>Ganztägig</strong></p>
+    </template>
+    <template v-else>
+      <p><strong>Datum:</strong> {{ formatDate(event.DateStart) }}</p>
+      <p v-if="event.TimeStart && event.TimeEnd">
+        <strong>Zeit:</strong> {{ formatTime(event.TimeStart) }} - {{ formatTime(event.TimeEnd) }}
+      </p>
+      <p v-else>
+        <strong>Ganztägig</strong>
+      </p>
+    </template>
     <p v-if="event.Location">
       <strong>Ort: </strong>
       <a
@@ -27,6 +33,7 @@
 
 <script setup>
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
+import { isMultiDay, formatEventRange } from '@utils/eventDates'
 defineProps({
   event: { type: Object, required: true }
 })

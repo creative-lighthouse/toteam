@@ -111,6 +111,19 @@
         line-height: 1;
         cursor: pointer;
         padding: 0;
+        // Sichtbar klein, aber mit 32px großer Tipp-Fläche
+        position: relative;
+
+        &::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorWhite);
+            outline-offset: 2px;
+        }
 
         &:hover {
             background: rgba(255, 255, 255, 0.45);
@@ -141,19 +154,17 @@
         border-radius: var(--BorderRadiusSmall);
         box-shadow: var(--BoxShadowMedium);
 
-        li button {
-            display: block;
-            width: 100%;
-            text-align: left;
+        // Treffer (role="option"): markiert per Pfeiltasten oder Maus
+        .member-picker_dropdown-option {
             padding: 7px 10px;
-            border: none;
             border-radius: var(--BorderRadiusSmall);
-            background: none;
             font-size: 13px;
+            text-align: left;
             cursor: pointer;
 
-            &:hover {
+            &--active {
                 background-color: var(--ColorVeryLightGray);
+                box-shadow: inset 3px 0 0 var(--ColorPrimary);
             }
         }
     }
@@ -192,9 +203,24 @@
         transition: border-color 0.15s ease, background-color 0.15s ease;
         margin: 0;
 
+        position: relative;
+
         input[type="checkbox"],
         input[type="radio"] {
-            display: none;
+            // Nur optisch ausgeblendet (nicht display:none): so bleiben die
+            // Optionen per Tastatur (Tab, Pfeiltasten, Leertaste) und für
+            // Screenreader bedienbar — der Fokus zeigt sich am Chip
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        &:has(input:focus-visible) {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
         }
 
         &:has(input:checked) {
@@ -239,4 +265,14 @@
         color: var(--ColorGray);
         margin: 4px 0 0;
     }
+}
+
+// Trefferzahl nur für Screenreader
+.member-picker_sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }

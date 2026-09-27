@@ -9,6 +9,7 @@ use App\Announcements\Announcement;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
+use App\Teams\OrgEvent;
 use App\Events\EventDay;
 use App\Calendar\Appointment;
 use App\Calendar\SchedulingPoll;
@@ -290,6 +291,35 @@ class PushNotificationService
     /**
      * Benachrichtigt den Vorschlagenden über die Entscheidung des Essensorganisators.
      */
+    /**
+     * Neuer Vorschlag für ein Event (noch ohne Mahlzeit): an alle Essensplaner der
+     * Organisation, mit Link direkt in den Planer dieses Events.
+     */
+    public static function notifyFoodSuggestionForEvent(Food $food, OrgEvent $event): void
+    {
+        $org = $event->Organization();
+        if (!$org || !$org->exists()) {
+            return;
+        }
+
+        $supplier = $food->Supplier();
+        $title    = '🍽️ Neuer Essens-Vorschlag';
+        $body     = ($supplier && $supplier->exists() ? trim($supplier->FirstName . ' ' . $supplier->Surname) . ' schlägt "' : 'Vorschlag: "')
+            . $food->Title . '" für "' . $event->Title . '" vor.';
+        $url      = '/app/food?tab=plan&event=' . $event->ID;
+
+        foreach (OrganizationMembership::get()->filter(['OrganizationID' => $org->ID, 'Role' => 'member']) as $membership) {
+            $planner = $membership->Member();
+            if (!$planner || !$planner->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
+                continue;
+            }
+            self::saveNotification($planner->ID, 'meals', $title, $body, $url);
+            if ($planner->NotifyMeals) {
+                self::sendToMember($planner, $title, $body, $url);
+            }
+        }
+    }
+
     public static function notifyFoodSuggestionDecision(Food $food): void
     {
         $supplier = $food->Supplier();

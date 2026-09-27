@@ -1,0 +1,65 @@
+@use "../../base/variables" as *;
+
+// Eigene Essensvorschläge (FoodSuggestionsModal.vue)
+.food-suggestions-modal {
+    text-align: left;
+
+    .food-suggestions-modal_empty {
+        margin: 0;
+        color: var(--ColorGray);
+    }
+
+    .food-suggestions-modal_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .food-suggestion {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+        text-align: left;
+    }
+
+    .food-suggestion_info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .food-suggestion_title {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .food-suggestion_pref {
+        margin-left: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+
+    .food-suggestion_context {
+        margin: 2px 0 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .food-suggestion_badge {
+        flex-shrink: 0;
+        padding: 2px 10px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 700;
+
+        &--new      { background-color: var(--ColorStatusWarningAccent); color: #b07800; }
+        &--accepted { background-color: var(--ColorStatusGoodAccent); color: #2e7d32; }
+        &--rejected { background-color: var(--ColorStatusBadAccent); color: var(--ColorStatusBad); }
+    }
+}

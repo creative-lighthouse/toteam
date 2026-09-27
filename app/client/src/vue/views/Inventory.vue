@@ -3,15 +3,19 @@
     <div class="section_content">
 
       <div class="inventory-page_topbar">
-        <div class="inventory-page_tabs" role="tablist">
+        <!-- Tabs: ein Tab-Stopp, links/rechts (bzw. Pos1/Ende) wechselt direkt den Tab -->
+        <div class="inventory-page_tabs" role="tablist" aria-label="Inventar" @keydown="onTabKeydown">
           <button
             v-for="t in TABS"
+            :id="`inventory-tab-${t.id}`"
             :key="t.id"
             type="button"
             role="tab"
             class="inventory-page_tab"
             :class="{ 'inventory-page_tab--active': tab === t.id }"
             :aria-selected="tab === t.id"
+            aria-controls="inventory-tabpanel"
+            :tabindex="tab === t.id ? 0 : -1"
             @click="setTab(t.id)"
           >
             <span class="icon-mask" :style="t.iconStyle" aria-hidden="true" />
@@ -27,6 +31,7 @@
         </div>
       </div>
 
+      <div id="inventory-tabpanel" role="tabpanel" :aria-labelledby="`inventory-tab-${tab}`">
       <InventoryRoomsTab v-if="tab === 'rooms'" ref="roomsTab" @reserve="onReserveRoom" @manage-types="typeManagerModal?.open('room')" @scan-nfc="scanModal?.open()" />
 
       <template v-else>
@@ -51,7 +56,7 @@
             <AppButton v-if="store.canCreatePrivate" variant="primary" @click="itemFormModal?.open({ kind })">+ Neu</AppButton>
           </template>
           <template #filters>
-            <select :value="store.filterOrganization ?? ''" @change="onOwnerFilterChange($event.target.value)">
+            <select aria-label="Nach Besitzer filtern" :value="store.filterOrganization ?? ''" @change="onOwnerFilterChange($event.target.value)">
               <option value="">Alle Besitzer</option>
               <optgroup v-if="store.organizations.length" label="Organisationen">
                 <option v-for="org in store.organizations" :key="org.ID" :value="org.ID">{{ org.Title }}</option>
@@ -63,6 +68,7 @@
             </select>
             <select
               v-if="store.filterableTypes.length"
+              aria-label="Nach Art filtern"
               :value="store.filterType ?? ''"
               @change="store.setTypeFilter($event.target.value ? parseInt($event.target.value) : null)"
             >
@@ -70,6 +76,7 @@
               <option v-for="type in store.filterableTypes" :key="type.ID" :value="type.ID">{{ type.Title }}</option>
             </select>
             <select
+              aria-label="Nach Zustand filtern"
               :value="store.filterStatus ?? ''"
               @change="store.setStatusFilter($event.target.value || null)"
             >
@@ -138,6 +145,7 @@
           </li>
         </ul>
       </template>
+      </div>
 
     </div>
 
@@ -261,6 +269,22 @@ const canManageTypes = computed(() => store.organizations.some(o => o.CanManageT
 
 function setTab(id) {
   router.replace({ query: { ...route.query, tab: id === 'items' ? undefined : id } })
+}
+
+// Tabs per Pfeiltasten: wechselt direkt den Tab und setzt den Fokus darauf
+function onTabKeydown(event) {
+  const index = TABS.findIndex(t => t.id === tab.value)
+  const last = TABS.length - 1
+  const target = {
+    ArrowRight: index >= last ? 0 : index + 1,
+    ArrowLeft: index <= 0 ? last : index - 1,
+    Home: 0,
+    End: last,
+  }[event.key]
+  if (target === undefined) return
+  event.preventDefault()
+  setTab(TABS[target].id)
+  nextTick(() => document.getElementById(`inventory-tab-${TABS[target].id}`)?.focus())
 }
 
 function initials(title) {

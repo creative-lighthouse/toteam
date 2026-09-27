@@ -2,7 +2,11 @@
   <div
     class="task-card"
     :class="[`task-card--${task.State || 'open'}`, { 'task-card--has-subtasks': task.SubTasks?.length, 'task-card--compact': compact }]"
+    role="button"
+    tabindex="0"
     @click="$emit('click', task)"
+    @keydown.enter.prevent="$emit('click', task)"
+    @keydown.space.prevent="$emit('click', task)"
   >
     <!-- Compact: title + badge/deadline in two lines, e.g. on the dashboard -->
     <template v-if="compact">
@@ -13,7 +17,7 @@
             {{ stateLabel }}
           </span>
           <span v-if="task.DeadlineNice && task.State !== 'finished'" class="task-card_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
-            {{ task.DeadlineNice }}
+            {{ task.DeadlineNice }}<template v-if="isOverdue"> · überfällig</template>
           </span>
           <span v-if="task.Parent" class="task-card_parent">in <span class="task-card_parent-title">{{ task.Parent.Title }}</span></span>
         </span>
@@ -53,7 +57,7 @@
       <div class="task-card_footer">
         <div class="task-card_meta">
           <span v-if="task.DeadlineNice && task.State !== 'finished'" class="task-card_deadline" :class="{ 'task-card_deadline--overdue': isOverdue }">
-            {{ task.DeadlineNice }}
+            {{ task.DeadlineNice }}<template v-if="isOverdue"> · überfällig</template>
           </span>
           <span v-if="task.SubTasks?.length" class="task-card_subtasks-count">
             {{ task.SubTasks.length }} Unteraufgabe{{ task.SubTasks.length !== 1 ? 'n' : '' }}

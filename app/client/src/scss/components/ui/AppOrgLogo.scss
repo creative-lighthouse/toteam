@@ -17,8 +17,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--ColorPrimary);
-        color: var(--ColorWhite);
+        // Farbton kommt aus AppOrgLogo.vue (Hash des Namens), ohne Namen neutral grau
+        background: hsl(var(--apporglogo-hue, 0) 70% 85% / 1);
+        color: hsl(var(--apporglogo-hue, 0) 40% 30% / 1);
         font-weight: 700;
+
+        &:not([style*="--apporglogo-hue"]) {
+            background: var(--ColorLightGray);
+            color: var(--ColorGray);
+        }
     }
 }

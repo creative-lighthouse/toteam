@@ -2,8 +2,9 @@
   <AppModal ref="modal" class="poll-dialog" @close="$emit('close')">
     <template #header>
       <AppOrgLogo
-        v-if="event.OrganizationLogoURL"
-        :src="event.OrganizationLogoURL"
+        v-if="primaryOrg"
+        :src="primaryOrg.LogoURL"
+        :name="primaryOrg.Title"
         alt=""
         :size="32"
       />
@@ -19,7 +20,6 @@
           <div v-if="canManageContent" class="event-manage-actions">
             <AppIconButton
               variant="primary"
-              :disabled="finalizing"
               aria-label="Terminfindung bearbeiten"
               @click="$emit('edit-poll', event)"
             >
@@ -46,50 +46,84 @@
           <div class="poll-options-section">
             <h3 class="event-participation_title">Terminoptionen</h3>
 
-            <div v-for="option in sortedOptions" :key="option.OptionID" class="poll-option">
-              <div class="poll-option_header">
-                <div class="poll-option_datetime">
-                  <strong>{{ option.RenderDate }}</strong>
-                  <span class="poll-option_time">{{ option.RenderTime }}</span>
-                </div>
-                <!-- Abstimmung inkl. Anzahl je Antwort, z.B. "Zusagen (3)" -->
-                <AppButtonGroup
-                  :options="participationOptionsFor(option)"
-                  :model-value="option.UserVote"
-                  :disabled="votingOptionId === option.OptionID"
-                  size="compact"
-                  class="poll-option_vote"
-                  @select="(type) => vote(option, type)"
-                />
-              </div>
-
-              <AppCollapse
-                title="Teilnehmer"
-                :subtitle="`(${option.Participations?.length ?? 0})`"
-                class="poll-option_participants-collapse"
+            <!-- Je Option eine Zeile: Datum (klappt Teilnehmer auf) und drei Antwort-Buttons mit Anzahl -->
+            <div class="poll-table" role="list" aria-label="Terminoptionen">
+              <div
+                v-for="option in sortedOptions"
+                :key="option.OptionID"
+                class="poll-table_row"
+                :class="{ 'poll-table_row--open': expandedId === option.OptionID }"
+                role="listitem"
+                @click="toggle(option)"
               >
-                <div class="poll-option_participants">
+                <button
+                  type="button"
+                  class="poll-table_date"
+                  :aria-expanded="expandedId === option.OptionID"
+                  :title="expandedId === option.OptionID ? 'Teilnehmer ausblenden' : 'Teilnehmer anzeigen'"
+                >
+                  <span class="poll-table_chevron" aria-hidden="true"></span>
+                  <span class="poll-table_date-text">
+                    <strong>{{ option.RenderDate }}</strong>
+                    <span v-if="option.RenderTime" class="poll-table_time">{{ option.RenderTime }}</span>
+                  </span>
+                </button>
+
+                <!-- Ein Tab-Stopp je Option; innerhalb der Gruppe per Pfeiltasten wechseln,
+                     Leertaste/Enter stimmt ab -->
+                <div
+                  class="poll-table_votes"
+                  role="radiogroup"
+                  :aria-label="`Deine Antwort für ${option.RenderDate}${option.RenderTime ? ', ' + option.RenderTime : ''}`"
+                  :aria-busy="votingOptionId === option.OptionID"
+                  @click.stop
+                  @keydown="onVoteKeydown($event, option)"
+                >
+                  <button
+                    v-for="choice in VOTE_OPTIONS"
+                    :key="choice.value"
+                    type="button"
+                    role="radio"
+                    class="poll-table_vote"
+                    :class="[`poll-table_vote--${choice.tone}`, { 'poll-table_vote--active': option.UserVote === choice.value }]"
+                    :aria-checked="option.UserVote === choice.value"
+                    :aria-label="`${choice.label}, ${count(option, choice.value)} ${count(option, choice.value) === 1 ? 'Stimme' : 'Stimmen'}`"
+                    :aria-disabled="votingOptionId === option.OptionID"
+                    :tabindex="choice.value === focusableVote(option) ? 0 : -1"
+                    :title="`${choice.label} (${count(option, choice.value)})`"
+                    @click="vote(option, choice.value)"
+                  >
+                    <img :src="choice.icon" alt="">
+                    <span aria-hidden="true">{{ count(option, choice.value) }}</span>
+                  </button>
+                </div>
+
+                <div
+                  v-if="expandedId === option.OptionID"
+                  v-roving-focus="{ selector: '.participant', label: `Antworten für ${option.RenderDate}` }"
+                  class="poll-table_participants"
+                  @click.stop
+                >
                   <ParticipantCard
                     v-for="p in option.Participations"
                     :key="p.ID"
+                    v-context-menu="p.Username ? (e => openParticipantMenu(e, p)) : null"
                     :participation="p"
                   />
                   <p v-if="!option.Participations?.length" class="event-section-empty">Noch keine Antworten.</p>
                 </div>
-              </AppCollapse>
-
-              <div v-if="canManageContent" class="poll-option_finalize">
-                <AppButton
-                  variant="primary"
-                  size="small"
-                  :disabled="finalizing"
-                  @click="finalize(option)"
-                >Diese Option festlegen</AppButton>
               </div>
             </div>
           </div>
 
         </div>
+
+    <!-- Im Dialog statt nach body, sonst läge das Menü hinter dem Top Layer -->
+    <ContextMenu ref="participantMenu" />
+
+    <template v-if="canManageContent && sortedOptions.length" #actions>
+      <AppButton variant="primary" @click="openFinalize">Termin festlegen</AppButton>
+    </template>
 
     <Transition name="fade">
       <div v-if="statusMessage" :class="['status-message', `status-message--${statusMessage.type}`]">
@@ -97,21 +131,29 @@
       </div>
     </Transition>
   </AppModal>
+
+  <PollFinalizeModal ref="finalizeModal" @finalized="emit('finalized')" />
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/ui/AppButton.vue'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
-import AppButtonGroup from '@components/ui/AppButtonGroup.vue'
 import ParticipantCard from '@components/calendar/ParticipantCard.vue'
+import ContextMenu from '@components/ui/ContextMenu.vue'
+import { vContextMenu, profileMenuItem } from '@utils/contextMenu'
+import { vRovingFocus } from '@utils/rovingFocus'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
-import AppCollapse from '@components/ui/AppCollapse.vue'
+import PollFinalizeModal from '@components/calendar/PollFinalizeModal.vue'
 import ScheduleIcon from '../../../../icons/actions/action_schedule.svg'
+import AcceptIcon from '../../../../icons/states/participation_accept.svg'
+import MaybeIcon from '../../../../icons/states/participation_maybe.svg'
+import DeclineIcon from '../../../../icons/states/participation_decline.svg'
 
 const scheduleIconStyle = {
   maskImage: `url("${ScheduleIcon}")`,
@@ -124,23 +166,48 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'edit-poll', 'finalized'])
 
+const router = useRouter()
+const participantMenu = ref(null)
+
+function openParticipantMenu(event, participation) {
+  const item = profileMenuItem(router, participation)
+  if (item) participantMenu.value?.open(event, [item])
+}
+
+// Erste Organisation der Terminfindung (ohne Logo zeigt AppOrgLogo die Initiale — wie in der EventCard)
+const primaryOrg = computed(() =>
+  props.event.OrganizationLogos?.[0]
+    || (props.event.OrganizationLogoURL ? { LogoURL: props.event.OrganizationLogoURL, Title: '' } : null)
+)
+
 const orgsStore = useOrganizationsStore()
 const eventsStore = useEventsStore()
 const modal = ref(null)
 const statusMessage = ref(null)
 const votingOptionId = ref(null)
-const finalizing = ref(false)
+
+const VOTE_OPTIONS = [
+  { value: 'Decline', label: 'Absagen', tone: 'negative', icon: DeclineIcon },
+  { value: 'Maybe', label: 'Vielleicht', tone: 'warning', icon: MaybeIcon },
+  { value: 'Accept', label: 'Zusagen', tone: 'positive', icon: AcceptIcon },
+]
 
 // Anzahl direkt aus den Participations zählen statt aus VotedYes/-Maybe/-No:
 // die Participations aktualisiert der Store nach dem Abstimmen sofort, die
 // Zähler vom Server erst beim nächsten Laden
-function participationOptionsFor(option) {
-  const count = type => (option.Participations || []).filter(p => p.Type === type).length
-  return [
-    { value: 'Decline', label: `Absagen (${count('Decline')})`, tone: 'negative' },
-    { value: 'Maybe', label: `Vielleicht (${count('Maybe')})`, tone: 'warning' },
-    { value: 'Accept', label: `Zusagen (${count('Accept')})`, tone: 'positive' },
-  ]
+function count(option, type) {
+  return (option.Participations || []).filter(p => p.Type === type).length
+}
+
+// Teilnehmerliste einer Option aufgeklappt (höchstens eine gleichzeitig)
+const expandedId = ref(null)
+function toggle(option) {
+  expandedId.value = expandedId.value === option.OptionID ? null : option.OptionID
+}
+
+const finalizeModal = ref(null)
+function openFinalize() {
+  finalizeModal.value?.open({ pollId: props.event.PollID, options: sortedOptions.value })
 }
 
 const canManageContent = computed(() => {
@@ -164,7 +231,35 @@ function showStatusMessage(text, type = 'success') {
 }
 
 
+// Roving Tabindex: nur die gewählte Antwort (sonst die erste) ist per Tab erreichbar
+function focusableVote(option) {
+  return VOTE_OPTIONS.some(c => c.value === option.UserVote) ? option.UserVote : VOTE_OPTIONS[0].value
+}
+
+// Pfeiltasten/Pos1/Ende verschieben nur den Fokus — abgestimmt wird erst mit
+// Leertaste/Enter, damit nicht jeder Tastendruck eine Stimme abschickt
+function onVoteKeydown(event, option) {
+  const buttons = [...event.currentTarget.querySelectorAll('[role="radio"]')]
+  const current = buttons.indexOf(document.activeElement)
+  if (current === -1) return
+  const last = buttons.length - 1
+  const targets = {
+    ArrowRight: current === last ? 0 : current + 1,
+    ArrowDown: current === last ? 0 : current + 1,
+    ArrowLeft: current === 0 ? last : current - 1,
+    ArrowUp: current === 0 ? last : current - 1,
+    Home: 0,
+    End: last,
+  }
+  if (!(event.key in targets)) return
+  event.preventDefault()
+  buttons.forEach((b, i) => { b.tabIndex = i === targets[event.key] ? 0 : -1 })
+  buttons[targets[event.key]].focus()
+}
+
 async function vote(option, type) {
+  // aria-disabled statt disabled, damit der Fokus beim Abstimmen nicht verloren geht
+  if (votingOptionId.value === option.OptionID || option.UserVote === type) return
   votingOptionId.value = option.OptionID
   try {
     await eventsStore.voteOnPollOption(option.OptionID, type)
@@ -172,19 +267,6 @@ async function vote(option, type) {
     showStatusMessage(err.message || 'Fehler beim Abstimmen', 'error')
   } finally {
     votingOptionId.value = null
-  }
-}
-
-async function finalize(option) {
-  if (!confirm(`"${option.RenderDate}" als Termin festlegen? Die Terminfindung wird danach gelöscht.`)) return
-  finalizing.value = true
-  try {
-    await eventsStore.finalizePoll(props.event.PollID, option.OptionID)
-    emit('finalized')
-  } catch (err) {
-    showStatusMessage(err.message || 'Fehler beim Festlegen', 'error')
-  } finally {
-    finalizing.value = false
   }
 }
 
