@@ -84,11 +84,16 @@ class CalendarApiController extends ApiController
         $startDate = date('Y-m-01', strtotime($date));
         $endDate = date('Y-m-t', strtotime($date));
 
+        // Mehrtägige Termine, die vor dem Monat beginnen, aber in ihn hineinreichen, gehören dazu.
+        // Termine ohne Enddatum gelten als eintägig.
         $appointments = Appointment::get()
             ->filter([
                 'Organisations.ID' => $organizationIDs,
-                'DateStart:GreaterThanOrEqual' => $startDate,
                 'DateStart:LessThanOrEqual' => $endDate
+            ])
+            ->filterAny([
+                'DateStart:GreaterThanOrEqual' => $startDate,
+                'DateEnd:GreaterThanOrEqual' => $startDate,
             ])
             ->distinct(true)
             ->sort('DateStart', 'ASC');
@@ -260,8 +265,11 @@ class CalendarApiController extends ApiController
         $pollOptions = SchedulingPollOption::get()
             ->filter([
                 'Parent.Organisations.ID' => $organizationIDs,
-                'DateStart:GreaterThanOrEqual' => $startDate,
                 'DateStart:LessThanOrEqual' => $endDate,
+            ])
+            ->filterAny([
+                'DateStart:GreaterThanOrEqual' => $startDate,
+                'DateEnd:GreaterThanOrEqual' => $startDate,
             ])
             ->distinct(true)
             ->sort('DateStart', 'ASC');

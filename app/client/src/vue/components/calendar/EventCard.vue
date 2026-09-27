@@ -68,7 +68,8 @@
           <p v-else-if="event.Status=='Suggested'" class="event-card_status">(Vorschlag)</p>
           <p v-else-if="event.Status=='Cancelled'" class="event-card_status">(Abgesagt)</p>
         </div>
-        <span v-if="dateDisplay" class="event-card_time">{{ dateDisplay }}</span>
+        <span v-if="multiDay" class="event-card_time">{{ formatEventRange(event) }}</span>
+        <span v-else-if="dateDisplay" class="event-card_time">{{ dateDisplay }}</span>
         <span v-else-if="event.AllDay" class="event-card_time event-card_time--allday">Ganztägig</span>
         <span v-else-if="event.TimeStart" class="event-card_time">
           {{ formatTime(event.TimeStart) }}<template v-if="event.TimeEnd"> – {{ formatTime(event.TimeEnd) }}</template>
@@ -103,6 +104,7 @@ import { computed } from 'vue'
 import ParticipationIcon from './ParticipationIcon.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import { isMultiDay, formatEventRange } from '@utils/eventDates'
 import ScheduleIcon from '../../../../icons/actions/action_schedule.svg'
 
 const scheduleIconStyle = {
@@ -138,14 +140,22 @@ const primaryOrg = computed(() =>
     || (props.event.OrganizationLogoURL ? { LogoURL: props.event.OrganizationLogoURL, Title: '' } : null)
 )
 
-// Compact meta line: "Do., 24.09.26 · 18:00 – 20:00 · Vereinsheim"
+const multiDay = computed(() => isMultiDay(props.event))
+
+// Compact meta line: "Do., 24.09.26 · 18:00 – 20:00 · Vereinsheim",
+// multi-day: "Fr., 30.10., 18:00 – So., 01.11., 14:00 · Vereinsheim"
 const compactMeta = computed(() => {
   const parts = []
-  if (props.dateDisplay) parts.push(props.dateDisplay)
-  if (props.event.AllDay) {
-    parts.push('Ganztägig')
-  } else if (props.event.TimeStart) {
-    parts.push(formatTime(props.event.TimeStart) + (props.event.TimeEnd ? ` – ${formatTime(props.event.TimeEnd)}` : ''))
+  if (multiDay.value) {
+    // Uhrzeiten stehen schon im Zeitraum
+    parts.push(formatEventRange(props.event, { weekday: true }))
+  } else {
+    if (props.dateDisplay) parts.push(props.dateDisplay)
+    if (props.event.AllDay) {
+      parts.push('Ganztägig')
+    } else if (props.event.TimeStart) {
+      parts.push(formatTime(props.event.TimeStart) + (props.event.TimeEnd ? ` – ${formatTime(props.event.TimeEnd)}` : ''))
+    }
   }
   if (props.event.Location) parts.push(props.event.Location)
   return parts.join(' · ')

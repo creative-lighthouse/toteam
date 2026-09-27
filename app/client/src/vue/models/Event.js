@@ -1,3 +1,5 @@
+import { isMultiDay, getEventDateKeys } from '@utils/eventDates'
+
 /**
  * Event Model
  * Repräsentiert einen Kalender-Event mit allen relevanten Eigenschaften
@@ -80,15 +82,31 @@ export class Event {
   }
 
   /**
-   * Gibt zurück ob der Event heute ist
+   * Gibt zurück ob der Event mehrere Tage umfasst
+   */
+  isMultiDay() {
+    return isMultiDay(this)
+  }
+
+  /**
+   * Alle Tage des Events als "YYYY-MM-DD"
+   */
+  getDateKeys() {
+    return getEventDateKeys(this)
+  }
+
+  /**
+   * Gibt zurück ob der Event heute ist (bei mehrtägigen Events: heute läuft)
    */
   isToday() {
     if (!this.DateStart) return false
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const eventDate = new Date(this.DateStart)
-    eventDate.setHours(0, 0, 0, 0)
-    return today.getTime() === eventDate.getTime()
+    const start = new Date(this.DateStart)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(this.DateEnd || this.DateStart)
+    end.setHours(0, 0, 0, 0)
+    return start <= today && today <= end
   }
 
   /**
@@ -110,7 +128,7 @@ export class Event {
     if (!this.DateStart) return false
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const eventDate = new Date(this.DateStart)
+    const eventDate = new Date(this.DateEnd || this.DateStart)
     eventDate.setHours(0, 0, 0, 0)
     return eventDate < today
   }

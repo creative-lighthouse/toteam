@@ -51,12 +51,13 @@
     .dialog-infobox {
         position: relative;
 
+        // Gefloatet statt absolut: die Zeilen der Event-Info (z.B. ein langer Zeitraum)
+        // laufen um die Buttons herum, statt darunter zu liegen
         .event-manage-actions {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            float: right;
             display: flex;
             gap: 6px;
+            margin: 0 0 6px 10px;
         }
     }
 
