@@ -8,7 +8,11 @@
       event.IsPoll ? 'event-card--poll' : '',
       compact ? 'event-card--compact' : '',
     ]"
+    role="button"
+    tabindex="0"
     @click="openEventDetails($event)"
+    @keydown.enter.prevent="openEventDetails($event)"
+    @keydown.space.prevent="openEventDetails($event)"
   >
     <!-- Compact: logo + title/meta in two lines + RSVP icon, e.g. on the dashboard -->
     <template v-if="compact">

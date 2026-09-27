@@ -13,7 +13,8 @@
                     <AppIconButton variant="neutral" aria-label="Vorheriger Monat" @click="previousMonth">
                         <span class="icon-mask" :style="backIconStyle" />
                     </AppIconButton>
-                    <h2>{{ monthYearDisplay }}</h2>
+                    <!-- aria-live: Monatswechsel (auch per Pfeiltasten) wird angesagt -->
+                    <h2 aria-live="polite">{{ monthYearDisplay }}</h2>
                     <AppButton
                         size="small"
                         variant="secondary"
@@ -27,9 +28,22 @@
                 </div>
 
                 <!-- Calendar Grid -->
-                <div class="calendar-grid" :class="{ 'calendar-grid--loading': monthLoading }" :aria-busy="monthLoading">
-                    <!-- Weekday Headers -->
-                    <div v-for="day in weekDays" :key="day" class="calendar-weekday">
+                <!--
+                    Tastatur: ein Tab-Stopp auf dem fokussierten Tag. Pfeiltasten wechseln
+                    Tag/Woche, Pos1/Ende Wochenanfang/-ende, Bild auf/ab den Monat.
+                    Leertaste/Enter wählt den Tag und springt zur Liste darunter.
+                -->
+                <div
+                    ref="calendarGridEl"
+                    class="calendar-grid"
+                    :class="{ 'calendar-grid--loading': monthLoading }"
+                    role="group"
+                    :aria-label="`Kalender ${monthYearDisplay}`"
+                    :aria-busy="monthLoading"
+                    @keydown="onGridKeydown"
+                >
+                    <!-- Weekday Headers (stecken für Screenreader schon im Label jedes Tages) -->
+                    <div v-for="day in weekDays" :key="day" class="calendar-weekday" aria-hidden="true">
                         {{ day }}
                     </div>
 
@@ -38,16 +52,23 @@
                         v-for="cell in calendarDays"
                         :key="`${cell.year}-${cell.month}-${cell.day}`"
                         class="calendar-day"
+                        role="button"
+                        :data-date="makeDateKey(cell.day, cell.month, cell.year)"
+                        :tabindex="makeDateKey(cell.day, cell.month, cell.year) === focusedDate ? 0 : -1"
+                        :aria-label="dayLabel(cell)"
+                        :aria-pressed="isSelectedDay(cell.day, cell.month, cell.year)"
+                        :aria-current="isToday(cell.day, cell.month, cell.year) ? 'date' : undefined"
                         :class="{
                         'calendar-day--outside': !cell.isCurrentMonth,
                         'calendar-day--has-events': getEventsCountForDay(cell.day, cell.month, cell.year) > 0,
                         'calendar-day--selected': isSelectedDay(cell.day, cell.month, cell.year),
                         'calendar-day--today': isToday(cell.day, cell.month, cell.year)
                         }"
-                        @click="selectDayAndFetchAbsences(cell.day, cell.month, cell.year)"
+                        @click="onDayClick(cell)"
+                        @focus="focusedDate = makeDateKey(cell.day, cell.month, cell.year)"
                     >
-                        <span v-if="cell.weekNumber" class="week-number" :title="`KW ${cell.weekNumber}`">{{ cell.weekNumber }}</span>
-                        <span class="day-number">{{ cell.day }}</span>
+                        <span v-if="cell.weekNumber" class="week-number" :title="`KW ${cell.weekNumber}`" aria-hidden="true">{{ cell.weekNumber }}</span>
+                        <span class="day-number" aria-hidden="true">{{ cell.day }}</span>
                         <!-- Skeleton, solange die Termine des Monats noch laden -->
                         <div v-if="monthLoading && cell.isCurrentMonth" class="event-dots event-dots--skeleton" aria-hidden="true">
                         <span class="event-dot-skeleton"></span>
@@ -72,7 +93,8 @@
 
                 <!-- Selected Day Events -->
                 <div v-if="selectedDate" class="selected-day-events">
-                    <h3>{{ selectedDateDisplay }}</h3>
+                    <!-- Ziel des Fokus nach Auswahl eines Tages per Tastatur -->
+                    <h3 ref="selectedDayHeading" tabindex="-1" class="selected-day-events_title">{{ selectedDateDisplay }}</h3>
 
                     <div v-if="selectedDayEvents.length > 0" class="events-list">
                         <EventCard
@@ -90,12 +112,16 @@
                 <!-- Absences -->
                 <div v-if="selectedDateAbsences.length > 0" class="absences-list">
                     <h4 class="absences-list__title">Abwesend</h4>
-                    <div
+                    <!-- Eigene Abwesenheiten sind Buttons (per Tab/Enter bearbeitbar), fremde nur Text -->
+                    <component
+                    :is="isOwnAbsence(a) ? 'button' : 'div'"
                     v-for="a in selectedDateAbsences"
                     :key="a.MemberID"
+                    :type="isOwnAbsence(a) ? 'button' : undefined"
+                    :aria-label="isOwnAbsence(a) ? absenceLabel(a) : undefined"
                     class="absence-item"
-                    :class="{ 'absence-item--own': a.MemberID === authStore.user?.ID }"
-                    @click="a.MemberID === authStore.user?.ID && entryModalRef.openEditAbsence(a)"
+                    :class="{ 'absence-item--own': isOwnAbsence(a) }"
+                    @click="isOwnAbsence(a) && entryModalRef.openEditAbsence(a)"
                     >
                     <AppAvatar
                         :src="a.ProfileImageURL"
@@ -104,7 +130,7 @@
                     />
                     <span class="absence-item__name">{{ a.MemberName }}</span>
                     <span v-if="a.Note" class="absence-item__note">{{ a.Note }}</span>
-                    </div>
+                    </component>
                 </div>
 
                 <!-- ICS Link + Termin eintragen -->
@@ -169,7 +195,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
@@ -179,6 +205,7 @@ import EventDialog from '@components/calendar/event-dialog/EventDialog.vue'
 import PollDialog from '@components/calendar/PollDialog.vue'
 import EventDialogSkeleton from '@components/calendar/event-dialog/EventDialogSkeleton.vue'
 import { morphIntoModal } from '@utils/viewTransition'
+import { MODAL_FOCUS_FALLBACK } from '@utils/modalFocus'
 import EventCard from '@components/calendar/EventCard.vue'
 import AppMenu from '@components/layout/AppMenu.vue'
 import CalendarEntryCreateModal from '@components/calendar/CalendarEntryCreateModal.vue'
@@ -334,6 +361,135 @@ const getEventDotsForDay = (day, month = currentMonth.value, year = currentYear.
   return Object.entries(counts)
     .filter(([, count]) => count > 0)
     .map(([status, count]) => ({ status, count }))
+}
+
+// ── Abwesenheiten ───────────────────────────────────────────────────────────
+
+const isOwnAbsence = a => a.MemberID === authStore.user?.ID
+
+function formatAbsenceDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })
+}
+
+// "Deine Abwesenheit bearbeiten, 3. Oktober bis 6. Oktober, Urlaub"
+function absenceLabel(a) {
+  const parts = ['Deine Abwesenheit bearbeiten']
+  if (a.DateStart) {
+    parts.push(a.DateEnd && a.DateEnd !== a.DateStart
+      ? `${formatAbsenceDate(a.DateStart)} bis ${formatAbsenceDate(a.DateEnd)}`
+      : formatAbsenceDate(a.DateStart))
+  }
+  if (a.Note) parts.push(a.Note)
+  return parts.join(', ')
+}
+
+// ── Tastatur-Navigation im Kalender-Raster ──────────────────────────────────
+
+const calendarGridEl = ref(null)
+const selectedDayHeading = ref(null)
+
+// Wurde ein Termin nicht aus der Liste geöffnet (z.B. per Link mit eventID),
+// landet der Fokus nach dem Schließen auf der Tagesüberschrift der Liste
+provide(MODAL_FOCUS_FALLBACK, () => selectedDayHeading.value)
+const focusedDate = ref(selectedDate.value)
+
+// Der Tab-Stopp muss auf einem sichtbaren Tag liegen: ausgewählter Tag, heute oder der Monatserste
+function defaultFocusDate() {
+  const inView = key => calendarDays.value.some(c => makeDateKey(c.day, c.month, c.year) === key)
+  if (selectedDate.value && inView(selectedDate.value)) return selectedDate.value
+  const now = new Date()
+  const today = makeDateKey(now.getDate(), now.getMonth() + 1, now.getFullYear())
+  if (inView(today)) return today
+  return makeDateKey(1, currentMonth.value, currentYear.value)
+}
+
+watch(calendarDays, () => {
+  if (!calendarDays.value.some(c => makeDateKey(c.day, c.month, c.year) === focusedDate.value)) {
+    focusedDate.value = defaultFocusDate()
+  }
+}, { immediate: true })
+
+function dayLabel(cell) {
+  const date = new Date(cell.year, cell.month - 1, cell.day)
+  const parts = [date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })]
+  if (isToday(cell.day, cell.month, cell.year)) parts.push('heute')
+  if (!monthLoading.value || !cell.isCurrentMonth) {
+    const events = getEventsCountForDay(cell.day, cell.month, cell.year)
+    parts.push(events === 0 ? 'keine Termine' : events === 1 ? '1 Termin' : `${events} Termine`)
+    const absences = getAbsenceCountForDay(cell.day, cell.month, cell.year)
+    if (absences) parts.push(absences === 1 ? '1 Abwesenheit' : `${absences} Abwesenheiten`)
+  }
+  return parts.join(', ')
+}
+
+function onDayClick(cell) {
+  focusedDate.value = makeDateKey(cell.day, cell.month, cell.year)
+  selectDayAndFetchAbsences(cell.day, cell.month, cell.year)
+}
+
+function parseKey(key) {
+  const [y, m, d] = key.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+function keyOf(date) {
+  return makeDateKey(date.getDate(), date.getMonth() + 1, date.getFullYear())
+}
+
+async function focusDate(date) {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  focusedDate.value = keyOf(date)
+  // Verlässt der Fokus den angezeigten Monat, wechselt der Kalender mit
+  if (year !== currentYear.value || month !== currentMonth.value) {
+    currentYear.value = year
+    currentMonth.value = month
+    loadMonth(year, month)
+  }
+  await nextTick()
+  calendarGridEl.value?.querySelector(`[data-date="${focusedDate.value}"]`)?.focus()
+}
+
+function onGridKeydown(event) {
+  const cellEl = event.target.closest?.('[data-date]')
+  if (!cellEl) return
+  const current = parseKey(cellEl.dataset.date)
+  const weekday = (current.getDay() + 6) % 7 // Montag = 0
+  const target = new Date(current)
+
+  switch (event.key) {
+    case 'ArrowLeft': target.setDate(current.getDate() - 1); break
+    case 'ArrowRight': target.setDate(current.getDate() + 1); break
+    case 'ArrowUp': target.setDate(current.getDate() - 7); break
+    case 'ArrowDown': target.setDate(current.getDate() + 7); break
+    case 'Home': target.setDate(current.getDate() - weekday); break
+    case 'End': target.setDate(current.getDate() + (6 - weekday)); break
+    case 'PageUp':
+    case 'PageDown': {
+      // Gleicher Tag im Vor-/Folgemonat, am Monatsende gekürzt (31. → 30./28.)
+      const offset = event.key === 'PageUp' ? -1 : 1
+      const lastDay = new Date(current.getFullYear(), current.getMonth() + offset + 1, 0).getDate()
+      target.setFullYear(current.getFullYear(), current.getMonth() + offset, Math.min(current.getDate(), lastDay))
+      break
+    }
+    case 'Enter':
+    case ' ':
+      event.preventDefault()
+      selectFocusedDay(current)
+      return
+    default:
+      return
+  }
+  event.preventDefault()
+  focusDate(target)
+}
+
+async function selectFocusedDay(date) {
+  selectDayAndFetchAbsences(date.getDate(), date.getMonth() + 1, date.getFullYear())
+  // Fokus zur Liste unter dem Kalender: die Überschrift nennt den Tag, danach Tab zu den Terminen
+  await nextTick()
+  selectedDayHeading.value?.focus()
 }
 
 const selectDay = (day, month = currentMonth.value, year = currentYear.value) => {

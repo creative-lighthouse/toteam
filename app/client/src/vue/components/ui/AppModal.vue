@@ -35,9 +35,10 @@
 </template>
 
 <script setup>
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, onBeforeUnmount, inject } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import { MORPHED_MODAL_CLASS, isMorphing } from '@utils/viewTransition'
+import { MODAL_FOCUS_FALLBACK } from '@utils/modalFocus'
 
 // Root ist ein <Teleport>, kein normales DOM-Element — Vues automatisches
 // Attribute-/Class-Fallthrough greift dabei nicht (landet ansonsten ins
@@ -85,6 +86,27 @@ function animateOut(el, done) {
   setTimeout(finish, CLOSE_DURATION + 80)
 }
 
+// ── Fokus zurückgeben ────────────────────────────────────────────────────────
+// Wird das <dialog> per v-if entfernt statt per close() geschlossen, gibt der
+// Browser den Fokus nicht an das auslösende Element zurück — er landet auf
+// <body>. Deshalb merkt sich das Modal beim Öffnen das fokussierte Element und
+// gibt den Fokus nach dem Schließen (und nach der Schließ-Animation, solange die
+// Kopie modal offen ist, wäre der Rest der Seite noch gesperrt) selbst zurück.
+const GHOST_CLASS = 'app-modal--ghost'
+let returnFocusEl = null
+
+// Seiten können per provide(MODAL_FOCUS_FALLBACK, () => element) ein Ziel
+// angeben, falls es kein auslösendes Element (mehr) gibt — z.B. wenn ein Termin
+// per Link statt aus der Liste geöffnet wurde
+const focusFallback = inject(MODAL_FOCUS_FALLBACK, null)
+
+function restoreFocus(target) {
+  // Ist inzwischen ein anderes Modal offen (z.B. Skeleton → Termin), behält das den Fokus
+  if (document.querySelector(`dialog.app-modal[open]:not(.${GHOST_CLASS})`)) return
+  const el = target?.isConnected ? target : focusFallback?.()
+  el?.focus({ preventScroll: true })
+}
+
 // Zählt Öffnen/Schließen mit: wird während der Schließ-Animation wieder
 // geöffnet, darf das verzögerte close() den Dialog nicht mehr zumachen
 let closeToken = 0
@@ -94,7 +116,11 @@ function open() {
   if (!el) return
   closeToken++
   el.classList.remove(CLOSING_CLASS, MORPHED_MODAL_CLASS)
-  if (!el.open) el.showModal()
+  if (!el.open) {
+    const active = document.activeElement
+    returnFocusEl = active && active !== document.body && !el.contains(active) ? active : null
+    el.showModal()
+  }
 }
 
 function close() {
@@ -105,6 +131,7 @@ function close() {
     if (token !== closeToken) return
     el.close()
     el.classList.remove(CLOSING_CLASS)
+    restoreFocus(returnFocusEl)
   })
 }
 
@@ -114,9 +141,15 @@ function close() {
 // Schließ-Animation stehen und wird danach entfernt.
 onBeforeUnmount(() => {
   const el = dialogEl.value
-  // Beim Morph (z.B. Skeleton → Termin) übernimmt die View Transition den Übergang
-  if (!el?.open || prefersReducedMotion() || isMorphing()) return
+  const focusTarget = returnFocusEl
+  if (!el?.open) return
+  // Ohne Kopie: Fokus zurückgeben, sobald das <dialog> aus dem DOM ist
+  if (prefersReducedMotion() || isMorphing()) {
+    requestAnimationFrame(() => restoreFocus(focusTarget))
+    return
+  }
   const ghost = el.cloneNode(true)
+  ghost.classList.add(GHOST_CLASS)
   // Die Kopie erbt das open-Attribut — showModal() würde darauf einen Fehler
   // werfen und die Kopie als offenen, nicht-modalen Dialog stehen lassen
   ghost.removeAttribute('open')
@@ -130,9 +163,13 @@ onBeforeUnmount(() => {
     const body = el.querySelector('.app-modal_body')
     const ghostBody = ghost.querySelector('.app-modal_body')
     if (body && ghostBody) ghostBody.scrollTop = body.scrollTop
-    animateOut(ghost, () => ghost.remove())
+    animateOut(ghost, () => {
+      ghost.remove()
+      restoreFocus(focusTarget)
+    })
   } catch {
     ghost.remove()
+    requestAnimationFrame(() => restoreFocus(focusTarget))
   }
 })
 
