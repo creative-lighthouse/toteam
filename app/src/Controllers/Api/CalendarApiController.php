@@ -13,6 +13,7 @@ use App\Food\MealEater;
 use App\Food\MealProductOrder;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Teams\OrgEvent;
 use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
 use SilverStripe\Control\HTTPRequest;
@@ -39,6 +40,7 @@ class CalendarApiController extends ApiController
         'appointment',
         'appointmentTypes',
         'appointmentHistory',
+        'orgEvents',
         'meal',
         'agendaPoint',
         'members',
@@ -165,6 +167,8 @@ class CalendarApiController extends ApiController
                     'ID'              => $p->ID,
                     'MemberID'        => $p->MemberID,
                     'MemberName'      => $pMember ? $pMember->getDisplayName() : 'Unknown',
+                'Username'        => $pMember && $pMember->exists() ? ($pMember->Username ?: null) : null,
+                    'Username'        => $pMember && $pMember->exists() ? ($pMember->Username ?: null) : null,
                     'ProfileImageURL' => $pMember && $pMember->hasMethod('RenderProfileImage')
                         ? $pMember->RenderProfileImage()
                         : null,
@@ -186,6 +190,7 @@ class CalendarApiController extends ApiController
                 $membersWithoutResponse[] = [
                     'ID'              => $pendingMember->ID,
                     'MemberName'      => $pendingMember->getDisplayName(),
+                    'Username'        => $pendingMember->Username ?: null,
                     'ProfileImageURL' => $pendingMember->hasMethod('RenderProfileImage')
                         ? $pendingMember->RenderProfileImage()
                         : null,
@@ -223,6 +228,8 @@ class CalendarApiController extends ApiController
                 'Status' => $appointment->Status,
                 'EventType' => $appointment->Type()->exists() ? $appointment->Type()->Title : null,
                 'TypeID' => $appointment->TypeID ?: null,
+                'EventID' => $appointment->EventID ?: null,
+                'EventTitle' => $appointment->EventID && $appointment->Event()->exists() ? $appointment->Event()->Title : null,
                 'OrganizationIDs' => array_map('intval', $appointment->Organisations()->column('ID')),
                 'ImageURL' => $appointment->Image()->exists() ? $appointment->Image()->getURL() : null,
                 'OrganizationLogoURL' => $orgLogoURL,
@@ -277,6 +284,8 @@ class CalendarApiController extends ApiController
                     $membersWithoutResponse[] = [
                         'ID'              => $pendingMember->ID,
                         'MemberName'      => $pendingMember->getDisplayName(),
+                        'Username'        => $pendingMember->Username ?: null,
+                    'Username'        => $pendingMember->Username ?: null,
                         'ProfileImageURL' => $pendingMember->hasMethod('RenderProfileImage')
                             ? $pendingMember->RenderProfileImage()
                             : null,
@@ -934,6 +943,10 @@ class CalendarApiController extends ApiController
             $appt->Status       = in_array($body['status'] ?? '', ['Suggested', 'Scheduled', 'Cancelled'])
                 ? $body['status'] : $appt->Status;
             $appt->TypeID       = !empty($body['typeId']) ? (int) $body['typeId'] : 0;
+            if (array_key_exists('eventId', $body)) {
+                $newOrgIDsForEvent = array_map('intval', $body['organizationIds'] ?? []) ?: $apptOrgIDs;
+                $appt->EventID = $this->resolveEventID($body['eventId'], $newOrgIDsForEvent);
+            }
             if (array_key_exists('enableMeals', $body)) {
                 $appt->EnableMeals = (bool) $body['enableMeals'];
             }
@@ -1018,6 +1031,7 @@ class CalendarApiController extends ApiController
         if (!empty($body['typeId'])) {
             $appt->TypeID = (int) $body['typeId'];
         }
+        $appt->EventID = $this->resolveEventID($body['eventId'] ?? null, $orgIDs);
 
         $appt->write();
         $appt->Organisations()->addMany($orgIDs);
@@ -1108,6 +1122,9 @@ class CalendarApiController extends ApiController
             if (!$title) {
                 return $this->errorResponse('Titel ist erforderlich', 400);
             }
+            if (mb_strlen($title) > Meal::TITLE_MAX_LENGTH) {
+                return $this->errorResponse('Der Titel darf höchstens ' . Meal::TITLE_MAX_LENGTH . ' Zeichen lang sein', 400);
+            }
             if (!$time) {
                 return $this->errorResponse('Uhrzeit ist erforderlich', 400);
             }
@@ -1175,6 +1192,9 @@ class CalendarApiController extends ApiController
         $title = trim($body['title'] ?? '');
         if (!$title) {
             return $this->errorResponse('Titel ist erforderlich', 400);
+        }
+        if (mb_strlen($title) > Meal::TITLE_MAX_LENGTH) {
+            return $this->errorResponse('Der Titel darf höchstens ' . Meal::TITLE_MAX_LENGTH . ' Zeichen lang sein', 400);
         }
 
         $time = trim($body['time'] ?? '');
@@ -1337,6 +1357,7 @@ class CalendarApiController extends ApiController
                 'ID'              => $p->ID,
                 'MemberID'        => $p->MemberID,
                 'MemberName'      => $pMember ? $pMember->getDisplayName() : 'Unknown',
+                'Username'        => $pMember && $pMember->exists() ? ($pMember->Username ?: null) : null,
                 'ProfileImageURL' => $pMember && $pMember->hasMethod('RenderProfileImage')
                     ? $pMember->RenderProfileImage()
                     : null,
@@ -1412,6 +1433,61 @@ class CalendarApiController extends ApiController
      * List all appointment types.
      * GET /api/v1/calendar/appointmentTypes
      */
+    /**
+     * Event-ID aus dem Request übernehmen — nur wenn das Event zu einer der
+     * Organisationen des Termins gehört, sonst 0 (kein Event).
+     *
+     * @param int[] $orgIDs
+     */
+    private function resolveEventID($eventID, array $orgIDs): int
+    {
+        $eventID = (int) $eventID;
+        if (!$eventID) {
+            return 0;
+        }
+        $event = OrgEvent::get()->byID($eventID);
+        return $event && in_array((int) $event->OrganizationID, array_map('intval', $orgIDs), true) ? $event->ID : 0;
+    }
+
+    /**
+     * Events der eigenen Organisationen (fürs Auswahlfeld beim Bearbeiten eines Termins)
+     * GET  /api/v1/calendar/orgEvents
+     * POST /api/v1/calendar/orgEvents  Body: { title, organizationId } — braucht CALENDAR_MANAGE
+     */
+    public function orgEvents(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $orgIDs = $member->getOrganizationIDs();
+
+        if ($request->httpMethod() === 'POST') {
+            $body  = json_decode($request->getBody(), true) ?? [];
+            $title = trim($body['title'] ?? '');
+            $orgID = (int) ($body['organizationId'] ?? 0);
+            if ($title === '') {
+                return $this->errorResponse('Titel ist erforderlich', 400);
+            }
+            $org = Organization::get()->byID($orgID);
+            if (!$org || !in_array($orgID, $orgIDs) || !$member->hasOrgPermission($org, OrgPermissions::CALENDAR_MANAGE)) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+            $event = OrgEvent::create(['Title' => $title, 'OrganizationID' => $orgID]);
+            $event->write();
+            return $this->successResponse(['event' => $event->toApi()], 'Event angelegt');
+        }
+
+        $events = [];
+        if (!empty($orgIDs)) {
+            foreach (OrgEvent::get()->filter('OrganizationID', $orgIDs) as $event) {
+                $events[] = $event->toApi();
+            }
+        }
+        return $this->jsonResponse(['events' => $events]);
+    }
+
     public function appointmentTypes(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();

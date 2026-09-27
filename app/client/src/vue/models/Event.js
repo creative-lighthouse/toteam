@@ -18,6 +18,8 @@ export class Event {
     this.ImageURL = data.ImageURL || null
     this.EventType = data.EventType || null
     this.TypeID = data.TypeID || null
+    this.EventID = data.EventID || null
+    this.EventTitle = data.EventTitle || null
     this.OrganizationIDs = data.OrganizationIDs || []
     this.OrganizationLogoURL = data.OrganizationLogoURL || null
     this.OrganizationLogos = data.OrganizationLogos || []
@@ -175,6 +177,8 @@ export class Event {
       Color: this.Color,
       EventType: this.EventType,
       TypeID: this.TypeID,
+      EventID: this.EventID,
+      EventTitle: this.EventTitle,
       OrganizationIDs: this.OrganizationIDs,
       UserParticipation: this.UserParticipation,
       Participations: this.Participations,

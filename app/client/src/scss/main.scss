@@ -7,6 +7,7 @@
 @use "base/typography.scss";
 @use "base/forms.scss";
 @use "components/ui/AppToggle.scss";
+@use "components/ui/AppTextField.scss";
 @use "components/ui/AppButton.scss";
 @use "components/ui/AppIconButton.scss";
 @use "base/icon-mask.scss";
@@ -38,6 +39,7 @@
 @use "pages/CalendarPage.scss";
 @use "pages/SuggestionPage.scss";
 @use "pages/FoodPage.scss";
+@use "pages/MealDetailPage.scss";
 @use "pages/MapPage.scss";
 @use "pages/OrganizationsPage.scss";
 @use "pages/OrganizationDetailPage.scss";
@@ -70,6 +72,12 @@
 @use "components/ui/OrganizationPicker.scss";
 @use "components/ui/MemberPicker.scss";
 @use "components/food/MealCard.scss";
+@use "components/food/MealFoodRow.scss";
+@use "components/food/FoodPlanner.scss";
+@use "components/food/FoodPlanCard.scss";
+@use "components/food/FoodEventSuggestModal.scss";
+@use "components/food/FoodSuggestionsModal.scss";
+@use "components/food/FoodEditModal.scss";
 @use "components/calendar/event-dialog/EventAgendaModal.scss";
 @use "components/food/MealFormModal.scss";
 @use "components/food/FoodSuggestModal.scss";

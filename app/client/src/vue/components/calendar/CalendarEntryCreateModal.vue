@@ -79,6 +79,31 @@
                         </select>
                     </label>
 
+                    <!-- Event der Organisation, zu dem der Termin gehört (z.B. "Halloweenhaus 2026") -->
+                    <label class="field">
+                        Event
+                        <select v-model="appt.eventId">
+                            <option value="">– kein Event –</option>
+                            <option v-for="e in selectableEvents" :key="e.ID" :value="e.ID">
+                                {{ e.Title }}<template v-if="appt.organizationIds.length > 1"> ({{ e.OrganizationTitle }})</template>
+                            </option>
+                            <option value="new">+ Neues Event …</option>
+                        </select>
+                    </label>
+
+                    <template v-if="appt.eventId === 'new'">
+                        <label class="field">
+                            Name des neuen Events *
+                            <input v-model="newEvent.title" type="text" placeholder="z.B. Halloweenhaus 2026" required />
+                        </label>
+                        <label v-if="newEventOrgs.length > 1" class="field">
+                            Organisation des Events *
+                            <select v-model="newEvent.organizationId" required>
+                                <option v-for="o in newEventOrgs" :key="o.ID" :value="o.ID">{{ o.Title }}</option>
+                            </select>
+                        </label>
+                    </template>
+
                     <label class="field">
                         Beschreibung
                         <textarea v-model="appt.description" rows="3"></textarea>
@@ -207,10 +232,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
-import { apiGet } from '@utils/api'
+import { apiGet, apiPost } from '@utils/api'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
@@ -346,6 +371,57 @@ const appt = ref(resetAppt())
 const apptSubmitting = ref(false)
 const apptError = ref('')
 
+// ── Events der Organisationen (Auswahlfeld beim Termin) ─────────────────────
+const orgEvents = ref([])
+const newEvent = ref({ title: '', organizationId: null })
+
+// Nur Events der Organisationen, die für den Termin gewählt sind
+const selectableEvents = computed(() =>
+  orgEvents.value.filter(e => appt.value.organizationIds.includes(e.OrganizationID))
+)
+
+// Ein neues Event gehört zu einer der gewählten Organisationen, in der man Termine verwalten darf
+const newEventOrgs = computed(() =>
+  managedOrgs.value.filter(o => appt.value.organizationIds.includes(o.ID))
+)
+
+async function loadOrgEvents() {
+  try {
+    const res = await apiGet('/calendar/orgEvents', false)
+    orgEvents.value = res.events ?? []
+  } catch {
+    orgEvents.value = []
+  }
+}
+
+// Wird eine Organisation abgewählt, passt ein Event aus ihr nicht mehr
+watch(() => appt.value.organizationIds, () => {
+  const id = appt.value.eventId
+  if (id && id !== 'new' && !selectableEvents.value.some(e => e.ID === id)) {
+    appt.value.eventId = ''
+  }
+  if (!newEventOrgs.value.some(o => o.ID === newEvent.value.organizationId)) {
+    newEvent.value.organizationId = newEventOrgs.value[0]?.ID ?? null
+  }
+}, { deep: true })
+
+watch(() => appt.value.eventId, (id) => {
+  if (id === 'new') newEvent.value = { title: '', organizationId: newEventOrgs.value[0]?.ID ?? null }
+})
+
+/** Legt bei "+ Neues Event" zuerst das Event an und liefert die ID fürs Speichern des Termins */
+async function resolveEventId() {
+  if (appt.value.eventId !== 'new') return appt.value.eventId || null
+  const res = await apiPost('/calendar/orgEvents', {
+    title: newEvent.value.title.trim(),
+    organizationId: newEvent.value.organizationId,
+  })
+  if (!res?.success) throw new Error(res?.error || 'Event konnte nicht angelegt werden')
+  orgEvents.value = [...orgEvents.value, res.data.event]
+  appt.value.eventId = res.data.event.ID
+  return res.data.event.ID
+}
+
 function resetAppt(date = '') {
   return {
     title: '',
@@ -356,6 +432,7 @@ function resetAppt(date = '') {
     allDay: true,
     location: '',
     typeId: '',
+    eventId: '',
     description: '',
     status: 'Scheduled',
     organizationIds: [],
@@ -373,6 +450,7 @@ async function submitAppointment() {
   }
   apptSubmitting.value = true
   try {
+    const eventId = await resolveEventId()
     const payload = {
       title: appt.value.title,
       dateStart: appt.value.dateStart,
@@ -384,6 +462,7 @@ async function submitAppointment() {
       description: appt.value.description,
       status: appt.value.status,
       typeId: appt.value.typeId || null,
+      eventId,
       organizationIds: appt.value.organizationIds,
       invitedMemberIds: appt.value.invitedMemberIds,
       enableMeals: appt.value.enableMeals,
@@ -515,7 +594,7 @@ async function deletePoll() {
 }
 
 async function loadOrgsAndTypes() {
-  await orgsStore.fetchOrganizations()
+  await Promise.all([orgsStore.fetchOrganizations(), loadOrgEvents()])
   if (!appointmentTypes.value.length) {
     try {
       const res = await apiGet('/calendar/appointmentTypes', false)
@@ -590,6 +669,7 @@ async function openEditAppointment(event) {
     description: event.Description ?? '',
     status: event.Status ?? 'Scheduled',
     typeId: event.TypeID ?? '',
+    eventId: event.EventID ?? '',
     organizationIds: (event.OrganizationIDs ?? []).map(Number),
     invitedMemberIds: (event.InvitedMemberIDs ?? []).map(Number),
     enableMeals: event.EnableMeals ?? true,

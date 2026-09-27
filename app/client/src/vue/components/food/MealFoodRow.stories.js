@@ -1,8 +1,8 @@
-import MealCard from './MealCard.vue'
+import MealFoodRow from './MealFoodRow.vue'
 
 export default {
-  title: 'Design System/MealCard',
-  component: MealCard,
+  title: 'Design System/MealFoodRow',
+  component: MealFoodRow,
   tags: ['autodocs'],
   argTypes: {
     preference: { control: 'select', options: ['None', 'Vegetarian', 'Vegan'] },

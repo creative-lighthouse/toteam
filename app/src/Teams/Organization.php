@@ -30,6 +30,7 @@ use SilverStripe\Security\PermissionProvider;
  * @method \SilverStripe\Assets\Image CoverImage()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] Memberships()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrgRole[] OrgRoles()
+ * @method \SilverStripe\ORM\DataList|\App\Teams\OrgEvent[] Events()
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -95,6 +96,7 @@ class Organization extends DataObject implements PermissionProvider
     private static $has_many = [
         "Memberships" => OrganizationMembership::class,
         "OrgRoles"    => OrgRole::class,
+        "Events"      => OrgEvent::class . '.Organization',
     ];
 
     private static $summary_fields = [

@@ -1,0 +1,26 @@
+@use "../../base/variables" as *;
+
+// Zeichenzähler unter einem AppTextField ("12/40"), klein und rechtsbündig
+.app-text-field_count {
+    align-self: flex-end;
+    margin-top: -2px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ColorGray);
+    font-variant-numeric: tabular-nums;
+
+    // Limit erreicht: dezent hervorheben
+    &--limit {
+        color: var(--ColorStatusBad);
+    }
+}
+
+// "Zeichen" nur für Screenreader ("12/40 Zeichen")
+.app-text-field_count-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}

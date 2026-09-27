@@ -62,6 +62,7 @@
             :options="rsvpOptions"
             :model-value="meal.userResponse"
             :disabled="responding"
+            label="Deine Antwort"
             @select="respond"
           />
         </div>
@@ -69,14 +70,15 @@
         <!-- Teilnehmer -->
         <div v-if="hasAnyParticipants" class="section_infobox participants-section">
           <h3 class="event-participation_title">Teilnehmer</h3>
-          <div class="participants-list">
+          <!-- Ein Tab-Stopp für die ganze Liste, Pfeiltasten wechseln zwischen den Karten -->
+          <div v-roving-focus="{ selector: '.participant', label: 'Teilnehmer' }" class="participants-list">
             <template v-if="groupedAttendees.Accept.length">
               <h5 class="participant-group_title">Zugesagt <span>({{ groupedAttendees.Accept.length }})</span></h5>
               <ParticipantCard
                 v-for="p in groupedAttendees.Accept"
                 :key="p.ID"
                 :participation="p"
-                @contextmenu="onAttendeeContextMenu($event, p)"
+                v-context-menu="hasAttendeeMenu(p) ? (e => onAttendeeContextMenu(e, p)) : null"
               />
             </template>
 
@@ -86,7 +88,7 @@
                 v-for="p in groupedAttendees.Decline"
                 :key="p.ID"
                 :participation="p"
-                @contextmenu="onAttendeeContextMenu($event, p)"
+                v-context-menu="hasAttendeeMenu(p) ? (e => onAttendeeContextMenu(e, p)) : null"
               />
             </template>
 
@@ -96,7 +98,7 @@
                 v-for="p in groupedAttendees.Pending"
                 :key="p.ID"
                 :participation="p"
-                @contextmenu="onAttendeeContextMenu($event, p)"
+                v-context-menu="hasAttendeeMenu(p) ? (e => onAttendeeContextMenu(e, p)) : null"
               />
             </template>
           </div>
@@ -168,7 +170,7 @@
                   <AppButton variant="secondary" :disabled="editFoodSaving" @click="cancelFoodEdit">Abbrechen</AppButton>
                 </div>
               </div>
-              <MealCard
+              <MealFoodRow
                 v-else
                 :title="item.title"
                 :preference="item.preference"
@@ -241,10 +243,10 @@
                     @click="decideFood(item.id, 'Rejected')"
                   >Ablehnen</AppButton>
                 </template>
-              </MealCard>
+              </MealFoodRow>
             </li>
           </ul>
-          <p v-else class="meal-card_empty">Noch keine Gerichte geplant.</p>
+          <p v-else class="meal-detail-empty">Noch keine Gerichte geplant.</p>
         </div>
 
       </template>
@@ -264,16 +266,18 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPut, apiDelete } from '@utils/api'
 import AppButton from '@components/ui/AppButton.vue'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppButtonGroup from '@components/ui/AppButtonGroup.vue'
-import MealCard from '@components/food/MealCard.vue'
+import MealFoodRow from '@components/food/MealFoodRow.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 import ContextMenu from '@components/ui/ContextMenu.vue'
+import { vContextMenu, profileMenuItem } from '@utils/contextMenu'
+import { vRovingFocus } from '@utils/rovingFocus'
 import ParticipantCard from '@components/calendar/ParticipantCard.vue'
 import MealFormModal from '@components/food/MealFormModal.vue'
 import FoodSuggestModal from '@components/food/FoodSuggestModal.vue'
@@ -283,6 +287,7 @@ import actionHistory from '../../../icons/actions/action_history.svg'
 import actionAddFood from '../../../icons/actions/action_addfood.svg'
 
 const route = useRoute()
+const router = useRouter()
 usePageHeaderStore().setHeader('Mahlzeit', '')
 
 const rsvpOptions = [
@@ -366,6 +371,7 @@ function toParticipation(a, type) {
     ID: a.id,
     MemberID: a.id,
     MemberName: a.name,
+    Username: a.username,
     ProfileImageURL: a.avatarUrl,
     Type: type,
     Allergies: a.allergies,
@@ -383,18 +389,27 @@ const hasAnyParticipants = computed(() => {
   return g.Accept.length > 0 || g.Decline.length > 0 || g.Pending.length > 0
 })
 
+// Menü: "Profil ansehen" für alle, darunter Antworten eintragen (nur mit FOOD_RECORD_RSVP)
+function hasAttendeeMenu(participation) {
+  return !!participation.Username || meal.value.canRecordRsvp
+}
+
 function onAttendeeContextMenu(event, participation) {
-  if (!meal.value.canRecordRsvp) return
+  const menuItems = [profileMenuItem(router, participation)].filter(Boolean)
+  if (!meal.value.canRecordRsvp) {
+    if (menuItems.length) attendeeMenu.value?.open(event, menuItems)
+    return
+  }
 
   const options = [
     { value: 'Accept', label: 'Zusagen' },
     { value: 'Decline', label: 'Absagen' },
   ].filter(o => o.value !== participation.Type)
 
-  const menuItems = options.map(o => ({
+  menuItems.push(...options.map(o => ({
     label: o.label,
     onClick: () => respondFor(participation.MemberID, o.value),
-  }))
+  })))
 
   if (participation.Type !== 'Pending') {
     menuItems.push({

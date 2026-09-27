@@ -10,6 +10,7 @@ use App\Food\MealEater;
 use App\Food\MealProductOrder;
 use App\Notifications\PushNotificationService;
 use App\Teams\Organization;
+use App\Teams\OrgEvent;
 use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
 use SilverStripe\Control\HTTPRequest;
@@ -31,10 +32,25 @@ class FoodApiController extends ApiController
         'mealProduct',
         'mealProductOrder',
         'foodStatus',
-        'pending',
+        'suggestEvent',
+        'planner',
+        'assign',
+        'plannerFood',
         'mealHistory',
     ];
 
+    /** Wie viele vergangene Mahlzeiten die Übersicht höchstens mitliefert */
+    private const PAST_MEALS_LIMIT = 50;
+
+    /**
+     * Übersicht des Essens-Totems.
+     * GET /api/v1/food
+     *
+     * - upcomingMeals / pastMeals: kompakte Mahlzeiten-Karten (neueste vergangene zuerst)
+     * - myFoods: eigene Vorschläge — an einer Mahlzeit oder (noch) nur an einem Event
+     * - suggestEvents: Events mit kommenden Mahlzeiten, für die man vorschlagen kann
+     * - planEvents: Events, deren Vorschläge man als Essensplaner zuordnen darf
+     */
     public function index(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
@@ -44,123 +60,133 @@ class FoodApiController extends ApiController
 
         try {
             $orgIDs = $member->getOrganizationIDs();
-
-            $canManage  = $this->hasPermissionInAnyOrg($member, $orgIDs, OrgPermissions::FOOD_MANAGE_MEALS);
-            $canApprove = $this->hasPermissionInAnyOrg($member, $orgIDs, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
-
+            $empty  = [
+                'upcomingMeals' => [],
+                'pastMeals'     => [],
+                'myFoods'       => [],
+                'suggestEvents' => [],
+                'planEvents'    => [],
+            ];
             if (empty($orgIDs)) {
-                return $this->jsonResponse([
-                    'acceptedMeals' => [],
-                    'otherMeals'    => [],
-                    'pastMeals'     => [],
-                    'myFoods'       => [],
-                    'canManage'     => $canManage,
-                    'canApprove'    => $canApprove,
-                ]);
+                return $this->jsonResponse($empty);
             }
 
             $today = date('Y-m-d');
 
-            // Index the member's meal RSVPs by meal ID
             $memberResponses = [];
             foreach (MealEater::get()->filter('MemberID', $member->ID) as $eater) {
                 $memberResponses[$eater->ParentID] = $eater->Type;
             }
 
-            // ── Upcoming meals (today and future) ──────────────────────────
-            $acceptedMeals = [];
-            $otherMeals    = [];
-
+            $upcomingMeals = [];
             $upcomingAppointments = Appointment::get()
-                ->filter([
-                    'Organisations.ID'              => $orgIDs,
-                    'DateStart:GreaterThanOrEqual'   => $today,
-                ])
+                ->filter(['Organisations.ID' => $orgIDs, 'DateStart:GreaterThanOrEqual' => $today])
                 ->sort('DateStart ASC, TimeStart ASC');
-
             foreach ($upcomingAppointments as $appointment) {
-                $org      = $appointment->Organisations()->first();
-                $orgTitle = $org?->Title;
-                $orgLogo  = $org?->RenderLogo(80);
-
                 foreach ($appointment->Meals()->sort('Time ASC') as $meal) {
-                    $data = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
-
-                    if (($memberResponses[$meal->ID] ?? null) === 'Accept') {
-                        $acceptedMeals[] = $data;
-                    } else {
-                        $otherMeals[] = $data;
-                    }
+                    $upcomingMeals[] = $this->formatMealListItem($meal, $appointment, $memberResponses);
                 }
             }
 
-            // ── Past meals (before today) ───────────────────────────────────
             $pastMeals = [];
-
             $pastAppointments = Appointment::get()
-                ->filter([
-                    'Organisations.ID' => $orgIDs,
-                    'DateStart:LessThan' => $today,
-                ])
+                ->filter(['Organisations.ID' => $orgIDs, 'DateStart:LessThan' => $today])
                 ->sort('DateStart DESC, TimeStart DESC');
-
             foreach ($pastAppointments as $appointment) {
-                $org      = $appointment->Organisations()->first();
-                $orgTitle = $org?->Title;
-                $orgLogo  = $org?->RenderLogo(80);
-
-                foreach ($appointment->Meals()->sort('Time ASC') as $meal) {
-                    $pastMeals[] = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
+                foreach ($appointment->Meals()->sort('Time DESC') as $meal) {
+                    $pastMeals[] = $this->formatMealListItem($meal, $appointment, $memberResponses);
+                    if (count($pastMeals) >= self::PAST_MEALS_LIMIT) {
+                        break 2;
+                    }
                 }
             }
 
-            // ── My food suggestions ─────────────────────────────────────────
-            $myFoods = [];
-
-            foreach (Food::get()->filter('SupplierID', $member->ID) as $food) {
-                foreach ($food->Meals() as $meal) {
-                    $appointment = $meal->Parent();
-                    if (!$appointment || !$appointment->exists()) {
-                        continue;
-                    }
-
-                    // Only include meals from the user's organisations
-                    $mealOrgIDs = $appointment->Organisations()->column('ID');
-                    if (empty(array_intersect($mealOrgIDs, $orgIDs))) {
-                        continue;
-                    }
-
-                    $org = $appointment->Organisations()->first();
-                    $myFoods[] = [
-                        'id'                  => $food->ID,
-                        'title'               => $food->Title,
-                        'preference'          => $food->FoodPreference ?: 'None',
-                        'status'              => $food->Status ?: 'New',
-                        'mealId'              => $meal->ID,
-                        'mealTitle'           => $meal->Title,
-                        'mealTime'            => $meal->RenderTime(),
-                        'date'                => $appointment->DateStart,
-                        'appointmentTitle'    => $appointment->Title,
-                        'organizationTitle'   => $org?->Title,
-                        'organizationLogoUrl' => $org?->RenderLogo(80),
-                    ];
+            // Events mit kommenden Mahlzeiten: für die kann man vorschlagen / planen
+            $suggestEvents = [];
+            $planEvents    = [];
+            foreach (OrgEvent::get()->filter('OrganizationID', $orgIDs) as $event) {
+                if (!$this->eventHasUpcomingMeals($event, $today)) {
+                    continue;
+                }
+                $suggestEvents[] = $event->toApi();
+                if ($member->hasOrgPermission($event->Organization(), OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
+                    $planEvents[] = $event->toApi();
                 }
             }
-
-            // Sort by date descending (most recent first)
-            usort($myFoods, fn ($a, $b) => strcmp($b['date'], $a['date']));
 
             return $this->jsonResponse([
-                'acceptedMeals' => $acceptedMeals,
-                'otherMeals'    => $otherMeals,
+                'upcomingMeals' => $upcomingMeals,
                 'pastMeals'     => $pastMeals,
-                'myFoods'       => $myFoods,
-                'canManage'     => $canManage,
-                'canApprove'    => $canApprove,
+                'myFoods'       => $this->formatMyFoods($member, $orgIDs),
+                'suggestEvents' => $suggestEvents,
+                'planEvents'    => $planEvents,
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Fehler: ' . $e->getMessage(), 500);
         }
+    }
+
+    private function eventHasUpcomingMeals(OrgEvent $event, string $today): bool
+    {
+        return Meal::get()->filter([
+            'Parent.EventID'                   => $event->ID,
+            'Parent.DateStart:GreaterThanOrEqual' => $today,
+        ])->exists();
+    }
+
+    /** Kompakte Mahlzeit für die Liste: Kontext, Zähler und die Titel der geplanten Gerichte */
+    private function formatMealListItem(Meal $meal, Appointment $appointment, array $memberResponses): array
+    {
+        $org   = $appointment->Organisations()->first();
+        $event = $appointment->EventID ? $appointment->Event() : null;
+
+        $foods = [];
+        foreach ($meal->Foods()->filter('Status', 'Accepted')->sort('Title ASC') as $food) {
+            $foods[] = $food->Title;
+        }
+
+        return [
+            'id'                  => $meal->ID,
+            'title'               => $meal->Title,
+            'time'                => $meal->RenderTime(),
+            'date'                => $appointment->DateStart,
+            'appointmentId'       => $appointment->ID,
+            'appointmentTitle'    => $appointment->Title,
+            'eventTitle'          => $event && $event->exists() ? $event->Title : null,
+            'organizationTitle'   => $org?->Title,
+            'organizationLogoUrl' => $org?->RenderLogo(80),
+            'acceptCount'         => $meal->Eaters()->filter('Type', 'Accept')->count(),
+            'declineCount'        => $meal->Eaters()->filter('Type', 'Decline')->count(),
+            'userResponse'        => $memberResponses[$meal->ID] ?? null,
+            'foods'               => $foods,
+        ];
+    }
+
+    /** Eigene Vorschläge, jeweils mit Mahlzeit (falls zugeordnet) oder nur mit Event */
+    private function formatMyFoods(Member $member, array $orgIDs): array
+    {
+        $myFoods = [];
+        foreach (Food::get()->filter(['SupplierID' => $member->ID, 'ParentID' => $orgIDs])->sort('Created DESC') as $food) {
+            $meal        = $food->Meals()->first();
+            $appointment = $meal ? $meal->Parent() : null;
+            $event       = $food->EventID ? $food->Event() : ($appointment?->EventID ? $appointment->Event() : null);
+            $org         = $food->Parent();
+
+            $myFoods[] = [
+                'id'                => $food->ID,
+                'title'             => $food->Title,
+                'preference'        => $food->FoodPreference ?: 'None',
+                'status'            => $food->Status ?: 'New',
+                'eventTitle'        => $event && $event->exists() ? $event->Title : null,
+                'mealId'            => $meal?->ID,
+                'mealTitle'         => $meal?->Title,
+                'mealTime'          => $meal?->RenderTime(),
+                'date'              => $appointment?->DateStart,
+                'appointmentTitle'  => $appointment?->Title,
+                'organizationTitle' => $org->exists() ? $org->Title : null,
+            ];
+        }
+        return $myFoods;
     }
 
     public function suggest(HTTPRequest $request): HTTPResponse
@@ -211,6 +237,7 @@ class FoodApiController extends ApiController
             $food->ParentID       = $org->ID;
             $food->SupplierID     = $member->ID;
             $food->Status         = 'New';
+            $food->EventID        = (int) $appointment->EventID;
             $food->write();
 
             $food->Meals()->add($meal);
@@ -529,61 +556,292 @@ class FoodApiController extends ApiController
         return $this->successResponse(['id' => $food->ID, 'status' => $status], 'Vorschlag aktualisiert');
     }
 
-    /** GET /api/v1/food/pending — offene Vorschläge über alle Organisationen mit FOOD_APPROVE_SUGGESTIONS */
-    public function pending(HTTPRequest $request): HTTPResponse
+    /**
+     * Gericht für ein Event vorschlagen ("Das könnte ich mitbringen") — noch ohne
+     * Mahlzeit; die legt der Essensplaner später per Zuordnen fest.
+     *
+     * Mit `asOrganization` legt ein Essensplaner ein Gericht an, das die
+     * Organisation selbst stellt (ohne Person als Lieferant) — optional direkt
+     * einer Mahlzeit des Events zugeordnet (dann gleich "Angenommen").
+     *
+     * POST /api/v1/food/suggestEvent/:eventId  Body: { title, preference, asOrganization?, mealId? }
+     */
+    public function suggestEvent(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !in_array((int) $event->OrganizationID, array_map('intval', $member->getOrganizationIDs()), true)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+
+        $data  = $this->getJsonBody();
+        $title = trim($data['title'] ?? '');
+        if ($title === '') {
+            return $this->errorResponse('Titel ist erforderlich', 400);
+        }
+        $preference = in_array($data['preference'] ?? '', ['None', 'Vegetarian', 'Vegan'], true)
+            ? $data['preference']
+            : 'None';
+
+        $asOrganization = !empty($data['asOrganization']);
+        $meal           = null;
+        if ($asOrganization) {
+            if (!$member->hasOrgPermission($event->Organization(), OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
+                return $this->errorResponse('Nur die Essensplanung kann Gerichte für die Organisation anlegen', 403);
+            }
+            if (!empty($data['mealId'])) {
+                $meal = Meal::get()->filter(['ID' => (int) $data['mealId'], 'Parent.EventID' => $event->ID])->first();
+                if (!$meal) {
+                    return $this->errorResponse('Mahlzeit gehört nicht zu diesem Event', 400);
+                }
+            }
+        }
+
+        $food                 = Food::create();
+        $food->Title          = $title;
+        $food->FoodPreference = $preference;
+        $food->ParentID       = $event->OrganizationID;
+        $food->EventID        = $event->ID;
+        $food->SupplierID     = $asOrganization ? 0 : $member->ID;
+        $food->Status         = $meal ? 'Accepted' : 'New';
+        $food->write();
+
+        if ($meal) {
+            $food->Meals()->add($meal);
+            $meal->recordHistorySetChange('Foods', [$food], []);
+        }
+
+        // Eigene Gerichte der Organisation legt die Essensplanung selbst an — keine Benachrichtigung
+        if (!$asOrganization) {
+            PushNotificationService::notifyFoodSuggestionForEvent($food, $event);
+        }
+
+        return $this->successResponse(
+            ['food' => ['id' => $food->ID, 'title' => $food->Title, 'status' => $food->Status, 'mealId' => $meal?->ID]],
+            $asOrganization ? 'Gericht angelegt' : 'Gericht vorgeschlagen'
+        );
+    }
+
+    /**
+     * Essensplaner: offene Vorschläge eines Events und seine kommenden Mahlzeiten
+     * (nach Tag gruppiert) mit den bereits zugeordneten Gerichten.
+     * GET /api/v1/food/planner/:eventId
+     */
+    public function planner(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
         if (!$member) {
             return $this->errorResponse('Unauthorized', 401);
         }
 
-        $orgIDs = array_values(array_filter(
-            $member->getOrganizationIDs(),
-            function ($orgID) use ($member) {
-                $org = Organization::get()->byID($orgID);
-                return $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !$member->hasOrgPermission($event->Organization(), OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
+            return $this->errorResponse('Zugriff verweigert', 403);
+        }
+
+        $meals = Meal::get()
+            ->filter(['Parent.EventID' => $event->ID, 'Parent.DateStart:GreaterThanOrEqual' => date('Y-m-d')])
+            ->sort(['Parent.DateStart' => 'ASC', 'Time' => 'ASC']);
+        $mealIDs = $meals->column('ID');
+
+        // Offen: Vorschläge fürs Event (noch ohne Mahlzeit) und solche, die direkt an
+        // einer Mahlzeit des Events gemacht wurden und noch nicht bestätigt sind
+        $pool = [];
+        $openFoods = Food::get()->filter('Status', 'New')->filterAny([
+            'EventID'  => $event->ID,
+            'Meals.ID' => $mealIDs ?: [-1],
+        ])->sort('Created ASC');
+        foreach ($openFoods as $food) {
+            $suggestedMeal = $food->Meals()->first();
+            $pool[] = $this->formatPlannerFood($food, $member) + [
+                'suggestedMealId' => $suggestedMeal ? $suggestedMeal->ID : null,
+            ];
+        }
+
+        $days = [];
+        foreach ($meals as $meal) {
+            $appointment = $meal->Parent();
+            $date        = $appointment->DateStart;
+            $foods       = [];
+            foreach ($meal->Foods()->filter('Status', 'Accepted')->sort('Title ASC') as $food) {
+                $foods[] = $this->formatPlannerFood($food, $member);
             }
-        ));
+            // Bearbeiten dürfen (wie im Termin) Termin- oder Mahlzeiten-Verwalter
+            $apptOrgIDs = $appointment->Organisations()->column('ID');
+            $canEdit    = $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::CALENDAR_MANAGE)
+                || $this->hasPermissionInAnyOrg($member, $apptOrgIDs, OrgPermissions::FOOD_MANAGE_MEALS);
 
-        $pending = [];
-        if (!empty($orgIDs)) {
-            foreach (Food::get()->filter(['ParentID' => $orgIDs, 'Status' => 'New']) as $food) {
-                foreach ($food->Meals() as $meal) {
-                    $appointment = $meal->Parent();
-                    if (!$appointment || !$appointment->exists()) {
-                        continue;
-                    }
+            $days[$date] ??= ['date' => $date, 'meals' => []];
+            $days[$date]['meals'][] = [
+                'id'               => $meal->ID,
+                'title'            => $meal->Title,
+                'time'             => $meal->RenderTime(),
+                'description'      => $meal->Description ?: '',
+                'acceptsContributions' => (bool) $meal->AcceptsContributions,
+                'canEdit'          => $canEdit,
+                'appointmentId'    => $appointment->ID,
+                'appointmentTitle' => $appointment->Title,
+                'acceptCount'      => $meal->Eaters()->filter('Type', 'Accept')->count(),
+                'foods'            => $foods,
+            ];
+        }
 
-                    $mealOrgIDs = $appointment->Organisations()->column('ID');
-                    if (empty(array_intersect($mealOrgIDs, $orgIDs))) {
-                        continue;
-                    }
+        return $this->jsonResponse([
+            'event' => $event->toApi(),
+            'pool'  => $pool,
+            'days'  => array_values($days),
+        ]);
+    }
 
-                    $org      = $appointment->Organisations()->first();
-                    $supplier = $food->Supplier();
+    private function formatPlannerFood(Food $food, Member $member): array
+    {
+        $supplier = $food->Supplier();
+        $org      = $food->Parent();
+        return [
+            // Bearbeiten/Löschen: Essensplanung der Organisation des Gerichts (nicht bei bestellbaren Produkten)
+            'canEdit'     => !$food->IsOrderable && $this->canPlanFood($food, $member),
+            'id'          => $food->ID,
+            'title'       => $food->Title,
+            'preference'  => $food->FoodPreference ?: 'None',
+            'supplier'    => $supplier->exists() ? $supplier->getDisplayName() : null,
+            // Ohne Person stellt die Organisation das Gericht selbst
+            'organizationTitle' => !$supplier->exists() && $org->exists() ? $org->Title : null,
+            // Bestellbare Produkte legt die Mahlzeit selbst an — nicht verschiebbar
+            'isOrderable' => (bool) $food->IsOrderable,
+        ];
+    }
 
-                    $pending[] = [
-                        'id'                  => $food->ID,
-                        'title'               => $food->Title,
-                        'preference'          => $food->FoodPreference ?: 'None',
-                        'supplier'            => ($supplier && $supplier->exists())
-                            ? trim($supplier->FirstName . ' ' . $supplier->Surname)
-                            : null,
-                        'mealId'              => $meal->ID,
-                        'mealTitle'           => $meal->Title,
-                        'mealTime'            => $meal->RenderTime(),
-                        'date'                => $appointment->DateStart,
-                        'appointmentTitle'    => $appointment->Title,
-                        'organizationTitle'   => $org?->Title,
-                        'organizationLogoUrl' => $org?->RenderLogo(80),
-                    ];
-                }
+    private function canPlanFood(Food $food, Member $member): bool
+    {
+        $org = $food->Parent();
+        return $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
+    }
+
+    /**
+     * Essensplaner: Gericht bearbeiten (Titel, Präferenz) oder löschen.
+     * PUT    /api/v1/food/plannerFood/:foodId  Body: { title, preference }
+     * DELETE /api/v1/food/plannerFood/:foodId
+     */
+    public function plannerFood(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $food = Food::get()->byID((int) $request->param('ID'));
+        if (!$food || !$food->exists()) {
+            return $this->errorResponse('Gericht nicht gefunden', 404);
+        }
+        if ($food->IsOrderable) {
+            return $this->errorResponse('Bestellbare Produkte werden in der Mahlzeit bearbeitet', 400);
+        }
+        if (!$this->canPlanFood($food, $member)) {
+            return $this->errorResponse('Zugriff verweigert', 403);
+        }
+
+        if ($request->httpMethod() === 'DELETE') {
+            foreach ($food->Meals() as $meal) {
+                $meal->recordHistorySetChange('Foods', [], [$food]);
+            }
+            $food->Meals()->removeAll();
+            $food->delete();
+            return $this->successResponse(['id' => (int) $request->param('ID')], 'Gericht gelöscht');
+        }
+
+        if ($request->httpMethod() !== 'PUT') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $body  = $this->getJsonBody();
+        $title = trim($body['title'] ?? '');
+        if ($title === '') {
+            return $this->errorResponse('Titel ist erforderlich', 400);
+        }
+        $food->Title = $title;
+        if (in_array($body['preference'] ?? '', ['None', 'Vegetarian', 'Vegan'], true)) {
+            $food->FoodPreference = $body['preference'];
+        }
+        $food->write();
+
+        return $this->successResponse(['food' => $this->formatPlannerFood($food, $member)], 'Gericht gespeichert');
+    }
+
+    /**
+     * Essensplaner: Vorschlag genau einer Mahlzeit zuordnen (→ Angenommen) oder
+     * wieder zurück zu den offenen Vorschlägen legen (mealId null → Offen).
+     * PUT /api/v1/food/assign/:foodId  Body: { mealId: int|null }
+     */
+    public function assign(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'PUT') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $food = Food::get()->byID((int) $request->param('ID'));
+        if (!$food || !$food->exists()) {
+            return $this->errorResponse('Gericht nicht gefunden', 404);
+        }
+        if ($food->IsOrderable) {
+            return $this->errorResponse('Bestellbare Produkte lassen sich nicht verschieben', 400);
+        }
+        $org = $food->Parent();
+        if (!$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
+            return $this->errorResponse('Zugriff verweigert', 403);
+        }
+
+        $body   = $this->getJsonBody();
+        $mealID = isset($body['mealId']) ? (int) $body['mealId'] : 0;
+        $meal   = null;
+        if ($mealID) {
+            $meal = Meal::get()->byID($mealID);
+            $appointment = $meal?->Parent();
+            $mealOrgIDs  = $appointment ? array_map('intval', $appointment->Organisations()->column('ID')) : [];
+            if (!$meal || !in_array((int) $org->ID, $mealOrgIDs, true)) {
+                return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+            }
+            // Vorschläge ohne Event übernehmen das Event der Mahlzeit
+            if (!$food->EventID && $appointment->EventID) {
+                $food->EventID = $appointment->EventID;
             }
         }
 
-        usort($pending, fn ($a, $b) => strcmp($a['date'], $b['date']));
+        $oldMeals  = $food->Meals()->toArray();
+        $oldStatus = $food->Status;
 
-        return $this->jsonResponse(['pending' => $pending]);
+        $food->Meals()->removeAll();
+        if ($meal) {
+            $food->Meals()->add($meal);
+        }
+        $food->Status = $meal ? 'Accepted' : 'New';
+        $food->write();
+
+        // Verlauf der betroffenen Mahlzeiten
+        foreach ($oldMeals as $oldMeal) {
+            if (!$meal || $oldMeal->ID !== $meal->ID) {
+                $oldMeal->recordHistorySetChange('Foods', [], [$food]);
+            }
+        }
+        if ($meal && !in_array($meal->ID, array_map(fn ($m) => $m->ID, $oldMeals), true)) {
+            $meal->recordHistorySetChange('Foods', [$food], []);
+        }
+
+        if ($oldStatus === 'New' && $food->Status === 'Accepted') {
+            PushNotificationService::notifyFoodSuggestionDecision($food);
+        }
+
+        return $this->successResponse(['id' => $food->ID, 'status' => $food->Status, 'mealId' => $meal?->ID], 'Zuordnung gespeichert');
     }
 
     /**
@@ -610,6 +868,7 @@ class FoodApiController extends ApiController
             $attendees[] = [
                 'id'        => $m->ID,
                 'name'      => trim($m->FirstName . ' ' . $m->Surname),
+                'username'  => $m->Username ?: null,
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
                 'allergies' => $m->Allergies()->filter('Category', Allergy::CATEGORY_FOOD)->column('Title'),
             ];
@@ -624,6 +883,7 @@ class FoodApiController extends ApiController
             $declinedAttendees[] = [
                 'id'        => $m->ID,
                 'name'      => trim($m->FirstName . ' ' . $m->Surname),
+                'username'  => $m->Username ?: null,
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
             ];
         }
@@ -633,6 +893,7 @@ class FoodApiController extends ApiController
             $pendingAttendees[] = [
                 'id'        => $m->ID,
                 'name'      => trim($m->FirstName . ' ' . $m->Surname),
+                'username'  => $m->Username ?: null,
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
             ];
         }

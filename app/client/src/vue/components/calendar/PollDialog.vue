@@ -98,10 +98,16 @@
                   </button>
                 </div>
 
-                <div v-if="expandedId === option.OptionID" class="poll-table_participants" @click.stop>
+                <div
+                  v-if="expandedId === option.OptionID"
+                  v-roving-focus="{ selector: '.participant', label: `Antworten für ${option.RenderDate}` }"
+                  class="poll-table_participants"
+                  @click.stop
+                >
                   <ParticipantCard
                     v-for="p in option.Participations"
                     :key="p.ID"
+                    v-context-menu="p.Username ? (e => openParticipantMenu(e, p)) : null"
                     :participation="p"
                   />
                   <p v-if="!option.Participations?.length" class="event-section-empty">Noch keine Antworten.</p>
@@ -111,6 +117,9 @@
           </div>
 
         </div>
+
+    <!-- Im Dialog statt nach body, sonst läge das Menü hinter dem Top Layer -->
+    <ContextMenu ref="participantMenu" />
 
     <template v-if="canManageContent && sortedOptions.length" #actions>
       <AppButton variant="primary" @click="openFinalize">Termin festlegen</AppButton>
@@ -128,6 +137,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/ui/AppButton.vue'
@@ -135,6 +145,9 @@ import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import ParticipantCard from '@components/calendar/ParticipantCard.vue'
+import ContextMenu from '@components/ui/ContextMenu.vue'
+import { vContextMenu, profileMenuItem } from '@utils/contextMenu'
+import { vRovingFocus } from '@utils/rovingFocus'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 import PollFinalizeModal from '@components/calendar/PollFinalizeModal.vue'
 import ScheduleIcon from '../../../../icons/actions/action_schedule.svg'
@@ -152,6 +165,14 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'edit-poll', 'finalized'])
+
+const router = useRouter()
+const participantMenu = ref(null)
+
+function openParticipantMenu(event, participation) {
+  const item = profileMenuItem(router, participation)
+  if (item) participantMenu.value?.open(event, [item])
+}
 
 // Erste Organisation der Terminfindung (ohne Logo zeigt AppOrgLogo die Initiale — wie in der EventCard)
 const primaryOrg = computed(() =>

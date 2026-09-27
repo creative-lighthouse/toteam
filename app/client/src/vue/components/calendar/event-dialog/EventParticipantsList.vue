@@ -1,7 +1,8 @@
 <template>
   <div v-if="groupedParticipations" class="participants-section">
     <h3 class="event-participation_title">Teilnehmer</h3>
-    <div class="participants-list">
+    <!-- Ein Tab-Stopp für die ganze Liste, Pfeiltasten wechseln zwischen den Karten -->
+    <div v-roving-focus="{ selector: '.participant', label: 'Teilnehmer' }" class="participants-list">
       <template v-if="groupedParticipations.Accept.length > 0">
         <h5 class="participant-group_title">Zugesagt <span>({{ groupedParticipations.Accept.length }})</span></h5>
         <ParticipantCard
@@ -10,7 +11,7 @@
           :participation="p"
           :note-expanded="expandedNoteIds.has(p.ID)"
           @toggle-note="toggleNoteExpanded(p.ID)"
-          @contextmenu="onContextMenu($event, p)"
+          v-context-menu="hasMenu(p) ? (e => onContextMenu(e, p)) : null"
         />
       </template>
 
@@ -22,7 +23,7 @@
           :participation="p"
           :note-expanded="expandedNoteIds.has(p.ID)"
           @toggle-note="toggleNoteExpanded(p.ID)"
-          @contextmenu="onContextMenu($event, p)"
+          v-context-menu="hasMenu(p) ? (e => onContextMenu(e, p)) : null"
         />
       </template>
 
@@ -34,7 +35,7 @@
           :participation="p"
           :note-expanded="expandedNoteIds.has(p.ID)"
           @toggle-note="toggleNoteExpanded(p.ID)"
-          @contextmenu="onContextMenu($event, p)"
+          v-context-menu="hasMenu(p) ? (e => onContextMenu(e, p)) : null"
         />
       </template>
 
@@ -44,7 +45,7 @@
           v-for="p in membersWithoutResponse"
           :key="p.ID"
           :participation="p"
-          @contextmenu="onContextMenu($event, p)"
+          v-context-menu="hasMenu(p) ? (e => onContextMenu(e, p)) : null"
         />
       </template>
     </div>
@@ -57,13 +58,17 @@
 import { ref, computed } from 'vue'
 import ParticipantCard from '@components/calendar/ParticipantCard.vue'
 import ContextMenu from '@components/ui/ContextMenu.vue'
+import { useRouter } from 'vue-router'
 import { useEventsStore } from '@stores/events'
+import { vContextMenu, profileMenuItem } from '@utils/contextMenu'
+import { vRovingFocus } from '@utils/rovingFocus'
 
 const props = defineProps({
   event: { type: Object, required: true }
 })
 
 const eventsStore = useEventsStore()
+const router = useRouter()
 const expandedNoteIds = ref(new Set())
 const participantMenu = ref(null)
 
@@ -81,13 +86,23 @@ const membersWithoutResponse = computed(() =>
     ID: m.ID,
     MemberID: m.ID,
     MemberName: m.MemberName,
+    Username: m.Username,
     ProfileImageURL: m.ProfileImageURL,
     Type: 'Pending',
   }))
 )
 
+// Menü: "Profil ansehen" für alle, darunter Antworten eintragen (nur mit CALENDAR_RECORD_RSVP)
+function hasMenu(participation) {
+  return !!participation.Username || props.event.CanRecordRsvp
+}
+
 function onContextMenu(event, participation) {
-  if (!props.event.CanRecordRsvp) return
+  const menuItems = [profileMenuItem(router, participation)].filter(Boolean)
+  if (!props.event.CanRecordRsvp) {
+    if (menuItems.length) participantMenu.value?.open(event, menuItems)
+    return
+  }
 
   const options = [
     { value: 'Accept', label: 'Zusagen' },
@@ -95,10 +110,10 @@ function onContextMenu(event, participation) {
     { value: 'Decline', label: 'Absagen' },
   ].filter(o => o.value !== participation.Type)
 
-  const menuItems = options.map(o => ({
+  menuItems.push(...options.map(o => ({
     label: o.label,
     onClick: () => recordParticipation(participation.MemberID, o.value),
-  }))
+  })))
 
   if (participation.Type !== 'Pending') {
     menuItems.push({

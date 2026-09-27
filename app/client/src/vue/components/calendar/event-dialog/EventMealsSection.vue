@@ -13,21 +13,20 @@
     </div>
 
     <div class="meals-list">
-      <div v-for="meal in event.Meals" :key="meal.ID" class="meal">
+      <!-- Bearbeiten per Rechtsklick bzw. langem Drücken (nur mit Rechten) -->
+      <div
+        v-for="meal in event.Meals"
+        :key="meal.ID"
+        v-context-menu="canManageContent ? (e => openMealMenu(e, meal)) : null"
+        class="meal"
+        :class="{ 'meal--manageable': canManageContent }"
+      >
         <div class="meal-info">
           <div class="meal-info-row">
-            <span>
+            <span class="meal-info-title">
               <router-link :to="`/food/meal/${meal.ID}`" class="meal-title-link">{{ meal.Title }}</router-link>
               <span v-if="meal.RenderTime"> ({{ meal.RenderTime }})</span>
             </span>
-            <AppIconButton
-              v-if="canManageContent"
-              variant="primary"
-              aria-label="Mahlzeit bearbeiten"
-              @click="openMealModal(meal)"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </AppIconButton>
           </div>
         </div>
 
@@ -37,13 +36,14 @@
             :model-value="meal.UserResponse"
             size="compact"
             :disabled="submitting"
+            :label="`Teilnahme an ${meal.Title}`"
             @select="type => changeFoodParticipation(meal.ID, type)"
           />
         </div>
 
         <!-- Bestellbare + feste Gerichte (nur nach Zusage zur Mahlzeit) -->
         <div v-if="meal.UserResponse === 'Accept' && mealEntries(meal).length" class="meal-entries">
-          <MealCard
+          <MealFoodRow
             v-for="entry in mealEntries(meal)"
             :key="`${entry.Orderable ? 'p' : 'f'}-${entry.ID}`"
             :title="entry.Title"
@@ -64,6 +64,8 @@
       Noch keine Mahlzeiten geplant.
     </p>
 
+    <ContextMenu ref="mealMenu" />
+
     <MealFormModal
       v-if="canManageContent"
       ref="mealModal"
@@ -80,8 +82,10 @@ import { ref, computed, watch } from 'vue'
 import { useEventsStore } from '@stores/events'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppButtonGroup from '@components/ui/AppButtonGroup.vue'
-import MealCard from '@components/food/MealCard.vue'
+import MealFoodRow from '@components/food/MealFoodRow.vue'
 import MealFormModal from '@components/food/MealFormModal.vue'
+import ContextMenu from '@components/ui/ContextMenu.vue'
+import { vContextMenu } from '@utils/contextMenu'
 import AddIcon from '../../../../../icons/actions/action_add.svg'
 
 const addIconStyle = { maskImage: `url("${AddIcon}")`, WebkitMaskImage: `url("${AddIcon}")` }
@@ -101,6 +105,14 @@ const emit = defineEmits(['food-changed', 'show-status'])
 const eventsStore = useEventsStore()
 const submitting = ref(false)
 const mealModal = ref(null)
+
+const mealMenu = ref(null)
+
+function openMealMenu(event, meal) {
+  mealMenu.value?.open(event, [
+    { label: 'Mahlzeit bearbeiten', onClick: () => openMealModal(meal) },
+  ])
+}
 
 // Mahlzeiten aus der Kalender-API (PascalCase) ins Format des MealFormModal bringen
 function openMealModal(meal) {
@@ -136,7 +148,7 @@ async function changeFoodParticipation(mealId, type) {
 }
 
 // Bestellbare und feste Gerichte kommen vom Backend getrennt (Products/Foods),
-// stammen aber beide vom selben Food-Model — für die einheitliche MealCard-Darstellung
+// stammen aber beide vom selben Food-Model — für die einheitliche MealFoodRow-Darstellung
 // werden sie hier zu einer Liste zusammengeführt und nur per `Orderable`-Flag unterschieden.
 function mealEntries(meal) {
   return [
