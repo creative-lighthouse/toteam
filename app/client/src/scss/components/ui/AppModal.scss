@@ -51,6 +51,64 @@ dialog.app-modal[open] {
     // der ganze Dialog (inkl. Header/Actions) einen gemeinsamen bekommt.
     display: flex;
     flex-direction: column;
+    // Weiches Öffnen statt Aufploppen: leicht von unten hereingleiten und
+    // einblenden, der Hintergrund blendet parallel ein. Keyframes (statt
+    // Transition) starten zuverlässig, sobald der Dialog per showModal() sichtbar wird.
+    animation: app-modal-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
+
+    &::backdrop {
+        animation: app-modal-backdrop-in 0.22s ease-out;
+    }
+
+    // Schließen: kurz ausblenden und leicht absinken (Dauer = CLOSE_DURATION in AppModal.vue)
+    &.app-modal--closing {
+        animation: app-modal-out 0.18s ease-in forwards;
+        pointer-events: none;
+
+        &::backdrop {
+            animation: app-modal-backdrop-out 0.18s ease-in forwards;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+
+        &::backdrop {
+            animation: none;
+        }
+    }
+}
+
+@keyframes app-modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes app-modal-out {
+    from {
+        opacity: 1;
+        transform: none;
+    }
+    to {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+}
+
+@keyframes app-modal-backdrop-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+@keyframes app-modal-backdrop-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .app-modal {
@@ -173,4 +231,59 @@ dialog.app-modal[open] {
     padding: 0;
     gap: 0;
     background-color: transparent;
+}
+
+// ── Morph aus einer Karte (utils/viewTransition.js) ───────────────────────────
+// Während des Morphs übernimmt die View Transition die Animation; die eigene
+// Einblend-Animation des Modals ist dann aus.
+html.is-morphing dialog.app-modal[open],
+dialog.app-modal[open].app-modal--morphed:not(.app-modal--closing) {
+    animation: none;
+
+    &::backdrop {
+        animation: none;
+    }
+}
+
+// Header und Menü tragen eigene view-transition-names und würden sonst als
+// eigene Ebenen über dem abgedunkelten Hintergrund liegen (weiß, dann Sprung).
+// Während des Morphs gehören sie zum normalen Seiten-Schnappschuss.
+html.is-morphing {
+    .AppHeader,
+    .AppMenu,
+    .AppMenu .primary_menu,
+    .AppMenu [class] {
+        view-transition-name: none;
+    }
+}
+
+::view-transition-group(app-morph) {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+    // Karte und Modal haben verschiedene Radien — so bleibt die Ecke rund
+    border-radius: var(--BorderRadiusMedium);
+    overflow: hidden;
+}
+
+// Karte schnell aus-, Modal etwas verzögert einblenden: so ist nie lange
+// verzerrter Text beider Zustände übereinander zu sehen
+::view-transition-old(app-morph) {
+    animation: app-morph-fade-out 0.12s ease-out both;
+}
+
+::view-transition-new(app-morph) {
+    animation: app-morph-fade-in 0.22s ease-in 0.06s both;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.3s;
+}
+
+@keyframes app-morph-fade-out {
+    to { opacity: 0; }
+}
+
+@keyframes app-morph-fade-in {
+    from { opacity: 0; }
 }

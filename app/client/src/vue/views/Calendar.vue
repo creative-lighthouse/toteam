@@ -27,7 +27,7 @@
                 </div>
 
                 <!-- Calendar Grid -->
-                <div class="calendar-grid" :class="{ 'calendar-grid--loading': monthLoading }">
+                <div class="calendar-grid" :class="{ 'calendar-grid--loading': monthLoading }" :aria-busy="monthLoading">
                     <!-- Weekday Headers -->
                     <div v-for="day in weekDays" :key="day" class="calendar-weekday">
                         {{ day }}
@@ -48,8 +48,12 @@
                     >
                         <span v-if="cell.weekNumber" class="week-number" :title="`KW ${cell.weekNumber}`">{{ cell.weekNumber }}</span>
                         <span class="day-number">{{ cell.day }}</span>
+                        <!-- Skeleton, solange die Termine des Monats noch laden -->
+                        <div v-if="monthLoading && cell.isCurrentMonth" class="event-dots event-dots--skeleton" aria-hidden="true">
+                        <span class="event-dot-skeleton"></span>
+                        </div>
                         <div
-                        v-if="getEventsCountForDay(cell.day, cell.month, cell.year) > 0 || getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
+                        v-else-if="getEventsCountForDay(cell.day, cell.month, cell.year) > 0 || getAbsenceCountForDay(cell.day, cell.month, cell.year) > 0"
                         class="event-dots"
                         >
                         <span
@@ -75,7 +79,7 @@
                         v-for="event in selectedDayEvents"
                         :key="event.ID"
                         :event="event"
-                        @click="openEvent(event)"
+                        @click="(ev, cardEl) => openEvent(ev, cardEl)"
                         />
                     </div>
                     <div v-else-if="selectedDateAbsences.length === 0" class="no-events-message">
@@ -131,6 +135,12 @@
                 @edit-appointment="onEditAppointment"
             />
 
+            <!-- Platzhalter, solange ein per Link (eventID) geöffneter Termin noch lädt -->
+            <EventDialogSkeleton
+                v-if="linkedEventLoadingId"
+                @close="cancelLinkedEvent"
+            />
+
             <!-- Poll (Terminfindung) Dialog -->
             <PollDialog
                 v-if="selectedPollEvent"
@@ -167,6 +177,8 @@ import { useAuthStore } from '@stores/auth'
 import { useOrganizationsStore } from '@stores/organizations'
 import EventDialog from '@components/calendar/event-dialog/EventDialog.vue'
 import PollDialog from '@components/calendar/PollDialog.vue'
+import EventDialogSkeleton from '@components/calendar/event-dialog/EventDialogSkeleton.vue'
+import { morphIntoModal } from '@utils/viewTransition'
 import EventCard from '@components/calendar/EventCard.vue'
 import AppMenu from '@components/layout/AppMenu.vue'
 import CalendarEntryCreateModal from '@components/calendar/CalendarEntryCreateModal.vue'
@@ -353,8 +365,43 @@ function getAdjacentMonth(year, month, offset) {
 function prefetchAdjacentMonths(year, month) {
   const prev = getAdjacentMonth(year, month, -1)
   const next = getAdjacentMonth(year, month, 1)
-  eventsStore.fetchEvents(prev.year, prev.month).catch(() => {})
-  eventsStore.fetchEvents(next.year, next.month).catch(() => {})
+  for (const m of [prev, next]) {
+    eventsStore.fetchEvents(m.year, m.month)
+      .then(() => loadedMonths.add(monthKey(m.year, m.month)))
+      .catch(() => {})
+  }
+}
+
+// Monate, deren Termine schon einmal geladen wurden — dort kein Skeleton, die
+// Daten werden nur still im Hintergrund aktualisiert
+const loadedMonths = new Set()
+const monthKey = (year, month) => `${year}-${month}`
+let monthLoadToken = 0
+
+// Wechselt die Ansicht sofort; das Raster ist direkt da, nur die Termin-Punkte
+// zeigen bis zum Laden ein Skeleton. Der Token verhindert, dass eine ältere,
+// langsamere Anfrage beim schnellen Durchblättern den Ladezustand zu früh beendet.
+async function loadMonth(year, month, forceRefresh = false) {
+  const token = ++monthLoadToken
+  const key = monthKey(year, month)
+  // Schon Termine im Store (z.B. vom Dashboard)? Dann ebenfalls kein Skeleton
+  const prefix = `${year}-${String(month).padStart(2, '0')}`
+  const hasData = loadedMonths.has(key) || eventsStore.events.some(e => e.DateStart?.startsWith(prefix))
+  monthLoading.value = !hasData
+  try {
+    await Promise.all([
+      eventsStore.fetchEvents(year, month, forceRefresh),
+      loadAbsenceCountsForCurrentMonth(),
+    ])
+    loadedMonths.add(key)
+  } catch {
+    // Fehler zeigt der Store (error) an
+  } finally {
+    if (token === monthLoadToken) {
+      monthLoading.value = false
+      prefetchAdjacentMonths(year, month)
+    }
+  }
 }
 
 const jumptotoday = async () => {
@@ -366,10 +413,9 @@ const jumptotoday = async () => {
   if (!isCurrentMonth.value) {
     currentYear.value = newYear
     currentMonth.value = newMonth
-    monthLoading.value = true
-    await eventsStore.fetchEvents(newYear, newMonth)
-    monthLoading.value = false
-    prefetchAdjacentMonths(newYear, newMonth)
+    selectedDate.value = todayKey
+    await loadMonth(newYear, newMonth)
+    return
   }
 
   selectedDate.value = todayKey
@@ -384,13 +430,7 @@ const previousMonth = async () => {
   }
   selectedDate.value = null
   selectedDateAbsences.value = []
-  monthLoading.value = true
-  await Promise.all([
-    eventsStore.fetchEvents(currentYear.value, currentMonth.value),
-    loadAbsenceCountsForCurrentMonth(),
-  ])
-  monthLoading.value = false
-  prefetchAdjacentMonths(currentYear.value, currentMonth.value)
+  await loadMonth(currentYear.value, currentMonth.value)
 }
 
 const nextMonth = async () => {
@@ -402,13 +442,7 @@ const nextMonth = async () => {
   }
   selectedDate.value = null
   selectedDateAbsences.value = []
-  monthLoading.value = true
-  await Promise.all([
-    eventsStore.fetchEvents(currentYear.value, currentMonth.value),
-    loadAbsenceCountsForCurrentMonth(),
-  ])
-  monthLoading.value = false
-  prefetchAdjacentMonths(currentYear.value, currentMonth.value)
+  await loadMonth(currentYear.value, currentMonth.value)
 }
 
 // AddCalendarEntryModal
@@ -496,12 +530,15 @@ const selectedPollEvent = ref(null)
 const pendingReopenId = ref(null)
 const pendingReopenPoll = ref(null)
 
-function openEvent(event) {
-  if (event.IsPoll) {
-    openPollDialog(event)
-  } else {
-    openEventDialog(event)
-  }
+// Die angeklickte Karte morpht (wo unterstützt) in den Termin- bzw. Terminfindungs-Dialog
+function openEvent(event, cardEl = null) {
+  morphIntoModal(cardEl, () => {
+    if (event.IsPoll) {
+      openPollDialog(event)
+    } else {
+      openEventDialog(event)
+    }
+  })
 }
 
 function openEventDialog(event) {
@@ -597,10 +634,63 @@ async function copyICSLink() {
 }
 
 // Load events on mount
+// ── Per Link (eventID) geöffneter Termin ──────────────────────────────────────
+// Liegt der Termin schon im Store (z.B. vom Dashboard), öffnet er sofort und wird
+// nach dem Laden nur aktualisiert. Sonst steht bis dahin ein Skeleton-Modal da,
+// das anschließend in den echten Dialog morpht.
+const linkedEventLoadingId = ref(null)
+
+function showLinkedEvent(event) {
+  if (event.IsPoll) {
+    selectedPollEvent.value = event
+  } else {
+    selectedEvent.value = event
+  }
+}
+
+function cancelLinkedEvent() {
+  linkedEventLoadingId.value = null
+  const { eventID: _removed, ...rest } = route.query
+  router.replace({ query: rest })
+}
+
+function resolveLinkedEvent(id) {
+  const fresh = eventsStore.getEventById(id)
+
+  // Skeleton offen → in den echten Dialog morphen (oder schließen, falls es den Termin nicht gibt)
+  if (linkedEventLoadingId.value === id) {
+    if (!fresh) {
+      cancelLinkedEvent()
+      return
+    }
+    const skeletonEl = document.querySelector('dialog.event-dialog-skeleton[open]')
+    morphIntoModal(skeletonEl, () => {
+      linkedEventLoadingId.value = null
+      showLinkedEvent(fresh)
+    })
+    return
+  }
+
+  // Sofort aus dem Store geöffnet → mit frischen Daten ersetzen, solange noch offen
+  if (fresh) {
+    if (selectedEvent.value?.ID === id) selectedEvent.value = fresh
+    if (selectedPollEvent.value?.ID === id) selectedPollEvent.value = fresh
+  }
+}
+
 onMounted(async () => {
   // Check for deep-link query params from notification or shared URL
   const linkDate = route.query.date
   const linkEventID = route.query.eventID ? Number(route.query.eventID) : null
+
+  if (linkEventID) {
+    const cached = eventsStore.getEventById(linkEventID)
+    if (cached) {
+      showLinkedEvent(cached)
+    } else {
+      linkedEventLoadingId.value = linkEventID
+    }
+  }
 
   // If a specific date was linked, navigate to that month
   if (linkDate) {
@@ -612,11 +702,13 @@ onMounted(async () => {
 
   // Always fetch fresh data for the current month on page load
   await Promise.all([
-    eventsStore.fetchEvents(currentYear.value, currentMonth.value, true),
-    loadAbsenceCountsForCurrentMonth(),
+    loadMonth(currentYear.value, currentMonth.value, true),
     orgsStore.fetchOrganizations(),
   ])
-  prefetchAdjacentMonths(currentYear.value, currentMonth.value)
+
+  // Verlinkten Termin öffnen bzw. aktualisieren (URL stimmt bereits) — vor den
+  // Abwesenheiten, damit der Dialog nicht unnötig auf sie wartet
+  if (linkEventID) resolveLinkedEvent(linkEventID)
 
   // Load absences for the initially selected day
   if (selectedDate.value) {
@@ -627,16 +719,5 @@ onMounted(async () => {
     }
   }
 
-  // If a specific event was linked, open its dialog (without modifying URL since it's already correct)
-  if (linkEventID) {
-    const event = eventsStore.getEventById(linkEventID)
-    if (event) {
-      if (event.IsPoll) {
-        selectedPollEvent.value = event
-      } else {
-        selectedEvent.value = event
-      }
-    }
-  }
 })
 </script>

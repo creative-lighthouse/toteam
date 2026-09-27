@@ -35,8 +35,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
+import { MORPHED_MODAL_CLASS, isMorphing } from '@utils/viewTransition'
 
 // Root ist ein <Teleport>, kein normales DOM-Element — Vues automatisches
 // Attribute-/Class-Fallthrough greift dabei nicht (landet ansonsten ins
@@ -57,13 +58,83 @@ defineEmits(['close', 'update:tab'])
 
 const dialogEl = ref(null)
 
+const CLOSING_CLASS = 'app-modal--closing'
+const CLOSE_DURATION = 180 // ms, passend zur Animation in AppModal.scss
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+
+// Spielt die Schließ-Animation auf `el` ab und ruft danach `done` auf. Der
+// Timeout ist die Absicherung, falls `animationend` nicht feuert.
+function animateOut(el, done) {
+  if (prefersReducedMotion()) {
+    done()
+    return
+  }
+  let finished = false
+  const finish = () => {
+    if (finished) return
+    finished = true
+    el.removeEventListener('animationend', onEnd)
+    done()
+  }
+  const onEnd = (event) => { if (event.target === el) finish() }
+  el.addEventListener('animationend', onEnd)
+  el.classList.add(CLOSING_CLASS)
+  setTimeout(finish, CLOSE_DURATION + 80)
+}
+
+// Zählt Öffnen/Schließen mit: wird während der Schließ-Animation wieder
+// geöffnet, darf das verzögerte close() den Dialog nicht mehr zumachen
+let closeToken = 0
+
 function open() {
-  dialogEl.value?.showModal()
+  const el = dialogEl.value
+  if (!el) return
+  closeToken++
+  el.classList.remove(CLOSING_CLASS, MORPHED_MODAL_CLASS)
+  if (!el.open) el.showModal()
 }
 
 function close() {
-  dialogEl.value?.close()
+  const el = dialogEl.value
+  if (!el?.open || el.classList.contains(CLOSING_CLASS)) return
+  const token = ++closeToken
+  animateOut(el, () => {
+    if (token !== closeToken) return
+    el.close()
+    el.classList.remove(CLOSING_CLASS)
+  })
 }
+
+// Viele Modals werden nicht per close() geschlossen, sondern von der
+// Elternkomponente per v-if entfernt — dann ist das <dialog> sofort weg. Damit
+// auch dort animiert wird, bleibt eine statische Kopie für die Dauer der
+// Schließ-Animation stehen und wird danach entfernt.
+onBeforeUnmount(() => {
+  const el = dialogEl.value
+  // Beim Morph (z.B. Skeleton → Termin) übernimmt die View Transition den Übergang
+  if (!el?.open || prefersReducedMotion() || isMorphing()) return
+  const ghost = el.cloneNode(true)
+  // Die Kopie erbt das open-Attribut — showModal() würde darauf einen Fehler
+  // werfen und die Kopie als offenen, nicht-modalen Dialog stehen lassen
+  ghost.removeAttribute('open')
+  ghost.removeAttribute('id')
+  ghost.setAttribute('aria-hidden', 'true')
+  ghost.inert = true
+  document.body.appendChild(ghost)
+  try {
+    ghost.showModal()
+    // Scrollposition übernehmen, sonst springt der Inhalt der Kopie nach oben
+    const body = el.querySelector('.app-modal_body')
+    const ghostBody = ghost.querySelector('.app-modal_body')
+    if (body && ghostBody) ghostBody.scrollTop = body.scrollTop
+    animateOut(ghost, () => ghost.remove())
+  } catch {
+    ghost.remove()
+  }
+})
 
 defineExpose({ open, close })
 </script>

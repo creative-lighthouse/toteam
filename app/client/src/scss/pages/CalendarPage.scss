@@ -240,11 +240,17 @@
         outline: 1px solid var(--ColorLightGray);
         box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 
-        &.calendar-grid--loading {
-            .calendar-day {
-                opacity: 0;
-                pointer-events: none;
-            }
+        // Während die Termine laden, bleibt das Raster sichtbar und klickbar;
+        // nur die Termin-Punkte werden durch ein pulsierendes Skeleton ersetzt
+        // Liegt im Grid von .event-dots und spannt über alle vier Spalten
+        .event-dot-skeleton {
+            grid-column: 1 / -1;
+            justify-self: center;
+            width: 60%;
+            height: 6px;
+            border-radius: 50px;
+            background-color: var(--ColorLightGray);
+            animation: calendar-skeleton-pulse 1.2s ease-in-out infinite;
         }
 
         .calendar-weekday {
@@ -473,5 +479,16 @@
         &:hover {
             background-color: var(--ColorPrimaryLight);
         }
+    }
+}
+
+@keyframes calendar-skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .event-dot-skeleton {
+        animation: none;
     }
 }

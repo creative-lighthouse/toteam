@@ -8,7 +8,7 @@
       event.IsPoll ? 'event-card--poll' : '',
       compact ? 'event-card--compact' : '',
     ]"
-    @click="openEventDetails"
+    @click="openEventDetails($event)"
   >
     <!-- Compact: logo + title/meta in two lines + RSVP icon, e.g. on the dashboard -->
     <template v-if="compact">
@@ -179,7 +179,8 @@ function formatTime(time) {
   return time.substring(0, 5)
 }
 
-function openEventDetails() {
-  emit('click', props.event)
+// Das Karten-Element geht mit, damit z.B. der Kalender die Karte ins Modal morphen kann
+function openEventDetails(domEvent) {
+  emit('click', props.event, domEvent?.currentTarget ?? null)
 }
 </script>
