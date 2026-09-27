@@ -1,6 +1,6 @@
 <template>
   <img v-if="src" :src="src" :alt="alt" class="apporglogo" :style="sizeStyle">
-  <span v-else class="apporglogo apporglogo--placeholder" :style="sizeStyle">{{ initials }}</span>
+  <span v-else class="apporglogo apporglogo--placeholder" :style="[sizeStyle, colorStyle]">{{ initials }}</span>
 </template>
 
 <script setup>
@@ -43,9 +43,29 @@ const sizeStyle = computed(() => {
   }
 })
 
+// Quelle für Initiale und Farbe: der Organisationsname
+const source = computed(() => (props.name || props.alt || '').trim())
+
+// Pastellfarbe aus einem Hash des Namens (FNV-1a): gleicher Name → immer derselbe
+// Farbton, ohne etwas speichern zu müssen. Sättigung/Helligkeit sind fest, damit
+// alle Platzhalter gleich pastellig wirken; die Schrift nimmt denselben Farbton dunkel.
+function hashString(value) {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return hash >>> 0
+}
+
+const colorStyle = computed(() => {
+  if (!source.value) return {}
+  const hue = hashString(source.value.toLowerCase()) % 360
+  return { '--apporglogo-hue': hue }
+})
+
 const initials = computed(() => {
-  const source = props.name || props.alt || ''
-  const letters = source
+  const letters = source.value
     .split(' ')
     .filter(Boolean)
     .slice(0, props.initialsLength)

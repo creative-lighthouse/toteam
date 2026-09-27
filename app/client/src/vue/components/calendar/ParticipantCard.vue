@@ -24,6 +24,13 @@
           :key="allergy"
           class="allergy-pill"
         >{{ allergy }}</span>
+        <img
+          v-if="statusIcon"
+          :src="statusIcon.src"
+          :alt="statusIcon.label"
+          :title="statusIcon.label"
+          class="participant-status-icon"
+        >
     </div>
     <p
       v-if="participation.Notes"
@@ -40,6 +47,9 @@ import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import HasTransportIcon from '../../../../icons/actions/action_hastransport.svg'
 import NeedsTransportIcon from '../../../../icons/actions/action_needstransport.svg'
+import AcceptIcon from '../../../../icons/states/participation_accept.svg'
+import MaybeIcon from '../../../../icons/states/participation_maybe.svg'
+import DeclineIcon from '../../../../icons/states/participation_decline.svg'
 
 const props = defineProps({
   participation: {
@@ -53,6 +63,14 @@ const props = defineProps({
 })
 
 defineEmits(['toggle-note'])
+
+// Status zusätzlich als Icon — nicht nur über die Randfarbe (Farbenblindheit)
+const STATUS_ICONS = {
+  Accept: { src: AcceptIcon, label: 'Zugesagt' },
+  Maybe: { src: MaybeIcon, label: 'Vielleicht' },
+  Decline: { src: DeclineIcon, label: 'Abgesagt' },
+}
+const statusIcon = computed(() => STATUS_ICONS[props.participation.Type] ?? null)
 
 function formatTime(timeStr) {
   if (!timeStr) return ''

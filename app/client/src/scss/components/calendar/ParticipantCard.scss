@@ -121,6 +121,12 @@
         }
     }
 
+    .participant-status-icon {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+    }
+
     .participant-note {
         margin: 4px 0 0 0;
         font-size: 12px;

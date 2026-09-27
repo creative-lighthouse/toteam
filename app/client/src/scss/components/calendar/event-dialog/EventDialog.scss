@@ -533,60 +533,6 @@
                     margin-bottom: 10px;
                 }
             }
-
-            .poll-option {
-                border: 1px dashed var(--ColorPrimary);
-                border-radius: var(--BorderRadiusMedium);
-                padding: 12px;
-                margin-bottom: 12px;
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-
-                &:last-child {
-                    margin-bottom: 0;
-                }
-
-                .poll-option_header {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 10px;
-                    flex-wrap: wrap;
-
-                    .poll-option_datetime {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 2px;
-
-                        .poll-option_time {
-                            font-size: 13px;
-                            color: var(--ColorGray);
-                            font-weight: normal;
-                        }
-                    }
-
-                    // Neben Datum/Uhrzeit; bricht auf schmalen Displays in eine eigene Zeile um
-                    .poll-option_vote {
-                        flex: 1 1 320px;
-                        width: auto;
-                        max-width: 420px;
-                    }
-                }
-
-                .poll-option_participants {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-
-                .poll-option_finalize {
-                    display: flex;
-                    justify-content: center;
-                    border-top: 1px solid var(--ColorLightGray);
-                    padding-top: 8px;
-                }
-            }
         }
     }
 }

@@ -148,7 +148,7 @@
                 @appointment-deleted="onAppointmentDeleted"
                 @poll-created="refreshEvents"
                 @poll-updated="refreshEvents"
-                @poll-deleted="refreshEvents"
+                @poll-deleted="onPollDeleted"
                 @absence-created="refreshAbsences"
                 @absence-updated="refreshAbsences"
                 @absence-deleted="refreshAbsences"
@@ -453,7 +453,15 @@ async function refreshAbsences() {
 }
 
 async function refreshEvents() {
-  await eventsStore.fetchEvents(currentYear.value, currentMonth.value, true)
+  // Auch die Nachbarmonate frisch laden: mehrtägige Termine und die Optionen einer
+  // Terminfindung liegen oft (auch) in einem anderen Monat als dem angezeigten
+  const prev = getAdjacentMonth(currentYear.value, currentMonth.value, -1)
+  const next = getAdjacentMonth(currentYear.value, currentMonth.value, 1)
+  await Promise.all([
+    eventsStore.fetchEvents(currentYear.value, currentMonth.value, true),
+    eventsStore.fetchEvents(prev.year, prev.month, true).catch(() => {}),
+    eventsStore.fetchEvents(next.year, next.month, true).catch(() => {}),
+  ])
   await loadAbsenceCountsForCurrentMonth()
   if (selectedDate.value) {
     try {
@@ -469,12 +477,24 @@ async function refreshEvents() {
     const fresh = eventsStore.getEventById(id)
     if (fresh) openEventDialog(fresh)
   }
+  // Terminfindung nach dem Bearbeiten mit frischen Daten wieder öffnen — bevorzugt
+  // an derselben Option, sonst an der ersten noch vorhandenen
+  const poll = pendingReopenPoll.value
+  pendingReopenPoll.value = null
+  if (poll) {
+    const pollEvents = eventsStore.events
+      .filter(e => e.IsPoll && e.PollID === poll.pollId)
+      .sort((a, b) => a.DateStart.localeCompare(b.DateStart))
+    const fresh = pollEvents.find(e => e.ID === poll.eventId) ?? pollEvents[0]
+    if (fresh) openPollDialog(fresh)
+  }
 }
 
 // Event dialog
 const selectedEvent = ref(null)
 const selectedPollEvent = ref(null)
 const pendingReopenId = ref(null)
+const pendingReopenPoll = ref(null)
 
 function openEvent(event) {
   if (event.IsPoll) {
@@ -508,9 +528,15 @@ function closePollDialog() {
 
 function onEditPoll(event) {
   selectedPollEvent.value = null
+  pendingReopenPoll.value = { pollId: event.PollID, eventId: event.ID }
   const { eventID: _removed, ...rest } = route.query
   router.replace({ query: rest })
   entryModalRef.value.openEditPoll(event)
+}
+
+async function onPollDeleted() {
+  pendingReopenPoll.value = null
+  await refreshEvents()
 }
 
 async function onPollFinalized() {
@@ -544,6 +570,7 @@ function onAddAppointmentModalClosed(wasSaved) {
   if (!wasSaved) {
     // User cancelled — clear pending reopen and clean up URL
     pendingReopenId.value = null
+    pendingReopenPoll.value = null
     const { eventID: _removed, ...rest } = route.query
     router.replace({ query: rest })
   }

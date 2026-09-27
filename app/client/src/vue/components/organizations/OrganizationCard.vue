@@ -13,6 +13,7 @@
         <AppOrgLogo
           :src="org.LogoURL"
           :alt="`${org.Title} Logo`"
+          :name="org.Title"
           class="organization-card_logo"
         />
       </div>
