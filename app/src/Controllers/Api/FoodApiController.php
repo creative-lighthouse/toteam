@@ -886,6 +886,8 @@ class FoodApiController extends ApiController
                 'name'      => trim($m->FirstName . ' ' . $m->Surname),
                 'username'  => $m->Username ?: null,
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+                'allergies' => $m->Allergies()->filter('Category', Allergy::CATEGORY_FOOD)->column('Title'),
+                'preference' => $m->FoodPreference ?: 'None',
             ];
         }
 
@@ -896,6 +898,8 @@ class FoodApiController extends ApiController
                 'name'      => trim($m->FirstName . ' ' . $m->Surname),
                 'username'  => $m->Username ?: null,
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
+                'allergies' => $m->Allergies()->filter('Category', Allergy::CATEGORY_FOOD)->column('Title'),
+                'preference' => $m->FoodPreference ?: 'None',
             ];
         }
 
