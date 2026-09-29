@@ -27,6 +27,13 @@
         <span class="participant-status" v-if="participation.Type !== 'Decline' && participation.CustomTimeframe && participation.TimeStart && participation.TimeEnd">
             {{ formatTime(participation.TimeStart) }} – {{ formatTime(participation.TimeEnd) }}
         </span>
+        <img
+          v-if="foodPreferenceIcon"
+          :src="foodPreferenceIcon.src"
+          :alt="foodPreferenceIcon.label"
+          :title="foodPreferenceIcon.label"
+          class="participant-food-preference"
+        >
         <span
           v-for="allergy in participation.Allergies || []"
           :key="allergy"
@@ -58,6 +65,8 @@ import NeedsTransportIcon from '../../../../icons/actions/action_needstransport.
 import AcceptIcon from '../../../../icons/states/participation_accept.svg'
 import MaybeIcon from '../../../../icons/states/participation_maybe.svg'
 import DeclineIcon from '../../../../icons/states/participation_decline.svg'
+import VeganIcon from '../../../../icons/states/food_vegan.svg'
+import VegetarianIcon from '../../../../icons/states/food_vegetarian.svg'
 
 const props = defineProps({
   participation: {
@@ -84,6 +93,12 @@ function formatTime(timeStr) {
   if (!timeStr) return ''
   return timeStr.substring(0, 5)
 }
+
+const FOOD_PREFERENCE_ICONS = {
+  Vegetarian: { src: VegetarianIcon, label: 'Vegetarisch' },
+  Vegan: { src: VeganIcon, label: 'Vegan' },
+}
+const foodPreferenceIcon = computed(() => FOOD_PREFERENCE_ICONS[props.participation.FoodPreference] ?? null)
 
 const rideIcon = computed(() => {
   if (props.participation.Type === 'Decline') return null
