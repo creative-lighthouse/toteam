@@ -102,6 +102,14 @@
               />
             </template>
           </div>
+
+          <ul v-if="hasFoodPreferences || hasAllergies" class="meal-food-preference-legend" aria-label="Legende Essenspräferenz und Allergien">
+            <template v-if="hasFoodPreferences">
+              <li><img :src="veganIcon" alt="" aria-hidden="true"> Vegan</li>
+              <li><img :src="vegetarianIcon" alt="" aria-hidden="true"> Vegetarisch</li>
+            </template>
+            <li v-if="hasAllergies"><span class="allergy-pill" aria-hidden="true">XXX</span> Allergie</li>
+          </ul>
         </div>
 
         <ContextMenu ref="attendeeMenu" />
@@ -287,6 +295,8 @@ import FoodCreateModal from '@components/food/FoodCreateModal.vue'
 import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
 import actionAddFood from '../../../icons/actions/action_addfood.svg'
+import veganIcon from '../../../icons/states/food_vegan.svg'
+import vegetarianIcon from '../../../icons/states/food_vegetarian.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -377,6 +387,7 @@ function toParticipation(a, type) {
     ProfileImageURL: a.avatarUrl,
     Type: type,
     Allergies: a.allergies,
+    FoodPreference: a.preference,
   }
 }
 
@@ -385,6 +396,14 @@ const groupedAttendees = computed(() => ({
   Decline: (meal.value?.declinedAttendees ?? []).map(a => toParticipation(a, 'Decline')),
   Pending: (meal.value?.pendingAttendees ?? []).map(a => toParticipation(a, 'Pending')),
 }))
+
+// Legende nur für das zeigen, was tatsächlich jemand hinterlegt hat
+const hasFoodPreferences = computed(() =>
+  (meal.value?.attendees ?? []).some(a => a.preference === 'Vegan' || a.preference === 'Vegetarian')
+)
+const hasAllergies = computed(() =>
+  (meal.value?.attendees ?? []).some(a => a.allergies?.length)
+)
 
 const hasAnyParticipants = computed(() => {
   const g = groupedAttendees.value

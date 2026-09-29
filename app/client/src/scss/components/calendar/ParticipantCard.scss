@@ -194,3 +194,10 @@
     font-weight: 500;
     white-space: nowrap;
 }
+
+// Essenspräferenz als Icon neben den Allergien
+.participant-food-preference {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
