@@ -47,6 +47,7 @@
             v-context-menu="food.canEdit ? (e => openFoodMenu(e, food)) : null"
             @pointerdown="startDrag($event, food)"
             @move="zone => move(food.id, zone)"
+            @edit="foodModal?.open(food)"
             @reject="reject(food)"
           />
         </ul>
@@ -97,6 +98,7 @@
                 v-context-menu="food.canEdit ? (e => openFoodMenu(e, food)) : null"
                 @pointerdown="startDrag($event, food)"
                 @move="zone => move(food.id, zone)"
+                @edit="foodModal?.open(food)"
               />
             </ul>
             <p v-else class="food-planner_empty">Noch nichts geplant.</p>

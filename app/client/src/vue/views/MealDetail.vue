@@ -209,15 +209,16 @@
                     @click="deleteProduct(item.id)"
                   >×</AppIconButton>
                 </template>
-                <template v-else-if="!item.isOrderable && !(item.status === 'New' && meal.canApprove) && meal.canManage" #trailing>
+                <template v-else-if="!item.isOrderable && (meal.canApprove || meal.canManage)" #trailing>
                   <AppIconButton
                     variant="primary"
                     aria-label="Gericht bearbeiten"
-                    @click="startFoodEdit(item)"
+                    @click="editFood(item)"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </AppIconButton>
                   <AppIconButton
+                    v-if="!(item.status === 'New' && meal.canApprove) && meal.canManage"
                     variant="danger"
                     aria-label="Gericht löschen"
                     :disabled="deletingProductId === item.id"
@@ -258,6 +259,7 @@
 
     <FoodSuggestModal ref="suggestModal" @suggested="onFoodSuggested" />
     <FoodCreateModal ref="foodCreateModal" @created="onFoodCreated" />
+    <FoodEditModal ref="foodEditModal" @saved="onFoodEdited" @deleted="onFoodDeleted" />
     <MealFormModal ref="editModal" @saved="onMealSaved" />
     <HistoryModal
       v-if="meal"
@@ -286,6 +288,7 @@ import ParticipantCard from '@components/calendar/ParticipantCard.vue'
 import MealFormModal from '@components/food/MealFormModal.vue'
 import FoodSuggestModal from '@components/food/FoodSuggestModal.vue'
 import FoodCreateModal from '@components/food/FoodCreateModal.vue'
+import FoodEditModal from '@components/food/FoodEditModal.vue'
 import FoodPreferenceLegend from '@components/food/FoodPreferenceLegend.vue'
 import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
@@ -312,6 +315,7 @@ const userOrders        = ref({})
 const ordersSaving      = ref(false)
 const ordersSaveTimer   = ref(null)
 const foodCreateModal   = ref(null)
+const foodEditModal     = ref(null)
 const deletingProductId     = ref(null)
 const decidingFoodId        = ref(null)
 const editingFoodId       = ref(null)
@@ -545,6 +549,32 @@ async function deleteProduct(productId) {
   } finally {
     deletingProductId.value = null
   }
+}
+
+// Essensplaner bearbeiten Titel und Präferenz im Modal (auch offene Vorschläge),
+// sonst die Inline-Bearbeitung für Mahlzeit-Verwalter
+function editFood(item) {
+  if (meal.value.canApprove) {
+    foodEditModal.value?.open(item)
+  } else {
+    startFoodEdit(item)
+  }
+}
+
+function onFoodEdited(updated) {
+  const item = meal.value.foods.find(f => f.id === updated.id)
+  if (item) {
+    Object.assign(item, {
+      title: updated.title,
+      preference: updated.preference,
+      supplier: updated.supplier,
+      supplierId: updated.supplierId,
+    })
+  }
+}
+
+function onFoodDeleted(foodId) {
+  meal.value.foods = meal.value.foods.filter(f => f.id !== foodId)
 }
 
 function startFoodEdit(item) {

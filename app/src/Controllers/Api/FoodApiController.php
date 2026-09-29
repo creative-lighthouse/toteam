@@ -711,6 +711,8 @@ class FoodApiController extends ApiController
             'title'       => $food->Title,
             'preference'  => $food->FoodPreference ?: 'None',
             'supplier'    => $supplier->exists() ? $supplier->getDisplayName() : null,
+            'supplierId'  => $supplier->exists() ? $supplier->ID : null,
+            'organizationId' => (int) $food->ParentID,
             // Ohne Person stellt die Organisation das Gericht selbst
             'organizationTitle' => !$supplier->exists() && $org->exists() ? $org->Title : null,
             // Bestellbare Produkte legt die Mahlzeit selbst an — nicht verschiebbar
@@ -725,8 +727,9 @@ class FoodApiController extends ApiController
     }
 
     /**
-     * Essensplaner: Gericht bearbeiten (Titel, Präferenz) oder löschen.
-     * PUT    /api/v1/food/plannerFood/:foodId  Body: { title, preference }
+     * Essensplaner: Gericht bearbeiten (Titel, Präferenz, wer es mitbringt) oder löschen.
+     * PUT    /api/v1/food/plannerFood/:foodId  Body: { title, preference, supplierId? }
+     *        supplierId: Mitglied der Organisation des Gerichts, null = die Organisation stellt es
      * DELETE /api/v1/food/plannerFood/:foodId
      */
     public function plannerFood(HTTPRequest $request): HTTPResponse
@@ -768,6 +771,17 @@ class FoodApiController extends ApiController
         $food->Title = $title;
         if (in_array($body['preference'] ?? '', ['None', 'Vegetarian', 'Vegan'], true)) {
             $food->FoodPreference = $body['preference'];
+        }
+        if (array_key_exists('supplierId', $body)) {
+            $supplierID = (int) $body['supplierId'];
+            if ($supplierID && $supplierID !== (int) $food->SupplierID) {
+                $supplier = Member::get()->byID($supplierID);
+                $membership = $supplier?->getMembershipInOrg($food->Parent());
+                if (!$membership || $membership->Role !== 'member') {
+                    return $this->errorResponse('Die Person ist kein Mitglied der Organisation', 400);
+                }
+            }
+            $food->SupplierID = $supplierID;
         }
         $food->write();
 
@@ -928,6 +942,8 @@ class FoodApiController extends ApiController
                 'supplier'    => ($supplier && $supplier->exists())
                     ? trim($supplier->FirstName . ' ' . $supplier->Surname)
                     : null,
+                'supplierId'  => ($supplier && $supplier->exists()) ? $supplier->ID : null,
+                'organizationId' => (int) $food->ParentID,
             ];
 
             if ($food->IsOrderable) {
