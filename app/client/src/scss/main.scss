@@ -44,6 +44,7 @@
 @use "pages/OrganizationsPage.scss";
 @use "pages/OrganizationDetailPage.scss";
 @use "pages/LinksPage.scss";
+@use "pages/EventsPage.scss";
 @use "pages/LoginPage.scss";
 @use "pages/TasksPage.scss";
 @use "pages/TaskDetailPage.scss";
@@ -91,6 +92,8 @@
 @use "components/maps/MapCreateModal.scss";
 @use "components/calendar/CalendarEntryCreateModal.scss";
 @use "components/calendar/PollDialog.scss";
+@use "components/events/OrgEventDetailModal.scss";
+@use "components/events/OrgEventCreateModal.scss";
 @use "components/layout/PwaInstallBanner.scss";
 @use "components/tasks/TaskCard.scss";
 @use "components/tasks/TaskProgressBar.scss";

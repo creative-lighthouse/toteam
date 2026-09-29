@@ -76,6 +76,50 @@ class OrgEvent extends DataObject
         ];
     }
 
+    /** toApi() plus Terminanzahl, Zeitraum und Verwaltungsrecht — für die Events-Übersicht */
+    public function toApiSummary(Member $member): array
+    {
+        $appointments = $this->Appointments();
+        $first = $appointments->sort('DateStart', 'ASC')->first();
+        $dateEnd = null;
+        foreach ($appointments as $appointment) {
+            $end = $appointment->DateEnd ?: $appointment->DateStart;
+            if ($end && (!$dateEnd || $end > $dateEnd)) {
+                $dateEnd = $end;
+            }
+        }
+        return array_merge($this->toApi(), [
+            'AppointmentCount' => $appointments->count(),
+            'DateStart'        => $first ? $first->DateStart : null,
+            'DateEnd'          => $dateEnd,
+            'FoodCount'        => $this->Foods()->count(),
+            'CanManage'        => $this->canBeManagedBy($member),
+        ]);
+    }
+
+    /** Die Termine des Events, chronologisch, mit der Teilnahme des Mitglieds */
+    public function appointmentsToApi(Member $member): array
+    {
+        $appointments = [];
+        foreach ($this->Appointments()->sort(['DateStart' => 'ASC', 'TimeStart' => 'ASC']) as $appointment) {
+            $participation = $appointment->Participations()->filter('MemberID', $member->ID)->first();
+            $appointments[] = [
+                'ID'        => $appointment->ID,
+                'Title'     => $appointment->Title,
+                'DateStart' => $appointment->DateStart,
+                'DateEnd'   => $appointment->DateEnd ?: $appointment->DateStart,
+                'TimeStart' => $appointment->TimeStart,
+                'TimeEnd'   => $appointment->TimeEnd,
+                'AllDay'    => (bool) $appointment->AllDay,
+                'Location'  => $appointment->Location ?: null,
+                'Status'    => $appointment->Status,
+                'EventType' => $appointment->Type()->exists() ? $appointment->Type()->Title : null,
+                'UserResponse' => $participation ? $participation->Type : null,
+            ];
+        }
+        return $appointments;
+    }
+
     protected function onBeforeDelete()
     {
         parent::onBeforeDelete();
