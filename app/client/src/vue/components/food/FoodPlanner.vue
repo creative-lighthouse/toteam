@@ -105,6 +105,8 @@
       </div>
     </div>
 
+    <FoodPreferenceLegend v-if="plan && !loadError" :preferences="hasFoodPreferences" />
+
     <ContextMenu ref="mealMenu" />
     <FoodEditModal ref="foodModal" @saved="onFoodSaved" @deleted="onFoodDeleted" />
     <MealFormModal
@@ -129,6 +131,7 @@ import { usePointerDrag } from '@utils/pointerDrag'
 import { formatMealDay, formatMealDayShort } from '@utils/food'
 import AppButton from '@components/ui/AppButton.vue'
 import FoodPlanCard from '@components/food/FoodPlanCard.vue'
+import FoodPreferenceLegend from '@components/food/FoodPreferenceLegend.vue'
 import MealFormModal from '@components/food/MealFormModal.vue'
 import FoodEditModal from '@components/food/FoodEditModal.vue'
 import ContextMenu from '@components/ui/ContextMenu.vue'
@@ -148,6 +151,12 @@ const plan = ref(null)
 const loading = ref(false)
 const loadError = ref(null)
 const statusMessage = ref(null)
+
+// Legende nur, wenn tatsächlich ein Gericht vegan/vegetarisch markiert ist
+const hasFoodPreferences = computed(() =>
+  [...(plan.value?.pool ?? []), ...(plan.value?.days ?? []).flatMap(d => d.meals.flatMap(m => m.foods))]
+    .some(f => f.preference === 'Vegan' || f.preference === 'Vegetarian')
+)
 
 const showOrg = computed(() => new Set(props.events.map(e => e.OrganizationID)).size > 1)
 

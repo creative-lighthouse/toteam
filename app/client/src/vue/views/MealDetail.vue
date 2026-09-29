@@ -103,13 +103,7 @@
             </template>
           </div>
 
-          <ul v-if="hasFoodPreferences || hasAllergies" class="meal-food-preference-legend" aria-label="Legende Essenspräferenz und Allergien">
-            <template v-if="hasFoodPreferences">
-              <li><img :src="veganIcon" alt="" aria-hidden="true"> Vegan</li>
-              <li><img :src="vegetarianIcon" alt="" aria-hidden="true"> Vegetarisch</li>
-            </template>
-            <li v-if="hasAllergies"><span class="allergy-pill" aria-hidden="true">XXX</span> Allergie</li>
-          </ul>
+          <FoodPreferenceLegend :preferences="hasFoodPreferences" :allergies="hasAllergies" />
         </div>
 
         <ContextMenu ref="attendeeMenu" />
@@ -292,11 +286,10 @@ import ParticipantCard from '@components/calendar/ParticipantCard.vue'
 import MealFormModal from '@components/food/MealFormModal.vue'
 import FoodSuggestModal from '@components/food/FoodSuggestModal.vue'
 import FoodCreateModal from '@components/food/FoodCreateModal.vue'
+import FoodPreferenceLegend from '@components/food/FoodPreferenceLegend.vue'
 import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
 import actionAddFood from '../../../icons/actions/action_addfood.svg'
-import veganIcon from '../../../icons/states/food_vegan.svg'
-import vegetarianIcon from '../../../icons/states/food_vegetarian.svg'
 
 const route = useRoute()
 const router = useRouter()

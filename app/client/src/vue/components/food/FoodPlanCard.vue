@@ -25,7 +25,13 @@
     <div class="food-plan-card_info">
       <p class="food-plan-card_title">
         {{ food.title }}
-        <span v-if="PREFERENCE_LABELS[food.preference]" class="food-plan-card_pref">{{ PREFERENCE_LABELS[food.preference] }}</span>
+        <img
+          v-if="preferenceIcon"
+          :src="preferenceIcon.src"
+          :alt="preferenceIcon.label"
+          :title="preferenceIcon.label"
+          class="food-plan-card_pref-icon"
+        >
         <span v-if="food.isOrderable" class="food-plan-card_pref">Bestellbar</span>
       </p>
       <p v-if="provider || suggestedFor" class="food-plan-card_meta">
@@ -65,7 +71,8 @@
 <script setup>
 import { computed } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
-import { PREFERENCE_LABELS } from '@utils/food'
+import VeganIcon from '../../../../icons/states/food_vegan.svg'
+import VegetarianIcon from '../../../../icons/states/food_vegetarian.svg'
 
 const props = defineProps({
   food: { type: Object, required: true },
@@ -79,6 +86,12 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['move', 'reject'])
+
+const PREFERENCE_ICONS = {
+  Vegetarian: { src: VegetarianIcon, label: 'Vegetarisch' },
+  Vegan: { src: VeganIcon, label: 'Vegan' },
+}
+const preferenceIcon = computed(() => PREFERENCE_ICONS[props.food.preference] ?? null)
 
 // Person, die es mitbringt — oder die Organisation, die es selbst stellt
 const provider = computed(() => props.food.supplier ?? props.food.organizationTitle ?? null)
