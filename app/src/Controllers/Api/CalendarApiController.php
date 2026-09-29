@@ -41,6 +41,7 @@ class CalendarApiController extends ApiController
         'appointmentTypes',
         'appointmentHistory',
         'orgEvents',
+        'orgEvent',
         'meal',
         'agendaPoint',
         'members',
@@ -1484,16 +1485,62 @@ class CalendarApiController extends ApiController
             }
             $event = OrgEvent::create(['Title' => $title, 'OrganizationID' => $orgID]);
             $event->write();
-            return $this->successResponse(['event' => $event->toApi()], 'Event angelegt');
+            return $this->successResponse(['event' => $event->toApiSummary($member)], 'Event angelegt');
         }
 
         $events = [];
         if (!empty($orgIDs)) {
             foreach (OrgEvent::get()->filter('OrganizationID', $orgIDs) as $event) {
-                $events[] = $event->toApi();
+                $events[] = $event->toApiSummary($member);
             }
         }
         return $this->jsonResponse(['events' => $events]);
+    }
+
+    /**
+     * Ein einzelnes Event mit seinen Terminen (Events-Übersicht)
+     * GET    /api/v1/calendar/orgEvent/{id}
+     * PUT    /api/v1/calendar/orgEvent/{id}  Body: { title } — braucht CALENDAR_MANAGE
+     * DELETE /api/v1/calendar/orgEvent/{id}  — braucht CALENDAR_MANAGE; Termine bleiben erhalten
+     */
+    public function orgEvent(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !in_array((int) $event->OrganizationID, array_map('intval', $member->getOrganizationIDs()), true)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+
+        if ($request->httpMethod() === 'PUT') {
+            if (!$event->canBeManagedBy($member)) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+            $body  = json_decode($request->getBody(), true) ?? [];
+            $title = trim($body['title'] ?? '');
+            if ($title === '') {
+                return $this->errorResponse('Titel ist erforderlich', 400);
+            }
+            $event->Title = $title;
+            $event->write();
+            return $this->successResponse(['event' => $event->toApiSummary($member)], 'Event gespeichert');
+        }
+
+        if ($request->httpMethod() === 'DELETE') {
+            if (!$event->canBeManagedBy($member)) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+            $event->delete();
+            return $this->successResponse([], 'Event gelöscht');
+        }
+
+        return $this->jsonResponse([
+            'event'        => $event->toApiSummary($member),
+            'appointments' => $event->appointmentsToApi($member),
+        ]);
     }
 
     public function appointmentTypes(HTTPRequest $request): HTTPResponse

@@ -90,6 +90,15 @@
         <!-- Geschlossen: inert, damit Tab und Screenreader die ausgeblendeten Links überspringen -->
         <div id="app-menu-secondary" ref="secondaryMenu" class="secondarynav" :inert="!isSecondaryMenuOpen">
             <ul class="secondary_menu">
+                <li v-if="authStore.hasTotem('calendar')">
+                    <router-link data-secondary-item to="/events" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Events' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="kalenderTotem" alt="" class="nav_image">
+                        </div>
+                        <p class="nav_title">Events <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
                 <li v-if="authStore.hasTotem('food')">
                     <router-link data-secondary-item to="/food" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Food' }" @click="closeAllMenus">
                         <div class="nav_icon">
