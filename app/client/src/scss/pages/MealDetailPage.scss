@@ -90,13 +90,15 @@
         grid-template-areas:
             "hero hero"
             "rsvp rsvp"
-            "foods participants";
+            "foods participants"
+            "legend legend";
         gap: 10px;
 
         .meal-detail-hero { grid-area: hero; }
         .meal-rsvp { grid-area: rsvp; }
         .participants-section { grid-area: participants; }
         .meal-foods-section { grid-area: foods; }
+        .meal-detail-legend { grid-area: legend; }
 
         // Ohne Teilnehmerliste nehmen die Gerichte die volle Breite ein
         .meal-foods-section--full { grid-column: 1 / -1; }

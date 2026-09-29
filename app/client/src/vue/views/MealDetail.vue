@@ -102,8 +102,6 @@
               />
             </template>
           </div>
-
-          <FoodPreferenceLegend :preferences="hasFoodPreferences" :allergies="hasAllergies" />
         </div>
 
         <ContextMenu ref="attendeeMenu" />
@@ -254,6 +252,8 @@
           <p v-else class="meal-detail-empty">Noch keine Gerichte geplant.</p>
         </div>
 
+        <FoodPreferenceLegend class="meal-detail-legend" :preferences="hasFoodPreferences" :allergies="hasAllergies" />
+
       </template>
     </div>
 
@@ -401,7 +401,8 @@ const allAttendees = computed(() => [
   ...(meal.value?.pendingAttendees ?? []),
 ])
 const hasFoodPreferences = computed(() =>
-  allAttendees.value.some(a => a.preference === 'Vegan' || a.preference === 'Vegetarian')
+  [...allAttendees.value, ...(meal.value?.foods ?? [])]
+    .some(a => a.preference === 'Vegan' || a.preference === 'Vegetarian')
 )
 const hasAllergies = computed(() =>
   allAttendees.value.some(a => a.allergies?.length)
