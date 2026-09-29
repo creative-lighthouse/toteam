@@ -398,11 +398,16 @@ const groupedAttendees = computed(() => ({
 }))
 
 // Legende nur für das zeigen, was tatsächlich jemand hinterlegt hat
+const allAttendees = computed(() => [
+  ...(meal.value?.attendees ?? []),
+  ...(meal.value?.declinedAttendees ?? []),
+  ...(meal.value?.pendingAttendees ?? []),
+])
 const hasFoodPreferences = computed(() =>
-  (meal.value?.attendees ?? []).some(a => a.preference === 'Vegan' || a.preference === 'Vegetarian')
+  allAttendees.value.some(a => a.preference === 'Vegan' || a.preference === 'Vegetarian')
 )
 const hasAllergies = computed(() =>
-  (meal.value?.attendees ?? []).some(a => a.allergies?.length)
+  allAttendees.value.some(a => a.allergies?.length)
 )
 
 const hasAnyParticipants = computed(() => {
