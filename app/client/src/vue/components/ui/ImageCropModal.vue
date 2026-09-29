@@ -39,7 +39,7 @@
     <template #actions>
       <AppButton variant="secondary" :disabled="saving" @click="cancel">Abbrechen</AppButton>
       <AppButton variant="primary" :disabled="saving" @click="save">
-        {{ saving ? 'Wird gespeichert …' : 'Speichern' }}
+        {{ saving ? 'Wird gespeichert …' : (uploadUrl ? 'Speichern' : 'Übernehmen') }}
       </AppButton>
     </template>
   </AppModal>
@@ -56,16 +56,18 @@ import AppModal from '@components/ui/AppModal.vue'
 // RenderProfileImage) als auch für Organisations-Logos (abgerundetes Quadrat,
 // Organization::RenderLogo) verwendet — beide skalieren serverseitig auf
 // dasselbe Zielformat, daher ist auch hier ein fester Ziel-Output sinnvoll.
+// Ohne `uploadUrl` wird nicht hochgeladen, sondern das zugeschnittene JPEG als
+// Blob per `cropped` zurückgegeben (z.B. für ein Event, das noch gar nicht existiert).
 const props = defineProps({
   title: { type: String, default: 'Profilbild zuschneiden' },
-  uploadUrl: { type: String, required: true },
+  uploadUrl: { type: String, default: null },
   // Feldname, unter dem die neue Bild-URL in der Erfolgsantwort steht (z.B. 'Avatar' oder 'LogoURL').
   responseField: { type: String, default: 'Avatar' },
   shape: { type: String, default: 'circle' }, // 'circle' | 'square'
   outputSize: { type: Number, default: 180 },
 })
 
-const emit = defineEmits(['saved'])
+const emit = defineEmits(['saved', 'cropped'])
 
 const modal      = ref(null)
 const canvasEl  = ref(null)
@@ -232,6 +234,14 @@ async function save() {
     out.getContext('2d').drawImage(img, cx - halfView, cy - halfView, viewSize, viewSize, 0, 0, props.outputSize, props.outputSize)
 
     const blob = await new Promise(resolve => out.toBlob(resolve, 'image/jpeg', 0.92))
+
+    if (!props.uploadUrl) {
+      emit('cropped', blob)
+      modal.value?.close()
+      cleanupImage()
+      return
+    }
+
     const fd   = new FormData()
     fd.append('image', blob, 'image.jpg')
 

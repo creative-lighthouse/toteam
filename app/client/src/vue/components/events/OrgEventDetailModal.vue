@@ -1,5 +1,5 @@
 <template>
-  <!-- Ein Event mit allen seinen Terminen; Verwalter können es umbenennen oder löschen -->
+  <!-- Ein Event mit seinen Angaben und Terminen; Verwalter können es bearbeiten oder löschen -->
   <AppModal ref="modal" class="org-event-detail-modal" :title="event?.Title ?? 'Event'" @close="close">
     <template v-if="event">
       <div class="org-event-detail-modal_meta">
@@ -11,16 +11,41 @@
           :size="22"
         />
         <span>{{ event.OrganizationTitle }}</span>
-        <span v-if="event.DateStart">· {{ formatDateRange(event.DateStart, event.DateEnd) }}</span>
+        <span v-if="event.RangeStart">· {{ formatOrgEventRange(event) }}</span>
+        <span class="org-event-detail-modal_badge">{{ event.IsPublic ? 'Öffentlich' : 'Intern' }}</span>
       </div>
 
-      <form v-if="editing" id="org-event-rename-form" class="modalform org-event-detail-modal_rename" @submit.prevent="saveTitle">
-        <label class="field">
-          Titel
-          <input v-model="title" type="text" required />
-        </label>
-      </form>
+      <div v-if="event.ImageURL || hasDetails" class="org-event-detail-modal_info">
+        <img v-if="event.ImageURL" :src="event.ImageURL" alt="" class="org-event-detail-modal_image">
+        <dl v-if="hasDetails" class="org-event-detail-modal_details">
+          <template v-if="event.Location">
+            <dt>Ort</dt>
+            <dd>{{ event.Location }}</dd>
+          </template>
+          <template v-if="event.TypeTitle">
+            <dt>Art</dt>
+            <dd>{{ event.TypeTitle }}</dd>
+          </template>
+          <template v-if="event.AgeGroups?.length">
+            <dt>Empfohlen für</dt>
+            <dd>{{ event.AgeGroups.map(g => g.Title).join(', ') }}</dd>
+          </template>
+        </dl>
+      </div>
 
+      <template v-if="event.Prices?.length">
+        <h3 class="org-event-detail-modal_heading">Preise</h3>
+        <table class="org-event-detail-modal_prices">
+          <tbody>
+            <tr v-for="price in event.Prices" :key="price.ID">
+              <td>{{ price.Title }}</td>
+              <td>{{ formatPrice(price.Price) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
+
+      <h3 class="org-event-detail-modal_heading">Termine</h3>
       <p v-if="loading" class="org-event-detail-modal_empty">Lade Termine…</p>
       <ul v-else-if="appointments.length" class="org-event-detail-modal_list">
         <li v-for="appt in appointments" :key="appt.ID">
@@ -49,33 +74,28 @@
     </template>
 
     <template #actions>
-      <template v-if="editing">
-        <AppButton variant="secondary" @click="editing = false">Abbrechen</AppButton>
-        <AppButton type="submit" form="org-event-rename-form" variant="primary" :disabled="saving">
-          {{ saving ? 'Speichern…' : 'Speichern' }}
-        </AppButton>
+      <template v-if="event?.CanManage">
+        <AppButton variant="danger" :disabled="saving" @click="remove">Löschen</AppButton>
+        <AppButton variant="secondary" @click="edit">Bearbeiten</AppButton>
       </template>
-      <template v-else>
-        <template v-if="event?.CanManage">
-          <AppButton variant="danger" :disabled="saving" @click="remove">Löschen</AppButton>
-          <AppButton variant="secondary" @click="startEditing">Umbenennen</AppButton>
-        </template>
-        <AppButton variant="secondary" @click="close">Schließen</AppButton>
-      </template>
+      <AppButton variant="secondary" @click="close">Schließen</AppButton>
     </template>
   </AppModal>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOrgEventsStore } from '@stores/orgEvents'
-import { formatDate, formatDateRange } from '@utils/inventory'
+import { formatDate } from '@utils/inventory'
 import { formatEventRange, isMultiDay } from '@utils/eventDates'
+import { formatOrgEventRange, formatPrice } from '@utils/orgEvents'
 import AppButton from '@components/ui/AppButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 import ParticipationIcon from '@components/calendar/ParticipationIcon.vue'
+
+const emit = defineEmits(['edit'])
 
 const router = useRouter()
 const orgEventsStore = useOrgEventsStore()
@@ -85,9 +105,9 @@ const event = ref(null)
 const appointments = ref([])
 const loading = ref(false)
 const error = ref(null)
-const editing = ref(false)
-const title = ref('')
 const saving = ref(false)
+
+const hasDetails = computed(() => !!(event.value?.Location || event.value?.TypeTitle || event.value?.AgeGroups?.length))
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -105,7 +125,6 @@ async function open(summary) {
   event.value = summary
   appointments.value = []
   error.value = null
-  editing.value = false
   modal.value?.open()
 
   loading.value = true
@@ -129,24 +148,10 @@ function openAppointment(appt) {
   router.push({ name: 'Calendar', query: { date: appt.DateStart, eventID: appt.ID } })
 }
 
-function startEditing() {
-  title.value = event.value.Title
-  error.value = null
-  editing.value = true
-}
-
-async function saveTitle() {
-  if (!title.value.trim()) return
-  saving.value = true
-  error.value = null
-  try {
-    event.value = await orgEventsStore.renameEvent(event.value.ID, title.value.trim())
-    editing.value = false
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    saving.value = false
-  }
+function edit() {
+  const current = event.value
+  close()
+  emit('edit', current)
 }
 
 async function remove() {
