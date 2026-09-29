@@ -190,13 +190,28 @@ export const useEventsStore = defineStore('events', () => {
       // Update local state
       const event = getEventById(eventId)
       if (event) {
+        const authStore = useAuthStore()
+        const u = authStore.user
         if (!type) {
           // Zurück auf "Ohne Antwort"
+          const existing = event.Participations?.find(p => p.IsCurrentUser)
           event.UserParticipation = null
           if (event.Participations) {
             event.Participations = event.Participations.filter(p => !p.IsCurrentUser)
           }
+          if (event.IsInvited && event.MembersWithoutResponse && u
+            && !event.MembersWithoutResponse.some(m => m.ID === u.ID)) {
+            event.MembersWithoutResponse.push({
+              ID: u.ID,
+              MemberName: existing?.MemberName ?? `${u.FirstName} ${u.Surname}`,
+              Username: u.Username ?? null,
+              ProfileImageURL: existing?.ProfileImageURL ?? u.Avatar ?? null,
+            })
+          }
         } else {
+          if (event.MembersWithoutResponse && u) {
+            event.MembersWithoutResponse = event.MembersWithoutResponse.filter(m => m.ID !== u.ID)
+          }
           event.updateUserParticipation(response.data)
 
           // Update in participations list
@@ -209,8 +224,6 @@ export const useEventsStore = defineStore('events', () => {
               existing.CustomTimeframe = response.data.CustomTimeframe ?? false
             } else {
               // First RSVP — add a new entry so avatars + counts update immediately
-              const authStore = useAuthStore()
-              const u = authStore.user
               event.Participations.push({
                 ID: response.data.ID,
                 MemberID: u?.ID ?? null,
