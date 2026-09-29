@@ -4,6 +4,7 @@ import { useAuthStore } from '@stores/auth'
 // Views
 import Dashboard from '@views/Dashboard.vue'
 import Calendar from '@views/Calendar.vue'
+import Events from '@views/Events.vue'
 import Food from '@views/Food.vue'
 import Announcements from '@views/Announcements.vue'
 import AnnouncementDetail from '@views/AnnouncementDetail.vue'
@@ -53,6 +54,12 @@ const routes = [
     path: '/calendar',
     name: 'Calendar',
     component: Calendar,
+    meta: { requiresAuth: true, totem: 'calendar' }
+  },
+  {
+    path: '/events',
+    name: 'Events',
+    component: Events,
     meta: { requiresAuth: true, totem: 'calendar' }
   },
   {

@@ -257,6 +257,11 @@
         width: auto;
         max-width: 600px;
         height: auto;
+        // Passt nicht alles auf den Bildschirm, scrollt die Liste innerhalb des
+        // Menüs: oben bleiben 20px Abstand, unten liegt es hinter der Leiste (bottom 40px)
+        max-height: calc(100dvh - 60px);
+        display: flex;
+        flex-direction: column;
         transition: bottom 0.2s ease-in-out;
         overflow: hidden;
         background-color: var(--ColorWhite);
@@ -269,10 +274,19 @@
             margin: 0;
             width: 100%;
             height: auto;
+            min-height: 0;
+            flex: 1 1 auto;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
             overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+
+            li{
+                flex-shrink: 0;
+            }
 
             li{
                 width: 100%;
