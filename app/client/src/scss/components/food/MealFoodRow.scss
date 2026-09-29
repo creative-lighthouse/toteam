@@ -20,7 +20,12 @@
         font-weight: 500;
     }
 
-    &_pref,
+    &_pref-icon {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+    }
+
     &_supplier,
     &_max {
         font-size: 0.75rem;

@@ -9,13 +9,16 @@
     >
         <span class="meal-food-row_title">
             <slot name="leading" />{{ title }}
+            <img
+                v-if="preferenceIcon"
+                :src="preferenceIcon.src"
+                :alt="preferenceIcon.label"
+                :title="preferenceIcon.label"
+                class="meal-food-row_pref-icon"
+            >
         </span>
 
-        <span v-if="supplier" class="meal-food-row_supplier">von {{ supplier }}
-            <span v-if="preference && preference !== 'None'" class="meal-food-row_pref">
-                {{ preference === 'Vegetarian' ? '(Vegetarisch)' : '(Vegan)' }}
-            </span>
-        </span>
+        <span v-if="supplier" class="meal-food-row_supplier">von {{ supplier }}</span>
 
         <div v-if="orderable || $slots.trailing" class="meal-food-row_trailing">
             <div v-if="orderable" class="meal-product-qty">
@@ -46,9 +49,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
+import VeganIcon from '../../../../icons/states/food_vegan.svg'
+import VegetarianIcon from '../../../../icons/states/food_vegetarian.svg'
 
-defineProps({
+const props = defineProps({
   title: { type: String, required: true },
   preference: { type: String, default: 'None' },
   supplier: { type: String, default: null },
@@ -63,4 +69,10 @@ defineProps({
 })
 
 defineEmits(['increment', 'decrement'])
+
+const PREFERENCE_ICONS = {
+  Vegetarian: { src: VegetarianIcon, label: 'Vegetarisch' },
+  Vegan: { src: VeganIcon, label: 'Vegan' },
+}
+const preferenceIcon = computed(() => PREFERENCE_ICONS[props.preference] ?? null)
 </script>

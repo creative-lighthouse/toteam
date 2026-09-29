@@ -42,7 +42,7 @@
         </div>
 
         <!-- Bestellbare + feste Gerichte (nur nach Zusage zur Mahlzeit) -->
-        <div v-if="meal.UserResponse === 'Accept' && mealEntries(meal).length" class="meal-entries">
+        <div v-if="mealEntries(meal).length" class="meal-entries">
           <MealFoodRow
             v-for="entry in mealEntries(meal)"
             :key="`${entry.Orderable ? 'p' : 'f'}-${entry.ID}`"
