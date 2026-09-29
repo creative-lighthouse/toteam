@@ -15,8 +15,72 @@
         color: var(--ColorGray);
     }
 
-    .org-event-detail-modal_rename {
+    .org-event-detail-modal_badge {
+        padding: 1px 6px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .org-event-detail-modal_info {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
         margin-bottom: 16px;
+    }
+
+    .org-event-detail-modal_image {
+        display: block;
+        flex-shrink: 0;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    .org-event-detail-modal_details {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 12px;
+        margin: 0;
+        font-size: 14px;
+
+        dt {
+            font-weight: 600;
+            color: var(--ColorGray);
+        }
+
+        dd {
+            margin: 0;
+        }
+    }
+
+    .org-event-detail-modal_heading {
+        margin: 0 0 8px;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ColorGray);
+    }
+
+    .org-event-detail-modal_prices {
+        width: 100%;
+        margin-bottom: 16px;
+        border-collapse: collapse;
+        font-size: 14px;
+
+        td {
+            padding: 6px 0;
+            border-bottom: 1px solid var(--ColorVeryLightGray);
+        }
+
+        td:last-child {
+            text-align: right;
+            font-weight: 600;
+            white-space: nowrap;
+        }
     }
 
     .org-event-detail-modal_empty {

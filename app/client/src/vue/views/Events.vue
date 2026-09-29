@@ -4,7 +4,7 @@
 
       <AppSearchBar v-model="search" placeholder="Events durchsuchen…">
         <template v-if="managedOrgs.length > 0" #actions>
-          <AppButton variant="primary" @click="createModal?.open()">+ Event anlegen</AppButton>
+          <AppButton variant="primary" @click="formModal?.open()">+ Event anlegen</AppButton>
         </template>
       </AppSearchBar>
 
@@ -23,8 +23,9 @@
           <ul class="events-list">
             <li v-for="event in group.events" :key="event.ID">
               <button type="button" class="org-event-card" @click="detailModal?.open(event)">
+                <img v-if="event.ImageURL" :src="event.ImageURL" alt="" class="org-event-card_image">
                 <AppOrgLogo
-                  v-if="authStore.hasMultipleOrganizations"
+                  v-else-if="authStore.hasMultipleOrganizations"
                   :src="event.OrganizationLogoURL"
                   :alt="event.OrganizationTitle"
                   :name="event.OrganizationTitle"
@@ -34,7 +35,8 @@
                 <span class="org-event-card_body">
                   <span class="org-event-card_title">{{ event.Title }}</span>
                   <span class="org-event-card_meta">
-                    <template v-if="event.DateStart">{{ formatDateRange(event.DateStart, event.DateEnd) }} · </template>
+                    <template v-if="event.RangeStart">{{ formatOrgEventRange(event) }} · </template>
+                    <template v-if="event.Location">{{ event.Location }} · </template>
                     {{ event.AppointmentCount === 1 ? '1 Termin' : `${event.AppointmentCount} Termine` }}
                     <template v-if="event.FoodCount"> · {{ event.FoodCount === 1 ? '1 Gericht' : `${event.FoodCount} Gerichte` }}</template>
                   </span>
@@ -53,8 +55,8 @@
 
     </div>
 
-    <OrgEventDetailModal ref="detailModal" />
-    <OrgEventCreateModal ref="createModal" :orgs="managedOrgs" @created="event => detailModal?.open(event)" />
+    <OrgEventDetailModal ref="detailModal" @edit="event => formModal?.openForEdit(event)" />
+    <OrgEventFormModal ref="formModal" :orgs="managedOrgs" @saved="event => detailModal?.open(event)" />
   </div>
 </template>
 
@@ -64,12 +66,12 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { useAuthStore } from '@stores/auth'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useOrgEventsStore } from '@stores/orgEvents'
-import { formatDateRange } from '@utils/inventory'
+import { formatOrgEventRange } from '@utils/orgEvents'
 import AppButton from '@components/ui/AppButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 import OrgEventDetailModal from '@components/events/OrgEventDetailModal.vue'
-import OrgEventCreateModal from '@components/events/OrgEventCreateModal.vue'
+import OrgEventFormModal from '@components/events/OrgEventFormModal.vue'
 
 usePageHeaderStore().setHeader('Events', 'Alle Events deiner Organisationen mit ihren Terminen.')
 
@@ -79,7 +81,7 @@ const orgEventsStore = useOrgEventsStore()
 
 const search = ref('')
 const detailModal = ref(null)
-const createModal = ref(null)
+const formModal = ref(null)
 
 const managedOrgs = computed(() =>
   orgsStore.organizations.filter(o => o.MembershipStatus === 'member' && o.Permissions?.includes('CALENDAR_MANAGE'))
@@ -92,9 +94,9 @@ const groups = computed(() => {
     !q || e.Title.toLowerCase().includes(q) || e.OrganizationTitle?.toLowerCase().includes(q)
   )
   return [
-    { key: 'upcoming', title: 'Aktuell & geplant', events: events.filter(e => e.DateStart && (e.DateEnd ?? e.DateStart) >= today) },
-    { key: 'empty', title: 'Ohne Termine', events: events.filter(e => !e.DateStart) },
-    { key: 'past', title: 'Vergangen', events: events.filter(e => e.DateStart && (e.DateEnd ?? e.DateStart) < today) },
+    { key: 'upcoming', title: 'Aktuell & geplant', events: events.filter(e => e.RangeStart && (e.RangeEnd ?? e.RangeStart) >= today) },
+    { key: 'empty', title: 'Ohne Datum', events: events.filter(e => !e.RangeStart) },
+    { key: 'past', title: 'Vergangen', events: events.filter(e => e.RangeStart && (e.RangeEnd ?? e.RangeStart) < today) },
   ].filter(g => g.events.length)
 })
 

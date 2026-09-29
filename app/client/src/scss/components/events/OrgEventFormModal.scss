@@ -1,0 +1,87 @@
+@use "../../base/variables" as *;
+
+// Event anlegen/bearbeiten (OrgEventFormModal.vue)
+.org-event-form-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90dvh;
+
+    .org-event-form-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+        grid-column: 1 / -1;
+
+        // Erklärung direkt unter einem Feld — rückt näher an dieses heran
+        &--attached {
+            margin-top: -12px;
+        }
+    }
+
+    .org-event-form-modal_image {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .org-event-form-modal_image-preview {
+        display: block;
+        width: 88px;
+        height: 88px;
+        object-fit: cover;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    .org-event-form-modal_image-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .org-event-form-modal_image-button {
+        position: relative;
+        cursor: pointer;
+
+        // Das Datei-Feld steckt unsichtbar im Button-Label — dort den Tastatur-Fokus zeigen
+        &:has(.org-event-form-modal_image-input:focus-visible) {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
+        }
+    }
+
+    .org-event-form-modal_image-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+    }
+
+    .org-event-form-modal_prices {
+        list-style: none;
+        margin: 0 0 4px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        li > input {
+            flex: 1;
+        }
+    }
+
+    .org-event-form-modal_price {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 0 0 120px;
+        font-size: 15px;
+        color: var(--ColorBlack);
+    }
+}

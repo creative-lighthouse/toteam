@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiGet, apiPost, apiPut, apiDelete, clearCacheForEndpoint } from '@utils/api'
+import { apiGet, apiPost, apiPut, apiDelete, apiPostForm, clearCacheForEndpoint } from '@utils/api'
 
 /**
  * Events der Organisationen (OrgEvent, z.B. "Halloweenhaus 2026"), die mehrere
@@ -11,17 +11,21 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
   const events = ref([])
   const loading = ref(false)
   const error = ref(null)
+  // Im CMS gepflegte Auswahllisten fürs Event-Formular
+  const types = ref([])
+  const ageGroups = ref([])
 
   // Laufende und kommende Events zuerst (nach Beginn), danach vergangene und
-  // Events ohne Termine
+  // Events ohne Datum. RangeStart/RangeEnd sind die eigenen Daten des Events
+  // oder, ohne eigene Angabe, der Zeitraum seiner Termine.
   const sortedEvents = computed(() => {
     const today = new Date().toISOString().slice(0, 10)
-    const rank = e => (!e.DateStart ? 1 : (e.DateEnd ?? e.DateStart) >= today ? 0 : 2)
+    const rank = e => (!e.RangeStart ? 1 : (e.RangeEnd ?? e.RangeStart) >= today ? 0 : 2)
     return [...events.value].sort((a, b) =>
       rank(a) - rank(b)
       || (rank(a) === 2
-        ? (b.DateStart ?? '').localeCompare(a.DateStart ?? '')
-        : (a.DateStart ?? '').localeCompare(b.DateStart ?? ''))
+        ? (b.RangeStart ?? '').localeCompare(a.RangeStart ?? '')
+        : (a.RangeStart ?? '').localeCompare(b.RangeStart ?? ''))
       || a.Title.localeCompare(b.Title)
     )
   })
@@ -47,17 +51,43 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     return res
   }
 
-  async function createEvent(title, organizationId) {
-    const res = await apiPost('/calendar/orgEvents', { title, organizationId })
+  async function fetchOptions() {
+    const res = await apiGet('/calendar/orgEventOptions')
+    types.value = res.types ?? []
+    ageGroups.value = res.ageGroups ?? []
+  }
+
+  /** data: { title, organizationId, dateStart, …, prices } — siehe OrgEvent::applyApiData() */
+  async function createEvent(data) {
+    const res = await apiPost('/calendar/orgEvents', data)
     if (!res?.success) throw new Error(res?.error || 'Event konnte nicht angelegt werden')
-    events.value = [...events.value, res.data.event]
+    replace(res.data.event)
     await clearCacheForEndpoint('/calendar')
     return res.data.event
   }
 
-  async function renameEvent(id, title) {
-    const res = await apiPut(`/calendar/orgEvent/${id}`, { title })
+  async function updateEvent(id, data) {
+    const res = await apiPut(`/calendar/orgEvent/${id}`, data)
     if (!res?.success) throw new Error(res?.error || 'Event konnte nicht gespeichert werden')
+    replace(res.data.event)
+    await clearCacheForEndpoint('/calendar')
+    return res.data.event
+  }
+
+  /** image: zugeschnittenes JPEG (Blob aus ImageCropModal) */
+  async function uploadImage(id, image) {
+    const fd = new FormData()
+    fd.append('image', image, 'image.jpg')
+    const res = await apiPostForm(`/calendar/orgEventImage/${id}`, fd)
+    if (!res?.success) throw new Error(res?.error || 'Bild konnte nicht gespeichert werden')
+    replace(res.data.event)
+    await clearCacheForEndpoint('/calendar')
+    return res.data.event
+  }
+
+  async function removeImage(id) {
+    const res = await apiDelete(`/calendar/orgEventImage/${id}`)
+    if (!res?.success) throw new Error(res?.error || 'Bild konnte nicht entfernt werden')
     replace(res.data.event)
     await clearCacheForEndpoint('/calendar')
     return res.data.event
@@ -81,11 +111,16 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     events,
     loading,
     error,
+    types,
+    ageGroups,
     sortedEvents,
     fetchEvents,
     fetchEvent,
+    fetchOptions,
     createEvent,
-    renameEvent,
+    updateEvent,
+    uploadImage,
+    removeImage,
     deleteEvent,
   }
 })

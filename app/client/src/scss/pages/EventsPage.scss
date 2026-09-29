@@ -59,6 +59,14 @@
         flex-shrink: 0;
     }
 
+    .org-event-card_image {
+        flex-shrink: 0;
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: var(--BorderRadiusSmall);
+    }
+
     .org-event-card_body {
         display: flex;
         flex-direction: column;
