@@ -7,6 +7,7 @@
 @use "base/typography.scss";
 @use "base/forms.scss";
 @use "components/ui/AppToggle.scss";
+@use "components/ui/AppPatternImage.scss";
 @use "components/ui/AppTextField.scss";
 @use "components/ui/AppButton.scss";
 @use "components/ui/AppIconButton.scss";
@@ -95,6 +96,7 @@
 @use "components/calendar/CalendarEntryCreateModal.scss";
 @use "components/calendar/PollDialog.scss";
 @use "components/events/OrgEventAppointmentList.scss";
+@use "components/events/OrgEventCard.scss";
 @use "components/events/OrgEventFormModal.scss";
 @use "components/layout/PwaInstallBanner.scss";
 @use "components/tasks/TaskCard.scss";

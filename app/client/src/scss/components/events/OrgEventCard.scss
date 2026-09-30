@@ -1,0 +1,260 @@
+@use "../../base/variables" as *;
+
+// Karte eines Events (OrgEventCard.vue) — feste Höhen für Titel, Chips und Fuß,
+// damit alle Karten im Raster gleich aussehen; nur die Breite ist variabel
+.org-event-card {
+    --OrgEventCardBadgeSize: 52px;
+
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--BorderRadiusMedium);
+    background-color: var(--ColorWhite);
+    box-shadow: var(--BoxShadowLight);
+    color: inherit;
+    text-decoration: none;
+    transition: box-shadow 0.15s, transform 0.15s;
+
+    &:is(a) {
+        cursor: pointer;
+
+        @include hover {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        &:active {
+            scale: 0.99;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
+        }
+    }
+
+    // Vergangene Events treten zurück
+    &--past {
+        .org-event-card_media {
+            filter: grayscale(0.8);
+            opacity: 0.7;
+        }
+
+        .org-event-card_badge-month {
+            background-color: var(--ColorGray);
+        }
+
+        .org-event-card_date {
+            color: var(--ColorGray);
+        }
+    }
+}
+
+// ── Bild (16:9, so wird es auch zugeschnitten) ─────────────────────────────
+.org-event-card_media {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background-color: var(--ColorPrimaryLight);
+}
+
+.org-event-card_image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+// Hinweis nur bei nicht öffentlichen Events
+.org-event-card_internal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 3px 8px;
+    border-radius: var(--BorderRadiusLarge);
+    background-color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ColorPrimary);
+}
+
+// ── Inhalt ──────────────────────────────────────────────────────────────────
+.org-event-card_body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    padding: 0 16px 14px;
+}
+
+// Datums-Badge ragt wie ein Kalenderblatt ins Bild hinein
+.org-event-card_heading {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    min-height: 26px;
+    padding-top: 10px;
+}
+
+.org-event-card_badge {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: var(--OrgEventCardBadgeSize);
+    margin-top: calc(var(--OrgEventCardBadgeSize) * -0.8);
+    overflow: hidden;
+    border-radius: var(--BorderRadiusSmall);
+    background-color: var(--ColorWhite);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    position: relative;
+}
+
+.org-event-card_badge-month {
+    padding: 2px 0;
+    background-color: var(--ColorPrimary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ColorWhite);
+    white-space: nowrap;
+}
+
+.org-event-card_badge-day {
+    padding: 2px 0 4px;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ColorBlack);
+}
+
+.org-event-card_date {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ColorPrimary);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+// Immer zwei Zeilen Platz, auch bei kurzem Titel
+.org-event-card_title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    min-height: calc(2 * 1.25em);
+    overflow: hidden;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--ColorBlack);
+    overflow-wrap: anywhere;
+}
+
+// Eine Zeile für den Ort, auch wenn keiner angegeben ist
+.org-event-card_place {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 18px;
+    margin: -2px 0 0;
+    font-size: 13px;
+    color: var(--ColorGray);
+}
+
+.org-event-card_place-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.org-event-card_place-text {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+// Eine Zeile Chips, auch wenn keine vorhanden sind
+.org-event-card_tags {
+    display: flex;
+    gap: 6px;
+    min-height: 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: hidden;
+}
+
+.org-event-card_tag {
+    min-width: 0;
+    overflow: hidden;
+    padding: 3px 9px;
+    border: 1px solid var(--ColorLightGray);
+    border-radius: var(--BorderRadiusLarge);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    color: var(--ColorPrimaryDark);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    &--type {
+        flex-shrink: 0;
+        border-color: transparent;
+        background-color: var(--ColorPrimaryLight);
+    }
+
+    &--more {
+        flex-shrink: 0;
+        color: var(--ColorGray);
+    }
+}
+
+.org-event-card_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--ColorVeryLightGray);
+}
+
+.org-event-card_price {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ColorBlack);
+    white-space: nowrap;
+
+    &--empty {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--ColorGray);
+    }
+}
+
+.org-event-card_org {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ColorGray);
+
+    .apporglogo {
+        flex-shrink: 0;
+    }
+}
+
+.org-event-card_org-title {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}

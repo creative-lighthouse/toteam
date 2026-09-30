@@ -20,29 +20,13 @@
       <template v-else>
         <section v-for="group in groups" :key="group.key" class="events-group">
           <h2 class="events-group_title">{{ group.title }}</h2>
-          <ul class="events-list">
+          <ul class="org-event-grid">
             <li v-for="event in group.events" :key="event.ID">
-              <router-link :to="{ name: 'EventDetail', params: { segment: event.URLSegment } }" class="org-event-card">
-                <img v-if="event.ImageURL" :src="event.ImageURL" alt="" class="org-event-card_image">
-                <AppOrgLogo
-                  v-else-if="authStore.hasMultipleOrganizations"
-                  :src="event.OrganizationLogoURL"
-                  :alt="event.OrganizationTitle"
-                  :name="event.OrganizationTitle"
-                  :size="40"
-                  class="org-event-card_logo"
-                />
-                <span class="org-event-card_body">
-                  <span class="org-event-card_title">{{ event.Title }}</span>
-                  <span class="org-event-card_meta">
-                    <template v-if="event.RangeStart">{{ formatOrgEventRange(event) }} · </template>
-                    <template v-if="event.Location">{{ event.Location }} · </template>
-                    {{ event.AppointmentCount === 1 ? '1 Termin' : `${event.AppointmentCount} Termine` }}
-                    <template v-if="event.FoodCount"> · {{ event.FoodCount === 1 ? '1 Gericht' : `${event.FoodCount} Gerichte` }}</template>
-                  </span>
-                </span>
-                <span class="org-event-card_arrow" aria-hidden="true">›</span>
-              </router-link>
+              <OrgEventCard
+                :event="event"
+                :to="{ name: 'EventDetail', params: { segment: event.URLSegment } }"
+                :show-organization="authStore.hasMultipleOrganizations"
+              />
             </li>
           </ul>
         </section>
@@ -70,10 +54,9 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { useAuthStore } from '@stores/auth'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useOrgEventsStore } from '@stores/orgEvents'
-import { formatOrgEventRange } from '@utils/orgEvents'
 import AppButton from '@components/ui/AppButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
-import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import OrgEventCard from '@components/events/OrgEventCard.vue'
 import OrgEventFormModal from '@components/events/OrgEventFormModal.vue'
 
 usePageHeaderStore().setHeader('Events', 'Alle Events deiner Organisationen mit ihren Terminen.')

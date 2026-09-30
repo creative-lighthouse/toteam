@@ -18,6 +18,8 @@
         <!-- Eckdaten: sieht jeder, der das Event sehen darf (bei öffentlichen Events auch ohne Anmeldung) -->
         <article class="event-page_card">
           <img v-if="event.ImageURL" :src="event.ImageURL" :alt="event.Title" class="event-page_image">
+          <!-- Ohne Hauptbild wie auf der Karte: aus dem Titel generiertes Muster -->
+          <AppPatternImage v-else :seed="event.Title" class="event-page_image" />
 
           <div class="event-page_body">
             <div class="event-page_head">
@@ -30,6 +32,21 @@
               />
               <span class="event-page_org">{{ event.OrganizationTitle }}</span>
               <span v-if="isInternal" class="event-page_badge">{{ event.IsPublic ? 'Öffentlich' : 'Intern' }}</span>
+
+              <div class="event-page_actions">
+                <span v-if="linkCopied" class="event-page_copied" role="status">Link kopiert</span>
+                <AppIconButton variant="neutral" aria-label="Teilen" title="Teilen" @click="share">
+                  <span class="icon-mask" :style="iconStyle(actionShare)" aria-hidden="true" />
+                </AppIconButton>
+                <template v-if="event.CanManage">
+                  <AppIconButton variant="neutral" aria-label="Bearbeiten" title="Bearbeiten" @click="formModal?.openForEdit(event)">
+                    <span class="icon-mask" :style="iconStyle(actionEdit)" aria-hidden="true" />
+                  </AppIconButton>
+                  <AppIconButton variant="danger" aria-label="Löschen" title="Löschen" :disabled="deleting" @click="remove">
+                    <span class="icon-mask" :style="iconStyle(actionTrash)" aria-hidden="true" />
+                  </AppIconButton>
+                </template>
+              </div>
             </div>
 
             <dl v-if="facts.length" class="event-page_facts">
@@ -40,7 +57,7 @@
             </dl>
           </div>
 
-          <template v-if="event.Prices?.length">
+          <template v-if="event.PriceMode === 'Tiered' && event.Prices?.length">
             <h2 class="hl3 event-page_subtitle">Preise</h2>
             <table class="event-page_prices">
               <tbody>
@@ -63,13 +80,6 @@
             </ul>
           </template>
 
-          <div class="event-page_actions">
-            <AppButton variant="secondary" @click="copyLink">{{ linkCopied ? 'Link kopiert ✓' : 'Link kopieren' }}</AppButton>
-            <template v-if="event.CanManage">
-              <AppButton variant="secondary" @click="formModal?.openForEdit(event)">Bearbeiten</AppButton>
-              <AppButton variant="danger" :disabled="deleting" @click="remove">Löschen</AppButton>
-            </template>
-          </div>
           <p v-if="actionError" class="event-page_error">{{ actionError }}</p>
         </article>
 
@@ -100,12 +110,19 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useOrgEventsStore } from '@stores/orgEvents'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import { formatOrgEventRange, formatPrice } from '@utils/orgEvents'
+import { formatOrgEventRange, formatPrice, formatFixedPrice, formatAddress, PRICE_MODE_LABELS } from '@utils/orgEvents'
 import AppButton from '@components/ui/AppButton.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppLightbox from '@components/ui/AppLightbox.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import AppPatternImage from '@components/ui/AppPatternImage.vue'
 import OrgEventAppointmentList from '@components/events/OrgEventAppointmentList.vue'
 import OrgEventFormModal from '@components/events/OrgEventFormModal.vue'
+import actionShare from '../../../icons/actions/action_share.svg'
+import actionEdit from '../../../icons/actions/action_edit.svg'
+import actionTrash from '../../../icons/actions/action_trash.svg'
+
+const iconStyle = icon => ({ maskImage: `url("${icon}")`, WebkitMaskImage: `url("${icon}")` })
 
 const route = useRoute()
 const router = useRouter()
@@ -129,9 +146,10 @@ const facts = computed(() => {
   if (!e) return []
   return [
     { label: 'Wann', value: e.RangeStart ? formatOrgEventRange(e) : '' },
-    { label: 'Wo', value: e.Location },
+    { label: 'Wo', value: formatAddress(e) },
     { label: 'Art', value: e.TypeTitle },
     { label: 'Empfohlen für', value: (e.AgeGroups ?? []).map(g => g.Title).join(', ') },
+    { label: 'Eintritt', value: PRICE_MODE_LABELS[e.PriceMode] ?? formatFixedPrice(e) },
   ].filter(fact => fact.value)
 })
 
@@ -159,13 +177,23 @@ function login() {
   router.push({ name: 'Login', query: { redirect: route.fullPath } })
 }
 
-async function copyLink() {
+// Auf dem Handy der System-Teilen-Dialog, sonst Link in die Zwischenablage
+async function share() {
+  const url = window.location.origin + event.value.Link
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: event.value.Title, url })
+    } catch {
+      // Dialog abgebrochen
+    }
+    return
+  }
   try {
-    await navigator.clipboard.writeText(window.location.origin + event.value.Link)
+    await navigator.clipboard.writeText(url)
     linkCopied.value = true
     setTimeout(() => { linkCopied.value = false }, 2000)
   } catch {
-    window.prompt('Link zum Event:', window.location.origin + event.value.Link)
+    window.prompt('Link zum Event:', url)
   }
 }
 
