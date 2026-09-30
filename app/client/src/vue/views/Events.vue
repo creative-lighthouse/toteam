@@ -22,7 +22,7 @@
           <h2 class="events-group_title">{{ group.title }}</h2>
           <ul class="events-list">
             <li v-for="event in group.events" :key="event.ID">
-              <button type="button" class="org-event-card" @click="detailModal?.open(event)">
+              <router-link :to="{ name: 'EventDetail', params: { segment: event.URLSegment } }" class="org-event-card">
                 <img v-if="event.ImageURL" :src="event.ImageURL" alt="" class="org-event-card_image">
                 <AppOrgLogo
                   v-else-if="authStore.hasMultipleOrganizations"
@@ -42,7 +42,7 @@
                   </span>
                 </span>
                 <span class="org-event-card_arrow" aria-hidden="true">›</span>
-              </button>
+              </router-link>
             </li>
           </ul>
         </section>
@@ -55,13 +55,17 @@
 
     </div>
 
-    <OrgEventDetailModal ref="detailModal" @edit="event => formModal?.openForEdit(event)" />
-    <OrgEventFormModal ref="formModal" :orgs="managedOrgs" @saved="event => detailModal?.open(event)" />
+    <OrgEventFormModal
+      ref="formModal"
+      :orgs="managedOrgs"
+      @saved="event => router.push({ name: 'EventDetail', params: { segment: event.URLSegment } })"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useAuthStore } from '@stores/auth'
 import { useOrganizationsStore } from '@stores/organizations'
@@ -70,7 +74,6 @@ import { formatOrgEventRange } from '@utils/orgEvents'
 import AppButton from '@components/ui/AppButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
-import OrgEventDetailModal from '@components/events/OrgEventDetailModal.vue'
 import OrgEventFormModal from '@components/events/OrgEventFormModal.vue'
 
 usePageHeaderStore().setHeader('Events', 'Alle Events deiner Organisationen mit ihren Terminen.')
@@ -79,8 +82,9 @@ const authStore = useAuthStore()
 const orgsStore = useOrganizationsStore()
 const orgEventsStore = useOrgEventsStore()
 
+const router = useRouter()
+
 const search = ref('')
-const detailModal = ref(null)
 const formModal = ref(null)
 
 const managedOrgs = computed(() =>

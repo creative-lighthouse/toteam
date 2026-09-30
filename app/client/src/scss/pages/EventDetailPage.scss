@@ -1,0 +1,160 @@
+@use "../base/variables" as *;
+
+// Eigene Seite eines Events (views/EventDetail.vue)
+.section.section--EventDetailPage {
+
+    .event-page_card,
+    .event-page_section,
+    .event-page_login {
+        width: 100%;
+        max-width: var(--WidthMedium);
+        margin: 0 auto;
+        padding: 20px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: var(--BoxShadowLight);
+        box-sizing: border-box;
+    }
+
+    .event-page_section,
+    .event-page_login {
+        margin-top: 20px;
+    }
+
+    .event-page_card {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .event-page_image {
+        display: block;
+        width: 100%;
+        max-width: 280px;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: var(--BorderRadiusSmall);
+        align-self: center;
+    }
+
+    .event-page_body {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .event-page_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .event-page_org {
+        font-weight: 600;
+    }
+
+    .event-page_badge {
+        padding: 1px 8px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ColorGray);
+    }
+
+    .event-page_facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
+        margin: 0;
+
+        dt {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ColorGray);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        dd {
+            margin: 2px 0 0;
+        }
+    }
+
+    .event-page_subtitle {
+        margin: 0 0 -6px;
+    }
+
+    .event-page_section .event-page_subtitle {
+        margin-bottom: 12px;
+    }
+
+    .event-page_prices {
+        width: 100%;
+        border-collapse: collapse;
+
+        td {
+            padding: 6px 0;
+            border-bottom: 1px solid var(--ColorVeryLightGray);
+        }
+
+        td:last-child {
+            text-align: right;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+    }
+
+    .event-page_gallery {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        gap: 8px;
+
+        a {
+            display: block;
+        }
+
+        img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: var(--BorderRadiusSmall);
+        }
+    }
+
+    .event-page_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .event-page_error {
+        margin: 0;
+        color: var(--ColorStatusBad);
+        font-size: 13px;
+    }
+
+    .event-page_login {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+
+        p {
+            margin: 0;
+            color: var(--ColorGray);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .event-page_facts {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+}

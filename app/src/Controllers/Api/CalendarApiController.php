@@ -30,6 +30,8 @@ use SilverStripe\Security\Member;
  */
 class CalendarApiController extends ApiController
 {
+    use AttachmentUploads;
+
     private static $url_segment = 'api/v1/calendar';
 
     private static $allowed_actions = [
@@ -48,6 +50,7 @@ class CalendarApiController extends ApiController
         'orgEvent',
         'orgEventOptions',
         'orgEventImage',
+        'orgEventGallery',
         'meal',
         'agendaPoint',
         'members',
@@ -1504,26 +1507,36 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Ein einzelnes Event mit seinen Terminen (Events-Übersicht)
-     * GET    /api/v1/calendar/orgEvent/{id}
+     * Ein einzelnes Event — per ID oder URL-Segment (Event-Seite /app/events/{URLSegment})
+     * GET    /api/v1/calendar/orgEvent/{id|segment}  — auch ohne Anmeldung, wenn das Event öffentlich ist.
+     *        Mitglieder der Organisation bekommen zusätzlich die Termine (isInternal: true).
      * PUT    /api/v1/calendar/orgEvent/{id}  Body: siehe OrgEvent::applyApiData() — braucht CALENDAR_MANAGE
      * DELETE /api/v1/calendar/orgEvent/{id}  — braucht CALENDAR_MANAGE; Termine bleiben erhalten
      */
     public function orgEvent(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
-        if (!$member) {
+        $method = $request->httpMethod();
+        if (!$member && $method !== 'GET') {
             return $this->errorResponse('Unauthorized', 401);
         }
 
-        $event = OrgEvent::get()->byID((int) $request->param('ID'));
-        if (!$event || !in_array((int) $event->OrganizationID, array_map('intval', $member->getOrganizationIDs()), true)) {
+        $key = (string) $request->param('ID');
+        $event = ctype_digit($key)
+            ? OrgEvent::get()->byID((int) $key)
+            : ($key !== '' ? OrgEvent::get()->filter('URLSegment', $key)->first() : null);
+        // Nicht öffentliche Events gibt es für Außenstehende schlicht nicht
+        if (!$event || !$event->isViewableBy($member)) {
             return $this->errorResponse('Event nicht gefunden', 404);
         }
 
-        if ($request->httpMethod() === 'PUT') {
+        if ($method === 'PUT' || $method === 'DELETE') {
             if (!$event->canBeManagedBy($member)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
+            }
+            if ($method === 'DELETE') {
+                $event->delete();
+                return $this->successResponse([], 'Event gelöscht');
             }
             $body  = json_decode($request->getBody(), true) ?? [];
             $error = $event->applyApiData($body);
@@ -1534,18 +1547,61 @@ class CalendarApiController extends ApiController
             return $this->successResponse(['event' => $event->toApiSummary($member)], 'Event gespeichert');
         }
 
-        if ($request->httpMethod() === 'DELETE') {
-            if (!$event->canBeManagedBy($member)) {
-                return $this->errorResponse('Keine Berechtigung', 403);
-            }
-            $event->delete();
-            return $this->successResponse([], 'Event gelöscht');
+        if (!$event->isInternalFor($member)) {
+            return $this->jsonResponse(['isInternal' => false, 'event' => $event->toApiPublic()]);
         }
 
         return $this->jsonResponse([
+            'isInternal'   => true,
             'event'        => $event->toApiSummary($member),
             'appointments' => $event->appointmentsToApi($member),
         ]);
+    }
+
+    /**
+     * Galerie eines Events (zusätzlich zum Hauptbild) — braucht CALENDAR_MANAGE
+     * POST   /api/v1/calendar/orgEventGallery/{id}            multipart: images[]
+     * DELETE /api/v1/calendar/orgEventGallery/{id}?image={ID}
+     */
+    public function orgEventGallery(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !$event->isInternalFor($member)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+        if (!$event->canBeManagedBy($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        if ($request->httpMethod() === 'DELETE') {
+            $image = $event->Images()->byID((int) $request->getVar('image'));
+            if (!$image) {
+                return $this->errorResponse('Bild nicht gefunden', 404);
+            }
+            $event->Images()->removeByID($image->ID);
+            $image->deleteFile();
+            $image->doArchive();
+            return $this->successResponse(['event' => $event->toApiSummary($member)], 'Bild entfernt');
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $errors = $this->attachUploadedFiles([$event], 'EventImages/' . $event->ID . '/Galerie');
+        if ($errors) {
+            return $this->jsonResponse([
+                'success' => false,
+                'error'   => implode(' ', $errors),
+                'data'    => ['event' => $event->toApiSummary($member)],
+            ], 400);
+        }
+        return $this->successResponse(['event' => $event->toApiSummary($member)], 'Bilder hochgeladen');
     }
 
     /**
@@ -1637,7 +1693,7 @@ class CalendarApiController extends ApiController
         if ($event->ImageID && $event->Image()->exists()) {
             $oldImage = $event->Image();
             $oldImage->deleteFile();
-            $oldImage->delete();
+            $oldImage->doArchive();
         }
         $event->ImageID = $newImageID;
         $event->write();
