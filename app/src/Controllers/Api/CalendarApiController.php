@@ -1621,7 +1621,7 @@ class CalendarApiController extends ApiController
     }
 
     /**
-     * Bild eines Events — wird im Frontend quadratisch zugeschnitten (ImageCropModal)
+     * Bild eines Events — wird im Frontend im Format 16:9 zugeschnitten (ImageCropModal)
      * POST   /api/v1/calendar/orgEventImage/{id}  multipart: image (JPEG) — braucht CALENDAR_MANAGE
      * DELETE /api/v1/calendar/orgEventImage/{id}  — braucht CALENDAR_MANAGE
      */

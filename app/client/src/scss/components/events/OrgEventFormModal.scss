@@ -26,8 +26,8 @@
 
     .org-event-form-modal_image-preview {
         display: block;
-        width: 88px;
-        height: 88px;
+        width: 128px;
+        aspect-ratio: 16 / 9;
         object-fit: cover;
         border-radius: var(--BorderRadiusSmall);
     }
@@ -83,6 +83,12 @@
         flex: 0 0 120px;
         font-size: 15px;
         color: var(--ColorBlack);
+
+        // Steht allein im .field (Flex-Spalte) — ohne das würde flex-basis zur Höhe
+        &--fixed {
+            flex: none;
+            max-width: 160px;
+        }
     }
 
     .org-event-form-modal_gallery {

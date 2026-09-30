@@ -8,8 +8,9 @@
       ref="canvasEl"
       class="image-crop-modal_canvas"
       :class="`image-crop-modal_canvas--${shape}`"
-      width="280"
-      height="280"
+      :width="canvasWidth"
+      :height="canvasHeight"
+      :style="{ aspectRatio }"
       @wheel.prevent="onWheel"
       @mousedown.prevent="onMouseDown"
       @mousemove="onMouseMove"
@@ -52,9 +53,9 @@ import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 
-// Generischer Zuschnitt-Editor: wird sowohl für das eigene Profilbild (Kreis,
-// RenderProfileImage) als auch für Organisations-Logos (abgerundetes Quadrat,
-// Organization::RenderLogo) verwendet — beide skalieren serverseitig auf
+// Generischer Zuschnitt-Editor: wird für das eigene Profilbild (Kreis,
+// RenderProfileImage), Organisations-Logos (abgerundetes Quadrat,
+// Organization::RenderLogo) und Event-Bilder (16:9-Rechteck) verwendet — beide skalieren serverseitig auf
 // dasselbe Zielformat, daher ist auch hier ein fester Ziel-Output sinnvoll.
 // Ohne `uploadUrl` wird nicht hochgeladen, sondern das zugeschnittene JPEG als
 // Blob per `cropped` zurückgegeben (z.B. für ein Event, das noch gar nicht existiert).
@@ -63,9 +64,16 @@ const props = defineProps({
   uploadUrl: { type: String, default: null },
   // Feldname, unter dem die neue Bild-URL in der Erfolgsantwort steht (z.B. 'Avatar' oder 'LogoURL').
   responseField: { type: String, default: 'Avatar' },
-  shape: { type: String, default: 'circle' }, // 'circle' | 'square'
+  shape: { type: String, default: 'circle' }, // 'circle' | 'square' | 'rect'
+  // Breite des fertigen Bildes in px; die Höhe ergibt sich aus aspectRatio
   outputSize: { type: Number, default: 180 },
+  // Seitenverhältnis Breite/Höhe, z.B. 16 / 9 für Event-Bilder (shape "rect")
+  aspectRatio: { type: Number, default: 1 },
 })
+
+// Zeichenfläche: gleiche Fläche wie das bisherige 280×280, im gewünschten Seitenverhältnis
+const canvasWidth  = Math.round(280 * Math.sqrt(props.aspectRatio))
+const canvasHeight = Math.round(canvasWidth / props.aspectRatio)
 
 const emit = defineEmits(['saved', 'cropped'])
 
@@ -121,22 +129,32 @@ function cleanupImage() {
   zoom.value      = 1
 }
 
+/**
+ * Sichtbarer Ausschnitt im Originalbild: bei Zoom 1 das größte Rechteck im
+ * gewünschten Seitenverhältnis, das ins Bild passt; Mittelpunkt auf das Bild begrenzt.
+ */
+function viewRect(img) {
+  const width  = Math.min(img.width, img.height * props.aspectRatio) / zoom.value
+  const height = width / props.aspectRatio
+  const cx = Math.max(width / 2,  Math.min(img.width  - width / 2,  panX.value))
+  const cy = Math.max(height / 2, Math.min(img.height - height / 2, panY.value))
+  return { x: cx - width / 2, y: cy - height / 2, width, height }
+}
+
 function redraw() {
   const canvas = canvasEl.value
   const img    = editorImg.value
   if (!canvas || !img) return
 
-  const ctx       = canvas.getContext('2d')
-  const size      = canvas.width
-  const shortSide = Math.min(img.width, img.height)
-  const viewSize  = shortSide / zoom.value
-  const halfView  = viewSize / 2
+  const ctx  = canvas.getContext('2d')
+  const view = viewRect(img)
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(img, view.x, view.y, view.width, view.height, 0, 0, canvas.width, canvas.height)
+}
 
-  const cx = Math.max(halfView, Math.min(img.width  - halfView, panX.value))
-  const cy = Math.max(halfView, Math.min(img.height - halfView, panY.value))
-
-  ctx.clearRect(0, 0, size, size)
-  ctx.drawImage(img, cx - halfView, cy - halfView, viewSize, viewSize, 0, 0, size, size)
+// Bildschirm-Pixel beim Ziehen → Pixel im Originalbild
+function dragScale() {
+  return viewRect(editorImg.value).width / canvasEl.value.clientWidth
 }
 
 function adjustZoom(delta) {
@@ -163,9 +181,7 @@ function onMouseDown(e) {
 
 function onMouseMove(e) {
   if (!isDragging.value || !editorImg.value) return
-  const shortSide = Math.min(editorImg.value.width, editorImg.value.height)
-  const viewSize  = shortSide / zoom.value
-  const scale     = viewSize / canvasEl.value.width
+  const scale = dragScale()
   panX.value = dragStartPanX.value - (e.clientX - dragStartX.value) * scale
   panY.value = dragStartPanY.value - (e.clientY - dragStartY.value) * scale
   redraw()
@@ -202,9 +218,7 @@ function onTouchMove(e) {
     lastPinchDist.value = dist
     redraw()
   } else if (e.touches.length === 1 && isDragging.value && editorImg.value) {
-    const shortSide = Math.min(editorImg.value.width, editorImg.value.height)
-    const viewSize  = shortSide / zoom.value
-    const scale     = viewSize / canvasEl.value.width
+    const scale = dragScale()
     panX.value = dragStartPanX.value - (e.touches[0].clientX - dragStartX.value) * scale
     panY.value = dragStartPanY.value - (e.touches[0].clientY - dragStartY.value) * scale
     redraw()
@@ -222,16 +236,13 @@ async function save() {
   error.value  = null
 
   try {
-    const img       = editorImg.value
-    const shortSide = Math.min(img.width, img.height)
-    const viewSize  = shortSide / zoom.value
-    const halfView  = viewSize / 2
-    const cx = Math.max(halfView, Math.min(img.width  - halfView, panX.value))
-    const cy = Math.max(halfView, Math.min(img.height - halfView, panY.value))
+    const img  = editorImg.value
+    const view = viewRect(img)
 
     const out = document.createElement('canvas')
-    out.width = out.height = props.outputSize
-    out.getContext('2d').drawImage(img, cx - halfView, cy - halfView, viewSize, viewSize, 0, 0, props.outputSize, props.outputSize)
+    out.width  = props.outputSize
+    out.height = Math.round(props.outputSize / props.aspectRatio)
+    out.getContext('2d').drawImage(img, view.x, view.y, view.width, view.height, 0, 0, out.width, out.height)
 
     const blob = await new Promise(resolve => out.toBlob(resolve, 'image/jpeg', 0.92))
 

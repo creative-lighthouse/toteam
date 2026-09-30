@@ -35,7 +35,11 @@ use SilverStripe\View\Parsers\URLSegmentFilter;
  * @property ?string $TimeEnd
  * @property bool $AllDay
  * @property ?string $Location
+ * @property ?string $Street
+ * @property ?string $PostalCode
+ * @property ?string $City
  * @property bool $IsPublic
+ * @property ?string $PriceMode
  * @property int $OrganizationID
  * @property int $TypeID
  * @property int $ImageID
@@ -58,8 +62,16 @@ class OrgEvent extends DataObject
         "DateEnd"   => "Date",
         "TimeEnd"   => "Time",
         "AllDay"    => "Boolean(1)",
-        "Location"  => "Varchar(511)",
+        // Adresse: Location ist der Name des Veranstaltungsorts (z.B. "Gemeindehaus");
+        // City erscheint auf der OrgEventCard, der Rest nur auf der Event-Seite
+        "Location"   => "Varchar(511)",
+        "Street"     => "Varchar(255)",
+        "PostalCode" => "Varchar(10)",
+        "City"       => "Varchar(255)",
         "IsPublic"  => "Boolean",
+        // Fixed: ein Preis ohne Bezeichnung, Tiered: Preistabelle (z.B. Kinder/Erwachsene),
+        // Free/Donation: kostenfrei bzw. gegen Spende, ohne Preise — alle nutzen Prices()
+        "PriceMode" => "Enum('Fixed,Tiered,Free,Donation','Fixed')",
     ];
 
     private static $has_one = [
@@ -103,8 +115,12 @@ class OrgEvent extends DataObject
         "DateEnd"      => "Bis",
         "TimeEnd"      => "Uhrzeit bis",
         "AllDay"       => "Ganztägig",
-        "Location"     => "Ort",
+        "Location"     => "Veranstaltungsort",
+        "Street"       => "Straße und Hausnummer",
+        "PostalCode"   => "PLZ",
+        "City"         => "Ort",
         "IsPublic"     => "Öffentlich sichtbar",
+        "PriceMode"    => "Preisangabe",
         "Organization" => "Organisation",
         "Type"         => "Art",
         "AgeGroups"    => "Altersgruppen",
@@ -209,12 +225,16 @@ class OrgEvent extends DataObject
             'TimeEnd'       => $this->AllDay ? null : ($this->TimeEnd ?: null),
             'AllDay'        => (bool) $this->AllDay,
             'Location'      => $this->Location ?: null,
+            'Street'        => $this->Street ?: null,
+            'PostalCode'    => $this->PostalCode ?: null,
+            'City'          => $this->City ?: null,
             'IsPublic'      => (bool) $this->IsPublic,
             'TypeID'        => (int) $this->TypeID ?: null,
             'TypeTitle'     => $type->exists() ? $type->Title : null,
             'AgeGroups'     => array_map(fn ($group) => $group->toApi(), $ageGroups->toArray()),
             'ImageURL'      => $this->RenderImage(),
             'Gallery'       => $this->galleryToApi(),
+            'PriceMode'     => $this->PriceMode ?: 'Fixed',
             'Prices'        => array_map(fn ($price) => $price->toApi(), $this->Prices()->toArray()),
         ];
     }
@@ -249,11 +269,11 @@ class OrgEvent extends DataObject
         ]);
     }
 
-    /** Das Bild wird im Frontend quadratisch zugeschnitten hochgeladen (wie Organisations-Logos) */
-    public function RenderImage(int $size = 400): ?string
+    /** Das Bild wird im Frontend im Format 16:9 zugeschnitten hochgeladen (passend zur OrgEventCard) */
+    public function RenderImage(int $width = 1280): ?string
     {
         if ($this->ImageID && $this->Image()->exists()) {
-            return $this->Image()->Fill($size, $size)->getURL();
+            return $this->Image()->Fill($width, (int) round($width * 9 / 16))->getURL();
         }
         return null;
     }
@@ -308,8 +328,13 @@ class OrgEvent extends DataObject
             return 'Das Ende darf nicht vor dem Beginn liegen';
         }
 
-        if (array_key_exists('location', $data)) {
-            $this->Location = trim((string) $data['location']) ?: null;
+        foreach (['location' => 'Location', 'street' => 'Street', 'postalCode' => 'PostalCode', 'city' => 'City'] as $key => $field) {
+            if (array_key_exists($key, $data)) {
+                $this->$field = trim((string) $data[$key]) ?: null;
+            }
+        }
+        if ($this->PostalCode && mb_strlen($this->PostalCode) > 10) {
+            return 'Die PLZ ist zu lang';
         }
         if (array_key_exists('isPublic', $data)) {
             $this->IsPublic = (bool) $data['isPublic'];
@@ -331,6 +356,18 @@ class OrgEvent extends DataObject
             $this->forceChange();
         }
 
+        if (array_key_exists('priceMode', $data)) {
+            if (!in_array($data['priceMode'], ['Fixed', 'Tiered', 'Free', 'Donation'], true)) {
+                return 'Ungültige Preisangabe';
+            }
+            $this->PriceMode = $data['priceMode'];
+            // Kostenfrei/gegen Spende hat keine Preise
+            if (in_array($this->PriceMode, ['Free', 'Donation'], true)) {
+                $data['prices'] = [];
+            }
+        }
+        $isFixed = ($this->PriceMode ?: 'Fixed') === 'Fixed';
+
         if (array_key_exists('prices', $data)) {
             $prices = [];
             foreach ((array) $data['prices'] as $row) {
@@ -340,13 +377,17 @@ class OrgEvent extends DataObject
                 if ($label === '' && ($price === '' || $price === null)) {
                     continue;
                 }
-                if ($label === '') {
+                // Beim festen Preis gibt es genau einen Betrag, eine Bezeichnung braucht er nicht
+                if ($label === '' && !$isFixed) {
                     return 'Bitte gib für jeden Preis eine Bezeichnung an';
                 }
                 if (!is_numeric($price) || $price < 0 || $price > 99999999) {
-                    return "Ungültiger Preis für „{$label}“";
+                    return $label === '' ? 'Ungültiger Preis' : "Ungültiger Preis für „{$label}“";
                 }
-                $prices[] = ['Title' => $label, 'Price' => round((float) $price, 2)];
+                $prices[] = ['Title' => $isFixed ? '' : $label, 'Price' => round((float) $price, 2)];
+                if ($isFixed) {
+                    break;
+                }
             }
             $this->pendingPrices = $prices;
             // Sonst schreibt write() nichts, wenn sich nur die Preise geändert haben,

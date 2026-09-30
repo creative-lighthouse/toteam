@@ -15,9 +15,11 @@
         text-align: center;
     }
 
+    // Höhe folgt dem Seitenverhältnis (per style aus aspectRatio)
     .image-crop-modal_canvas {
         width: 220px;
-        height: 220px;
+        max-width: 100%;
+        height: auto;
         cursor: grab;
         touch-action: none;
         background-color: var(--ColorLightGray);
@@ -35,6 +37,12 @@
 
         &--square {
             border-radius: 20%;
+        }
+
+        // Event-Bilder (OrgEventCard): gleiche Rundung wie die Karte
+        &--rect {
+            width: 100%;
+            border-radius: var(--BorderRadiusSmall);
         }
     }
 

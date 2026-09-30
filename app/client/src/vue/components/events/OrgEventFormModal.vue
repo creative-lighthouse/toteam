@@ -62,8 +62,24 @@
       />
 
       <label class="field">
+        Veranstaltungsort
+        <input v-model="form.location" type="text" autocomplete="off" placeholder="z.B. Gemeindehaus" />
+      </label>
+
+      <label class="field">
+        Straße und Hausnummer
+        <input v-model="form.street" type="text" autocomplete="street-address" placeholder="z.B. Hauptstraße 1" />
+      </label>
+
+      <label class="field field--2">
+        PLZ
+        <input v-model="form.postalCode" type="text" inputmode="numeric" maxlength="10" autocomplete="postal-code" />
+      </label>
+
+      <!-- Der Ort erscheint auch auf der Event-Karte -->
+      <label class="field field--4">
         Ort
-        <input v-model="form.location" type="text" autocomplete="off" placeholder="z.B. Gemeindehaus, Hauptstraße 1" />
+        <input v-model="form.city" type="text" autocomplete="address-level2" placeholder="z.B. Lütjensee" />
       </label>
 
       <label class="field">
@@ -88,7 +104,26 @@
         {{ form.isPublic ? 'Das Event darf öffentlich angezeigt werden.' : 'Das Event ist nur intern für Mitglieder sichtbar.' }}
       </p>
 
-      <div class="field">
+      <AppSegmentedToggle
+        v-model="form.priceMode"
+        label="Eintritt"
+        :options="[
+          { value: 'Fixed', label: 'Festpreis' },
+          { value: 'Tiered', label: 'Gestaffelt' },
+          { value: 'Free', label: 'Kostenfrei' },
+          { value: 'Donation', label: 'Spende' },
+        ]"
+      />
+
+      <label v-if="form.priceMode === 'Fixed'" class="field">
+        Preis
+        <span class="org-event-form-modal_price org-event-form-modal_price--fixed">
+          <input v-model="form.fixedPrice" type="number" autocomplete="off" step="0.01" min="0" placeholder="0,00">
+          €
+        </span>
+      </label>
+
+      <div v-if="form.priceMode === 'Tiered'" class="field">
         <label>Preise</label>
         <ul v-if="form.prices.length" class="org-event-form-modal_prices">
           <li v-for="(price, index) in form.prices" :key="price.key">
@@ -105,8 +140,6 @@
         </div>
       </div>
 
-      <p class="org-event-form-modal_hint">Termine ordnest du beim Anlegen oder Bearbeiten im Kalender einem Event zu.</p>
-
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
 
@@ -121,8 +154,9 @@
   <ImageCropModal
     ref="cropModal"
     title="Bild zuschneiden"
-    shape="square"
-    :output-size="800"
+    shape="rect"
+    :aspect-ratio="16 / 9"
+    :output-size="1280"
     @cropped="onImageCropped"
   />
 </template>
@@ -135,6 +169,7 @@ import AppChipSelect from '@components/ui/AppChipSelect.vue'
 import AppFileUpload from '@components/ui/AppFileUpload.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
+import AppSegmentedToggle from '@components/ui/AppSegmentedToggle.vue'
 import AppToggle from '@components/ui/AppToggle.vue'
 import DateTimeRangeField from '@components/ui/DateTimeRangeField.vue'
 import ImageCropModal from '@components/ui/ImageCropModal.vue'
@@ -170,9 +205,14 @@ const defaultForm = () => ({
   timeEnd: '',
   allDay: true,
   location: '',
+  street: '',
+  postalCode: '',
+  city: '',
   typeId: null,
   ageGroupIds: [],
   isPublic: false,
+  priceMode: 'Fixed',
+  fixedPrice: '',
   prices: [],
 })
 
@@ -238,6 +278,17 @@ async function removeGalleryImage(img) {
   }
 }
 
+// Je nach Preisangabe: ein Betrag, die Tabelle oder nichts (kostenfrei/gegen Spende)
+function pricesPayload() {
+  if (form.priceMode === 'Fixed') {
+    return form.fixedPrice === '' ? [] : [{ title: '', price: Number(form.fixedPrice) }]
+  }
+  if (form.priceMode === 'Tiered') {
+    return form.prices.map(p => ({ title: p.title.trim(), price: p.price === '' ? '' : Number(p.price) }))
+  }
+  return []
+}
+
 function addPrice() {
   form.prices.push(priceRow())
 }
@@ -264,10 +315,15 @@ function openForEdit(event) {
     timeEnd: event.TimeEnd?.slice(0, 5) ?? '',
     allDay: event.AllDay ?? true,
     location: event.Location ?? '',
+    street: event.Street ?? '',
+    postalCode: event.PostalCode ?? '',
+    city: event.City ?? '',
     typeId: event.TypeID ?? null,
     ageGroupIds: (event.AgeGroups ?? []).map(g => g.ID),
     isPublic: !!event.IsPublic,
-    prices: (event.Prices ?? []).map(p => priceRow(p.Title, p.Price)),
+    priceMode: event.PriceMode ?? 'Fixed',
+    fixedPrice: event.PriceMode === 'Fixed' && event.Prices?.length ? event.Prices[0].Price : '',
+    prices: event.PriceMode === 'Tiered' ? (event.Prices ?? []).map(p => priceRow(p.Title, p.Price)) : [],
   })
   resetImage(event.ImageURL ?? null)
   resetGallery(event.Gallery ?? [])
@@ -299,10 +355,14 @@ async function submit() {
     timeEnd: form.allDay ? null : (form.timeEnd || null),
     allDay: form.allDay,
     location: form.location.trim(),
+    street: form.street.trim(),
+    postalCode: form.postalCode.trim(),
+    city: form.city.trim(),
     typeId: form.typeId || 0,
     ageGroupIds: form.ageGroupIds,
     isPublic: form.isPublic,
-    prices: form.prices.map(p => ({ title: p.title.trim(), price: p.price === '' ? '' : Number(p.price) })),
+    priceMode: form.priceMode,
+    prices: pricesPayload(),
   }
 
   submitting.value = true

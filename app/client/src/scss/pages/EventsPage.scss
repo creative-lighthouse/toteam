@@ -15,84 +15,13 @@
         color: var(--ColorGray);
     }
 
-    .events-list {
+    // Karten (OrgEventCard) im Raster: so viele Spalten wie passen, auf dem Handy eine
+    .org-event-grid {
         list-style: none;
         margin: 0;
         padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .org-event-card {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        width: 100%;
-        padding: 14px 16px;
-        border: none;
-        border-radius: var(--BorderRadiusMedium);
-        background-color: var(--ColorWhite);
-        box-shadow: var(--BoxShadowLight);
-        color: inherit;
-        font: inherit;
-        text-align: left;
-        text-decoration: none;
-        cursor: pointer;
-        transition: box-shadow 0.15s, transform 0.15s;
-
-        @include hover {
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-            transform: translateY(-1px);
-        }
-
-        &:active {
-            scale: 0.99;
-        }
-
-        &:focus-visible {
-            outline: 2px solid var(--ColorPrimary);
-            outline-offset: 2px;
-        }
-    }
-
-    .org-event-card_logo {
-        flex-shrink: 0;
-    }
-
-    .org-event-card_image {
-        flex-shrink: 0;
-        width: 56px;
-        height: 56px;
-        object-fit: cover;
-        border-radius: var(--BorderRadiusSmall);
-    }
-
-    .org-event-card_body {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        flex: 1;
-        min-width: 0;
-    }
-
-    .org-event-card_title {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--ColorBlack);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .org-event-card_meta {
-        font-size: 13px;
-        color: var(--ColorGray);
-    }
-
-    .org-event-card_arrow {
-        flex-shrink: 0;
-        font-size: 22px;
-        color: var(--ColorGray);
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
     }
 }
