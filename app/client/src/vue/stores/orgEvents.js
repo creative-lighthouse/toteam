@@ -43,11 +43,14 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     }
   }
 
-  /** Event inkl. seiner Termine */
-  async function fetchEvent(id) {
-    const res = await apiGet(`/calendar/orgEvent/${id}`, false)
+  /**
+   * Event-Seite per ID oder URL-Segment: { isInternal, event, appointments? }.
+   * Außenstehende bekommen nur die Eckdaten öffentlicher Events (sonst 404).
+   */
+  async function fetchEvent(key) {
+    const res = await apiGet(`/calendar/orgEvent/${encodeURIComponent(key)}`, false)
     if (res?.success === false) throw new Error(res.error || 'Event konnte nicht geladen werden')
-    replace(res.event)
+    if (res.isInternal) replace(res.event)
     return res
   }
 
@@ -80,6 +83,26 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     fd.append('image', image, 'image.jpg')
     const res = await apiPostForm(`/calendar/orgEventImage/${id}`, fd)
     if (!res?.success) throw new Error(res?.error || 'Bild konnte nicht gespeichert werden')
+    replace(res.data.event)
+    await clearCacheForEndpoint('/calendar')
+    return res.data.event
+  }
+
+  /** files: File[] aus AppFileUpload — landen in der Galerie des Events */
+  async function uploadGallery(id, files) {
+    if (!files.length) return null
+    const fd = new FormData()
+    files.forEach(f => fd.append('images[]', f))
+    const res = await apiPostForm(`/calendar/orgEventGallery/${id}`, fd)
+    if (res?.data?.event) replace(res.data.event)
+    await clearCacheForEndpoint('/calendar')
+    if (!res?.success) throw new Error(res?.error || 'Bilder konnten nicht hochgeladen werden')
+    return res.data.event
+  }
+
+  async function removeGalleryImage(id, imageId) {
+    const res = await apiDelete(`/calendar/orgEventGallery/${id}?image=${imageId}`)
+    if (!res?.success) throw new Error(res?.error || 'Bild konnte nicht entfernt werden')
     replace(res.data.event)
     await clearCacheForEndpoint('/calendar')
     return res.data.event
@@ -121,6 +144,8 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     updateEvent,
     uploadImage,
     removeImage,
+    uploadGallery,
+    removeGalleryImage,
     deleteEvent,
   }
 })

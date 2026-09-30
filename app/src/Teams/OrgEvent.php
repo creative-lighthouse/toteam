@@ -7,6 +7,7 @@ use App\Food\Food;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
+use SilverStripe\View\Parsers\URLSegmentFilter;
 
 /**
  * Class \App\Teams\OrgEvent
@@ -19,10 +20,15 @@ use SilverStripe\Security\Member;
  * Beginn und Ende sind optional; ohne eigene Angabe ergibt sich der Zeitraum
  * aus den zugeordneten Terminen (siehe toApiSummary()).
  *
+ * Jedes Event hat eine eigene Seite unter /app/events/{URLSegment}: Mitglieder
+ * der Organisation sehen dort alles, alle anderen (auch ohne Anmeldung) nur die
+ * Eckdaten — und das nur, wenn das Event öffentlich ist (siehe isViewableBy()).
+ *
  * (Nicht zu verwechseln mit den älteren EventDay-Klassen in App\Events oder den
  * Kalender-"Events" im Frontend, die einzelne Termine meinen.)
  *
  * @property ?string $Title
+ * @property ?string $URLSegment
  * @property ?string $DateStart
  * @property ?string $TimeStart
  * @property ?string $DateEnd
@@ -40,12 +46,14 @@ use SilverStripe\Security\Member;
  * @method \SilverStripe\ORM\DataList|\App\Food\Food[] Foods()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrgEventPrice[] Prices()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\OrgEventAgeGroup[] AgeGroups()
+ * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Assets\Image[] Images()
  */
 class OrgEvent extends DataObject
 {
     private static $db = [
-        "Title"     => "Varchar(255)",
-        "DateStart" => "Date",
+        "Title"      => "Varchar(255)",
+        "URLSegment" => "Varchar(255)",
+        "DateStart"  => "Date",
         "TimeStart" => "Time",
         "DateEnd"   => "Date",
         "TimeEnd"   => "Time",
@@ -60,8 +68,15 @@ class OrgEvent extends DataObject
         "Image"        => Image::class,
     ];
 
+    private static $indexes = [
+        "URLSegment" => true,
+    ];
+
+    // Galerie zusätzlich zum Hauptbild — heißt "Images", damit der
+    // AttachmentUploads-Trait der API-Controller sie direkt befüllen kann
     private static $owns = [
         "Image",
+        "Images",
     ];
 
     private static $has_many = [
@@ -72,6 +87,7 @@ class OrgEvent extends DataObject
 
     private static $many_many = [
         "AgeGroups" => OrgEventAgeGroup::class,
+        "Images"    => Image::class,
     ];
 
     private static $cascade_deletes = [
@@ -93,6 +109,8 @@ class OrgEvent extends DataObject
         "Type"         => "Art",
         "AgeGroups"    => "Altersgruppen",
         "Image"        => "Bild",
+        "Images"       => "Galerie",
+        "URLSegment"   => "URL-Segment",
         "Appointments" => "Termine",
         "Foods"        => "Gerichte",
         "Prices"       => "Preise",
@@ -120,6 +138,57 @@ class OrgEvent extends DataObject
         return $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::CALENDAR_MANAGE);
     }
 
+    /** Sehen darf ein Event, wer in der Organisation Mitglied ist — oder jeder, wenn es öffentlich ist */
+    public function isViewableBy(?Member $member): bool
+    {
+        return $this->IsPublic || $this->isInternalFor($member);
+    }
+
+    /** Mitglieder der Organisation sehen auch die internen Inhalte (Termine usw.) */
+    public function isInternalFor(?Member $member): bool
+    {
+        return $member && in_array((int) $this->OrganizationID, array_map('intval', $member->getOrganizationIDs()), true);
+    }
+
+    /** Pfad der Event-Seite im Frontend */
+    public function Link(): string
+    {
+        return '/app/events/' . $this->URLSegment;
+    }
+
+    /** Lesbares, eindeutiges URL-Segment aus dem Titel ("halloweenhaus-2026", bei Bedarf "-2" usw.) */
+    public function generateURLSegment(): string
+    {
+        $base = URLSegmentFilter::create()->filter((string) $this->Title) ?: 'event';
+        // Rein numerisch würde die API das Segment als ID lesen (z.B. Titel "2026")
+        if (ctype_digit($base)) {
+            $base = 'event-' . $base;
+        }
+        $segment = $base;
+        for ($i = 2; self::get()->filter('URLSegment', $segment)->exclude('ID', $this->ID ?: 0)->exists(); $i++) {
+            $segment = $base . '-' . $i;
+        }
+        return $segment;
+    }
+
+    protected function onBeforeWrite()
+    {
+        parent::onBeforeWrite();
+        // Einmal vergeben und dann stabil, damit geteilte Links auch nach dem Umbenennen funktionieren
+        if (!$this->URLSegment) {
+            $this->URLSegment = $this->generateURLSegment();
+        }
+    }
+
+    /** Vorhandene Events ohne URL-Segment beim dev/build nachziehen */
+    public function requireDefaultRecords()
+    {
+        parent::requireDefaultRecords();
+        foreach (self::get()->filter('URLSegment', [null, '']) as $event) {
+            $event->write();
+        }
+    }
+
     public function toApi(): array
     {
         $org = $this->Organization();
@@ -128,6 +197,8 @@ class OrgEvent extends DataObject
         return [
             'ID'                  => $this->ID,
             'Title'               => $this->Title,
+            'URLSegment'          => $this->URLSegment,
+            'Link'                => $this->Link(),
             'OrganizationID'      => (int) $this->OrganizationID,
             'OrganizationTitle'   => $org->exists() ? $org->Title : null,
             'OrganizationLogoURL' => $org->exists() ? $org->RenderLogo(80) : null,
@@ -143,8 +214,39 @@ class OrgEvent extends DataObject
             'TypeTitle'     => $type->exists() ? $type->Title : null,
             'AgeGroups'     => array_map(fn ($group) => $group->toApi(), $ageGroups->toArray()),
             'ImageURL'      => $this->RenderImage(),
+            'Gallery'       => $this->galleryToApi(),
             'Prices'        => array_map(fn ($price) => $price->toApi(), $this->Prices()->toArray()),
         ];
+    }
+
+    /** Galeriebilder im selben Format wie AttachmentUploads::formatImages() */
+    public function galleryToApi(): array
+    {
+        $images = [];
+        foreach ($this->Images() as $image) {
+            $images[] = [
+                'ID'        => $image->ID,
+                'URL'       => $image->getURL(),
+                'Thumbnail' => $image->Fill(300, 300)->getURL(),
+                'Name'      => $image->Name,
+            ];
+        }
+        return $images;
+    }
+
+    /**
+     * Eckdaten für Besucher ohne Mitgliedschaft (öffentliche Events). Ohne
+     * Termin-Zeitraum, Zähler und IDs — die verraten interne Planung.
+     */
+    public function toApiPublic(): array
+    {
+        $data = $this->toApi();
+        unset($data['OrganizationID'], $data['TypeID']);
+        return array_merge($data, [
+            'RangeStart' => $this->DateStart ?: null,
+            'RangeEnd'   => $this->DateStart ? ($this->DateEnd ?: $this->DateStart) : null,
+            'CanManage'  => false,
+        ]);
     }
 
     /** Das Bild wird im Frontend quadratisch zugeschnitten hochgeladen (wie Organisations-Logos) */
@@ -337,9 +439,14 @@ class OrgEvent extends DataObject
             $food->write();
         }
         $this->AgeGroups()->removeAll();
+        // Dateien sind versioniert: doArchive() entfernt sie aus Entwurf und Live
         if ($this->ImageID && $this->Image()->exists()) {
             $this->Image()->deleteFile();
-            $this->Image()->delete();
+            $this->Image()->doArchive();
+        }
+        foreach ($this->Images() as $image) {
+            $image->deleteFile();
+            $image->doArchive();
         }
     }
 }

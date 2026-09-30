@@ -31,6 +31,25 @@
         </div>
       </div>
 
+      <div v-if="existingGallery.length" class="field">
+        <label>Galerie</label>
+        <ul class="org-event-form-modal_gallery">
+          <li v-for="img in existingGallery" :key="img.ID">
+            <img :src="img.Thumbnail" :alt="img.Name">
+            <AppIconButton variant="ghost" aria-label="Bild entfernen" title="Bild entfernen" @click="removeGalleryImage(img)">✕</AppIconButton>
+          </li>
+        </ul>
+      </div>
+      <AppFileUpload
+        v-model="newGallery"
+        :label="existingGallery.length ? 'Weitere Galeriebilder' : 'Galerie'"
+        multiple
+        :max-files="20"
+        accept="image/jpeg,image/png,image/webp"
+        :max-size="10 * 1024 * 1024"
+        hint="Zusätzliche Bilder zum Hauptbild – JPG, PNG oder WebP, max. 10 MB"
+      />
+
       <DateTimeRangeField
         :model-value="form"
         @update:model-value="v => Object.assign(form, v)"
@@ -113,6 +132,7 @@ import { ref, reactive, computed } from 'vue'
 import { useOrgEventsStore } from '@stores/orgEvents'
 import AppButton from '@components/ui/AppButton.vue'
 import AppChipSelect from '@components/ui/AppChipSelect.vue'
+import AppFileUpload from '@components/ui/AppFileUpload.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppToggle from '@components/ui/AppToggle.vue'
@@ -198,6 +218,26 @@ function clearImage() {
   resetImage(null)
 }
 
+// Galerie: vorhandene Bilder werden sofort entfernt, neue nach dem Speichern hochgeladen
+const existingGallery = ref([])
+const newGallery = ref([])
+
+function resetGallery(images = []) {
+  existingGallery.value = [...images]
+  newGallery.value = []
+}
+
+async function removeGalleryImage(img) {
+  if (!confirm(`„${img.Name}“ wirklich aus der Galerie entfernen?`)) return
+  error.value = null
+  try {
+    const event = await orgEventsStore.removeGalleryImage(editingId.value, img.ID)
+    existingGallery.value = event.Gallery ?? []
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 function addPrice() {
   form.prices.push(priceRow())
 }
@@ -206,12 +246,13 @@ function open() {
   editingId.value = null
   Object.assign(form, defaultForm())
   resetImage()
+  resetGallery()
   error.value = null
   orgEventsStore.fetchOptions()
   modal.value?.open()
 }
 
-// event: Summary aus der Events-Übersicht bzw. dem Detail-Modal
+// event: Summary von der Event-Seite (GET /calendar/orgEvent/{id})
 function openForEdit(event) {
   editingId.value = event.ID
   Object.assign(form, {
@@ -229,6 +270,7 @@ function openForEdit(event) {
     prices: (event.Prices ?? []).map(p => priceRow(p.Title, p.Price)),
   })
   resetImage(event.ImageURL ?? null)
+  resetGallery(event.Gallery ?? [])
   error.value = null
   orgEventsStore.fetchOptions()
   modal.value?.open()
@@ -277,6 +319,19 @@ async function submit() {
       event = await orgEventsStore.removeImage(event.ID)
     }
     resetImage(event.ImageURL)
+
+    if (newGallery.value.length) {
+      try {
+        event = await orgEventsStore.uploadGallery(event.ID, newGallery.value)
+        resetGallery(event.Gallery ?? [])
+      } catch (e) {
+        // Wie im RoomFormModal: Auswahl leeren, sonst würden bereits hochgeladene
+        // Bilder beim nächsten Speichern doppelt angelegt
+        const updated = orgEventsStore.events.find(ev => ev.ID === event.ID)
+        resetGallery(updated?.Gallery ?? existingGallery.value)
+        throw e
+      }
+    }
 
     close()
     emit('saved', event)

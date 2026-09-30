@@ -5,6 +5,7 @@ import { useAuthStore } from '@stores/auth'
 import Dashboard from '@views/Dashboard.vue'
 import Calendar from '@views/Calendar.vue'
 import Events from '@views/Events.vue'
+import EventDetail from '@views/EventDetail.vue'
 import Food from '@views/Food.vue'
 import Announcements from '@views/Announcements.vue'
 import AnnouncementDetail from '@views/AnnouncementDetail.vue'
@@ -61,6 +62,13 @@ const routes = [
     name: 'Events',
     component: Events,
     meta: { requiresAuth: true, totem: 'calendar' }
+  },
+  {
+    // Eigene Seite je Event — öffentliche Events auch ohne Anmeldung (Zugriff prüft die API)
+    path: '/events/:segment',
+    name: 'EventDetail',
+    component: EventDetail,
+    meta: { requiresAuth: false }
   },
   {
     path: '/food/meal/:id',
