@@ -1,41 +1,34 @@
 <template>
-  <!-- Die Termine eines Events, chronologisch; ein Klick öffnet den Termin im Kalender -->
+  <!-- Die Termine eines Events, chronologisch, als kompakte Karten wie auf dem Dashboard; ein Klick öffnet den Termin im Kalender -->
   <ul v-if="appointments.length" class="org-event-appointment-list">
-    <li v-for="appt in appointments" :key="appt.ID">
-      <button
-        type="button"
-        class="org-event-appointment"
-        :class="{ 'org-event-appointment--cancelled': appt.Status === 'Cancelled', 'org-event-appointment--past': isPast(appt) }"
-        @click="openAppointment(appt)"
-      >
-        <span class="org-event-appointment_date">{{ formatAppointmentDate(appt) }}</span>
-        <span class="org-event-appointment_title">
-          {{ appt.Title }}
-          <span v-if="appt.Status === 'Cancelled'" class="org-event-appointment_badge">Abgesagt</span>
-          <span v-else-if="appt.Status === 'Suggested'" class="org-event-appointment_badge">Vorschlag</span>
-        </span>
-        <span v-if="appt.Location || appt.EventType" class="org-event-appointment_info">
-          {{ [appt.EventType, appt.Location].filter(Boolean).join(' · ') }}
-        </span>
-        <ParticipationIcon :participationType="appt.UserResponse?.toLowerCase() ?? 'none'" />
-      </button>
+    <li
+      v-for="appt in cards"
+      :key="appt.ID"
+      :class="{ 'org-event-appointment-list_item--past': isPast(appt) }"
+    >
+      <EventCard :event="appt" :date-display="formatDate(appt.DateStart)" compact hide-org-logo @click="openAppointment" />
     </li>
   </ul>
   <p v-else class="org-event-appointment-list_empty">Diesem Event sind noch keine Termine zugeordnet.</p>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { formatDate } from '@utils/inventory'
-import { formatEventRange, isMultiDay } from '@utils/eventDates'
-import ParticipationIcon from '@components/calendar/ParticipationIcon.vue'
+import EventCard from '@components/calendar/EventCard.vue'
 
-defineProps({
+const props = defineProps({
   // aus GET /calendar/orgEvent/{id} (OrgEvent::appointmentsToApi())
   appointments: { type: Array, default: () => [] },
 })
 
 const router = useRouter()
+
+// EventCard erwartet die Rückmeldung als UserParticipation.Type (wie in der Kalender-API)
+const cards = computed(() => props.appointments.map(appt => ({
+  ...appt,
+  UserParticipation: appt.UserResponse ? { Type: appt.UserResponse } : null,
+})))
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -43,10 +36,17 @@ function isPast(appt) {
   return (appt.DateEnd || appt.DateStart) < today()
 }
 
-function formatAppointmentDate(appt) {
-  if (isMultiDay(appt)) return formatEventRange(appt, { weekday: true })
-  const time = !appt.AllDay && appt.TimeStart ? `, ${appt.TimeStart.slice(0, 5)}` : ''
-  return formatDate(appt.DateStart) + time
+// Wie auf dem Dashboard: "Do., 24.09.26"
+function formatDate(dateString) {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return dateString
+  return new Intl.DateTimeFormat('de-DE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  }).format(date)
 }
 
 function openAppointment(appt) {

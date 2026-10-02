@@ -115,7 +115,8 @@ export const useSkriptStore = defineStore('skript', () => {
 
   async function createRole(scriptId, { Title, Description = '' }) {
     const response = await apiPost('/skript/roleStore', { ScriptID: scriptId, Title, Description })
-    if (response.success && response.data?.role && currentScript.value) {
+    // Auch von der Event-Seite aus genutzt — dann ist evtl. ein anderes Skript geladen
+    if (response.success && response.data?.role && currentScript.value?.ID === scriptId) {
       currentScript.value.Roles = [...(currentScript.value.Roles || []), response.data.role]
     }
     return response
@@ -164,6 +165,41 @@ export const useSkriptStore = defineStore('skript', () => {
     return response
   }
 
+  // ── Skripte & Rollenzuteilung eines Events (Feature auf der Event-Seite) ──
+  // Alle Aufrufe liefern den vollständigen Stand: { scripts, availableScripts,
+  // assignments, members, CanManageScripts, CanCreateScripts, CanAssign }
+
+  async function fetchEventScripts(eventId) {
+    const response = await apiGet(`/skript/eventScripts/${eventId}`, false)
+    if (response?.success === false) throw new Error(response.error || 'Skripte konnten nicht geladen werden')
+    return response
+  }
+
+  async function eventMutation(promise, fallbackError) {
+    const response = await promise
+    if (!response?.success) throw new Error(response?.error || fallbackError)
+    await clearCacheForEndpoint('/skript')
+    return response.data
+  }
+
+  /** data: { ScriptID } für ein vorhandenes Skript oder { Title } für ein neues */
+  function attachEventScript(eventId, data) {
+    return eventMutation(apiPost(`/skript/eventScriptAttach/${eventId}`, data), 'Skript konnte nicht hinzugefügt werden')
+  }
+
+  function detachEventScript(eventId, scriptId) {
+    return eventMutation(apiDelete(`/skript/eventScriptDetach/${eventId}?script=${scriptId}`), 'Skript konnte nicht entfernt werden')
+  }
+
+  /** data: { RoleID, MemberID, Date, TimeStart?, TimeEnd? } */
+  function createEventAssignment(eventId, data) {
+    return eventMutation(apiPost(`/skript/eventAssignmentStore/${eventId}`, data), 'Zuteilung konnte nicht gespeichert werden')
+  }
+
+  function deleteEventAssignment(assignmentId) {
+    return eventMutation(apiDelete(`/skript/eventAssignmentRemove/${assignmentId}`), 'Zuteilung konnte nicht entfernt werden')
+  }
+
   function setMode(mode) {
     activeMode.value = mode
   }
@@ -194,6 +230,11 @@ export const useSkriptStore = defineStore('skript', () => {
     deleteRole,
     assignRoleMembers,
     syncParagraphs,
+    fetchEventScripts,
+    attachEventScript,
+    detachEventScript,
+    createEventAssignment,
+    deleteEventAssignment,
     setMode,
     setFocusMember,
   }

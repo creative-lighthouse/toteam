@@ -6,6 +6,8 @@ use App\Calendar\Appointment;
 use App\Food\Food;
 use App\Maps\Geocoder;
 use App\Maps\MapTilesSettings;
+use App\Skript\Script;
+use App\Skript\ScriptRoleAssignment;
 use Psr\Log\LoggerInterface;
 use SilverStripe\Assets\Image;
 use SilverStripe\Core\Injector\Injector;
@@ -58,6 +60,8 @@ use SilverStripe\View\Parsers\URLSegmentFilter;
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrgEventPrice[] Prices()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\OrgEventAgeGroup[] AgeGroups()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Assets\Image[] Images()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Skript\Script[] Scripts()
+ * @method \SilverStripe\ORM\DataList|\App\Skript\ScriptRoleAssignment[] RoleAssignments()
  */
 class OrgEvent extends DataObject
 {
@@ -107,15 +111,21 @@ class OrgEvent extends DataObject
         "Appointments" => Appointment::class . '.Event',
         "Foods"        => Food::class . '.Event',
         "Prices"       => OrgEventPrice::class . '.Event',
+        // Rollenzuteilung der Skript-Rollen pro Tag (siehe ScriptRoleAssignment)
+        "RoleAssignments" => ScriptRoleAssignment::class . '.Event',
     ];
 
     private static $many_many = [
         "AgeGroups" => OrgEventAgeGroup::class,
         "Images"    => Image::class,
+        // Skripte der Organisation, die bei diesem Event gespielt werden — ein Skript
+        // kann zu mehreren Events gehören
+        "Scripts"   => Script::class,
     ];
 
     private static $cascade_deletes = [
         "Prices",
+        "RoleAssignments",
     ];
 
     private static $default_sort = "Title ASC";
@@ -337,10 +347,8 @@ class OrgEvent extends DataObject
     {
         $data = $this->toApi();
         unset($data['OrganizationID'], $data['TypeID']);
-        return array_merge($data, [
-            'RangeStart' => $this->DateStart ?: null,
-            'RangeEnd'   => $this->DateStart ? ($this->DateEnd ?: $this->DateStart) : null,
-            'CanManage'  => false,
+        return array_merge($data, $this->dateRange(), [
+            'CanManage' => false,
         ]);
     }
 
@@ -500,6 +508,23 @@ class OrgEvent extends DataObject
      */
     public function toApiSummary(Member $member): array
     {
+        return array_merge($this->toApi(), $this->dateRange(), [
+            'AppointmentCount' => $this->Appointments()->count(),
+            'FoodCount'        => $this->Foods()->count(),
+            'CanManage'        => $this->canBeManagedBy($member),
+        ]);
+    }
+
+    /**
+     * Zeitraum des Events: die eigenen Daten oder, ohne eigene Angabe, der Zeitraum
+     * seiner Termine — auch auf der öffentlichen Seite (nur die Daten, nicht die Termine selbst).
+     * @return array{RangeStart: ?string, RangeEnd: ?string}
+     */
+    public function dateRange(): array
+    {
+        if ($this->DateStart) {
+            return ['RangeStart' => $this->DateStart, 'RangeEnd' => $this->DateEnd ?: $this->DateStart];
+        }
         $appointments = $this->Appointments();
         $first = $appointments->sort('DateStart', 'ASC')->first();
         $dateEnd = null;
@@ -509,14 +534,7 @@ class OrgEvent extends DataObject
                 $dateEnd = $end;
             }
         }
-        $ownStart = $this->DateStart ?: null;
-        return array_merge($this->toApi(), [
-            'AppointmentCount' => $appointments->count(),
-            'RangeStart'       => $ownStart ?? ($first ? $first->DateStart : null),
-            'RangeEnd'         => $ownStart ? ($this->DateEnd ?: $ownStart) : $dateEnd,
-            'FoodCount'        => $this->Foods()->count(),
-            'CanManage'        => $this->canBeManagedBy($member),
-        ]);
+        return ['RangeStart' => $first ? $first->DateStart : null, 'RangeEnd' => $dateEnd];
     }
 
     /** Die Termine des Events, chronologisch, mit der Teilnahme des Mitglieds */
@@ -555,6 +573,8 @@ class OrgEvent extends DataObject
             $food->write();
         }
         $this->AgeGroups()->removeAll();
+        // Die Skripte selbst bleiben erhalten, nur die Verknüpfung fällt weg
+        $this->Scripts()->removeAll();
         // Dateien sind versioniert: doArchive() entfernt sie aus Entwurf und Live
         if ($this->ImageID && $this->Image()->exists()) {
             $this->Image()->deleteFile();

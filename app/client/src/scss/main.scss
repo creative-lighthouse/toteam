@@ -95,10 +95,15 @@
 @use "components/maps/MapCreateModal.scss";
 @use "components/calendar/CalendarEntryCreateModal.scss";
 @use "components/calendar/PollDialog.scss";
+@use "components/events/OrgEventAddActions.scss";
 @use "components/events/OrgEventAppointmentList.scss";
 @use "components/events/OrgEventCard.scss";
 @use "components/events/OrgEventFormModal.scss";
 @use "components/events/OrgEventMap.scss";
+@use "components/events/OrgEventRoleCasting.scss";
+@use "components/events/OrgEventRoleTable.scss";
+@use "components/events/OrgEventScriptAddModal.scss";
+@use "components/events/OrgEventScripts.scss";
 @use "components/layout/PwaInstallBanner.scss";
 @use "components/tasks/TaskCard.scss";
 @use "components/tasks/TaskProgressBar.scss";

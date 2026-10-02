@@ -1,8 +1,11 @@
 <template>
   <div class="org-event-map">
-    <div ref="container" class="org-event-map_canvas" :aria-label="`Karte: ${title}`" role="region" />
+    <div class="org-event-map_frame">
+      <div ref="container" class="org-event-map_canvas" :aria-label="`Karte: ${title}`" role="region" />
+      <!-- Liegt unten links auf der Karte; unten rechts sitzt die Quellenangabe von MapLibre -->
+      <a class="org-event-map_link" :href="osmLink" target="_blank" rel="noopener">In OpenStreetMap öffnen</a>
+    </div>
     <p v-if="failed" class="org-event-map_error">Die Karte konnte nicht geladen werden.</p>
-    <a class="org-event-map_link" :href="osmLink" target="_blank" rel="noopener">In OpenStreetMap öffnen</a>
   </div>
 </template>
 

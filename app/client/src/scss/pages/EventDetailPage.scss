@@ -3,6 +3,22 @@
 // Eigene Seite eines Events (views/EventDetail.vue)
 .section.section--EventDetailPage {
 
+    // Umschalter Öffentlich / Mitglied / Bearbeiten über der Seite
+    .event-page_view-switch {
+        width: 100%;
+        max-width: var(--WidthMedium);
+        margin: 0 auto 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .event-page_view-hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusWarning);
+    }
+
     .event-page_card,
     .event-page_section,
     .event-page_login {

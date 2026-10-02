@@ -13,6 +13,7 @@ use App\Food\MealEater;
 use App\Food\MealProductOrder;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Skript\ScriptRoleAssignment;
 use App\Teams\OrgEvent;
 use App\Teams\OrgEventAgeGroup;
 use App\Teams\OrgEventType;
@@ -261,6 +262,9 @@ class CalendarApiController extends ApiController
                 ] : null,
                 'EnableMeals'   => (bool)$appointment->EnableMeals,
                 'EnableAgenda'  => (bool)$appointment->EnableAgenda,
+                'EnableRoleCasting' => (bool)$appointment->EnableRoleCasting,
+                'EventURLSegment'   => $appointment->EventID && $appointment->Event()->exists() ? $appointment->Event()->URLSegment : null,
+                'RoleAssignments'   => $this->roleAssignmentsForAppointment($appointment),
                 'Meals'         => $meals,
                 'AgendaPoints'  => $agendaPoints,
                 'Participations' => $participations,
@@ -367,6 +371,8 @@ class CalendarApiController extends ApiController
                 ] : null,
                 'EnableMeals'   => false,
                 'EnableAgenda'  => false,
+                'EnableRoleCasting' => false,
+                'RoleAssignments'   => [],
                 'Meals'         => [],
                 'AgendaPoints'  => [],
                 'Participations' => $optionParticipations,
@@ -971,6 +977,9 @@ class CalendarApiController extends ApiController
             if (array_key_exists('enableAgenda', $body)) {
                 $appt->EnableAgenda = (bool) $body['enableAgenda'];
             }
+            if (array_key_exists('enableRoleCasting', $body)) {
+                $appt->EnableRoleCasting = (bool) $body['enableRoleCasting'];
+            }
             $appt->write();
             $newOrgIDs = array_map('intval', $body['organizationIds'] ?? []);
             if (!empty($newOrgIDs)) {
@@ -1050,6 +1059,9 @@ class CalendarApiController extends ApiController
             $appt->TypeID = (int) $body['typeId'];
         }
         $appt->EventID = $this->resolveEventID($body['eventId'] ?? null, $orgIDs);
+        $appt->EnableMeals = !array_key_exists('enableMeals', $body) || !empty($body['enableMeals']);
+        $appt->EnableAgenda = !array_key_exists('enableAgenda', $body) || !empty($body['enableAgenda']);
+        $appt->EnableRoleCasting = !empty($body['enableRoleCasting']);
 
         $appt->write();
         $appt->Organisations()->addMany($orgIDs);
@@ -1451,6 +1463,33 @@ class CalendarApiController extends ApiController
      * List all appointment types.
      * GET /api/v1/calendar/appointmentTypes
      */
+    /**
+     * Rollenplan eines Termins: die Rollenzuteilungen seines Events an den Tagen des Termins
+     * (leer, wenn der Rollenplan aus ist oder der Termin zu keinem Event gehört)
+     */
+    private function roleAssignmentsForAppointment(Appointment $appointment): array
+    {
+        if (!$appointment->EnableRoleCasting || !$appointment->EventID) {
+            return [];
+        }
+        $assignments = ScriptRoleAssignment::get()->filter([
+            'EventID'          => $appointment->EventID,
+            'Date:GreaterThanOrEqual' => $appointment->DateStart,
+            'Date:LessThanOrEqual'    => $appointment->DateEnd ?: $appointment->DateStart,
+        ]);
+        $result = [];
+        foreach ($assignments as $assignment) {
+            $role = $assignment->Role();
+            $result[] = array_merge($assignment->toApi(), [
+                'RoleTitle'   => $role->Title,
+                'ScriptTitle' => $role->Script()->Title,
+            ]);
+        }
+        // Nach Rolle, dann Uhrzeit (ganztägig zuerst)
+        usort($result, fn ($a, $b) => [$a['Date'], $a['RoleTitle'], $a['TimeStart'] ?? ''] <=> [$b['Date'], $b['RoleTitle'], $b['TimeStart'] ?? '']);
+        return $result;
+    }
+
     /**
      * Event-ID aus dem Request übernehmen — nur wenn das Event zu einer der
      * Organisationen des Termins gehört, sonst 0 (kein Event).

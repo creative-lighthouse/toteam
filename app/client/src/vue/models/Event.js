@@ -55,6 +55,11 @@ export class Event {
     // Feature-Flags
     this.EnableMeals = data.EnableMeals ?? true
     this.EnableAgenda = data.EnableAgenda ?? true
+    this.EnableRoleCasting = data.EnableRoleCasting ?? false
+
+    // Rollenplan: Zuteilungen der Skript-Rollen des Events an den Tagen dieses Termins
+    this.RoleAssignments = data.RoleAssignments || []
+    this.EventURLSegment = data.EventURLSegment ?? null
 
     // Essen/Mahlzeiten
     this.Meals = data.Meals || []
@@ -209,6 +214,9 @@ export class Event {
       PollOptions: this.PollOptions,
       EnableMeals: this.EnableMeals,
       EnableAgenda: this.EnableAgenda,
+      EnableRoleCasting: this.EnableRoleCasting,
+      RoleAssignments: this.RoleAssignments,
+      EventURLSegment: this.EventURLSegment,
       Meals: this.Meals,
       AgendaPoints: this.AgendaPoints,
     }

@@ -1,0 +1,193 @@
+@use "../../base/variables" as *;
+
+// Rollenzuteilung pro Tag in der Skript-Karte (OrgEventRoleCasting.vue)
+.org-event-role-casting {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--ColorVeryLightGray);
+
+    .org-event-role-casting_title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .org-event-role-casting_days {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .org-event-role-casting_day {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorWhite);
+        color: inherit;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+
+        &--active {
+            border-color: var(--ColorPrimary);
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    .org-event-role-casting_day-count {
+        min-width: 18px;
+        padding: 0 4px;
+        border-radius: 9px;
+        background-color: var(--ColorVeryLightGray);
+        color: var(--ColorGray);
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .org-event-role-casting_day-label {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        opacity: 0.75;
+    }
+
+    .org-event-role-casting_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-role-casting_script {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .org-event-role-casting_script-title {
+        margin: 4px 0 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ColorGray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .org-event-role-casting_role {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+    }
+
+    .org-event-role-casting_role-head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+
+    .org-event-role-casting_role-title {
+        font-weight: 600;
+    }
+
+    .org-event-role-casting_role-empty {
+        font-size: 12px;
+        color: var(--ColorStatusWarning);
+    }
+
+    .org-event-role-casting_assignments {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .org-event-role-casting_assignment {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 4px 3px 10px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorWhite);
+        font-size: 13px;
+
+        &--conflict {
+            outline: 1px solid var(--ColorStatusWarning);
+        }
+    }
+
+    .org-event-role-casting_assignment-name {
+        font-weight: 600;
+    }
+
+    .org-event-role-casting_assignment-time {
+        color: var(--ColorGray);
+    }
+
+    .org-event-role-casting_assignment-warn {
+        color: var(--ColorStatusWarning);
+    }
+
+    .org-event-role-casting_assignment-remove {
+        padding: 0 6px;
+        border: none;
+        background: none;
+        color: var(--ColorGray);
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+
+        @include hover {
+            color: var(--ColorStatusBad);
+        }
+    }
+
+    .org-event-role-casting_form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+
+        .script-member-picker {
+            flex: 1 1 180px;
+            min-width: 0;
+        }
+
+        input[type="time"] {
+            width: auto;
+        }
+    }
+
+    .org-event-role-casting_draft-hint {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ColorStatusWarning);
+    }
+
+    .org-event-role-casting_allday {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .org-event-role-casting_error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+}

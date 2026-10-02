@@ -1,0 +1,184 @@
+@use "../../base/variables" as *;
+
+// Rollenplan als Tabelle in der Mitgliederansicht (OrgEventRoleTable.vue)
+.org-event-role-table {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--ColorVeryLightGray);
+
+    .org-event-role-table_title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .org-event-role-table_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-role-table_days {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .org-event-role-table_day {
+        padding: 4px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorWhite);
+        color: inherit;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+
+        &--active {
+            border-color: var(--ColorPrimary);
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+    }
+
+    // Viele Rollen: die Tabelle scrollt seitwärts, die Namensspalte bleibt stehen
+    .org-event-role-table_scroll {
+        overflow-x: auto;
+        border: 1px solid var(--ColorVeryLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .org-event-role-table_grid {
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 100%;
+        font-size: 13px;
+
+        th,
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--ColorVeryLightGray);
+            border-right: 1px solid var(--ColorVeryLightGray);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        tr:last-child > * {
+            border-bottom: none;
+        }
+
+        tr > *:last-child {
+            border-right: none;
+        }
+
+        thead th {
+            background-color: var(--ColorVeryLightGray);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+    }
+
+    .org-event-role-table_corner,
+    .org-event-role-table_person {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.12);
+    }
+
+    .org-event-role-table_corner {
+        z-index: 2;
+        vertical-align: bottom;
+        color: var(--ColorGray);
+    }
+
+    .org-event-role-table_script {
+        text-align: center;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ColorGray);
+    }
+
+    .org-event-role-table_role {
+        min-width: 110px;
+
+        &--empty {
+            color: var(--ColorGray);
+        }
+    }
+
+    .org-event-role-table_role-empty {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--ColorStatusWarning);
+    }
+
+    .org-event-role-table_person {
+        background-color: var(--ColorWhite);
+        font-weight: 600;
+        white-space: nowrap;
+
+        span {
+            vertical-align: middle;
+        }
+    }
+
+    .org-event-role-table_avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+        border-radius: 50%;
+        object-fit: cover;
+        vertical-align: middle;
+
+        &--placeholder {
+            background-color: var(--ColorLightGray);
+            font-size: 10px;
+            font-weight: 700;
+        }
+    }
+
+    // Eigene Zeile hervorheben
+    .org-event-role-table_row--me {
+        > td,
+        > th {
+            background-color: var(--ColorPrimaryLight);
+        }
+    }
+
+    .org-event-role-table_cell {
+        min-width: 110px;
+    }
+
+    .org-event-role-table_slot {
+        display: flex;
+        flex-direction: column;
+        width: max-content;
+        margin-bottom: 4px;
+        padding: 3px 8px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+        line-height: 1.3;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .org-event-role-table_slot-day {
+        font-weight: 700;
+    }
+
+    .org-event-role-table_slot-time {
+        white-space: nowrap;
+    }
+}

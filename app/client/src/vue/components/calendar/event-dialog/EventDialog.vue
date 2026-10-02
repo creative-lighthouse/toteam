@@ -43,6 +43,8 @@
         @show-status="({ text, type }) => showStatusMessage(text, type)"
       />
 
+      <EventRoleCastingSection :event="event" :can-manage-content="canManageContent" />
+
       <EventParticipantsList :event="event" />
     </div>
 
@@ -63,6 +65,7 @@ import EventInfo from './EventInfo.vue'
 import EventParticipationForm from './EventParticipationForm.vue'
 import EventMealsSection from './EventMealsSection.vue'
 import EventAgendaSection from './EventAgendaSection.vue'
+import EventRoleCastingSection from './EventRoleCastingSection.vue'
 import EventParticipantsList from './EventParticipantsList.vue'
 import EventAdminSection from './EventAdminSection.vue'
 

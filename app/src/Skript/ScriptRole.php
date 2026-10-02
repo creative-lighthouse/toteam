@@ -17,6 +17,7 @@ use SilverStripe\Security\Member;
  * @property int $ScriptID
  * @method \App\Skript\Script Script()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] Members()
+ * @method \SilverStripe\ORM\DataList|\App\Skript\ScriptRoleAssignment[] Assignments()
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -35,8 +36,17 @@ class ScriptRole extends DataObject
         "Script" => Script::class,
     ];
 
+    private static $has_many = [
+        // Rollenzuteilungen pro Event und Tag (siehe ScriptRoleAssignment)
+        "Assignments" => ScriptRoleAssignment::class . '.Role',
+    ];
+
     private static $many_many = [
         "Members" => Member::class,
+    ];
+
+    private static $cascade_deletes = [
+        "Assignments",
     ];
 
     private static $default_sort = "SortOrder ASC";

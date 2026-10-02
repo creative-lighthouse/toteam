@@ -111,6 +111,8 @@
 
                     <AppToggle v-model="appt.enableMeals" label="Mahlzeiten" />
                     <AppToggle v-model="appt.enableAgenda" label="Tagesordnung" />
+                    <!-- Rollen werden pro Event zugeteilt — ohne Event gibt es keinen Rollenplan -->
+                    <AppToggle v-if="appt.eventId" v-model="appt.enableRoleCasting" label="Rollenplan" />
 
                     <div v-if="apptError" class="form-error">{{ apptError }}</div>
                 </template>
@@ -259,6 +261,8 @@ const modal = ref(null)
 const activeTab = ref('absence')
 const editMode = ref(null) // null | 'absence' | 'appointment' | 'poll'
 const editId = ref(null)
+// Von der Event-Seite geöffnet (openForEvent): nur der Termin-Tab
+const forEvent = ref(false)
 const orgsStore = useOrganizationsStore()
 const eventsStore = useEventsStore()
 const apptInviteePickerRef = ref(null)
@@ -275,7 +279,7 @@ const ALL_TABS = [
 // Tabs nur beim Anlegen anzeigen — beim Bearbeiten ist ohnehin nur der
 // jeweilige Modus relevant, und AppModal blendet die Tableiste bei nur
 // einem Eintrag automatisch aus.
-const visibleTabs = computed(() => (editMode.value ? [] : ALL_TABS))
+const visibleTabs = computed(() => (editMode.value || forEvent.value ? [] : ALL_TABS))
 
 const memberOrgs = computed(() =>
   orgsStore.organizations.filter(o => o.MembershipStatus === 'member')
@@ -439,6 +443,7 @@ function resetAppt(date = '') {
     invitedMemberIds: [],
     enableMeals: true,
     enableAgenda: true,
+    enableRoleCasting: false,
   }
 }
 
@@ -467,6 +472,7 @@ async function submitAppointment() {
       invitedMemberIds: appt.value.invitedMemberIds,
       enableMeals: appt.value.enableMeals,
       enableAgenda: appt.value.enableAgenda,
+      enableRoleCasting: !!appt.value.eventId && appt.value.enableRoleCasting,
     }
     savedThisSession.value = true
     if (editMode.value === 'appointment') {
@@ -609,6 +615,7 @@ async function open(preselectedDate = null) {
 
   editMode.value = null
   editId.value = null
+  forEvent.value = false
   absenceError.value = ''
   apptError.value = ''
   pollError.value = ''
@@ -625,6 +632,23 @@ async function open(preselectedDate = null) {
     poll.value.organizationIds = [managedOrgs.value[0].ID]
   }
   modal.value?.open()
+}
+
+/**
+ * Termin direkt für ein Event (OrgEvent) anlegen, z.B. von der Event-Seite:
+ * Organisation, Event und Ort sind vorausgewählt, Startdatum ist der Beginn des
+ * Events (oder heute, wenn der schon vorbei ist). Mit roleCasting ist der
+ * Rollenplan direkt eingeschaltet (z.B. wenn das Event Skripte hat).
+ */
+async function openForEvent(orgEvent, { roleCasting = false } = {}) {
+  const today = new Date().toISOString().slice(0, 10)
+  await open(orgEvent.RangeStart && orgEvent.RangeStart >= today ? orgEvent.RangeStart : today)
+  forEvent.value = true
+  activeTab.value = 'appointment'
+  appt.value.organizationIds = [orgEvent.OrganizationID]
+  appt.value.eventId = orgEvent.ID
+  appt.value.location = orgEvent.Location ?? ''
+  appt.value.enableRoleCasting = roleCasting
 }
 
 async function openEditAbsence(data) {
@@ -674,6 +698,7 @@ async function openEditAppointment(event) {
     invitedMemberIds: (event.InvitedMemberIDs ?? []).map(Number),
     enableMeals: event.EnableMeals ?? true,
     enableAgenda: event.EnableAgenda ?? true,
+    enableRoleCasting: event.EnableRoleCasting ?? false,
   }
 
   modal.value?.open()
@@ -716,5 +741,5 @@ function close() {
   savedThisSession.value = false
 }
 
-defineExpose({ open, openEditAbsence, openEditAppointment, openEditPoll })
+defineExpose({ open, openForEvent, openEditAbsence, openEditAppointment, openEditPoll })
 </script>
