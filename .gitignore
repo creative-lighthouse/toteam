@@ -17,3 +17,6 @@ public/assets/
 .vscode/
 
 firebase-service-account.json
+
+# Selbst gehostete Kartendaten (lädt der UpdateMapTilesJob, siehe CMS > Kartendaten)
+/public/tiles/
