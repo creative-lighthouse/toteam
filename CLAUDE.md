@@ -93,6 +93,15 @@ There are no frontend or backend test suites configured.
 
 **Data flow:** Vue component → Pinia action → `utils/api.js` helper → fetch with session cookie → `Api*Controller` (extends `ApiController`) → JSON response → Pinia store → reactive component update
 
+### Event-Karte & Job-Queue
+
+The event page (`views/EventDetail.vue` → `components/events/OrgEventMap.vue`) shows a MapLibre map from **self-hosted** vector tiles — no third-party requests from the browser (GDPR), so no consent dialog.
+- `OrgEvent::geocode()` (on write, only when the address changed) fills `Latitude`/`Longitude` server-side via Nominatim (`App\Maps\Geocoder`, max 1 req/s). `GeocodeOrgEventsTask` backfills old events.
+- Tiles: a Protomaps/OSM extract as one `.pmtiles` file plus fonts/sprites in `public/tiles/` (gitignored, served directly by the webserver via range requests). `UpdateMapTilesJob` (silverstripe-queuedjobs) downloads it; it runs the download as a detached `setsid` process and polls it in short steps, because the queue restarts jobs whose step count stalls.
+- CMS section "Kartendaten" (`Admins/MapTilesAdmin` + singleton `Maps/MapTilesSettings`): status, bbox/zoom/interval, "jetzt aktualisieren". Defaults in `app/_config/maps.yml` (live: Germany, dev: Schleswig-Holstein + Hamburg). The job reschedules itself after each run.
+- The API only sends `event.Map` if tiles exist and the event lies inside the downloaded bbox.
+- The queue needs a runner: on servers a cron `* * * * * php vendor/bin/sake tasks:ProcessJobQueueTask`; in DDEV the `job-queue` daemon in `.ddev/config.queuedjobs.yaml`. Requires `exec`/`shell_exec`, the `posix` extension, `curl`, `tar` and `setsid` on the server.
+
 ### Firebase
 
 Push notifications use Firebase Cloud Messaging. Config keys come from `.env` (`VITE_FIREBASE_*`). A service worker handles background messages.
@@ -106,5 +115,6 @@ Copy `.env.example` to `.env`. Key variables:
 - `VITE_MANIFEST_PATH`, `VITE_OUTPUT_DIR` — Vite build integration paths for SilverStripe templates
 - `VITE_FIREBASE_*` — Firebase project config (API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID, MEASUREMENT_ID, VAPID_KEY)
 - `MAILER_DSN` — outgoing mail transport
+- `NOMINATIM_EMAIL` — optional contact address sent with geocoding requests
 
 There is no `VITE_API_BASE` variable — the frontend API base path (`/api/v1`) is hardcoded in `app/client/src/vue/utils/api.js`.

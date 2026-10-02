@@ -1,0 +1,20 @@
+---
+Name: toteam-maps
+---
+# Selbst gehostete Kartendaten (Protomaps/OpenStreetMap) für die Karte auf der Event-Seite.
+# Bereich und Zoom lassen sich im CMS unter "Kartendaten" überschreiben; das hier sind die
+# Vorgaben, wenn dort nichts eingetragen ist.
+App\Maps\MapTilesSettings:
+  # min_lon,min_lat,max_lon,max_lat — Deutschland (ca. 7 GB)
+  default_bbox: '5.87,47.27,15.04,55.06'
+  default_max_zoom: 15
+
+---
+Name: toteam-maps-dev
+After: toteam-maps
+Only:
+  environment: dev
+---
+# Lokal reicht ein kleiner Ausschnitt: Schleswig-Holstein und Hamburg (ca. 400 MB)
+App\Maps\MapTilesSettings:
+  default_bbox: '7.8,53.35,11.35,55.1'

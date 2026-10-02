@@ -4,7 +4,11 @@ namespace App\Teams;
 
 use App\Calendar\Appointment;
 use App\Food\Food;
+use App\Maps\Geocoder;
+use App\Maps\MapTilesSettings;
+use Psr\Log\LoggerInterface;
 use SilverStripe\Assets\Image;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 use SilverStripe\View\Parsers\URLSegmentFilter;
@@ -38,6 +42,9 @@ use SilverStripe\View\Parsers\URLSegmentFilter;
  * @property ?string $Street
  * @property ?string $PostalCode
  * @property ?string $City
+ * @property float $Latitude
+ * @property float $Longitude
+ * @property ?string $GeocodedAddress
  * @property bool $IsPublic
  * @property ?string $PriceMode
  * @property int $OrganizationID
@@ -68,6 +75,11 @@ class OrgEvent extends DataObject
         "Street"     => "Varchar(255)",
         "PostalCode" => "Varchar(10)",
         "City"       => "Varchar(255)",
+        // Koordinaten für die Karte auf der Event-Seite — beim Speichern aus der Adresse
+        // ermittelt (siehe geocode()); GeocodedAddress merkt sich, für welche Adresse
+        "Latitude"        => "Decimal(9,6)",
+        "Longitude"       => "Decimal(9,6)",
+        "GeocodedAddress" => "Varchar(1023)",
         "IsPublic"  => "Boolean",
         // Fixed: ein Preis ohne Bezeichnung, Tiered: Preistabelle (z.B. Kinder/Erwachsene),
         // Free/Donation: kostenfrei bzw. gegen Spende, ohne Preise — alle nutzen Prices()
@@ -194,6 +206,63 @@ class OrgEvent extends DataObject
         if (!$this->URLSegment) {
             $this->URLSegment = $this->generateURLSegment();
         }
+        $this->geocode();
+    }
+
+    public function hasCoordinates(): bool
+    {
+        return (float) $this->Latitude !== 0.0 || (float) $this->Longitude !== 0.0;
+    }
+
+    /**
+     * Suchanfrage für den Geocoder: mit Straße strukturiert, sonst über den Namen des
+     * Veranstaltungsorts. Nur der Ort allein reicht nicht — ein Pin in der Stadtmitte
+     * würde einen falschen Treffpunkt suggerieren.
+     */
+    public function geocoderQuery(): ?array
+    {
+        if ($this->Street && ($this->PostalCode || $this->City)) {
+            return array_filter([
+                'street'     => $this->Street,
+                'postalcode' => $this->PostalCode,
+                'city'       => $this->City,
+            ]);
+        }
+        if ($this->Location && ($this->PostalCode || $this->City)) {
+            return ['q' => $this->Location . ', ' . trim($this->PostalCode . ' ' . $this->City)];
+        }
+        return null;
+    }
+
+    /**
+     * Koordinaten über Nominatim ermitteln, wenn sich die Adresse geändert hat. Läuft
+     * serverseitig (keine Nutzerdaten an Dritte). Ist der Dienst nicht erreichbar, wird
+     * trotzdem gespeichert und beim nächsten Speichern erneut versucht; eine nicht
+     * gefundene Adresse wird sich gemerkt und erst nach einer Änderung neu gesucht.
+     */
+    public function geocode(): void
+    {
+        $query = $this->geocoderQuery();
+        $key = $query ? implode(' | ', $query) : '';
+        if ($key === (string) $this->GeocodedAddress) {
+            return;
+        }
+        $result = null;
+        if ($query) {
+            try {
+                $result = Geocoder::singleton()->geocode($query);
+                // Mit Straße nichts gefunden — vielleicht kennt OSM den Ort beim Namen
+                if (!$result && $this->Location && isset($query['street'])) {
+                    $result = Geocoder::singleton()->geocode(['q' => $this->Location . ', ' . trim($this->PostalCode . ' ' . $this->City)]);
+                }
+            } catch (\Throwable $e) {
+                Injector::inst()->get(LoggerInterface::class)->warning('Geocoding für Event #' . $this->ID . ' fehlgeschlagen: ' . $e->getMessage());
+                return;
+            }
+        }
+        $this->Latitude = $result['lat'] ?? 0;
+        $this->Longitude = $result['lng'] ?? 0;
+        $this->GeocodedAddress = $key ?: null;
     }
 
     /** Vorhandene Events ohne URL-Segment beim dev/build nachziehen */
@@ -228,6 +297,12 @@ class OrgEvent extends DataObject
             'Street'        => $this->Street ?: null,
             'PostalCode'    => $this->PostalCode ?: null,
             'City'          => $this->City ?: null,
+            'Latitude'      => $this->hasCoordinates() ? (float) $this->Latitude : null,
+            'Longitude'     => $this->hasCoordinates() ? (float) $this->Longitude : null,
+            // Selbst gehostete Kartendaten (null, wenn keine vorhanden oder der Ort außerhalb liegt)
+            'Map'           => $this->hasCoordinates()
+                ? MapTilesSettings::current()->clientConfig((float) $this->Latitude, (float) $this->Longitude)
+                : null,
             'IsPublic'      => (bool) $this->IsPublic,
             'TypeID'        => (int) $this->TypeID ?: null,
             'TypeTitle'     => $type->exists() ? $type->Title : null,

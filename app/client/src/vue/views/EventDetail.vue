@@ -55,6 +55,16 @@
                 <dd>{{ fact.value }}</dd>
               </div>
             </dl>
+
+            <!-- Nur mit Koordinaten und wenn der Ort in den selbst gehosteten Kartendaten liegt -->
+            <OrgEventMap
+              v-if="event.Map"
+              :key="event.ID"
+              :latitude="event.Latitude"
+              :longitude="event.Longitude"
+              :config="event.Map"
+              :title="event.Location || event.Title"
+            />
           </div>
 
           <template v-if="event.PriceMode === 'Tiered' && event.Prices?.length">
@@ -118,6 +128,7 @@ import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 import AppPatternImage from '@components/ui/AppPatternImage.vue'
 import OrgEventAppointmentList from '@components/events/OrgEventAppointmentList.vue'
 import OrgEventFormModal from '@components/events/OrgEventFormModal.vue'
+import OrgEventMap from '@components/events/OrgEventMap.vue'
 import actionShare from '../../../icons/actions/action_share.svg'
 import actionEdit from '../../../icons/actions/action_edit.svg'
 import actionTrash from '../../../icons/actions/action_trash.svg'
