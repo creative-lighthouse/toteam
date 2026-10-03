@@ -3,6 +3,7 @@
 namespace App\Money;
 
 use Override;
+use App\Teams\OrgEvent;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use SilverStripe\ORM\DataObject;
@@ -23,7 +24,9 @@ use SilverStripe\Security\PermissionProvider;
  * @property bool $RequiresReceiptWithdrawal
  * @property float $CachedCurrentBalance
  * @property int $ParentID
+ * @property int $EventID
  * @method \App\Teams\Organization Parent()
+ * @method \App\Teams\OrgEvent Event()
  * @method \SilverStripe\ORM\DataList|\App\Money\MoneyHistory[] MoneyHistory()
  * @method \SilverStripe\ORM\DataList|\App\Money\MoneyBudget[] MoneyBudget()
  * @mixin \SilverStripe\Assets\AssetControlExtension
@@ -49,6 +52,8 @@ class MoneyAccount extends DataObject implements PermissionProvider
 
     private static $has_one = [
         "Parent" => Organization::class,
+        // Optionales Event der Organisation, für das die Kasse geführt wird (z.B. "Halloweenhaus 2026")
+        "Event" => OrgEvent::class,
     ];
 
     private static $has_many = [
@@ -67,6 +72,7 @@ class MoneyAccount extends DataObject implements PermissionProvider
         "IBAN" => "IBAN",
         "SortOrder" => "Sortierreihenfolge",
         "Parent" => "Organisation",
+        "Event" => "Event",
         "StartingAmount" => "Startbetrag",
         "RequiresApproval" => "Änderungen müssen genehmigt werden",
         "RequiresReceiptDeposit" => "Beleg für Einnahmen erforderlich",
@@ -90,6 +96,7 @@ class MoneyAccount extends DataObject implements PermissionProvider
         'RequiresApproval',
         'RequiresReceiptDeposit',
         'RequiresReceiptWithdrawal',
+        'Event',
     ];
 
     private static $history_field_labels = [

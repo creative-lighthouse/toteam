@@ -8,6 +8,12 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+
+    > li {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
 }
 
 .org-event-appointment-list_item--past {

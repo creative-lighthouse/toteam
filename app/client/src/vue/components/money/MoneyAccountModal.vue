@@ -17,6 +17,15 @@
         <input id="account-title" v-model="form.Title" type="text" placeholder="z.B. Vereinskasse" required />
       </label>
 
+      <!-- Optional: Kasse für ein Event der Organisation (erscheint dann auf der Event-Seite) -->
+      <label v-if="orgEvents.length" class="field">
+        Event
+        <select v-model="form.EventID">
+          <option :value="null">— kein Event —</option>
+          <option v-for="e in orgEvents" :key="e.ID" :value="e.ID">{{ e.Title }}</option>
+        </select>
+      </label>
+
       <label class="field">
         IBAN
         <input id="account-iban" v-model="form.IBAN" type="text" placeholder="DE00 0000 0000 0000 0000 00" />
@@ -52,6 +61,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useMoneyStore } from '@stores/money'
+import { useOrgEventsStore } from '@stores/orgEvents'
 import AppButton from '@components/ui/AppButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppToggle from '@components/ui/AppToggle.vue'
@@ -64,6 +74,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['saved'])
 const store = useMoneyStore()
+const orgEventsStore = useOrgEventsStore()
 
 const modal = ref(null)
 const saving = ref(false)
@@ -89,9 +100,19 @@ const defaultForm = () => ({
   RequiresApproval: false,
   RequiresReceiptDeposit: false,
   RequiresReceiptWithdrawal: false,
+  EventID: null,
 })
 
 const form = reactive(defaultForm())
+
+// Events der Organisation, zu der die Kasse gehört (bzw. beim Anlegen gewählt ist)
+const orgId = computed(() => (props.mode === 'create' ? parseInt(form.OrganizationID) : props.account?.Organization?.ID))
+const orgEvents = computed(() => orgEventsStore.sortedEvents.filter(e => e.OrganizationID === orgId.value))
+
+// Anderes Event bei Wechsel der Organisation passt nicht mehr
+watch(orgId, () => {
+  if (form.EventID && !orgEvents.value.some(e => e.ID === form.EventID)) form.EventID = null
+})
 
 const serverAmountError = ref(null)
 const clientStartingAmountError = computed(() => amountFieldError(form.StartingAmount))
@@ -115,6 +136,7 @@ function fillFromAccount(account) {
   form.RequiresApproval = account.RequiresApproval
   form.RequiresReceiptDeposit = account.RequiresReceiptDeposit
   form.RequiresReceiptWithdrawal = account.RequiresReceiptWithdrawal
+  form.EventID = account.EventID ?? null
 }
 
 watch(() => props.account, fillFromAccount)
@@ -124,6 +146,7 @@ function open() {
   if (props.mode === 'edit') fillFromAccount(props.account)
   error.value = null
   serverAmountError.value = null
+  if (!orgEventsStore.events.length) orgEventsStore.fetchEvents()
   modal.value?.open()
 }
 
@@ -150,6 +173,7 @@ async function submit() {
     RequiresApproval: form.RequiresApproval,
     RequiresReceiptDeposit: form.RequiresReceiptDeposit,
     RequiresReceiptWithdrawal: form.RequiresReceiptWithdrawal,
+    EventID: form.EventID || 0,
   }
   if (props.mode === 'create') {
     payload.OrganizationID = parseInt(form.OrganizationID)

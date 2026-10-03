@@ -19,22 +19,47 @@
         color: var(--ColorStatusWarning);
     }
 
+    // Einspaltig schmal; auf dem Desktop (sobald es neben den Eckdaten etwas gibt) breit
+    // und zweispaltig im Masonry-Prinzip: 1px hohe Zeilen, jede Karte bekommt per
+    // useMasonry() so viele Zeilen wie sie hoch ist (plus Abstand) und rutscht dank
+    // "dense" in die kürzere Spalte
+    .event-page_layout {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+        max-width: var(--WidthMedium);
+        margin: 0 auto;
+
+        &--split {
+            @include media(desktop) {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-auto-rows: 1px;
+                grid-auto-flow: row dense;
+                align-items: start;
+                column-gap: 25px;
+                row-gap: 0;
+                max-width: var(--WidthWide);
+            }
+        }
+    }
+
+    // "Hinzufügen" unter beiden Spalten
+    .event-page_add {
+        grid-column: 1 / -1;
+    }
+
     .event-page_card,
     .event-page_section,
     .event-page_login {
         width: 100%;
-        max-width: var(--WidthMedium);
-        margin: 0 auto;
+        margin: 0;
         padding: 20px;
         background-color: var(--ColorWhite);
         border-radius: var(--BorderRadiusMedium);
         box-shadow: var(--BoxShadowLight);
         box-sizing: border-box;
-    }
-
-    .event-page_section,
-    .event-page_login {
-        margin-top: 20px;
     }
 
     .event-page_card {

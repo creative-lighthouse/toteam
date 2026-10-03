@@ -43,20 +43,7 @@
         <ul class="infobox_list infobox_list--events">
           <li v-for="event in todaysEvents" :key="event.ID">
             <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
-            <ul v-if="event.Meals?.length" class="event-meals-list">
-              <li v-for="meal in event.Meals" :key="meal.ID">
-                <router-link :to="`/food/meal/${meal.ID}`" class="event-meal-link">
-                  <span class="event-meal-time">{{ meal.RenderTime }} Uhr</span>
-                  <span class="event-meal-name">{{ meal.Title }}</span>
-                  <span class="event-meal-response" :class="mealResponseClass(meal.UserResponse)">
-                    {{ mealResponseLabel(meal.UserResponse) }}
-                  </span>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:.4;flex-shrink:0">
-                    <path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/>
-                  </svg>
-                </router-link>
-              </li>
-            </ul>
+            <EventMealsList :meals="event.Meals ?? []" />
           </li>
         </ul>
         <div class="section_infobox_footer">
@@ -187,6 +174,7 @@ import { useDashboardStore } from '@stores/dashboard'
 import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/calendar/EventCard.vue'
+import EventMealsList from '@components/calendar/EventMealsList.vue'
 import TaskCard from '@components/tasks/TaskCard.vue'
 import AnnouncementCard from '@components/announcements/AnnouncementCard.vue'
 import AppButton from '@components/ui/AppButton.vue'
@@ -230,18 +218,6 @@ const pendingFeedback = computed(() =>
 const spinning = ref(false)
 const isLoading = computed(() => dashboardStore.loading || eventsStore.loading)
 const hasError = computed(() => !!(dashboardStore.error || eventsStore.error))
-
-function mealResponseClass(response) {
-  if (response === 'Accept')  return 'response--accept'
-  if (response === 'Decline') return 'response--decline'
-  return 'response--pending'
-}
-
-function mealResponseLabel(response) {
-  if (response === 'Accept')  return '✓ Zugesagt'
-  if (response === 'Decline') return '✗ Abgesagt'
-  return '?'
-}
 
 function formatDate(dateString) {
   if (!dateString) return ''

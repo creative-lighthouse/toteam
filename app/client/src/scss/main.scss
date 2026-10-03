@@ -68,6 +68,7 @@
 
 @use "pages/MapViewPage.scss";
 @use "components/calendar/EventCard.scss";
+@use "components/calendar/EventMealsList.scss";
 @use "components/announcements/AnnouncementCard.scss";
 @use "components/organizations/OrganizationCard.scss";
 @use "components/calendar/ParticipantCard.scss";
@@ -100,7 +101,9 @@
 @use "components/events/OrgEventCard.scss";
 @use "components/events/OrgEventFormModal.scss";
 @use "components/events/OrgEventMap.scss";
-@use "components/events/OrgEventRoleCasting.scss";
+@use "components/events/OrgEventMoney.scss";
+@use "components/events/OrgEventMoneyAddModal.scss";
+@use "components/events/OrgEventRoleAssignModal.scss";
 @use "components/events/OrgEventRoleTable.scss";
 @use "components/events/OrgEventScriptAddModal.scss";
 @use "components/events/OrgEventScripts.scss";

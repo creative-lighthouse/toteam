@@ -1,5 +1,5 @@
 /**
- * Hilfen für die Rollenzuteilung eines Events (OrgEventRoleCasting, OrgEventRoleTable).
+ * Hilfen für die Rollenzuteilung eines Events (OrgEventRoleTable, OrgEventRoleAssignModal).
  */
 
 /**
@@ -28,4 +28,34 @@ export function formatCastingDay(date) {
 /** "18:00 – 20:00" bzw. "ganztägig" */
 export function formatCastingSpan(assignment) {
   return assignment.TimeStart ? `${assignment.TimeStart} – ${assignment.TimeEnd}` : 'ganztägig'
+}
+
+const toMinutes = t => parseInt(t.slice(0, 2)) * 60 + parseInt(t.slice(3, 5))
+
+/** Ob sich zwei Zeitspannen überschneiden — ganztägig (ohne Uhrzeit) überschneidet sich mit allem */
+export function castingOverlaps(a, b) {
+  if (!a.TimeStart || !b.TimeStart) return true
+  return toMinutes(a.TimeStart) < toMinutes(b.TimeEnd) && toMinutes(b.TimeStart) < toMinutes(a.TimeEnd)
+}
+
+/** Wer am Tag zugesagt hat: Map MemberID → null (ganzer Tag) oder [{ TimeStart, TimeEnd }] */
+export function castingAvailability(day) {
+  return new Map((day?.Available ?? []).map(a => [a.MemberID, a.Windows]))
+}
+
+/**
+ * Hinweise an Zuteilungen eines Tages: Person hat nicht (mehr) zugesagt oder
+ * überschneidet sich mit einer anderen Zuteilung (nur aus Altdaten möglich).
+ * @returns {Object<number, string>} Zuteilungs-ID → Hinweis
+ */
+export function castingWarnings(dayAssignments, availability, roleTitles) {
+  const result = {}
+  dayAssignments.forEach(a => {
+    const notes = []
+    if (a.Member && !availability.has(a.Member.ID)) notes.push('Hat für diesen Tag nicht (mehr) zugesagt')
+    const others = dayAssignments.filter(b => b.ID !== a.ID && b.Member?.ID === a.Member?.ID && castingOverlaps(a, b))
+    if (others.length) notes.push(`Überschneidung mit: ${[...new Set(others.map(b => roleTitles[b.RoleID]))].join(', ')}`)
+    if (notes.length) result[a.ID] = notes.join(' · ')
+  })
+  return result
 }

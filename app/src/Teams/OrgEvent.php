@@ -6,6 +6,7 @@ use App\Calendar\Appointment;
 use App\Food\Food;
 use App\Maps\Geocoder;
 use App\Maps\MapTilesSettings;
+use App\Money\MoneyAccount;
 use App\Skript\Script;
 use App\Skript\ScriptRoleAssignment;
 use Psr\Log\LoggerInterface;
@@ -62,6 +63,7 @@ use SilverStripe\View\Parsers\URLSegmentFilter;
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Assets\Image[] Images()
  * @method \SilverStripe\ORM\ManyManyList|\App\Skript\Script[] Scripts()
  * @method \SilverStripe\ORM\DataList|\App\Skript\ScriptRoleAssignment[] RoleAssignments()
+ * @method \SilverStripe\ORM\DataList|\App\Money\MoneyAccount[] MoneyAccounts()
  */
 class OrgEvent extends DataObject
 {
@@ -113,6 +115,8 @@ class OrgEvent extends DataObject
         "Prices"       => OrgEventPrice::class . '.Event',
         // Rollenzuteilung der Skript-Rollen pro Tag (siehe ScriptRoleAssignment)
         "RoleAssignments" => ScriptRoleAssignment::class . '.Event',
+        // Kassen, die für dieses Event geführt werden
+        "MoneyAccounts" => MoneyAccount::class . '.Event',
     ];
 
     private static $many_many = [
@@ -555,9 +559,26 @@ class OrgEvent extends DataObject
                 'Status'    => $appointment->Status,
                 'EventType' => $appointment->Type()->exists() ? $appointment->Type()->Title : null,
                 'UserResponse' => $participation ? $participation->Type : null,
+                'Meals'        => $appointment->EnableMeals ? $this->mealsToApi($appointment, $member) : [],
             ];
         }
         return $appointments;
+    }
+
+    /** Mahlzeiten eines Termins mit der Rückmeldung des Mitglieds (wie auf dem Dashboard) */
+    private function mealsToApi(Appointment $appointment, Member $member): array
+    {
+        $meals = [];
+        foreach ($appointment->Meals() as $meal) {
+            $eater = $meal->Eaters()->filter('MemberID', $member->ID)->first();
+            $meals[] = [
+                'ID'           => $meal->ID,
+                'Title'        => $meal->Title,
+                'RenderTime'   => $meal->RenderTime(),
+                'UserResponse' => $eater ? $eater->Type : null,
+            ];
+        }
+        return $meals;
     }
 
     protected function onBeforeDelete()
@@ -575,6 +596,11 @@ class OrgEvent extends DataObject
         $this->AgeGroups()->removeAll();
         // Die Skripte selbst bleiben erhalten, nur die Verknüpfung fällt weg
         $this->Scripts()->removeAll();
+        // Ebenso die Kassen samt Buchungen
+        foreach ($this->MoneyAccounts() as $account) {
+            $account->EventID = 0;
+            $account->write();
+        }
         // Dateien sind versioniert: doArchive() entfernt sie aus Entwurf und Live
         if ($this->ImageID && $this->Image()->exists()) {
             $this->Image()->deleteFile();

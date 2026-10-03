@@ -1,12 +1,14 @@
 <template>
-  <!-- Die Termine eines Events, chronologisch, als kompakte Karten wie auf dem Dashboard; ein Klick öffnet den Termin im Kalender -->
+  <!-- Die Termine eines Events, chronologisch, als kompakte Karten wie auf dem Dashboard — darunter
+       ihre Mahlzeiten; ein Klick auf den Termin meldet "open" (die Event-Seite zeigt dann den Termin-Dialog) -->
   <ul v-if="appointments.length" class="org-event-appointment-list">
     <li
       v-for="appt in cards"
       :key="appt.ID"
       :class="{ 'org-event-appointment-list_item--past': isPast(appt) }"
     >
-      <EventCard :event="appt" :date-display="formatDate(appt.DateStart)" compact hide-org-logo @click="openAppointment" />
+      <EventCard :event="appt" :date-display="formatDate(appt.DateStart)" compact hide-org-logo @click="(appt, el) => emit('open', appt, el)" />
+      <EventMealsList :meals="appt.Meals ?? []" />
     </li>
   </ul>
   <p v-else class="org-event-appointment-list_empty">Diesem Event sind noch keine Termine zugeordnet.</p>
@@ -14,15 +16,16 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import EventCard from '@components/calendar/EventCard.vue'
+import EventMealsList from '@components/calendar/EventMealsList.vue'
 
 const props = defineProps({
   // aus GET /calendar/orgEvent/{id} (OrgEvent::appointmentsToApi())
   appointments: { type: Array, default: () => [] },
 })
 
-const router = useRouter()
+// (Termin, Karten-Element) — das Element, damit die Karte ins Modal morphen kann
+const emit = defineEmits(['open'])
 
 // EventCard erwartet die Rückmeldung als UserParticipation.Type (wie in der Kalender-API)
 const cards = computed(() => props.appointments.map(appt => ({
@@ -49,7 +52,4 @@ function formatDate(dateString) {
   }).format(date)
 }
 
-function openAppointment(appt) {
-  router.push({ name: 'Calendar', query: { date: appt.DateStart, eventID: appt.ID } })
-}
 </script>
