@@ -302,6 +302,31 @@ class FoodApiController extends ApiController
         }
     }
 
+    /**
+     * Änderungsverlauf einer Mahlzeit inkl. Essens-Zu-/Absagen und Bestellungen.
+     * GET /api/v1/food/mealHistory/:id?before=<EntryID>&limit=20
+     */
+    public function mealHistory(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $meal = Meal::get()->byID((int) $request->param('ID'));
+        if (!$meal || !$meal->exists()) {
+            return $this->errorResponse('Mahlzeit nicht gefunden', 404);
+        }
+
+        $appointment = $meal->Parent();
+        $mealOrgIDs  = $appointment && $appointment->exists() ? $appointment->Organisations()->column('ID') : [];
+        if (empty(array_intersect($mealOrgIDs, $member->getOrganizationIDs()))) {
+            return $this->errorResponse('Zugriff verweigert', 403);
+        }
+
+        return $this->historyResponse($meal, $request);
+    }
+
     public function mealProduct(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
