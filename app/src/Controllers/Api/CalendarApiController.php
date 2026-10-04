@@ -13,9 +13,15 @@ use App\Food\MealEater;
 use App\Food\MealProductOrder;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
+use App\Skript\ScriptRoleAssignment;
 use App\Teams\OrgEvent;
+use App\Teams\OrgEventAgeGroup;
+use App\Teams\OrgEventInterest;
+use App\Teams\OrgEventType;
 use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
+use SilverStripe\Assets\Image;
+use SilverStripe\Assets\Upload;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Security\Member;
@@ -26,6 +32,8 @@ use SilverStripe\Security\Member;
  */
 class CalendarApiController extends ApiController
 {
+    use AttachmentUploads;
+
     private static $url_segment = 'api/v1/calendar';
 
     private static $allowed_actions = [
@@ -41,6 +49,12 @@ class CalendarApiController extends ApiController
         'appointmentTypes',
         'appointmentHistory',
         'orgEvents',
+        'orgEvent',
+        'orgEventOptions',
+        'orgEventImage',
+        'orgEventGallery',
+        'orgEventInterest',
+        'myOrgEvents',
         'meal',
         'agendaPoint',
         'members',
@@ -251,6 +265,9 @@ class CalendarApiController extends ApiController
                 ] : null,
                 'EnableMeals'   => (bool)$appointment->EnableMeals,
                 'EnableAgenda'  => (bool)$appointment->EnableAgenda,
+                'EnableRoleCasting' => (bool)$appointment->EnableRoleCasting,
+                'EventURLSegment'   => $appointment->EventID && $appointment->Event()->exists() ? $appointment->Event()->URLSegment : null,
+                'RoleAssignments'   => $this->roleAssignmentsForAppointment($appointment),
                 'Meals'         => $meals,
                 'AgendaPoints'  => $agendaPoints,
                 'Participations' => $participations,
@@ -357,6 +374,8 @@ class CalendarApiController extends ApiController
                 ] : null,
                 'EnableMeals'   => false,
                 'EnableAgenda'  => false,
+                'EnableRoleCasting' => false,
+                'RoleAssignments'   => [],
                 'Meals'         => [],
                 'AgendaPoints'  => [],
                 'Participations' => $optionParticipations,
@@ -961,6 +980,9 @@ class CalendarApiController extends ApiController
             if (array_key_exists('enableAgenda', $body)) {
                 $appt->EnableAgenda = (bool) $body['enableAgenda'];
             }
+            if (array_key_exists('enableRoleCasting', $body)) {
+                $appt->EnableRoleCasting = (bool) $body['enableRoleCasting'];
+            }
             $appt->write();
             $newOrgIDs = array_map('intval', $body['organizationIds'] ?? []);
             if (!empty($newOrgIDs)) {
@@ -1040,6 +1062,9 @@ class CalendarApiController extends ApiController
             $appt->TypeID = (int) $body['typeId'];
         }
         $appt->EventID = $this->resolveEventID($body['eventId'] ?? null, $orgIDs);
+        $appt->EnableMeals = !array_key_exists('enableMeals', $body) || !empty($body['enableMeals']);
+        $appt->EnableAgenda = !array_key_exists('enableAgenda', $body) || !empty($body['enableAgenda']);
+        $appt->EnableRoleCasting = !empty($body['enableRoleCasting']);
 
         $appt->write();
         $appt->Organisations()->addMany($orgIDs);
@@ -1442,6 +1467,33 @@ class CalendarApiController extends ApiController
      * GET /api/v1/calendar/appointmentTypes
      */
     /**
+     * Rollenplan eines Termins: die Rollenzuteilungen seines Events an den Tagen des Termins
+     * (leer, wenn der Rollenplan aus ist oder der Termin zu keinem Event gehört)
+     */
+    private function roleAssignmentsForAppointment(Appointment $appointment): array
+    {
+        if (!$appointment->EnableRoleCasting || !$appointment->EventID) {
+            return [];
+        }
+        $assignments = ScriptRoleAssignment::get()->filter([
+            'EventID'          => $appointment->EventID,
+            'Date:GreaterThanOrEqual' => $appointment->DateStart,
+            'Date:LessThanOrEqual'    => $appointment->DateEnd ?: $appointment->DateStart,
+        ]);
+        $result = [];
+        foreach ($assignments as $assignment) {
+            $role = $assignment->Role();
+            $result[] = array_merge($assignment->toApi(), [
+                'RoleTitle'   => $role->Title,
+                'ScriptTitle' => $role->Script()->Title,
+            ]);
+        }
+        // Nach Rolle, dann Uhrzeit (ganztägig zuerst)
+        usort($result, fn ($a, $b) => [$a['Date'], $a['RoleTitle'], $a['TimeStart'] ?? ''] <=> [$b['Date'], $b['RoleTitle'], $b['TimeStart'] ?? '']);
+        return $result;
+    }
+
+    /**
      * Event-ID aus dem Request übernehmen — nur wenn das Event zu einer der
      * Organisationen des Termins gehört, sonst 0 (kein Event).
      *
@@ -1460,7 +1512,7 @@ class CalendarApiController extends ApiController
     /**
      * Events der eigenen Organisationen (fürs Auswahlfeld beim Bearbeiten eines Termins)
      * GET  /api/v1/calendar/orgEvents
-     * POST /api/v1/calendar/orgEvents  Body: { title, organizationId } — braucht CALENDAR_MANAGE
+     * POST /api/v1/calendar/orgEvents  Body: { title, organizationId, …siehe OrgEvent::applyApiData() } — braucht CALENDAR_MANAGE
      */
     public function orgEvents(HTTPRequest $request): HTTPResponse
     {
@@ -1473,27 +1525,292 @@ class CalendarApiController extends ApiController
 
         if ($request->httpMethod() === 'POST') {
             $body  = json_decode($request->getBody(), true) ?? [];
-            $title = trim($body['title'] ?? '');
             $orgID = (int) ($body['organizationId'] ?? 0);
-            if ($title === '') {
-                return $this->errorResponse('Titel ist erforderlich', 400);
-            }
             $org = Organization::get()->byID($orgID);
             if (!$org || !in_array($orgID, $orgIDs) || !$member->hasOrgPermission($org, OrgPermissions::CALENDAR_MANAGE)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
-            $event = OrgEvent::create(['Title' => $title, 'OrganizationID' => $orgID]);
+            $event = OrgEvent::create(['OrganizationID' => $orgID]);
+            $error = $event->applyApiData(array_merge(['title' => ''], $body));
+            if ($error) {
+                return $this->errorResponse($error, 400);
+            }
             $event->write();
-            return $this->successResponse(['event' => $event->toApi()], 'Event angelegt');
+            return $this->successResponse(['event' => $event->toApiSummary($member)], 'Event angelegt');
         }
 
         $events = [];
         if (!empty($orgIDs)) {
             foreach (OrgEvent::get()->filter('OrganizationID', $orgIDs) as $event) {
-                $events[] = $event->toApi();
+                $events[] = $event->toApiSummary($member);
             }
         }
         return $this->jsonResponse(['events' => $events]);
+    }
+
+    /**
+     * Ein einzelnes Event — per ID oder URL-Segment (Event-Seite /app/events/{URLSegment})
+     * GET    /api/v1/calendar/orgEvent/{id|segment}  — auch ohne Anmeldung, wenn das Event öffentlich ist.
+     *        Mitglieder der Organisation bekommen zusätzlich die Termine (isInternal: true).
+     * PUT    /api/v1/calendar/orgEvent/{id}  Body: siehe OrgEvent::applyApiData() — braucht CALENDAR_MANAGE
+     * DELETE /api/v1/calendar/orgEvent/{id}  — braucht CALENDAR_MANAGE; Termine bleiben erhalten
+     */
+    public function orgEvent(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        $method = $request->httpMethod();
+        if (!$member && $method !== 'GET') {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $key = (string) $request->param('ID');
+        $event = ctype_digit($key)
+            ? OrgEvent::get()->byID((int) $key)
+            : ($key !== '' ? OrgEvent::get()->filter('URLSegment', $key)->first() : null);
+        // Nicht öffentliche Events gibt es für Außenstehende schlicht nicht
+        if (!$event || !$event->isViewableBy($member)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+
+        if ($method === 'PUT' || $method === 'DELETE') {
+            if (!$event->canBeManagedBy($member)) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+            if ($method === 'DELETE') {
+                $event->delete();
+                return $this->successResponse([], 'Event gelöscht');
+            }
+            $body  = json_decode($request->getBody(), true) ?? [];
+            $error = $event->applyApiData($body);
+            if ($error) {
+                return $this->errorResponse($error, 400);
+            }
+            $event->write();
+            return $this->successResponse(['event' => $event->toApiSummary($member)], 'Event gespeichert');
+        }
+
+        if (!$event->isInternalFor($member)) {
+            return $this->jsonResponse([
+                'isInternal' => false,
+                'event'      => array_merge($event->toApiPublic(), $event->interestToApi($member)),
+            ]);
+        }
+
+        return $this->jsonResponse([
+            'isInternal'   => true,
+            'event'        => $event->toApiSummary($member),
+            'appointments' => $event->appointmentsToApi($member),
+        ]);
+    }
+
+    /**
+     * "Interessiert" / "Ich bin dabei" setzen — jede angemeldete Person, die das Event sehen darf
+     * POST /api/v1/calendar/orgEventInterest/{id}  Body: { type: 'Interested' | 'Going' | null }
+     * (null entfernt die Markierung). Antwort: { InterestedCount, GoingCount, UserInterest }
+     */
+    public function orgEventInterest(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !$event->isViewableBy($member)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+
+        $body = json_decode($request->getBody() ?: '[]', true) ?? [];
+        $type = $body['type'] ?? null;
+        if ($type !== null && !in_array($type, [OrgEventInterest::TYPE_INTERESTED, OrgEventInterest::TYPE_GOING], true)) {
+            return $this->errorResponse('Ungültige Markierung', 400);
+        }
+
+        $interest = $event->Interests()->filter('MemberID', $member->ID)->first();
+        if ($type === null) {
+            $interest?->delete();
+        } else {
+            $interest ??= OrgEventInterest::create(['EventID' => $event->ID, 'MemberID' => $member->ID]);
+            $interest->Type = $type;
+            $interest->write();
+        }
+
+        return $this->successResponse($event->interestToApi($member), $type ? 'Markierung gespeichert' : 'Markierung entfernt');
+    }
+
+    /**
+     * Events, die man als "Interessiert" oder "Ich bin dabei" markiert hat (Dashboard, Profil)
+     * GET /api/v1/calendar/myOrgEvents — nach Beginn sortiert, ohne Datum am Ende.
+     * Mitglieder der Organisation bekommen die Summary, alle anderen die öffentlichen Daten.
+     */
+    public function myOrgEvents(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $events = [];
+        foreach (OrgEventInterest::get()->filter('MemberID', $member->ID) as $interest) {
+            $event = $interest->Event();
+            // Inzwischen nicht mehr öffentlich (oder gelöscht) — dann nicht anzeigen
+            if (!$event || !$event->exists() || !$event->isViewableBy($member)) {
+                continue;
+            }
+            $events[] = $event->isInternalFor($member)
+                ? $event->toApiSummary($member)
+                : array_merge($event->toApiPublic(), $event->interestToApi($member));
+        }
+        usort($events, fn ($a, $b) => [$a['RangeStart'] === null, $a['RangeStart'] ?? ''] <=> [$b['RangeStart'] === null, $b['RangeStart'] ?? '']);
+
+        return $this->jsonResponse(['events' => $events]);
+    }
+
+    /**
+     * Galerie eines Events (zusätzlich zum Hauptbild) — braucht CALENDAR_MANAGE
+     * POST   /api/v1/calendar/orgEventGallery/{id}            multipart: images[]
+     * DELETE /api/v1/calendar/orgEventGallery/{id}?image={ID}
+     */
+    public function orgEventGallery(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !$event->isInternalFor($member)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+        if (!$event->canBeManagedBy($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        if ($request->httpMethod() === 'DELETE') {
+            $image = $event->Images()->byID((int) $request->getVar('image'));
+            if (!$image) {
+                return $this->errorResponse('Bild nicht gefunden', 404);
+            }
+            $event->Images()->removeByID($image->ID);
+            $image->deleteFile();
+            $image->doArchive();
+            return $this->successResponse(['event' => $event->toApiSummary($member)], 'Bild entfernt');
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $errors = $this->attachUploadedFiles([$event], 'EventImages/' . $event->ID . '/Galerie');
+        if ($errors) {
+            return $this->jsonResponse([
+                'success' => false,
+                'error'   => implode(' ', $errors),
+                'data'    => ['event' => $event->toApiSummary($member)],
+            ], 400);
+        }
+        return $this->successResponse(['event' => $event->toApiSummary($member)], 'Bilder hochgeladen');
+    }
+
+    /**
+     * Auswahllisten fürs Event-Formular (im CMS gepflegt)
+     * GET /api/v1/calendar/orgEventOptions
+     */
+    public function orgEventOptions(HTTPRequest $request): HTTPResponse
+    {
+        if (!$this->requireAuth()) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        return $this->jsonResponse([
+            'types'     => array_map(fn ($type) => $type->toApi(), OrgEventType::get()->toArray()),
+            'ageGroups' => array_map(fn ($group) => $group->toApi(), OrgEventAgeGroup::get()->toArray()),
+        ]);
+    }
+
+    /**
+     * Bild eines Events — wird im Frontend im Format 16:9 zugeschnitten (ImageCropModal)
+     * POST   /api/v1/calendar/orgEventImage/{id}  multipart: image (JPEG) — braucht CALENDAR_MANAGE
+     * DELETE /api/v1/calendar/orgEventImage/{id}  — braucht CALENDAR_MANAGE
+     */
+    public function orgEventImage(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !in_array((int) $event->OrganizationID, array_map('intval', $member->getOrganizationIDs()), true)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+        if (!$event->canBeManagedBy($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $method = $request->httpMethod();
+        if ($method !== 'POST' && $method !== 'DELETE') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $file = null;
+        $mime = null;
+        if ($method === 'POST') {
+            $file = $_FILES['image'] ?? null;
+            if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+                return $this->errorResponse('Keine Datei hochgeladen');
+            }
+            if ($file['size'] > 2 * 1024 * 1024) {
+                return $this->errorResponse('Die Datei darf maximal 2 MB groß sein');
+            }
+            // Der Cropper liefert das Ergebnis immer als JPEG
+            $mime = mime_content_type($file['tmp_name']);
+            if ($mime !== 'image/jpeg') {
+                return $this->errorResponse('Nur JPEG wird akzeptiert');
+            }
+        }
+
+        $newImageID = 0;
+        if ($method === 'POST') {
+            $image  = Image::create();
+            $upload = Upload::create();
+            $upload->getValidator()->setAllowedExtensions(['jpg', 'jpeg']);
+            $upload->getValidator()->setAllowedMaxFileSize(2 * 1024 * 1024);
+
+            $result = $upload->loadIntoFile([
+                'name'     => 'Event.jpg',
+                'type'     => $mime,
+                'tmp_name' => $file['tmp_name'],
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => $file['size'],
+            ], $image, 'EventImages/' . $event->ID);
+
+            if (!$result) {
+                $errors = $upload->getErrors();
+                return $this->errorResponse(
+                    !empty($errors) ? implode(', ', $errors) : 'Bild konnte nicht gespeichert werden'
+                );
+            }
+
+            $image->write();
+            $image->publishSingle();
+            $newImageID = $image->ID;
+        }
+
+        // Altes Bild erst entfernen, wenn das neue sicher gespeichert ist
+        if ($event->ImageID && $event->Image()->exists()) {
+            $oldImage = $event->Image();
+            $oldImage->deleteFile();
+            $oldImage->doArchive();
+        }
+        $event->ImageID = $newImageID;
+        $event->write();
+        return $this->successResponse(
+            ['ImageURL' => $event->RenderImage(), 'event' => $event->toApiSummary($member)],
+            $method === 'POST' ? 'Bild gespeichert' : 'Bild entfernt'
+        );
     }
 
     public function appointmentTypes(HTTPRequest $request): HTTPResponse

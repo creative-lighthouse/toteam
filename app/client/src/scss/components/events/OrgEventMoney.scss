@@ -1,0 +1,62 @@
+@use "../../base/variables" as *;
+
+// Kassen-Karte der Event-Seite (OrgEventMoney.vue)
+.org-event-money {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .org-event-money_account {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 12px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+    }
+
+    .org-event-money_head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .icon-mask {
+            width: 18px;
+            height: 18px;
+        }
+    }
+
+    .org-event-money_title {
+        flex: 1;
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .org-event-money_balance {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+
+        &--negative {
+            color: var(--ColorStatusBad);
+        }
+    }
+
+    .org-event-money_budget {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .org-event-money_open {
+        align-self: flex-start;
+        margin-top: 4px;
+    }
+
+    .org-event-money_error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+}

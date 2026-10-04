@@ -80,6 +80,8 @@
                 </AppButton>
             </div>
 
+            <ProfileEventsCard />
+
             <ActiveSessionsCard />
         </div>
 
@@ -97,6 +99,7 @@ import { apiGet } from '@utils/api'
 import EditProfileModal from '@components/profile/EditProfileModal.vue'
 import QrCodeModal from '@components/ui/QrCodeModal.vue'
 import ActiveSessionsCard from '@components/profile/ActiveSessionsCard.vue'
+import ProfileEventsCard from '@components/profile/ProfileEventsCard.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'

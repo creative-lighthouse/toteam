@@ -282,57 +282,19 @@
         }
 
         // Refresh button row
-        // ── Meals list under event cards ──────────────────────────────────────
-
-        .event-meals-list {
+        // ── Deine anstehenden Events: OrgEventCards wie in der Events-Übersicht ──
+        .dashboard-org-events {
             list-style: none;
-            padding: 0 0 0 10px;
-            margin: 2px 0 0 0;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            text-align: left;
 
-            .event-meal-link {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 5px 8px;
-                border-radius: var(--BorderRadiusSmall);
-                text-decoration: none;
-                background: var(--ColorVeryLightGray);
-                border-left: 3px solid var(--ColorLightGray);
-                transition: border-color 0.15s;
-
-                &:hover { border-color: var(--ColorPrimary); }
-            }
-
-            .event-meal-time {
-                font-size: 0.75rem;
-                font-weight: 700;
-                color: var(--ColorTextSecondary);
-                white-space: nowrap;
-                flex-shrink: 0;
-            }
-
-            .event-meal-name {
-                font-size: 0.8rem;
-                font-weight: 600;
-                color: var(--ColorTextPrimary);
-                flex: 1;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-
-            .event-meal-response {
-                font-size: 0.7rem;
-                font-weight: 600;
-                white-space: nowrap;
-                flex-shrink: 0;
-
-                &.response--accept  { color: #10b981; }
-                &.response--decline { color: #ef4444; }
-                &.response--pending { color: var(--ColorTextSecondary); }
+            @include media(smartphone) {
+                grid-template-columns: minmax(0, 1fr);
             }
         }
 

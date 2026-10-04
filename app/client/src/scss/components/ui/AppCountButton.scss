@@ -1,0 +1,65 @@
+@use "../../base/variables" as *;
+
+// Button mit angeschlossenem Zähler (AppCountButton.vue): eine Pille aus Druckfläche
+// und Zähler mit gemeinsamem Rahmen; aktiv ist die Druckfläche gefüllt
+.app-count-button {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--ColorPrimary);
+    border-radius: var(--BorderRadiusLarge);
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: bold;
+
+    .app-count-button_action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border: none;
+        background-color: transparent;
+        color: var(--ColorPrimary);
+        font: inherit;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+
+        @include hover(':not(:disabled)') {
+            background-color: var(--ColorPrimaryLight);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: -4px;
+        }
+    }
+
+    .app-count-button_count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        padding: 0 10px;
+        border-left: 1px solid var(--ColorPrimary);
+        background-color: var(--ColorWhite);
+        color: var(--ColorPrimary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &--active .app-count-button_action {
+        background-color: var(--ColorPrimary);
+        color: var(--ColorWhite);
+
+        @include hover(':not(:disabled)') {
+            background-color: var(--ColorPrimaryDark);
+        }
+    }
+
+    &--disabled {
+        opacity: 0.6;
+
+        .app-count-button_action {
+            cursor: default;
+        }
+    }
+}

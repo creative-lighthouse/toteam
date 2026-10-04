@@ -2,6 +2,7 @@
 
 namespace App\Skript;
 
+use App\Teams\OrgEvent;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use SilverStripe\ORM\DataObject;
@@ -18,6 +19,7 @@ use SilverStripe\Security\PermissionProvider;
  * @method \App\Teams\Organization Organization()
  * @method \SilverStripe\ORM\DataList|\App\Skript\ScriptParagraph[] Paragraphs()
  * @method \SilverStripe\ORM\DataList|\App\Skript\ScriptRole[] Roles()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Teams\OrgEvent[] Events()
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
  * @mixin \SilverStripe\CMS\Model\SiteTreeLinkTracking
@@ -40,11 +42,17 @@ class Script extends DataObject implements PermissionProvider
         "Roles"      => ScriptRole::class,
     ];
 
+    // Ein Skript kann in mehreren Events verwendet werden (z.B. jedes Jahr dasselbe Stück)
+    private static $belongs_many_many = [
+        "Events" => OrgEvent::class . '.Scripts',
+    ];
+
     private static $field_labels = [
         "Title"        => "Titel",
         "Organization" => "Organisation",
         "Paragraphs"   => "Absätze",
         "Roles"        => "Rollen",
+        "Events"       => "Events",
     ];
 
     private static $summary_fields = [

@@ -42,6 +42,7 @@ use SilverStripe\Forms\TimeField;
  * @property ?string $Status
  * @property bool $EnableMeals
  * @property bool $EnableAgenda
+ * @property bool $EnableRoleCasting
  * @property int $ImageID
  * @property int $TypeID
  * @property int $EventID
@@ -78,6 +79,9 @@ class Appointment extends DataObject implements PermissionProvider
 
         "EnableMeals" => "Boolean(1)",
         "EnableAgenda" => "Boolean(1)",
+        // Rollenplan: an den Tagen dieses Termins werden die Skript-Rollen des Events
+        // zugeteilt (siehe ScriptRoleAssignment) — nur sinnvoll mit Event
+        "EnableRoleCasting" => "Boolean",
     ];
 
     private static $has_one = [
@@ -123,6 +127,7 @@ class Appointment extends DataObject implements PermissionProvider
         "Status" => "Status",
         "EnableMeals" => "Mahlzeiten aktiviert",
         "EnableAgenda" => "Tagesordnung aktiviert",
+        "EnableRoleCasting" => "Rollenplan aktiviert",
         "Organisations" => "Organisationen",
         "InvitedMembers" => "Eingeladene Mitglieder",
     ];
@@ -146,6 +151,7 @@ class Appointment extends DataObject implements PermissionProvider
         'Event',
         'EnableMeals',
         'EnableAgenda',
+        'EnableRoleCasting',
     ];
 
     private static $history_field_labels = [

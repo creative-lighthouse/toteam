@@ -6,8 +6,9 @@
     @change="onChange($event.target.value)"
   >
     <option value="">— Person wählen —</option>
-    <option v-for="m in orderedMembers" :key="m.ID" :value="m.ID">
-      {{ m.ID === authStore.user?.ID ? `${m.Name} (Ich)` : m.Name }}
+    <!-- Optional pro Person: Hint (Zusatz in Klammern hinter dem Namen) und Disabled -->
+    <option v-for="m in orderedMembers" :key="m.ID" :value="m.ID" :disabled="m.Disabled">
+      {{ m.ID === authStore.user?.ID ? `${m.Name} (Ich)` : m.Name }}{{ m.Hint ? ` – ${m.Hint}` : '' }}
     </option>
   </select>
 </template>

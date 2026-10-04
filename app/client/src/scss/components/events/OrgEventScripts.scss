@@ -1,0 +1,52 @@
+@use "../../base/variables" as *;
+
+// Skript-Karte der Event-Seite (OrgEventScripts.vue): pro Skript eine Karte mit Rollenplan
+.org-event-scripts {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .org-event-scripts_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-scripts_error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+
+    .org-event-scripts_script {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 12px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+    }
+
+    .org-event-scripts_script-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .icon-mask {
+            width: 18px;
+            height: 18px;
+        }
+    }
+
+    .org-event-scripts_script-title {
+        flex: 1;
+        font-weight: 700;
+        color: inherit;
+    }
+
+    .org-event-scripts_script-meta {
+        margin: -6px 0 0;
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+}

@@ -1,0 +1,86 @@
+@use "../../base/variables" as *;
+
+// Rolle an einem Tag zuteilen (OrgEventRoleAssignModal.vue)
+.org-event-role-assign-modal {
+    .org-event-role-assign-modal_day {
+        margin: 0 0 12px;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-role-assign-modal_list {
+        list-style: none;
+        margin: 0 0 16px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .org-event-role-assign-modal_item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 8px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+
+        .icon-mask {
+            width: 18px;
+            height: 18px;
+        }
+    }
+
+    .org-event-role-assign-modal_avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+
+        &--placeholder {
+            background-color: var(--ColorLightGray);
+            font-size: 12px;
+            font-weight: 700;
+        }
+    }
+
+    .org-event-role-assign-modal_item-text {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+    }
+
+    .org-event-role-assign-modal_item-name {
+        font-weight: 600;
+    }
+
+    .org-event-role-assign-modal_item-time {
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-role-assign-modal_item-warn {
+        font-size: 12px;
+        color: var(--ColorStatusWarning);
+    }
+
+    .org-event-role-assign-modal_empty {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    // .modalform ist ein 6-Spalten-Grid — der Hinweis geht über die volle Breite
+    .org-event-role-assign-modal_hint {
+        grid-column: 1 / -1;
+        margin: 0;
+        font-size: 12px;
+        color: var(--ColorStatusWarning);
+    }
+}

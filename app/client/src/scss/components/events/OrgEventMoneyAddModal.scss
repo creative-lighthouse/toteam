@@ -1,0 +1,12 @@
+@use "../../base/variables" as *;
+
+// Kasse zu einem Event hinzufügen (OrgEventMoneyAddModal.vue)
+.org-event-money-add-modal {
+    // .modalform ist ein 6-Spalten-Grid — der Hinweis geht über die volle Breite
+    .org-event-money-add-modal_hint {
+        grid-column: 1 / -1;
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+}

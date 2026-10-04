@@ -31,9 +31,6 @@
                         alt="Nachrichten"
                         class="nav_image"
                         >
-                        <p v-if="announcementsStore.unreadCount > 0" class="nav_badge">
-                            {{ announcementsStore.unreadCount }}<span class="nav_sr-only"> ungelesen</span>
-                        </p>
                     </div>
                 </router-link>
             </li>
@@ -90,6 +87,15 @@
         <!-- Geschlossen: inert, damit Tab und Screenreader die ausgeblendeten Links überspringen -->
         <div id="app-menu-secondary" ref="secondaryMenu" class="secondarynav" :inert="!isSecondaryMenuOpen">
             <ul class="secondary_menu">
+                <li v-if="authStore.hasTotem('calendar')">
+                    <router-link data-secondary-item to="/events" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Events' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="kalenderTotem" alt="" class="nav_image">
+                        </div>
+                        <p class="nav_title">Events <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
                 <li v-if="authStore.hasTotem('food')">
                     <router-link data-secondary-item to="/food" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Food' }" @click="closeAllMenus">
                         <div class="nav_icon">
@@ -217,7 +223,6 @@
 import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
-import { useAnnouncementsStore } from '@stores/announcements'
 import { useUiStore } from '@stores/ui'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import SettingsModal from '@components/layout/SettingsModal.vue'
@@ -244,7 +249,6 @@ import actionSettings from '../../../../icons/actions/action_settings.svg'
 import actionFeedback from '../../../../icons/feedback_admin.svg'
 const router = useRouter()
 const authStore = useAuthStore()
-const announcementsStore = useAnnouncementsStore()
 const uiStore = useUiStore()
 const isSecondaryMenuOpen = ref(false)
 const isProfileMenuOpen = ref(false)
@@ -433,11 +437,6 @@ onMounted(() => {
         document.body.classList.add('theme--dark')
     }
 
-    if (authStore.isAuthenticated) {
-        announcementsStore.fetchAnnouncements().catch(err => {
-            console.warn('Could not fetch announcements for badge:', err)
-        })
-    }
 })
 
 onUnmounted(() => {

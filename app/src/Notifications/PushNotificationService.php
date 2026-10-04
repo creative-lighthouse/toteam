@@ -5,7 +5,7 @@ namespace App\Notifications;
 use App\Maps\Map;
 use App\Food\Food;
 use App\Food\Meal;
-use App\Announcements\Announcement;
+use App\Announcements\FeedPost;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
@@ -163,32 +163,28 @@ class PushNotificationService
     }
 
     /**
-     * Send notification for new notice – only to members of linked organisations
+     * Neuer Feed-Beitrag im Namen einer Organisation — an deren Mitglieder (außer
+     * dem Verfasser), Einstellung "Ankündigungen" (NotifyAnnouncements)
      */
-    public static function notifyNewAnnouncement(Announcement $announcement)
+    public static function notifyNewFeedPost(FeedPost $post): void
     {
-        $organisations = $announcement->Organisations();
-
-        if (!$organisations->exists()) {
+        $org = $post->Organization();
+        if (!$org || !$org->exists()) {
             return;
         }
 
-        $title = '📢 Neue Ankündigung';
-        $body = $announcement->Title;
-        $url = $announcement->getLink();
+        $title = '📢 ' . $org->Title;
+        $event = $post->EventID ? $post->Event() : null;
+        // Geteiltes Event ohne eigenen Text: das Event nennen
+        $body = $post->getExcerpt() ?: ($event && $event->exists() ? '📅 ' . $event->Title : '');
+        $url = $post->getLink();
 
-        $memberIDs = [];
-        foreach ($organisations as $organisation) {
-            $activeMembers = OrganizationMembership::get()->filter([
-                'OrganizationID' => $organisation->ID,
-                'Role'           => 'member',
-            ]);
-            foreach ($activeMembers as $membership) {
-                $memberIDs[$membership->MemberID] = $membership->MemberID;
-            }
-        }
+        $memberIDs = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'Role'           => 'member',
+        ])->exclude('MemberID', $post->AuthorID)->column('MemberID');
 
-        foreach ($memberIDs as $memberID) {
+        foreach (array_unique($memberIDs) as $memberID) {
             self::saveNotification($memberID, 'announcements', $title, $body, $url);
 
             $member = Member::get()->byID($memberID);

@@ -1,0 +1,21 @@
+@use "../../base/variables" as *;
+
+// Event im Feed teilen (OrgEventFeedShareModal.vue)
+.org-event-feed-share-modal {
+    .org-event-feed-share-modal_preview {
+        margin-bottom: 12px;
+        box-shadow: 0 0 0 1px var(--ColorLightGray);
+    }
+
+    .org-event-feed-share-modal_hint {
+        margin: 0 0 12px;
+        font-size: 13px;
+        color: var(--ColorStatusWarning);
+    }
+
+    // Im Modal ohne eigene Karte um das Formular
+    .feed-composer {
+        padding: 0;
+        box-shadow: none;
+    }
+}

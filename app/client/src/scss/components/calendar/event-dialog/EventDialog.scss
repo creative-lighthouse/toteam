@@ -259,6 +259,50 @@
 
             }
 
+            // ── Rollenplan section (EventRoleCastingSection.vue) ─────────────────
+            .role-casting-section {
+                border-bottom: 1px solid var(--ColorLightGray);
+                padding: 15px 0;
+
+                .section-feature-header .icon-mask {
+                    width: 15px;
+                    height: 15px;
+                }
+
+                .role-casting-list {
+                    list-style: none;
+                    margin: 0;
+                    padding: 0;
+                    display: grid;
+                    grid-template-columns: auto 1fr auto;
+                    column-gap: 12px;
+                    row-gap: 6px;
+                    text-align: left;
+                    font-size: 14px;
+                }
+
+                .role-casting-item {
+                    display: contents;
+
+                    &--me .role-casting-item_member {
+                        color: var(--ColorPrimary);
+                    }
+                }
+
+                .role-casting-item_role {
+                    font-weight: 600;
+                }
+
+                .role-casting-item_member {
+                    font-weight: 600;
+                }
+
+                .role-casting-item_time {
+                    color: var(--ColorGray);
+                    white-space: nowrap;
+                }
+            }
+
             // ── Agenda section ───────────────────────────────────────────────────
             .agenda-section {
                 border-bottom: 1px solid var(--ColorLightGray);
@@ -343,7 +387,8 @@
             .status--Cancelled { color: var(--ColorStatusBad); font-weight: bold; }
 
             .meals-section,
-            .agenda-section {
+            .agenda-section,
+            .role-casting-section {
                 padding: 10px 0 15px 0;
             }
 

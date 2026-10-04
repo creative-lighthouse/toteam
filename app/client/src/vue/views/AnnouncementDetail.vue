@@ -1,84 +1,61 @@
 <template>
+  <!-- Einzelner Feed-Beitrag, z.B. aus einer Push-Benachrichtigung oder einem geteilten Link -->
   <div class="section section--AnnouncementDetailPage">
     <div class="section_content">
       <div v-if="loading" class="section_infobox">
-        <p>Lade Mitteilung...</p>
+        <p>Lade Beitrag...</p>
       </div>
 
-      <div v-else-if="!announcement" class="section_infobox">
-        <p>Mitteilung nicht gefunden.</p>
+      <div v-else-if="!post" class="section_infobox">
+        <p>Diesen Beitrag gibt es nicht (mehr) oder er ist nicht für dich sichtbar.</p>
+        <router-link :to="{ name: 'Announcements' }">Zum Feed →</router-link>
       </div>
 
-      <div v-else class="announcement-detail_card">
-        <!-- Organisation(en) -->
-        <div v-if="announcement.Organisations?.length" class="announcement-detail_orgs">
-          <div
-            v-for="org in announcement.Organisations"
-            :key="org.ID"
-            class="announcement-detail_org"
-          >
-            <AppOrgLogo
-              :src="org.LogoURL"
-              :alt="org.Title"
-              :size="32"
-            />
-            <span class="announcement-detail_org-name">{{ org.Title }}</span>
-          </div>
-        </div>
-
-        <!-- Titel + Meta -->
-        <div class="announcement-detail_header">
-          <h2 class="hl2 announcement-detail_title">{{ announcement.Title }}</h2>
-          <div class="announcement-detail_meta">
-            <span>{{ announcement.Created }}</span>
-            <span v-if="announcement.AuthorName">von {{ announcement.AuthorName }}</span>
-            <span v-if="announcement.Category?.Title ?? announcement.Category" class="announcement-detail_category">
-              {{ announcement.Category?.Title ?? announcement.Category }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Langtext -->
-        <div class="announcement-detail_content" v-html="announcement.LongText"></div>
-      </div>
+      <template v-else>
+        <FeedPostCard :post="post" detail @delete="deletePost" />
+        <router-link :to="{ name: 'Announcements' }" class="announcement-detail_back">← Zum Feed</router-link>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAnnouncementsStore } from '@stores/announcements'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import FeedPostCard from '@components/announcements/FeedPostCard.vue'
 
 const route = useRoute()
-const announcementsStore = useAnnouncementsStore()
-const pageHeaderStore = usePageHeaderStore()
+const router = useRouter()
+const store = useAnnouncementsStore()
+const pageHeader = usePageHeaderStore()
+pageHeader.setHeader('Beitrag', '')
 
-pageHeaderStore.setHeader('Mitteilung')
-
-const announcement = ref(null)
+const post = ref(null)
 const loading = ref(true)
 
-watch(announcement, (val) => {
-  pageHeaderStore.setTitle(val?.Title ?? 'Mitteilung')
-})
-
-onMounted(async () => {
-  const id = Number(route.params.id)
-
-  let found = announcementsStore.getAnnouncementById(id)
-  if (!found) {
-    await announcementsStore.fetchAnnouncements()
-    found = announcementsStore.getAnnouncementById(id)
+async function load(id) {
+  loading.value = true
+  try {
+    post.value = await store.fetchPost(Number(id))
+    pageHeader.setHeader('Beitrag', post.value.Organization?.Title ?? post.value.Author?.Name ?? '')
+  } catch {
+    post.value = null
+  } finally {
+    loading.value = false
   }
-  if (!found) {
-    await announcementsStore.fetchArchivedAnnouncements()
-    found = announcementsStore.getAnnouncementById(id)
-  }
+}
 
-  announcement.value = found
-  loading.value = false
-})
+async function deletePost(p) {
+  if (!confirm('Diesen Beitrag wirklich löschen?')) return
+  try {
+    await store.deletePost(p.ID)
+    router.push({ name: 'Announcements' })
+  } catch (e) {
+    alert(e.message)
+  }
+}
+
+watch(() => route.params.id, id => { if (id) load(id) }, { immediate: true })
 </script>
