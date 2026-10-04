@@ -185,7 +185,7 @@ function createNotificationElement(notification) {
         margin: 0 0 4px 0;
         font-size: 16px;
         font-weight: ${notification.isRead ? 'normal' : 'bold'};
-        color: ${notification.isRead ? '#666' : '#333'};
+        color: ${notification.isRead ? 'var(--ColorGray, #666)' : 'var(--ColorDarkGray, #333)'};
     `;
 
     // Body

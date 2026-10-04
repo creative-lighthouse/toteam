@@ -549,6 +549,14 @@ class OrgEvent extends DataObject
     /** Die Termine des Events, chronologisch, mit der Teilnahme des Mitglieds */
     public function appointmentsToApi(Member $member): array
     {
+        $org = $this->Organization();
+        // Wie in der Kalender-API, damit die Termin-Karte die Farbe der Organisation bekommt
+        $orgLogos = $org->exists() ? [[
+            'ID'      => $org->ID,
+            'Title'   => $org->Title,
+            'LogoURL' => $org->RenderLogo(40),
+            'Color'   => $org->getLogoColor(),
+        ]] : [];
         $appointments = [];
         foreach ($this->Appointments()->sort(['DateStart' => 'ASC', 'TimeStart' => 'ASC']) as $appointment) {
             $participation = $appointment->Participations()->filter('MemberID', $member->ID)->first();
@@ -564,6 +572,7 @@ class OrgEvent extends DataObject
                 'Status'    => $appointment->Status,
                 'EventType' => $appointment->Type()->exists() ? $appointment->Type()->Title : null,
                 'UserResponse' => $participation ? $participation->Type : null,
+                'OrganizationLogos' => $orgLogos,
                 'Meals'        => $appointment->EnableMeals ? $this->mealsToApi($appointment, $member) : [],
             ];
         }

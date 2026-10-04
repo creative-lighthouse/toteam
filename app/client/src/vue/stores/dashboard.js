@@ -3,14 +3,12 @@ import { ref, computed } from 'vue'
 import { apiGet, clearCacheForEndpoint } from '@utils/api'
 
 export const useDashboardStore = defineStore('dashboard', () => {
-  const latestPosts     = ref([])
   const newFeedback             = ref([])
   const myUpcomingContributions = ref([])
   const myTasks                 = ref([])
   const loading = ref(false)
   const error   = ref(null)
 
-  const hasLatestPosts     = computed(() => latestPosts.value.length > 0)
   const hasNewFeedback             = computed(() => newFeedback.value.length > 0)
   const hasUpcomingContributions   = computed(() => myUpcomingContributions.value.length > 0)
   const hasMyTasks                 = computed(() => myTasks.value.length > 0)
@@ -26,7 +24,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
       const response = await apiGet('/dashboard', !forceRefresh, 3 * 60 * 1000)
 
-      latestPosts.value     = response.latestPosts     || []
       newFeedback.value             = response.newFeedback             || []
       myUpcomingContributions.value = response.myUpcomingContributions || []
       myTasks.value                 = response.myTasks                 || []
@@ -43,13 +40,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   return {
-    latestPosts,
     newFeedback,
     myUpcomingContributions,
     myTasks,
     loading,
     error,
-    hasLatestPosts,
     hasNewFeedback,
     hasUpcomingContributions,
     hasMyTasks,

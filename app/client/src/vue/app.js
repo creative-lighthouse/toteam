@@ -2,6 +2,10 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import { applyStoredTheme } from '@utils/theme'
+
+// Gespeichertes Theme (Dark Mode) vor dem ersten Rendern setzen
+applyStoredTheme()
 
 // Create Pinia instance
 const pinia = createPinia()

@@ -7,3 +7,11 @@ export function pastelColorForId(id) {
   const hue = (id * 137.508) % 360
   return `hsl(${hue}, 65%, 87%)`
 }
+
+// Passende Schriftfarbe für Text auf pastelColorForId(): derselbe Farbton, dunkel.
+// Fest statt per Variable, weil der Pastell-Hintergrund auch im Dark Mode hell bleibt.
+export function pastelTextColorForId(id) {
+  if (!id) return 'hsl(0, 0%, 25%)'
+  const hue = (id * 137.508) % 360
+  return `hsl(${hue}, 40%, 25%)`
+}

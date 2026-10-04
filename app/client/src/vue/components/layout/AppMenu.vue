@@ -197,7 +197,7 @@
                 </router-link>
                 <button type="button" @click="handleLogout" class="nav_logout" title="Abmelden" aria-label="Abmelden">
                     <div class="nav_icon nav_icon--logout">
-                        <img :src="actionLogout" alt="" class="logout_image">
+                        <span class="icon-mask" :style="logoutIconStyle" aria-hidden="true"></span>
                     </div>
                 </button>
                 <button type="button" @click="openFeedback" class="nav_feedback" title="Feedback geben" aria-label="Feedback geben">
@@ -220,7 +220,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useUiStore } from '@stores/ui'
@@ -247,6 +247,8 @@ import organizationsTotem from '../../../../icons/totems/organizations_totem.png
 import actionLogout from '../../../../icons/actions/action_logout.svg'
 import actionSettings from '../../../../icons/actions/action_settings.svg'
 import actionFeedback from '../../../../icons/feedback_admin.svg'
+
+const logoutIconStyle = { maskImage: `url("${actionLogout}")`, WebkitMaskImage: `url("${actionLogout}")` }
 const router = useRouter()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
@@ -430,14 +432,6 @@ async function handleLogout() {
     closeProfileMenu()
     router.push({ name: 'Login' })
 }
-
-onMounted(() => {
-    // Restore saved theme
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('theme--dark')
-    }
-
-})
 
 onUnmounted(() => {
     // Clean up body class when component is destroyed

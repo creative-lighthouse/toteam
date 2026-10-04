@@ -24,6 +24,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property bool $EnableLinks
  * @property bool $EnableMap
  * @property bool $EnableTasks
+ * @property ?string $LogoColor
  * @property int $LogoID
  * @property int $CoverImageID
  * @method \SilverStripe\Assets\Image Logo()
@@ -59,6 +60,8 @@ class Organization extends DataObject implements PermissionProvider
         "Description" => "Text",
         "JoinMode"    => "Enum('open,application,invite_only,hidden','invite_only')",
         "Username"    => "Varchar(100)",
+        // Akzentfarbe aus dem Logo (#rrggbb), "none" = nicht ermittelbar; null = noch nicht berechnet
+        "LogoColor"   => "Varchar(7)",
 
         "EnableAnnouncements" => "Boolean(1)",
         "EnableCalendar"      => "Boolean(1)",
@@ -190,6 +193,16 @@ class Organization extends DataObject implements PermissionProvider
         return $titles;
     }
 
+    public function onBeforeWrite()
+    {
+        parent::onBeforeWrite();
+
+        // Neues Logo → Farbe beim nächsten getLogoColor() neu berechnen
+        if ($this->isChanged('LogoID')) {
+            $this->LogoColor = null;
+        }
+    }
+
     public function onAfterWrite()
     {
         parent::onAfterWrite();
@@ -312,6 +325,115 @@ class Organization extends DataObject implements PermissionProvider
             return $this->Logo()->Fill($size, $size)->getURL();
         }
         return null;
+    }
+
+    /**
+     * Akzentfarbe der Organisation (#rrggbb), z.B. für die Markierung links an
+     * Termin-Karten. Wird beim ersten Abruf aus dem Logo berechnet und gespeichert;
+     * null, wenn es kein Logo gibt oder es zu farblos/hell ist (Frontend nimmt dann
+     * die Primärfarbe).
+     */
+    public function getLogoColor(): ?string
+    {
+        $color = $this->getField('LogoColor');
+        if ($color === null && $this->LogoID && $this->isInDB()) {
+            $color = $this->computeLogoColor() ?? 'none';
+            $this->LogoColor = $color;
+            $this->write();
+        }
+        return $color && $color !== 'none' ? $color : null;
+    }
+
+    /**
+     * Dominante Farbe des Logos: Transparente, sehr dunkle, sehr helle und graue
+     * Pixel zählen nicht (ein reiner Durchschnitt wäre bei den meist schwarz/weißen
+     * Logos fast immer Schwarz oder Grau). Die übrigen werden nach Farbton in 12
+     * Gruppen sortiert, die größte gewinnt. Die Helligkeit wird anschließend in einen
+     * mittleren Bereich gezogen, damit die Farbe auf hellen und dunklen Karten sichtbar ist.
+     */
+    private function computeLogoColor(): ?string
+    {
+        $logo = $this->Logo();
+        $data = $logo->exists() ? $logo->getString() : null;
+        $source = $data ? @imagecreatefromstring($data) : false;
+        if (!$source) {
+            return null; // z.B. SVG
+        }
+
+        $size = 64;
+        $image = imagecreatetruecolor($size, $size);
+        imagealphablending($image, false);
+        imagefill($image, 0, 0, imagecolorallocatealpha($image, 0, 0, 0, 127));
+        imagecopyresampled($image, $source, 0, 0, 0, 0, $size, $size, imagesx($source), imagesy($source));
+
+        $buckets = [];
+        for ($x = 0; $x < $size; $x++) {
+            for ($y = 0; $y < $size; $y++) {
+                $c = imagecolorat($image, $x, $y);
+                if ((($c >> 24) & 0x7F) > 64) {
+                    continue; // überwiegend transparent
+                }
+                $rgb = [($c >> 16) & 0xFF, ($c >> 8) & 0xFF, $c & 0xFF];
+                [$h, $sat, $light] = self::rgbToHsl(...$rgb);
+                if ($sat < 0.25 || $light < 0.12 || $light > 0.92) {
+                    continue; // grau, fast schwarz oder fast weiß
+                }
+                $bucket = (int) floor($h * 12) % 12;
+                $w = $sat;
+                $buckets[$bucket] ??= ['weight' => 0, 'sum' => [0, 0, 0]];
+                $buckets[$bucket]['weight'] += $w;
+                foreach ($rgb as $i => $v) {
+                    $buckets[$bucket]['sum'][$i] += $v * $w;
+                }
+            }
+        }
+        if (!$buckets) {
+            return null; // Logo ohne nennenswerte Farbe
+        }
+
+        usort($buckets, fn ($a, $b) => $b['weight'] <=> $a['weight']);
+        $top = $buckets[0];
+        $rgb = array_map(fn ($v) => $v / $top['weight'], $top['sum']);
+        [$h, $sat, $light] = self::rgbToHsl(...$rgb);
+        [$r, $g, $b] = self::hslToRgb($h, $sat, max(0.35, min(0.6, $light)));
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
+    /** @return float[] [Farbton, Sättigung, Helligkeit], jeweils 0–1 */
+    private static function rgbToHsl(float $r, float $g, float $b): array
+    {
+        [$r, $g, $b] = [$r / 255, $g / 255, $b / 255];
+        $max = max($r, $g, $b);
+        $min = min($r, $g, $b);
+        $l = ($max + $min) / 2;
+        $d = $max - $min;
+        if (!$d) {
+            return [0, 0, $l];
+        }
+        $s = $d / (1 - abs(2 * $l - 1));
+        $h = match ($max) {
+            $r => fmod(($g - $b) / $d + 6, 6),
+            $g => ($b - $r) / $d + 2,
+            default => ($r - $g) / $d + 4,
+        };
+        return [$h / 6, $s, $l];
+    }
+
+    /** @return int[] [r, g, b], jeweils 0–255 */
+    private static function hslToRgb(float $h, float $s, float $l): array
+    {
+        $c = (1 - abs(2 * $l - 1)) * $s;
+        $x = $c * (1 - abs(fmod($h * 6, 2) - 1));
+        $m = $l - $c / 2;
+        [$r, $g, $b] = match ((int) floor($h * 6) % 6) {
+            0 => [$c, $x, 0],
+            1 => [$x, $c, 0],
+            2 => [0, $c, $x],
+            3 => [0, $x, $c],
+            4 => [$x, 0, $c],
+            default => [$c, 0, $x],
+        };
+        return array_map(fn ($v) => (int) round(($v + $m) * 255), [$r, $g, $b]);
     }
 
     /**

@@ -74,7 +74,7 @@
           <span
             v-if="entry.PosterSize"
             class="marketing-list-row_size"
-            :style="{ backgroundColor: pastelColorForId(entry.PosterSize.ID) }"
+            :style="{ backgroundColor: pastelColorForId(entry.PosterSize.ID), color: pastelTextColorForId(entry.PosterSize.ID) }"
           >{{ entry.PosterSize.Title }}</span>
           <span v-else class="marketing-list-row_size">–</span>
           <span class="marketing-list-row_location">{{ entry.Location || 'Erfasste Position' }}</span>
@@ -131,7 +131,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarketingStore } from '@stores/marketing'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import { pastelColorForId } from '@utils/colors'
+import { pastelColorForId, pastelTextColorForId } from '@utils/colors'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import MarketingEntryModal from '@components/marketing/MarketingEntryModal.vue'

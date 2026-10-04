@@ -230,6 +230,7 @@ class CalendarApiController extends ApiController
                     'ID'      => $orgItem->ID,
                     'Title'   => $orgItem->Title,
                     'LogoURL' => $orgItem->RenderLogo(40),
+                    'Color'   => $orgItem->getLogoColor(),
                 ];
             }
             $orgLogoURL = array_values(array_filter(array_column($orgLogos, 'LogoURL')))[0] ?? null;
@@ -346,6 +347,7 @@ class CalendarApiController extends ApiController
                     'ID'      => $orgItem->ID,
                     'Title'   => $orgItem->Title,
                     'LogoURL' => $orgItem->RenderLogo(40),
+                    'Color'   => $orgItem->getLogoColor(),
                 ];
             }
             $pollOrgLogoURL = array_values(array_filter(array_column($pollOrgLogos, 'LogoURL')))[0] ?? null;

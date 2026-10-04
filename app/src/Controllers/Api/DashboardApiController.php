@@ -3,7 +3,6 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
-use App\Announcements\FeedPost;
 use App\Food\Food;
 use App\SuggestionBox\Suggestion;
 use App\Tasks\Task;
@@ -31,18 +30,6 @@ class DashboardApiController extends ApiController
         }
 
         $organizationIDs = $member->getOrganizationIDs();
-
-        // Neueste Feed-Beiträge, die man sehen darf (ohne eigene geplante)
-        $latestPosts = [];
-        foreach (FeedPost::visibleTo($member, false, 20) as $post) {
-            if ($post->isScheduled()) {
-                continue;
-            }
-            $latestPosts[] = $post->toApi($member);
-            if (count($latestPosts) === 3) {
-                break;
-            }
-        }
 
         // Unseen feedback addressed to the current user
         $newFeedback = [];
@@ -158,7 +145,6 @@ class DashboardApiController extends ApiController
 
         return $this->jsonResponse([
             'myTasks'                   => $myTasks,
-            'latestPosts'               => $latestPosts,
             'newFeedback'               => $newFeedback,
             'myUpcomingContributions'   => $myUpcomingContributions,
         ]);

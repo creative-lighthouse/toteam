@@ -448,7 +448,7 @@
         font-size: 0.9rem;
         font-weight: 600;
         margin: 0 0 8px 0;
-        color: var(--ColorDarkGray, #555);
+        color: var(--ColorGray);
     }
 }
 
@@ -481,7 +481,7 @@
 
     &__note {
         font-size: 0.8rem;
-        color: var(--ColorDarkGray, #555);
+        color: var(--ColorGray);
         font-style: italic;
         margin-left: auto;
     }

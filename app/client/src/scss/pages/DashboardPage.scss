@@ -327,12 +327,12 @@
         .contribution-item_food {
             font-size: 0.875rem;
             font-weight: 600;
-            color: var(--ColorTextPrimary);
+            color: var(--ColorBlack);
         }
 
         .contribution-item_context {
             font-size: 0.72rem;
-            color: var(--ColorTextSecondary);
+            color: var(--ColorGray);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;

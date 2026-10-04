@@ -26,7 +26,7 @@
     .event-meal-time {
         font-size: 0.75rem;
         font-weight: 700;
-        color: var(--ColorTextSecondary);
+        color: var(--ColorGray);
         white-space: nowrap;
         flex-shrink: 0;
     }
@@ -34,7 +34,7 @@
     .event-meal-name {
         font-size: 0.8rem;
         font-weight: 600;
-        color: var(--ColorTextPrimary);
+        color: var(--ColorBlack);
         flex: 1;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -49,6 +49,6 @@
 
         &.response--accept  { color: #10b981; }
         &.response--decline { color: #ef4444; }
-        &.response--pending { color: var(--ColorTextSecondary); }
+        &.response--pending { color: var(--ColorGray); }
     }
 }

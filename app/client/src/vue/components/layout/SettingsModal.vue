@@ -45,10 +45,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { apiGet, apiPost } from '@utils/api'
 import { useUiStore } from '@stores/ui'
 import { getPushPermission, enablePush, registerPushToken } from '@utils/push'
+import { isDarkMode, setDarkMode } from '@utils/theme'
 import AppModal from '@components/ui/AppModal.vue'
 import AppToggle from '@components/ui/AppToggle.vue'
 import AppButton from '@components/ui/AppButton.vue'
@@ -67,11 +68,8 @@ const prefs = reactive({
   NotifyInventory: true,
 })
 
-const darkMode = ref(false)
-
-onMounted(() => {
-  darkMode.value = document.body.classList.contains('theme--dark')
-})
+// Das Theme setzt app.js schon vor dem Mounten, daher hier direkt lesbar
+const darkMode = ref(isDarkMode())
 
 // ── Push auf diesem Gerät ──
 const pushPermission = ref(getPushPermission())
@@ -168,8 +166,7 @@ async function savePrefs() {
 }
 
 function applyDarkMode() {
-  document.body.classList.toggle('theme--dark', darkMode.value)
-  localStorage.setItem('theme', darkMode.value ? 'dark' : 'light')
+  setDarkMode(darkMode.value)
 }
 
 defineExpose({ open, close })

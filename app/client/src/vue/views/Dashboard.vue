@@ -21,17 +21,6 @@
         <AppButton variant="primary" @click="refresh()">Erneut versuchen</AppButton>
       </div>
 
-      <!-- Neueste Beiträge aus dem Feed -->
-      <div v-if="dashboardStore.hasLatestPosts" class="section_infobox">
-        <h2 class="hl2">Neueste Beiträge</h2>
-        <div class="feed-list feed-list--compact">
-          <FeedPostCard v-for="post in dashboardStore.latestPosts" :key="post.ID" :post="post" compact />
-        </div>
-        <div class="section_infobox_footer">
-          <router-link to="/announcements">Zum Feed →</router-link>
-        </div>
-      </div>
-
       <!-- Das steht heute an -->
       <div v-if="todaysEvents.length" class="section_infobox">
         <h2 class="hl2">Das steht heute an</h2>
@@ -39,6 +28,32 @@
           <li v-for="event in todaysEvents" :key="event.ID">
             <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
             <EventMealsList :meals="event.Meals ?? []" />
+          </li>
+        </ul>
+        <div class="section_infobox_footer">
+          <router-link to="/calendar">Zum Kalender →</router-link>
+        </div>
+      </div>
+
+      <!-- Offene Termine ohne Rückmeldung -->
+      <div v-if="pendingFeedback.length" class="section_infobox">
+        <h2 class="hl2">Offene Termine ohne Rückmeldung</h2>
+        <ul class="infobox_list infobox_list--events">
+          <li v-for="event in pendingFeedback" :key="event.ID">
+            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
+          </li>
+        </ul>
+        <div class="section_infobox_footer">
+          <router-link to="/calendar">Zum Kalender →</router-link>
+        </div>
+      </div>
+
+      <!-- Deine nächsten Termine -->
+      <div v-if="upcomingAccepted.length" class="section_infobox">
+        <h2 class="hl2">Deine nächsten Termine</h2>
+        <ul class="infobox_list infobox_list--events">
+          <li v-for="event in upcomingAccepted" :key="event.ID">
+            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
           </li>
         </ul>
         <div class="section_infobox_footer">
@@ -112,32 +127,6 @@
         </div>
       </div>
 
-      <!-- Deine nächsten Termine -->
-      <div v-if="upcomingAccepted.length" class="section_infobox">
-        <h2 class="hl2">Deine nächsten Termine</h2>
-        <ul class="infobox_list infobox_list--events">
-          <li v-for="event in upcomingAccepted" :key="event.ID">
-            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
-          </li>
-        </ul>
-        <div class="section_infobox_footer">
-          <router-link to="/calendar">Zum Kalender →</router-link>
-        </div>
-      </div>
-
-      <!-- Offene Termine ohne Rückmeldung -->
-      <div v-if="pendingFeedback.length" class="section_infobox">
-        <h2 class="hl2">Offene Termine ohne Rückmeldung</h2>
-        <ul class="infobox_list infobox_list--events">
-          <li v-for="event in pendingFeedback" :key="event.ID">
-            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
-          </li>
-        </ul>
-        <div class="section_infobox_footer">
-          <router-link to="/calendar">Zum Kalender →</router-link>
-        </div>
-      </div>
-
       <!-- Neues Feedback -->
       <div v-if="dashboardStore.hasNewFeedback" class="section_infobox">
         <h2 class="hl2">Neues Feedback</h2>
@@ -191,7 +180,6 @@ import EventMealsList from '@components/calendar/EventMealsList.vue'
 import OrgEventCard from '@components/events/OrgEventCard.vue'
 import { useOrgEventsStore } from '@stores/orgEvents'
 import TaskCard from '@components/tasks/TaskCard.vue'
-import FeedPostCard from '@components/announcements/FeedPostCard.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
