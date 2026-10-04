@@ -81,7 +81,6 @@
             router.push({ name: 'Dashboard' })
         }
     }
-    notificationsStore.fetchNotifications()
 
     const infoVisible = ref(false)
     const notificationsOpen = ref(false)

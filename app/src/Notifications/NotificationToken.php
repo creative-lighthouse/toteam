@@ -22,7 +22,8 @@ use SilverStripe\Security\Member;
 class NotificationToken extends DataObject
 {
     private static $db = [
-        'Token' => 'Varchar(255)',
+        // FCM-Tokens sind meist ~160 Zeichen, aber nicht garantiert kürzer als 255
+        'Token' => 'Varchar(512)',
         'DeviceInfo' => 'Varchar(255)',
         'LastUsed' => 'Datetime'
     ];
@@ -46,6 +47,10 @@ class NotificationToken extends DataObject
      */
     public static function updateToken($token, $member)
     {
+        // Ein Gerät gehört immer nur der zuletzt angemeldeten Person — sonst bekäme
+        // nach einem Kontowechsel der vorherige Nutzer weiter Pushes auf dieses Gerät
+        self::get()->filter('Token', $token)->exclude('MemberID', $member->ID)->removeAll();
+
         $existing = self::get()->filter([
             'Token' => $token,
             'MemberID' => $member->ID

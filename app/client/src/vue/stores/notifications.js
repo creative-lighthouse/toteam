@@ -1,53 +1,41 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import { apiGet, apiPost } from '@utils/api'
 
-const NOTIFICATIONS_BASE = '/api/notifications'
 const PAGE_SIZE = 20
 
-// TODO(Benachrichtigungen, bekannter Bug): Seit dem Umbau auf JWT-Login (Commit ac247dc)
-// antwortet /api/notifications immer mit 401 — dieser Request schickt kein
-// `Authorization: Bearer …` mit (anders als utils/api.js), und der
-// NotificationApiController prüft noch die alte PHP-Session. Zum Beheben diesen
-// Helper durch apiGet/apiPost aus @utils/api ersetzen (inkl. Token-Refresh) und
-// den Controller auf ApiController::requireAuth() umstellen.
-async function notificationsRequest(endpoint, options = {}) {
-    const response = await fetch(`${NOTIFICATIONS_BASE}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            ...options.headers
-        },
-        credentials: 'same-origin'
-    })
-
-    if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`)
-    }
-
-    return response.json()
-}
-
+// Die Liste enthält nur ungelesene Benachrichtigungen — als gelesen markierte
+// verschwinden sofort (auch serverseitig liefert /inbox nur ungelesene).
 export const useNotificationsStore = defineStore('notifications', () => {
     const notifications = ref([])
     const loading = ref(false)
     const loadingMore = ref(false)
     const error = ref(null)
     const hasMore = ref(false)
-    const offset = ref(0)
+    // Gesamtzahl ungelesener (auch noch nicht nachgeladener) Benachrichtigungen
+    const unreadCount = ref(0)
 
-    const unreadCount = computed(() => notifications.value.filter(n => !n.isRead).length)
+    function applyPage(data, append) {
+        const page = data.notifications || []
+        if (append) {
+            // Doppelte vermeiden, falls zwischendurch neue dazugekommen sind
+            const known = new Set(notifications.value.map(n => n.id))
+            notifications.value.push(...page.filter(n => !known.has(n.id)))
+        } else {
+            notifications.value = page
+        }
+        hasMore.value = data.hasMore ?? false
+        unreadCount.value = data.total ?? notifications.value.length
+    }
 
     async function fetchNotifications() {
         try {
-            loading.value = true
+            loading.value = notifications.value.length === 0
             error.value = null
-            offset.value = 0
 
-            const data = await notificationsRequest(`/inbox?limit=${PAGE_SIZE}&offset=0`)
-            notifications.value = data.notifications || []
-            hasMore.value = data.hasMore ?? false
-            offset.value = data.notifications?.length ?? 0
+            const data = await apiGet(`/notifications/inbox?limit=${PAGE_SIZE}&offset=0`, false)
+            if (!data?.notifications) throw new Error(data?.error || 'Benachrichtigungen konnten nicht geladen werden')
+            applyPage(data, false)
         } catch (err) {
             console.error('Failed to fetch notifications:', err)
             error.value = err.message
@@ -61,11 +49,9 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
         try {
             loadingMore.value = true
-
-            const data = await notificationsRequest(`/inbox?limit=${PAGE_SIZE}&offset=${offset.value}`)
-            notifications.value.push(...(data.notifications || []))
-            hasMore.value = data.hasMore ?? false
-            offset.value += data.notifications?.length ?? 0
+            // Offset = bereits geladene, weil gelesene serverseitig aus der Liste fallen
+            const data = await apiGet(`/notifications/inbox?limit=${PAGE_SIZE}&offset=${notifications.value.length}`, false)
+            if (data?.notifications) applyPage(data, true)
         } catch (err) {
             console.error('Failed to load more notifications:', err)
         } finally {
@@ -74,29 +60,53 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
 
     async function markAsRead(id) {
+        const index = notifications.value.findIndex(n => n.id === id)
+        if (index === -1) return
+
+        // Sofort ausblenden, bei Fehler wieder einfügen
+        const [removed] = notifications.value.splice(index, 1)
+        unreadCount.value = Math.max(0, unreadCount.value - 1)
+
         try {
-            await notificationsRequest(`/${id}/mark-read`, { method: 'POST' })
-            const notification = notifications.value.find(n => n.id === id)
-            if (notification) {
-                notification.isRead = true
-                // Move to end of list (after unread), stable sort
-                notifications.value = [
-                    ...notifications.value.filter(n => !n.isRead),
-                    ...notifications.value.filter(n => n.isRead)
-                ]
-            }
+            const response = await apiPost(`/notifications/${id}/mark-read`)
+            if (!response?.success) throw new Error(response?.error || 'Fehler')
         } catch (err) {
             console.error('Failed to mark notification as read:', err)
+            notifications.value.splice(index, 0, removed)
+            unreadCount.value++
+            return
+        }
+
+        // Liste nachfüllen, damit das Panel nicht leer wirkt, solange es noch weitere gibt
+        if (hasMore.value && notifications.value.length < PAGE_SIZE / 2) {
+            loadMore()
         }
     }
 
     async function markAllAsRead() {
+        const previous = notifications.value
+        const previousCount = unreadCount.value
+        const previousHasMore = hasMore.value
+        notifications.value = []
+        unreadCount.value = 0
+        hasMore.value = false
+
         try {
-            await notificationsRequest('/mark-all-read', { method: 'POST' })
-            notifications.value.forEach(n => { n.isRead = true })
+            const response = await apiPost('/notifications/mark-all-read')
+            if (!response?.success) throw new Error(response?.error || 'Fehler')
         } catch (err) {
             console.error('Failed to mark all notifications as read:', err)
+            notifications.value = previous
+            unreadCount.value = previousCount
+            hasMore.value = previousHasMore
         }
+    }
+
+    function reset() {
+        notifications.value = []
+        unreadCount.value = 0
+        hasMore.value = false
+        error.value = null
     }
 
     return {
@@ -109,6 +119,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         fetchNotifications,
         loadMore,
         markAsRead,
-        markAllAsRead
+        markAllAsRead,
+        reset
     }
 })

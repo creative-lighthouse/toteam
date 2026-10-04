@@ -109,6 +109,11 @@ The event page (`views/EventDetail.vue` → `components/events/OrgEventMap.vue`)
 ### Firebase
 
 Push notifications use Firebase Cloud Messaging. Config keys come from `.env` (`VITE_FIREBASE_*`). A service worker handles background messages.
+- Backend: `PushNotificationService` sends data-only messages via the FCM v1 API, authenticated with `firebase-service-account.json` in the repo root (gitignored; path overridable via `FIREBASE_SERVICE_ACCOUNT_PATH`). Tokens FCM reports as invalid are deleted from `NotificationToken`.
+- All notifications go through `PushNotificationService::deliver($memberIDs, $orgIDs, $type, …)`: the `notify*()` methods only pick the affected people and the organization(s) the thing belongs to. `deliver()` then keeps only members (`Role` = `member`) of those orgs whose setting `Notify<Type>` (`TYPE_SETTINGS`) is on, and gives each of them an inbox entry (`SavedNotification`) **and** a push to all their devices. The setting is the only switch; `$orgIDs = null` only for personal things without an org (privately lent equipment).
+- `NotificationApiController` is mounted at `api/v1/notifications` (Bearer JWT) and the legacy `api/notifications` (session). `inbox` only returns **unread** notifications — marking one as read removes it from the sidebar (`AppNotifications`).
+- Frontend: `utils/push.js` (Firebase loaded lazily, no Analytics). `App.vue` registers the device token after login when permission is already granted; permission is requested from the "Aktivieren" button in `SettingsModal` (needs a user gesture; on iOS only as installed PWA). Logout removes the device token.
+- `ProcessPendingNotificationsTask` sends the deferred notifications (appointments, polls, feed posts via `PendingNotificationJob`) and needs its own cron on the server.
 
 ## Environment Variables
 

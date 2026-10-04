@@ -25,6 +25,30 @@
         }
     }
 
+    // Push-Status dieses Geräts (Berechtigung ist pro Browser/Gerät)
+    .settings-push {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 20px;
+        background-color: var(--ColorWhite);
+        margin: 1px 0;
+    }
+
+    .settings-push_status {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.35;
+    }
+
+    .settings-push_message {
+        margin: 0;
+        padding: 6px 20px 8px;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
     // Zeilen-Layout für AppToggle innerhalb der Einstellungen (der Schalter
     // selbst kommt aus der geteilten .toggle-switch-Komponente/-Klasse in
     // base/forms.scss).

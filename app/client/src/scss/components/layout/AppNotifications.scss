@@ -115,11 +115,7 @@
             cursor: pointer;
         }
 
-        &--read {
-            opacity: 0.55;
-        }
-
-        &:not(.AppNotifications_item--read):hover {
+        &:hover {
             background-color: rgba(255, 255, 255, 0.12);
         }
     }
@@ -143,15 +139,6 @@
             outline: 2px solid var(--ColorWhite);
             outline-offset: -2px;
         }
-    }
-
-    .AppNotifications_sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-        white-space: nowrap;
     }
 
     .AppNotifications_item_title {
@@ -208,6 +195,20 @@
 .notifications-panel-enter-from,
 .notifications-panel-leave-to {
     transform: translateX(100%);
+}
+
+// Gelesene Benachrichtigung gleitet nach rechts hinaus
+.notification-item-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.notification-item-leave-to {
+    opacity: 0;
+    transform: translateX(40px);
+}
+
+.notification-item-move {
+    transition: transform 0.2s ease;
 }
 
 // Backdrop overlay
