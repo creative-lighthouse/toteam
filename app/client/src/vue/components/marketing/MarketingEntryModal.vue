@@ -57,6 +57,9 @@
             Koordinaten erfasst ({{ form.Latitude }}, {{ form.Longitude }})
             <button type="button" class="marketing-entry-modal_geo-clear" @click="clearLocation">Entfernen</button>
           </p>
+          <p v-else-if="form.Location.trim()" class="marketing-entry-modal_hint">
+            Steht ein Ort im Text oder ist die Stelle eindeutig, wird die Position beim Speichern ermittelt.
+          </p>
           <p v-if="geoError" class="app-modal_error">{{ geoError }}</p>
           <p v-if="!hasLocationInfo" class="marketing-entry-modal_hint">
             Bitte entweder einen Ort eingeben oder die aktuelle Position erfassen.
@@ -212,6 +215,7 @@ function open(distribution = null) {
   Object.assign(form, defaultForm())
   error.value = null
   geoError.value = null
+  geocodedLocation = ''
   isEdit.value = !!distribution
   editingId = distribution?.ID ?? null
 
@@ -220,8 +224,11 @@ function open(distribution = null) {
     form.Location = distribution.Location
     form.PosterSizeID = distribution.PosterSize?.ID ?? ''
     form.Quantity = distribution.Quantity
-    form.Latitude = distribution.Latitude || ''
-    form.Longitude = distribution.Longitude || ''
+    // Aus dem Ort ermittelte Koordinaten bestimmt der Server selbst neu
+    if (distribution.CoordinatesSource === 'GPS') {
+      form.Latitude = distribution.Latitude || ''
+      form.Longitude = distribution.Longitude || ''
+    }
     form.Note = distribution.Note || ''
     form.DistributedAt = distribution.DistributedAt ? distribution.DistributedAt.replace(' ', 'T').slice(0, 16) : nowLocal()
   }
@@ -244,7 +251,7 @@ function useCurrentLocation() {
     pos => {
       form.Latitude = pos.coords.latitude.toFixed(6)
       form.Longitude = pos.coords.longitude.toFixed(6)
-      geoLoading.value = false
+      fillLocationFromCoordinates()
     },
     err => {
       geoError.value = `Standort konnte nicht ermittelt werden (${err.message}).`
@@ -252,6 +259,30 @@ function useCurrentLocation() {
     },
     { enableHighAccuracy: true, timeout: 10000 }
   )
+}
+
+// Selbst eingegebener Text bleibt stehen — überschrieben wird nur ein leeres
+// Feld oder die Adresse einer vorherigen Positionserfassung.
+let geocodedLocation = ''
+const canAutofillLocation = () => !form.Location.trim() || form.Location === geocodedLocation
+
+async function fillLocationFromCoordinates() {
+  if (!canAutofillLocation()) {
+    geoLoading.value = false
+    return
+  }
+  try {
+    const address = await store.reverseGeocode(form.Latitude, form.Longitude)
+    // Während der Anfrage getippter Text hat Vorrang
+    if (address && canAutofillLocation()) {
+      form.Location = address
+      geocodedLocation = address
+    }
+  } catch {
+    geoError.value = 'Adresse konnte nicht ermittelt werden — die Koordinaten wurden trotzdem erfasst.'
+  } finally {
+    geoLoading.value = false
+  }
 }
 
 function clearLocation() {

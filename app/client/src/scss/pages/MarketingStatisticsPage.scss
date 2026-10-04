@@ -36,5 +36,31 @@
             position: relative;
             height: 320px;
         }
+
+        &_header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+
+            .marketing-stats-card_title {
+                margin: 0;
+            }
+        }
+
+        &_toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        &_hint {
+            margin: 0.5rem 0 0;
+            font-size: 0.85rem;
+            color: var(--ColorGray);
+        }
     }
 }

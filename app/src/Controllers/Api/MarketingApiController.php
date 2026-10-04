@@ -3,12 +3,16 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
+use App\Maps\Geocoder;
+use App\Maps\MapTilesSettings;
 use App\Marketing\PosterDistribution;
 use App\Marketing\PosterSize;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Core\Injector\Injector;
+use Psr\Log\LoggerInterface;
 use SilverStripe\Security\Member;
 
 /**
@@ -17,6 +21,9 @@ use SilverStripe\Security\Member;
  */
 class MarketingApiController extends ApiController
 {
+    /** Gruppe für Einträge, deren Ort das Geocoding nicht ermitteln konnte */
+    private const UNKNOWN_CITY = 'Ohne Ort';
+
     private static $url_segment = 'api/v1/marketing';
 
     private static $allowed_actions = [
@@ -28,6 +35,7 @@ class MarketingApiController extends ApiController
         'sizeUpdate',
         'sizeRemove',
         'statistics',
+        'reverseGeocode',
     ];
 
     protected function getDefaultAction()
@@ -84,6 +92,8 @@ class MarketingApiController extends ApiController
             'Quantity'          => $distribution->Quantity,
             'Latitude'          => $distribution->Latitude ?: null,
             'Longitude'         => $distribution->Longitude ?: null,
+            // GPS = vom Gerät erfasst, Address = aus dem Ort-Text ermittelt (ungefähr)
+            'CoordinatesSource' => $distribution->hasCoordinates() ? $distribution->CoordinatesSource : null,
             'Note'              => $distribution->Note,
             'DistributedAt'     => $distribution->DistributedAt,
             'DistributedAtNice' => $distribution->dbObject('DistributedAt')->Nice(),
@@ -166,6 +176,8 @@ class MarketingApiController extends ApiController
             'organizations'  => $orgData,
             'years'          => $years,
             'canManageSizes' => $canManageSizes,
+            // Selbst gehostete Kartendaten für die Karten-Ansicht (null, wenn keine vorhanden)
+            'map'            => MapTilesSettings::current()->areaClientConfig(),
         ]);
     }
 
@@ -192,55 +204,114 @@ class MarketingApiController extends ApiController
             ]);
         }
 
-        $sizeTitles   = [];   // sizeId => Title
-        $sizeTotals   = [];   // sizeId => Quantity
-        $memberTotals = [];   // memberName => [ sizeId => Quantity ]
+        $sizeTitles     = [];   // sizeId => Title
+        $sizeTotals     = [];   // sizeId => Quantity
+        $memberTotals   = [];   // memberName => [ sizeId => Quantity ]
+        $cityTotals     = [];   // Ort => [ sizeId => Quantity ]
+        $districtTotals = [];   // "Ort – Stadtteil" => [ sizeId => Quantity ]
+        $hasDistricts   = false;
 
         foreach ($distributions as $distribution) {
             $size     = $distribution->PosterSize();
             $sizeId   = $size && $size->exists() ? $size->ID : 0;
             $sizeTitles[$sizeId] = $size && $size->exists() ? $size->Title : 'Ohne Größe';
+            $quantity = $distribution->Quantity;
 
             $distMember = $distribution->Member();
             $memberName = $distMember && $distMember->exists() ? $distMember->getDisplayName() : 'Unbekannt';
 
-            $sizeTotals[$sizeId] = ($sizeTotals[$sizeId] ?? 0) + $distribution->Quantity;
+            // Ort und Stadtteil kommen aus dem Geocoding (PosterDistribution::geocode())
+            $city = $distribution->City ?: self::UNKNOWN_CITY;
+            $district = $distribution->City && $distribution->District ? $city . ' – ' . $distribution->District : $city;
+            $hasDistricts = $hasDistricts || $district !== $city;
 
-            if (!isset($memberTotals[$memberName])) {
-                $memberTotals[$memberName] = [];
-            }
-            $memberTotals[$memberName][$sizeId] = ($memberTotals[$memberName][$sizeId] ?? 0) + $distribution->Quantity;
+            $sizeTotals[$sizeId] = ($sizeTotals[$sizeId] ?? 0) + $quantity;
+            $memberTotals[$memberName][$sizeId] = ($memberTotals[$memberName][$sizeId] ?? 0) + $quantity;
+            $cityTotals[$city][$sizeId] = ($cityTotals[$city][$sizeId] ?? 0) + $quantity;
+            $districtTotals[$district][$sizeId] = ($districtTotals[$district][$sizeId] ?? 0) + $quantity;
         }
 
         arsort($sizeTotals);
         $sizeIds = array_keys($sizeTotals);
-
-        $memberOrderTotals = [];
-        foreach ($memberTotals as $name => $sizes) {
-            $memberOrderTotals[$name] = array_sum($sizes);
-        }
-        arsort($memberOrderTotals);
-        $memberLabels = array_keys($memberOrderTotals);
 
         $sizes = [];
         foreach ($sizeIds as $sizeId) {
             $sizes[] = ['ID' => $sizeId, 'Title' => $sizeTitles[$sizeId], 'Total' => $sizeTotals[$sizeId]];
         }
 
-        $datasetsBySize = [];
-        foreach ($sizeIds as $sizeId) {
-            $data = [];
-            foreach ($memberLabels as $memberName) {
-                $data[] = $memberTotals[$memberName][$sizeId] ?? 0;
-            }
-            $datasetsBySize[] = ['sizeId' => $sizeId, 'size' => $sizeTitles[$sizeId], 'data' => $data];
-        }
+        [$memberLabels, $datasetsBySize] = $this->stackBySize($memberTotals, $sizeIds, $sizeTitles);
+        [$cityLabels, $cityDatasets] = $this->stackBySize($cityTotals, $sizeIds, $sizeTitles);
+        [$districtLabels, $districtDatasets] = $hasDistricts
+            ? $this->stackBySize($districtTotals, $sizeIds, $sizeTitles)
+            : [[], []];
 
         return $this->jsonResponse([
-            'sizes'          => $sizes,
-            'memberLabels'   => $memberLabels,
-            'datasetsBySize' => $datasetsBySize,
+            'sizes'                  => $sizes,
+            'memberLabels'           => $memberLabels,
+            'datasetsBySize'         => $datasetsBySize,
+            'cityLabels'             => $cityLabels,
+            'cityDatasetsBySize'     => $cityDatasets,
+            // Leer, wenn kein Eintrag einen Stadtteil hat
+            'districtLabels'         => $districtLabels,
+            'districtDatasetsBySize' => $districtDatasets,
         ]);
+    }
+
+    /**
+     * Mengen je Gruppe und Größe als gestapelte Chart-Daten: Gruppen absteigend
+     * nach Summe ("Ohne Ort" immer zuletzt), ein Datensatz pro Größe.
+     *
+     * @param array<string, array<int, int>> $totals Gruppe => [ sizeId => Quantity ]
+     * @param list<int> $sizeIds
+     * @param array<int, string> $sizeTitles
+     * @return array{0: list<string>, 1: list<array{sizeId: int, size: string, data: list<int>}>}
+     */
+    private function stackBySize(array $totals, array $sizeIds, array $sizeTitles): array
+    {
+        $groupTotals = array_map('array_sum', $totals);
+        arsort($groupTotals);
+        $labels = array_map('strval', array_keys($groupTotals));
+        usort($labels, fn ($a, $b) => ($a === self::UNKNOWN_CITY) <=> ($b === self::UNKNOWN_CITY)
+            ?: $groupTotals[$b] <=> $groupTotals[$a]);
+
+        $datasets = [];
+        foreach ($sizeIds as $sizeId) {
+            $data = [];
+            foreach ($labels as $label) {
+                $data[] = $totals[$label][$sizeId] ?? 0;
+            }
+            $datasets[] = ['sizeId' => $sizeId, 'size' => $sizeTitles[$sizeId], 'data' => $data];
+        }
+        return [$labels, $datasets];
+    }
+
+    /**
+     * GET /api/v1/marketing/reverseGeocode?lat=&lng=
+     *
+     * Adresse zur erfassten Position, um das Ort-Feld vorzufüllen. Läuft über
+     * den Server, damit der Browser keine Anfragen an Nominatim schickt.
+     */
+    public function reverseGeocode(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $lat = $request->getVar('lat');
+        $lng = $request->getVar('lng');
+        if (!is_numeric($lat) || !is_numeric($lng) || abs((float) $lat) > 90 || abs((float) $lng) > 180) {
+            return $this->errorResponse('Ungültige Koordinaten', 400);
+        }
+
+        try {
+            $address = Geocoder::singleton()->reverse((float) $lat, (float) $lng);
+        } catch (\Throwable $e) {
+            Injector::inst()->get(LoggerInterface::class)->warning('Reverse-Geocoding fehlgeschlagen: ' . $e->getMessage());
+            return $this->errorResponse('Adresse konnte nicht ermittelt werden', 502);
+        }
+
+        return $this->successResponse(['address' => $address]);
     }
 
     /** POST /api/v1/marketing/store */
@@ -286,8 +357,11 @@ class MarketingApiController extends ApiController
             $distribution = PosterDistribution::create();
             $distribution->Location       = $location;
             $distribution->Quantity       = max(1, (int) ($body['Quantity'] ?? 1));
-            $distribution->Latitude       = $latitude ?: null;
-            $distribution->Longitude      = $longitude ?: null;
+            if ($latitude && $longitude) {
+                $distribution->Latitude          = $latitude;
+                $distribution->Longitude         = $longitude;
+                $distribution->CoordinatesSource = 'GPS';
+            }
             $distribution->Note           = $body['Note'] ?? '';
             $distribution->DistributedAt  = $distributedAt;
             $distribution->PosterSizeID   = $size->ID;
@@ -329,11 +403,22 @@ class MarketingApiController extends ApiController
         if (isset($body['Quantity'])) {
             $distribution->Quantity = max(1, (int) $body['Quantity']);
         }
-        if (array_key_exists('Latitude', $body)) {
-            $distribution->Latitude = trim((string) $body['Latitude']) ?: null;
-        }
-        if (array_key_exists('Longitude', $body)) {
-            $distribution->Longitude = trim((string) $body['Longitude']) ?: null;
+        // Das Formular schickt nur GPS-Koordinaten mit. Leere Werte heißen
+        // "GPS-Position entfernt" — aus dem Ort ermittelte Koordinaten bleiben
+        // davon unberührt und werden bei einer Ortsänderung neu bestimmt.
+        if (array_key_exists('Latitude', $body) || array_key_exists('Longitude', $body)) {
+            $latitude  = trim((string) ($body['Latitude'] ?? ''));
+            $longitude = trim((string) ($body['Longitude'] ?? ''));
+            if ($latitude && $longitude) {
+                $distribution->Latitude          = $latitude;
+                $distribution->Longitude         = $longitude;
+                $distribution->CoordinatesSource = 'GPS';
+            } elseif ($distribution->CoordinatesSource === 'GPS') {
+                $distribution->Latitude          = null;
+                $distribution->Longitude         = null;
+                $distribution->CoordinatesSource = 'None';
+                $distribution->GeocodedLocation  = null;
+            }
         }
         if (isset($body['Note'])) {
             $distribution->Note = $body['Note'];
@@ -353,7 +438,7 @@ class MarketingApiController extends ApiController
             $distribution->PosterSizeID = $size->ID;
         }
 
-        if (!$distribution->Location && !($distribution->Latitude && $distribution->Longitude)) {
+        if (!$distribution->Location && $distribution->CoordinatesSource !== 'GPS') {
             return $this->errorResponse('Bitte einen Ort eingeben oder die Position erfassen', 400);
         }
 

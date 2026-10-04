@@ -30,6 +30,7 @@ import Skript from '@views/Skript.vue'
 import SkriptDetail from '@views/SkriptDetail.vue'
 import Marketing from '@views/Marketing.vue'
 import MarketingStatistics from '@views/MarketingStatistics.vue'
+import MarketingMap from '@views/MarketingMap.vue'
 import Inventory from '@views/Inventory.vue'
 import InventoryRentals from '@views/InventoryRentals.vue'
 import InventoryItemPublic from '@views/InventoryItemPublic.vue'
@@ -218,6 +219,12 @@ const routes = [
     path: '/marketing/statistics',
     name: 'MarketingStatistics',
     component: MarketingStatistics,
+    meta: { requiresAuth: true, totem: 'marketing' }
+  },
+  {
+    path: '/marketing/map',
+    name: 'MarketingMap',
+    component: MarketingMap,
     meta: { requiresAuth: true, totem: 'marketing' }
   },
   {

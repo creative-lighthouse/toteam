@@ -30,6 +30,14 @@
             <span class="icon-mask" :style="statisticsIconStyle" />
           </AppIconButton>
           <AppIconButton
+            variant="neutral"
+            aria-label="Karte"
+            title="Karte"
+            @click="router.push({ name: 'MarketingMap' })"
+          >
+            <span class="icon-mask" :style="mapIconStyle" />
+          </AppIconButton>
+          <AppIconButton
             v-if="store.canManageSizes"
             variant="neutral"
             aria-label="Plakat-Größen verwalten"
@@ -79,12 +87,12 @@
           <span v-else class="marketing-list-row_size">–</span>
           <span class="marketing-list-row_location">{{ entry.Location || 'Erfasste Position' }}</span>
 
-          <div class="marketing-list-row_map">
+          <div class="marketing-list-row_map" :class="{ 'marketing-list-row_map--approx': entry.CoordinatesSource === 'Address' }">
             <AppIconButton
               v-if="entry.Latitude && entry.Longitude"
               variant="ghost"
               :aria-label="`${entry.Location || 'Erfasste Position'} auf Karte öffnen`"
-              title="Auf Karte öffnen"
+              :title="entry.CoordinatesSource === 'Address' ? 'Auf Karte öffnen (aus dem Ort ermittelt, ungefähr)' : 'Auf Karte öffnen'"
               @click="openMap(entry)"
             >
               <span class="icon-mask" :style="locationIconStyle" />
@@ -140,12 +148,14 @@ import actionEdit from '../../../icons/actions/action_edit.svg'
 import actionTrash from '../../../icons/actions/action_trash.svg'
 import actionLocation from '../../../icons/actions/action_location.svg'
 import actionStatistics from '../../../icons/actions/action_statistics.svg'
+import actionMap from '../../../icons/actions/action_map.svg'
 import actionPages from '../../../icons/actions/action_pages.svg'
 
 const editIconStyle = { maskImage: `url("${actionEdit}")`, WebkitMaskImage: `url("${actionEdit}")` }
 const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 const locationIconStyle = { maskImage: `url("${actionLocation}")`, WebkitMaskImage: `url("${actionLocation}")` }
 const sizesIconStyle = { maskImage: `url("${actionPages}")`, WebkitMaskImage: `url("${actionPages}")` }
+const mapIconStyle = { maskImage: `url("${actionMap}")`, WebkitMaskImage: `url("${actionMap}")` }
 const statisticsIconStyle = { maskImage: `url("${actionStatistics}")`, WebkitMaskImage: `url("${actionStatistics}")` }
 
 const router = useRouter()

@@ -123,7 +123,7 @@
       <p class="feed-composer_hint">{{ audienceHint }}</p>
       <AppIconButton
         v-if="!inline"
-        :variant="showOptions ? 'primary' : 'ghost'"
+        :variant="showOptions ? 'primary' : 'neutral'"
         :aria-label="showOptions ? 'Sichtbarkeit und Absender ausblenden' : 'Sichtbarkeit und Absender einstellen'"
         :title="showOptions ? 'Einstellungen ausblenden' : 'Wer postet, wer sieht es?'"
         :aria-expanded="showOptions"
@@ -134,7 +134,7 @@
       </AppIconButton>
       <AppIconButton
         v-if="!inline"
-        :variant="showSchedule || isScheduled || expiryDate ? 'primary' : 'ghost'"
+        :variant="showSchedule || isScheduled || expiryDate ? 'primary' : 'neutral'"
         :aria-label="showSchedule ? 'Zeitraum ausblenden' : 'Zeitraum festlegen'"
         :title="showSchedule ? 'Zeitraum ausblenden' : 'Planen und Ablaufdatum'"
         :aria-expanded="showSchedule"

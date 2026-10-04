@@ -183,11 +183,6 @@
         align-items: center;
         gap: 8px;
 
-        .icon-mask {
-            width: 20px;
-            height: 20px;
-        }
-
         // Auf dem Handy steht "Posten" in einer eigenen Zeile
         @include media(max-medium) {
             flex-wrap: wrap;

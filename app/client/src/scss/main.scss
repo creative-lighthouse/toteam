@@ -59,6 +59,7 @@
 @use "pages/SkriptDetailPage.scss";
 @use "pages/MarketingPage.scss";
 @use "pages/MarketingStatisticsPage.scss";
+@use "pages/MarketingMapPage.scss";
 @use "pages/InventoryPage.scss";
 @use "pages/InventoryRentalsPage.scss";
 @use "pages/InventoryItemPublicPage.scss";
@@ -139,6 +140,7 @@
 @use "components/skript/ScriptRoleInfoModal.scss";
 @use "components/skript/ScriptMemberPickerDropdown.scss";
 @use "components/marketing/MarketingEntryModal.scss";
+@use "components/marketing/MarketingMap.scss";
 @use "components/marketing/MarketingSizeManagerModal.scss";
 @use "components/announcements/FeedComposer.scss";
 @use "components/announcements/FeedPostCard.scss";

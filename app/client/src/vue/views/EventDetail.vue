@@ -134,7 +134,7 @@
             </section>
 
             <section v-if="scriptState?.scripts.length" class="event-page_section">
-              <h2 class="hl3 event-page_subtitle">{{ scriptState.scripts.length === 1 ? 'Skript' : 'Skripte' }}</h2>
+              <h2 class="hl3 event-page_subtitle">Rollenverteilung</h2>
               <OrgEventScripts :event="event" :state="visibleScriptState" @update="scriptState = $event" />
             </section>
           </template>

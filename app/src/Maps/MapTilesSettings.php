@@ -128,12 +128,26 @@ class MapTilesSettings extends DataObject
      */
     public function clientConfig(float $lat, float $lng): ?array
     {
-        $bbox = self::parseBBox($this->TilesBBox);
-        if (!$bbox || !$this->isAvailable()) {
+        $config = $this->areaClientConfig();
+        if (!$config) {
             return null;
         }
-        [$minLon, $minLat, $maxLon, $maxLat] = $bbox;
+        [$minLon, $minLat, $maxLon, $maxLat] = $config['BBox'];
         if ($lng < $minLon || $lng > $maxLon || $lat < $minLat || $lat > $maxLat) {
+            return null;
+        }
+        return $config;
+    }
+
+    /**
+     * Kartenkonfiguration ohne festen Punkt (z.B. für Karten mit vielen Markern),
+     * mit dem heruntergeladenen Bereich als `BBox` [min_lon, min_lat, max_lon, max_lat].
+     * Null, wenn es keine Kartendaten gibt.
+     */
+    public function areaClientConfig(): ?array
+    {
+        $bbox = self::parseBBox($this->TilesBBox);
+        if (!$bbox || !$this->isAvailable()) {
             return null;
         }
         $base = Director::baseURL() . static::config()->get('directory');
@@ -142,6 +156,7 @@ class MapTilesSettings extends DataObject
             'TilesURL'  => $base . '/' . static::config()->get('file_name') . '?v=' . $this->TilesBuild,
             'AssetsURL' => $base,
             'MaxZoom'   => (int) $this->TilesMaxZoom,
+            'BBox'      => $bbox,
         ];
     }
 
