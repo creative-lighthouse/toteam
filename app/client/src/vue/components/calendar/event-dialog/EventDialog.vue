@@ -30,16 +30,10 @@
         @show-status="({ text, type }) => showStatusMessage(text, type)"
       />
 
-      <EventMealsSection
-        :event="event"
-        :can-manage-content="canManageContent"
-        @food-changed="$emit('food-changed', ...arguments)"
-        @show-status="({ text, type }) => showStatusMessage(text, type)"
-      />
-
       <EventAgendaSection
         :event="event"
         :can-manage-content="canManageContent"
+        @food-changed="$emit('food-changed', ...arguments)"
         @show-status="({ text, type }) => showStatusMessage(text, type)"
       />
 
@@ -63,7 +57,6 @@ import AppModal from '@components/ui/AppModal.vue'
 import EventDialogHeader from './EventDialogHeader.vue'
 import EventInfo from './EventInfo.vue'
 import EventParticipationForm from './EventParticipationForm.vue'
-import EventMealsSection from './EventMealsSection.vue'
 import EventAgendaSection from './EventAgendaSection.vue'
 import EventRoleCastingSection from './EventRoleCastingSection.vue'
 import EventParticipantsList from './EventParticipantsList.vue'

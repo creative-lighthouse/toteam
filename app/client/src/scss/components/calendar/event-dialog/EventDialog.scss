@@ -252,13 +252,6 @@
                 padding: 6px 0;
             }
 
-            // ── Meals section ────────────────────────────────────────────────────
-            .meals-section {
-                border-bottom: 1px solid var(--ColorLightGray);
-                padding: 15px 0;
-
-            }
-
             // ── Rollenplan section (EventRoleCastingSection.vue) ─────────────────
             .role-casting-section {
                 border-bottom: 1px solid var(--ColorLightGray);
@@ -318,6 +311,8 @@
                             color: var(--ColorGray);
                             font-weight: 600;
                             white-space: nowrap;
+                            // Oben bündig mit dem Titel (kleinere Schrift → etwas nach unten gerückt)
+                            align-self: start;
                             padding-top: 2px;
                         }
 
@@ -340,6 +335,60 @@
                             text-align: left;
 
                             &--pre { white-space: pre-wrap; word-break: break-word; }
+                        }
+
+                        // Bearbeitbar per langem Drücken: kein iOS-Menü und keine Textmarkierung dabei
+                        .agenda-point_content--manageable {
+                            -webkit-touch-callout: none;
+                            -webkit-user-select: none;
+                            user-select: none;
+                        }
+                    }
+
+                    // ── Mahlzeit als Tagesordnungspunkt (EventAgendaMeal.vue) ─────
+                    .agenda-point--meal {
+                        // Höhe der kompakten Teilnahme-Buttons: Uhrzeit und Titel bekommen dieselbe
+                        // Zeilenhöhe und stehen so oben auf einer Linie (auch wenn die Buttons umbrechen)
+                        --MealHeadHeight: 34px;
+
+                        // Essens-Icon hinter der Uhrzeit, damit der Titel bündig mit den anderen Punkten bleibt
+                        .agenda-point_time {
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                            min-height: var(--MealHeadHeight);
+                            padding-top: 0;
+                        }
+
+                        .agenda-meal_head {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            flex-wrap: wrap;
+                            gap: 6px 12px;
+                        }
+
+                        .agenda-meal_title {
+                            display: flex;
+                            align-items: center;
+                            min-height: var(--MealHeadHeight);
+                            min-width: 0;
+                        }
+
+                        .agenda-meal_icon {
+                            flex-shrink: 0;
+                            width: 16px;
+                            height: 16px;
+                            background-color: var(--ColorPrimary);
+                        }
+
+                        .agenda-meal_response {
+                            width: 220px;
+                            flex-shrink: 0;
+
+                            @include media(max-medium) {
+                                width: 100%;
+                            }
                         }
                     }
                 }
@@ -381,7 +430,6 @@
             .status--Suggested { color: var(--ColorStatusWarning); font-weight: bold; }
             .status--Cancelled { color: var(--ColorStatusBad); font-weight: bold; }
 
-            .meals-section,
             .agenda-section,
             .role-casting-section {
                 padding: 10px 0 15px 0;
@@ -506,94 +554,6 @@
                 }
             }
 
-            .meals-list {
-                display: flex;
-                flex-direction: column;
-                gap: 5px;
-
-                .meal {
-                    // Bearbeitbar per langem Drücken: kein iOS-Menü und keine Textmarkierung dabei
-                    &.meal--manageable {
-                        -webkit-touch-callout: none;
-                        -webkit-user-select: none;
-                        user-select: none;
-                    }
-
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    flex-wrap: wrap;
-                    gap: 0 10px;
-                    background-color: var(--ColorVeryLightGray);
-                    padding: 8px 10px;
-                    border-radius: var(--BorderRadiusSmall);
-
-                    form {
-                        border: none;
-                        max-width: unset;
-                        background-color: transparent;
-                        box-shadow: none;
-                        padding: 0;
-                        border-radius: 0;
-
-                        fieldset {
-                            flex-direction: row;
-                        }
-                    }
-
-                    .event-response-actions {
-                        margin: 0;
-                        padding: 0;
-                        width: 50%;
-                        flex-shrink: 0;
-
-                        @include media(max-medium) {
-                            width: 100%;
-                            margin-top: 10px;
-                        }
-                    }
-
-                    // Desktop: Titel füllt den Platz links der Buttons und bricht dort um,
-                    // statt die Buttons in die nächste Zeile zu schieben
-                    .meal-info {
-                        flex: 1 1 0;
-                        min-width: 0;
-
-                        .meal-info-row {
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-
-                            // Der Dialog zentriert Text — zweizeilige Titel bleiben linksbündig
-                            .meal-info-title {
-                                min-width: 0;
-                                text-align: left;
-                            }
-
-                            .meal-name {
-                                font-size: 14px;
-                                font-weight: 500;
-                                color: var(--ColorBlack);
-                            }
-
-                            .meal-manage-actions {
-                                display: flex;
-                                gap: 5px;
-                            }
-
-                            @include media(max-medium) {
-                                align-items: center;
-                                justify-content: space-between;
-                            }
-                        }
-
-                        @include media(max-medium) {
-                            width: 100%;
-                        }
-                    }
-                }
-            }
-
             .participants-list {
                 display: flex;
                 flex-direction: column;
@@ -625,7 +585,7 @@
     }
 }
 
-// ── Mahlzeiten im Termin (EventMealsSection.vue) ───────────────────────────────
+// ── Mahlzeiten in der Tagesordnung (EventAgendaMeal.vue) ───────────────────────────────
 
 .meal-title-link {
     color: inherit;
@@ -635,14 +595,22 @@
     &:hover { text-decoration: underline; color: var(--ColorPrimary); }
 }
 
-// Liste der Gerichte einer Mahlzeit (MealFoodRow) unter der eigenen Zusage
+// Gerichte einer Mahlzeit (MealFoodRow) — jedes einzeln hellgrau hinterlegt
 .meal-entries {
-    flex-basis: 100%;
-    margin-top: 8px;
-    padding: 0;
-    background: var(--ColorVeryLightGray);
-    border-radius: var(--BorderRadiusSmall);
+    margin-top: 6px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+
+    .meal-food-row {
+        background: var(--ColorVeryLightGray);
+        border-radius: var(--BorderRadiusSmall);
+    }
+
+    // Bearbeitbar per langem Drücken: kein iOS-Menü und keine Textmarkierung dabei
+    .meal-food-row--manageable {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
 }

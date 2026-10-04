@@ -47,7 +47,7 @@
               title="Mahlzeit bearbeiten"
               @click="openEditModal"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span class="icon-mask" :style="editIconStyle" />
             </AppIconButton>
           </div>
         </div>
@@ -116,7 +116,7 @@
                 variant="primary"
                 aria-label="Gericht hinzufügen"
                 title="Gericht hinzufügen"
-                @click="foodCreateModal?.open(meal.id)"
+                @click="foodModal?.create(meal.id, meal.organizationId)"
               >
                 <span class="icon-mask" :style="addFoodIconStyle" />
               </AppIconButton>
@@ -136,42 +136,7 @@
               class="meal-food"
               :class="{ 'meal-food--orderable': item.isOrderable }"
             >
-              <div v-if="editingFoodId === item.id" class="meal-food-edit-form">
-                <input
-                  v-model="editFoodTitle"
-                  type="text"
-                  class="form-control"
-                  placeholder="Titel"
-                  aria-label="Titel des Gerichts"
-                  @keyup.enter="saveFoodEdit(item.id)"
-                />
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="editFoodOrderable" aria-label="Bestellbar (Menge pro Person begrenzbar)" />
-                  Bestellbar (Menge pro Person begrenzbar)
-                </label>
-                <div v-if="editFoodOrderable" class="meal-product-add-row">
-                  <label>
-                    Max. pro Person (0 = unbegrenzt)
-                    <input
-                      v-model.number="editFoodMax"
-                      type="number"
-                      min="0"
-                      class="form-control"
-                      aria-label="Max. pro Person"
-                    />
-                  </label>
-                </div>
-                <div class="meal-product-add-row">
-                  <AppButton
-                    variant="primary"
-                    :disabled="!editFoodTitle.trim() || editFoodSaving"
-                    @click="saveFoodEdit(item.id)"
-                  >{{ editFoodSaving ? '…' : 'Speichern' }}</AppButton>
-                  <AppButton variant="secondary" :disabled="editFoodSaving" @click="cancelFoodEdit">Abbrechen</AppButton>
-                </div>
-              </div>
               <MealFoodRow
-                v-else
                 :title="item.title"
                 :preference="item.preference"
                 :supplier="item.supplier"
@@ -196,9 +161,9 @@
                   <AppIconButton
                     variant="primary"
                     aria-label="Gericht bearbeiten"
-                    @click="startFoodEdit(item)"
+                    @click="foodModal?.open(item)"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <span class="icon-mask" :style="editIconStyle" />
                   </AppIconButton>
                   <AppIconButton
                     variant="danger"
@@ -211,9 +176,9 @@
                   <AppIconButton
                     variant="primary"
                     aria-label="Gericht bearbeiten"
-                    @click="editFood(item)"
+                    @click="foodModal?.open(item)"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <span class="icon-mask" :style="editIconStyle" />
                   </AppIconButton>
                   <AppIconButton
                     v-if="!(item.status === 'New' && meal.canApprove) && meal.canManage"
@@ -258,9 +223,14 @@
     </div>
 
     <FoodSuggestModal ref="suggestModal" @suggested="onFoodSuggested" />
-    <FoodCreateModal ref="foodCreateModal" @created="onFoodCreated" />
-    <FoodEditModal ref="foodEditModal" @saved="onFoodEdited" @deleted="onFoodDeleted" />
-    <MealFormModal ref="editModal" @saved="onMealSaved" />
+    <FoodFormModal
+      ref="foodModal"
+      :allow-orderable="meal?.canManage || meal?.canApprove"
+      @created="onFoodCreated"
+      @saved="onFoodEdited"
+      @deleted="onFoodDeleted"
+    />
+    <MealFormModal ref="editModal" @saved="onMealSaved" @deleted="onMealDeleted" />
     <HistoryModal
       v-if="meal"
       ref="historyModal"
@@ -287,12 +257,12 @@ import { vRovingFocus } from '@utils/rovingFocus'
 import ParticipantCard from '@components/calendar/ParticipantCard.vue'
 import MealFormModal from '@components/food/MealFormModal.vue'
 import FoodSuggestModal from '@components/food/FoodSuggestModal.vue'
-import FoodCreateModal from '@components/food/FoodCreateModal.vue'
-import FoodEditModal from '@components/food/FoodEditModal.vue'
+import FoodFormModal from '@components/food/FoodFormModal.vue'
 import FoodPreferenceLegend from '@components/food/FoodPreferenceLegend.vue'
 import HistoryModal from '@components/history/HistoryModal.vue'
 import actionHistory from '../../../icons/actions/action_history.svg'
 import actionAddFood from '../../../icons/actions/action_addfood.svg'
+import actionEdit from '../../../icons/actions/action_edit.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -314,19 +284,14 @@ const suggestModal = ref(null)
 const userOrders        = ref({})
 const ordersSaving      = ref(false)
 const ordersSaveTimer   = ref(null)
-const foodCreateModal   = ref(null)
-const foodEditModal     = ref(null)
+const foodModal         = ref(null)
 const deletingProductId     = ref(null)
 const decidingFoodId        = ref(null)
-const editingFoodId       = ref(null)
-const editFoodTitle       = ref('')
-const editFoodOrderable   = ref(false)
-const editFoodMax         = ref(0)
-const editFoodSaving      = ref(false)
 const editModal = ref(null)
 const historyModal = ref(null)
 const historyIconStyle = { maskImage: `url("${actionHistory}")`, WebkitMaskImage: `url("${actionHistory}")` }
 const addFoodIconStyle = { maskImage: `url("${actionAddFood}")`, WebkitMaskImage: `url("${actionAddFood}")` }
+const editIconStyle = { maskImage: `url("${actionEdit}")`, WebkitMaskImage: `url("${actionEdit}")` }
 
 function openEditModal() {
   editModal.value?.open(meal.value)
@@ -338,6 +303,11 @@ function onMealSaved({ title, time, description, acceptsContributions }) {
   meal.value.description          = description
   meal.value.acceptsContributions = acceptsContributions
   usePageHeaderStore().setHeader(meal.value.title, '')
+}
+
+// Die Mahlzeit gibt es nicht mehr → zurück zur Übersicht des Essens-Totems
+function onMealDeleted() {
+  router.push({ name: 'Food' })
 }
 
 async function load() {
@@ -552,59 +522,21 @@ async function deleteProduct(productId) {
   }
 }
 
-// Essensplaner bearbeiten Titel und Präferenz im Modal (auch offene Vorschläge),
-// sonst die Inline-Bearbeitung für Mahlzeit-Verwalter
-function editFood(item) {
-  if (meal.value.canApprove) {
-    foodEditModal.value?.open(item)
-  } else {
-    startFoodEdit(item)
-  }
-}
-
+// Das Modal antwortet je nach Gericht im Format des Essensplaners oder der Produkt-API —
+// beide enthalten nur Felder, die auch die Gerichte-Liste kennt. Wurde das Gericht
+// bestellbar (oder wieder fest), fehlen Bestellungen bzw. Status → neu laden.
 function onFoodEdited(updated) {
   const item = meal.value.foods.find(f => f.id === updated.id)
-  if (item) {
-    Object.assign(item, {
-      title: updated.title,
-      preference: updated.preference,
-      supplier: updated.supplier,
-      supplierId: updated.supplierId,
-    })
+  if (!item) return
+  if (item.isOrderable !== updated.isOrderable) {
+    load()
+    return
   }
+  Object.assign(item, updated)
 }
 
 function onFoodDeleted(foodId) {
   meal.value.foods = meal.value.foods.filter(f => f.id !== foodId)
-}
-
-function startFoodEdit(item) {
-  editingFoodId.value     = item.id
-  editFoodTitle.value     = item.title
-  editFoodOrderable.value = item.isOrderable
-  editFoodMax.value       = item.maxQuantity ?? 0
-}
-
-function cancelFoodEdit() {
-  editingFoodId.value = null
-}
-
-async function saveFoodEdit(foodId) {
-  if (!editFoodTitle.value.trim() || editFoodSaving.value) return
-  editFoodSaving.value = true
-  try {
-    await apiPut(`/food/mealProduct/${foodId}`, {
-      title: editFoodTitle.value.trim(),
-      isOrderable: editFoodOrderable.value,
-      maxQuantity: editFoodMax.value ?? 0,
-    })
-    editingFoodId.value = null
-    await load()
-  } catch (e) {
-    alert('Fehler: ' + e.message)
-  } finally {
-    editFoodSaving.value = false
-  }
 }
 
 onMounted(load)

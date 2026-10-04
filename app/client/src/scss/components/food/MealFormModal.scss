@@ -2,4 +2,10 @@
     text-align: left;
     max-width: 420px;
     max-height: 90dvh;
+
+    // Löschen links, wie in den anderen Bearbeiten-Modals
+    .meal-form-modal_delete {
+        margin-right: auto;
+        align-self: center;
+    }
 }

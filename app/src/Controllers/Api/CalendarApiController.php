@@ -117,6 +117,10 @@ class CalendarApiController extends ApiController
             $participation = $appointment->Participations()->filter(['MemberID' => $member->ID])->first();
 
             // Get meals
+            // Gerichte bearbeiten (FoodFormModal per Rechtsklick): Essensplaner oder Mahlzeit-Verwalter
+            $appointmentOrgIDs = $appointment->Organisations()->column('ID');
+            $canEditFoods = $this->hasPermissionInAnyOrg($member, $appointmentOrgIDs, OrgPermissions::FOOD_MANAGE_MEALS)
+                || $this->hasPermissionInAnyOrg($member, $appointmentOrgIDs, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
             $meals = [];
             foreach ($appointment->Meals() as $meal) {
                 $mealEater = $meal->Eaters()->filter(['MemberID' => $member->ID])->first();
@@ -135,6 +139,8 @@ class CalendarApiController extends ApiController
                         'Supplier'     => ($productSupplier && $productSupplier->exists())
                             ? trim($productSupplier->FirstName . ' ' . $productSupplier->Surname)
                             : null,
+                        'SupplierID'   => ($productSupplier && $productSupplier->exists()) ? $productSupplier->ID : null,
+                        'OrganizationID' => (int) $food->ParentID,
                         'MaxQuantity'  => (int) $food->MaxQuantity,
                         'UserQuantity' => $userOrder ? (int) $userOrder->Quantity : 0,
                     ];
@@ -150,6 +156,8 @@ class CalendarApiController extends ApiController
                         'Supplier'   => ($supplier && $supplier->exists())
                             ? trim($supplier->FirstName . ' ' . $supplier->Surname)
                             : null,
+                        'SupplierID' => ($supplier && $supplier->exists()) ? $supplier->ID : null,
+                        'OrganizationID' => (int) $food->ParentID,
                     ];
                 }
                 $meals[] = [
@@ -162,6 +170,7 @@ class CalendarApiController extends ApiController
                     'AcceptsContributions' => (bool) $meal->AcceptsContributions,
                     'Products'             => $products,
                     'Foods'                => $foods,
+                    'CanEditFoods'         => $canEditFoods,
                 ];
             }
 

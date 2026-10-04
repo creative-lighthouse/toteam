@@ -1,5 +1,8 @@
 // Gemeinsame Helfer fürs Essens-Totem (Übersicht und Essensplaner)
 
+import VeganIcon from '../../../icons/states/food_vegan.svg'
+import VegetarianIcon from '../../../icons/states/food_vegetarian.svg'
+
 function parseDay(dateStr) {
   return new Date(`${dateStr}T00:00:00`)
 }
@@ -38,3 +41,9 @@ export function groupMealsByDay(meals) {
 }
 
 export const PREFERENCE_LABELS = { Vegetarian: 'Vegetarisch', Vegan: 'Vegan' }
+
+/** Icon hinter dem Titel eines Gerichts — `{ src, label }` oder null ohne Präferenz */
+export const PREFERENCE_ICONS = {
+  Vegetarian: { src: VegetarianIcon, label: PREFERENCE_LABELS.Vegetarian },
+  Vegan: { src: VeganIcon, label: PREFERENCE_LABELS.Vegan },
+}

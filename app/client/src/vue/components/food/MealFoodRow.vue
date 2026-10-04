@@ -51,8 +51,7 @@
 <script setup>
 import { computed } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
-import VeganIcon from '../../../../icons/states/food_vegan.svg'
-import VegetarianIcon from '../../../../icons/states/food_vegetarian.svg'
+import { PREFERENCE_ICONS } from '@utils/food'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -70,9 +69,5 @@ const props = defineProps({
 
 defineEmits(['increment', 'decrement'])
 
-const PREFERENCE_ICONS = {
-  Vegetarian: { src: VegetarianIcon, label: 'Vegetarisch' },
-  Vegan: { src: VeganIcon, label: 'Vegan' },
-}
 const preferenceIcon = computed(() => PREFERENCE_ICONS[props.preference] ?? null)
 </script>

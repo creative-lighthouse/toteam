@@ -291,7 +291,8 @@ class FoodApiController extends ApiController
             $orgTitle = $org?->Title;
             $orgLogo  = $org?->RenderLogo(80);
 
-            $canManage = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_MANAGE_MEALS);
+            // Termine können mehreren Orgs gehören — Recht in irgendeiner davon reicht
+            $canManage = $this->hasPermissionInAnyOrg($member, $appointment->Organisations()->column('ID'), OrgPermissions::FOOD_MANAGE_MEALS);
 
             $mealData              = $this->formatMeal($meal, $appointment, $orgTitle, $orgLogo, $memberResponses, $member);
             $mealData['canManage'] = $canManage;
@@ -344,8 +345,8 @@ class FoodApiController extends ApiController
             }
 
             $mealAppointment = $meal->Parent();
-            $mealOrg = ($mealAppointment && $mealAppointment->exists()) ? $mealAppointment->Organisations()->first() : null;
-            if (!$mealOrg || !$mealOrg->exists() || !$member->hasOrgPermission($mealOrg, OrgPermissions::FOOD_MANAGE_MEALS)) {
+            $mealOrgIDs = ($mealAppointment && $mealAppointment->exists()) ? $mealAppointment->Organisations()->column('ID') : [];
+            if (!$this->hasPermissionInAnyOrg($member, $mealOrgIDs, OrgPermissions::FOOD_MANAGE_MEALS)) {
                 return $this->errorResponse('Zugriff verweigert', 403);
             }
 
@@ -365,6 +366,15 @@ class FoodApiController extends ApiController
             $food->MaxQuantity = $isOrderable ? max(0, (int) ($body['maxQuantity'] ?? 0)) : 0;
             $food->Status      = 'Accepted';
             $food->ParentID    = $org?->ID ?? 0;
+            if (in_array($body['preference'] ?? '', ['None', 'Vegetarian', 'Vegan'], true)) {
+                $food->FoodPreference = $body['preference'];
+            }
+            if (!empty($body['supplierId'])) {
+                $supplierError = $this->applySupplier($food, (int) $body['supplierId']);
+                if ($supplierError) {
+                    return $this->errorResponse($supplierError, 400);
+                }
+            }
             $food->write();
             $food->Meals()->add($meal);
             $meal->recordHistorySetChange('Foods', [$food], []);
@@ -376,7 +386,9 @@ class FoodApiController extends ApiController
                     'isOrderable'  => $isOrderable,
                     'preference'   => $food->FoodPreference ?: 'None',
                     'status'       => 'Accepted',
-                    'supplier'     => null,
+                    'supplier'     => $food->Supplier()->exists() ? $food->Supplier()->getDisplayName() : null,
+                    'supplierId'   => $food->Supplier()->exists() ? $food->SupplierID : null,
+                    'organizationId' => (int) $food->ParentID,
                     'maxQuantity'  => (int) $food->MaxQuantity,
                     'totalOrdered' => 0,
                     'userQuantity' => 0,
@@ -391,8 +403,8 @@ class FoodApiController extends ApiController
                 return $this->errorResponse('Gericht nicht gefunden', 404);
             }
 
-            $foodOrg = Organization::get()->byID((int) $food->ParentID);
-            if (!$foodOrg || !$foodOrg->exists() || !$member->hasOrgPermission($foodOrg, OrgPermissions::FOOD_MANAGE_MEALS)) {
+            // Mahlzeit-Verwalter und Essensplaner (die Gerichte auch als bestellbar markieren)
+            if (!$this->canPlanFood($food, $member)) {
                 return $this->errorResponse('Zugriff verweigert', 403);
             }
 
@@ -411,6 +423,15 @@ class FoodApiController extends ApiController
             $food->Title       = $title;
             $food->IsOrderable = $isOrderable;
             $food->MaxQuantity = $isOrderable ? max(0, (int) ($body['maxQuantity'] ?? $food->MaxQuantity)) : 0;
+            if (in_array($body['preference'] ?? '', ['None', 'Vegetarian', 'Vegan'], true)) {
+                $food->FoodPreference = $body['preference'];
+            }
+            if (array_key_exists('supplierId', $body)) {
+                $supplierError = $this->applySupplier($food, (int) $body['supplierId']);
+                if ($supplierError) {
+                    return $this->errorResponse($supplierError, 400);
+                }
+            }
             $food->write();
 
             // Ein Gericht kann mehreren Mahlzeiten zugeordnet sein — in jedem Verlauf festhalten
@@ -431,14 +452,8 @@ class FoodApiController extends ApiController
                 );
             }
 
-            return $this->successResponse([
-                'food' => [
-                    'id'          => $food->ID,
-                    'title'       => $food->Title,
-                    'isOrderable' => $isOrderable,
-                    'maxQuantity' => (int) $food->MaxQuantity,
-                ],
-            ], 'Gericht aktualisiert');
+            // Planer-Format (das Bearbeiten-Modal wird im Essensplaner und in der Mahlzeit genutzt)
+            return $this->successResponse(['food' => $this->formatPlannerFood($food, $member)], 'Gericht aktualisiert');
         }
 
         if ($method === 'DELETE') {
@@ -447,8 +462,8 @@ class FoodApiController extends ApiController
                 return $this->errorResponse('Produkt nicht gefunden', 404);
             }
 
-            $foodOrg = Organization::get()->byID((int) $food->ParentID);
-            if (!$foodOrg || !$foodOrg->exists() || !$member->hasOrgPermission($foodOrg, OrgPermissions::FOOD_MANAGE_MEALS)) {
+            // Mahlzeit-Verwalter und Essensplaner (die Gerichte auch als bestellbar markieren)
+            if (!$this->canPlanFood($food, $member)) {
                 return $this->errorResponse('Zugriff verweigert', 403);
             }
 
@@ -730,8 +745,8 @@ class FoodApiController extends ApiController
         $supplier = $food->Supplier();
         $org      = $food->Parent();
         return [
-            // Bearbeiten/Löschen: Essensplanung der Organisation des Gerichts (nicht bei bestellbaren Produkten)
-            'canEdit'     => !$food->IsOrderable && $this->canPlanFood($food, $member),
+            // Bearbeiten/Löschen: Essensplanung der Organisation des Gerichts (auch bestellbare Produkte)
+            'canEdit'     => $this->canPlanFood($food, $member),
             'id'          => $food->ID,
             'title'       => $food->Title,
             'preference'  => $food->FoodPreference ?: 'None',
@@ -740,15 +755,37 @@ class FoodApiController extends ApiController
             'organizationId' => (int) $food->ParentID,
             // Ohne Person stellt die Organisation das Gericht selbst
             'organizationTitle' => !$supplier->exists() && $org->exists() ? $org->Title : null,
-            // Bestellbare Produkte legt die Mahlzeit selbst an — nicht verschiebbar
+            // Bestellbare Produkte gehören fest zu ihrer Mahlzeit — nicht verschiebbar
             'isOrderable' => (bool) $food->IsOrderable,
+            'maxQuantity' => (int) $food->MaxQuantity,
         ];
     }
 
+    /**
+     * Setzt, wer ein Gericht mitbringt (0 = die Organisation stellt es). Eine neue Person
+     * muss Mitglied der Organisation des Gerichts sein. Gibt im Fehlerfall die Meldung zurück.
+     */
+    private function applySupplier(Food $food, int $supplierID): ?string
+    {
+        if ($supplierID && $supplierID !== (int) $food->SupplierID) {
+            $supplier = Member::get()->byID($supplierID);
+            $membership = $supplier?->getMembershipInOrg($food->Parent());
+            if (!$membership || $membership->Role !== 'member') {
+                return 'Die Person ist kein Mitglied der Organisation';
+            }
+        }
+        $food->SupplierID = $supplierID;
+        return null;
+    }
+
+    /** Gericht bearbeiten/löschen: Essensplaner oder Mahlzeit-Verwalter der Organisation des Gerichts */
     private function canPlanFood(Food $food, Member $member): bool
     {
         $org = $food->Parent();
-        return $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
+        return $org->exists() && (
+            $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS)
+            || $member->hasOrgPermission($org, OrgPermissions::FOOD_MANAGE_MEALS)
+        );
     }
 
     /**
@@ -798,15 +835,10 @@ class FoodApiController extends ApiController
             $food->FoodPreference = $body['preference'];
         }
         if (array_key_exists('supplierId', $body)) {
-            $supplierID = (int) $body['supplierId'];
-            if ($supplierID && $supplierID !== (int) $food->SupplierID) {
-                $supplier = Member::get()->byID($supplierID);
-                $membership = $supplier?->getMembershipInOrg($food->Parent());
-                if (!$membership || $membership->Role !== 'member') {
-                    return $this->errorResponse('Die Person ist kein Mitglied der Organisation', 400);
-                }
+            $supplierError = $this->applySupplier($food, (int) $body['supplierId']);
+            if ($supplierError) {
+                return $this->errorResponse($supplierError, 400);
             }
-            $food->SupplierID = $supplierID;
         }
         $food->write();
 
@@ -942,8 +974,11 @@ class FoodApiController extends ApiController
             ];
         }
 
-        $org           = $appointment->Organisations()->first();
-        $canApprove    = $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS);
+        $canApprove    = $this->hasPermissionInAnyOrg(
+            $member,
+            $appointment->Organisations()->column('ID'),
+            OrgPermissions::FOOD_APPROVE_SUGGESTIONS
+        );
         $canRecordRsvp = $this->hasPermissionInAnyOrg(
             $member,
             $appointment->Organisations()->column('ID'),
@@ -1014,6 +1049,8 @@ class FoodApiController extends ApiController
             'appointmentTitle'     => $appointment->Title,
             'organizationTitle'    => $orgTitle,
             'organizationLogoUrl'  => $orgLogo,
+            // Organisation, der neue Gerichte dieser Mahlzeit gehören (wie beim Anlegen in mealProduct())
+            'organizationId'       => (int) ($appointment->Organisations()->first()?->ID ?? 0),
             'userResponse'         => $memberResponses[$meal->ID] ?? null,
             'attendees'            => $attendees,
             'declinedAttendees'    => $declinedAttendees,
