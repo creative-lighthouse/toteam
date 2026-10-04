@@ -2,6 +2,7 @@
 
 namespace App\Teams;
 
+use App\Announcements\FeedPost;
 use App\Calendar\Appointment;
 use App\Food\Food;
 use App\Maps\Geocoder;
@@ -64,6 +65,7 @@ use SilverStripe\View\Parsers\URLSegmentFilter;
  * @method \SilverStripe\ORM\ManyManyList|\App\Skript\Script[] Scripts()
  * @method \SilverStripe\ORM\DataList|\App\Skript\ScriptRoleAssignment[] RoleAssignments()
  * @method \SilverStripe\ORM\DataList|\App\Money\MoneyAccount[] MoneyAccounts()
+ * @method \SilverStripe\ORM\DataList|\App\Teams\OrgEventInterest[] Interests()
  */
 class OrgEvent extends DataObject
 {
@@ -117,6 +119,8 @@ class OrgEvent extends DataObject
         "RoleAssignments" => ScriptRoleAssignment::class . '.Event',
         // Kassen, die für dieses Event geführt werden
         "MoneyAccounts" => MoneyAccount::class . '.Event',
+        // "Interessiert" / "Ich bin dabei" der Mitglieder
+        "Interests" => OrgEventInterest::class . '.Event',
     ];
 
     private static $many_many = [
@@ -130,6 +134,7 @@ class OrgEvent extends DataObject
     private static $cascade_deletes = [
         "Prices",
         "RoleAssignments",
+        "Interests",
     ];
 
     private static $default_sort = "Title ASC";
@@ -516,7 +521,7 @@ class OrgEvent extends DataObject
             'AppointmentCount' => $this->Appointments()->count(),
             'FoodCount'        => $this->Foods()->count(),
             'CanManage'        => $this->canBeManagedBy($member),
-        ]);
+        ], $this->interestToApi($member));
     }
 
     /**
@@ -565,6 +570,20 @@ class OrgEvent extends DataObject
         return $appointments;
     }
 
+    /**
+     * Zähler für "Interessiert" und "Ich bin dabei" plus die eigene Markierung
+     * (UserInterest: 'Interested' | 'Going' | null) — auch für die öffentliche Seite
+     */
+    public function interestToApi(?Member $member): array
+    {
+        $own = $member ? $this->Interests()->filter('MemberID', $member->ID)->first() : null;
+        return [
+            'InterestedCount' => $this->Interests()->filter('Type', OrgEventInterest::TYPE_INTERESTED)->count(),
+            'GoingCount'      => $this->Interests()->filter('Type', OrgEventInterest::TYPE_GOING)->count(),
+            'UserInterest'    => $own ? $own->Type : null,
+        ];
+    }
+
     /** Mahlzeiten eines Termins mit der Rückmeldung des Mitglieds (wie auf dem Dashboard) */
     private function mealsToApi(Appointment $appointment, Member $member): array
     {
@@ -596,6 +615,15 @@ class OrgEvent extends DataObject
         $this->AgeGroups()->removeAll();
         // Die Skripte selbst bleiben erhalten, nur die Verknüpfung fällt weg
         $this->Scripts()->removeAll();
+        // Im Feed geteilte Events: Beiträge ohne eigenen Text verschwinden, die anderen verlieren nur das Event
+        foreach (FeedPost::get()->filter('EventID', $this->ID) as $post) {
+            if (FeedPost::plainText((string) $post->Content) === '') {
+                $post->delete();
+            } else {
+                $post->EventID = 0;
+                $post->write();
+            }
+        }
         // Ebenso die Kassen samt Buchungen
         foreach ($this->MoneyAccounts() as $account) {
             $account->EventID = 0;

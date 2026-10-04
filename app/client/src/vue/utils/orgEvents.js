@@ -1,6 +1,6 @@
 // Formatierungs-Helfer für Events (OrgEvent) im Events-Totem
 
-import { formatDate, formatDateRange } from '@utils/inventory'
+import { formatDate } from '@utils/inventory'
 import { formatEventRange, isMultiDay } from '@utils/eventDates'
 
 const priceFormat = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' })
@@ -16,11 +16,15 @@ export function formatPrice(value) {
 
 /**
  * Zeitraum eines Events: mit eigenen Daten inkl. Uhrzeiten (z.B. "30.10.2026, 18:00 – 22:00"
- * oder "30.10. 18:00 – 01.11. 14:00"), sonst der Zeitraum seiner Termine.
+ * oder "30.10. 18:00 – 01.11.26 14:00"), sonst der Zeitraum seiner Termine — mehrtägig
+ * kompakt wie bei Kalender-Terminen, das Jahr am Ende ("30.09. – 30.10.26").
  */
 export function formatOrgEventRange(event) {
-  if (!event.DateStart) return formatDateRange(event.RangeStart, event.RangeEnd)
-  if (isMultiDay(event)) return formatEventRange(event)
+  if (!event.DateStart) {
+    if (!event.RangeEnd || event.RangeEnd === event.RangeStart) return formatDate(event.RangeStart)
+    return formatEventRange({ DateStart: event.RangeStart, DateEnd: event.RangeEnd, AllDay: true }, { withYear: true })
+  }
+  if (isMultiDay(event)) return formatEventRange(event, { withYear: true })
   if (event.AllDay || !event.TimeStart) return formatDate(event.DateStart)
   const time = event.TimeEnd
     ? `${event.TimeStart.slice(0, 5)} – ${event.TimeEnd.slice(0, 5)}`

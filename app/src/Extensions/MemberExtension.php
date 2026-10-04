@@ -13,7 +13,6 @@ use App\Calendar\Absence;
 use App\Calendar\AppointmentParticipation;
 use App\Events\EventDayParticipation;
 use SilverStripe\Forms\DropdownField;
-use App\Controllers\AnnouncementsController;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
@@ -226,11 +225,6 @@ class MemberExtension extends Extension
     {
         $today = date('Y-m-d');
         return $this->getParticipations()->filter('Parent.Date', $today)->filterAny('Type', ['Accept', 'Maybe']);
-    }
-
-    public function getUnreadAnnouncements()
-    {
-        return AnnouncementsController::getUnreadAnnouncements($this->owner->ID);
     }
 
     public function getMembershipInOrg(Organization $org): ?OrganizationMembership

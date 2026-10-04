@@ -21,20 +21,15 @@
         <AppButton variant="primary" @click="refresh()">Erneut versuchen</AppButton>
       </div>
 
-      <!-- Aktuelle Ankündigungen -->
-      <div v-if="dashboardStore.hasLatestAnnouncements" class="section_infobox">
-        <h2 class="hl2 dashboard-announcements_title">Aktuelle Ankündigungen</h2>
-        <div class="announcements-list announcements-list--compact">
-          <AnnouncementCard
-            v-for="announcement in dashboardStore.latestAnnouncements"
-            :key="announcement.ID"
-            :announcement="announcement"
-            compact
-            :hide-org-logo="!authStore.hasMultipleOrganizations"
-            @click="openAnnouncement"
-          />
+      <!-- Neueste Beiträge aus dem Feed -->
+      <div v-if="dashboardStore.hasLatestPosts" class="section_infobox">
+        <h2 class="hl2">Neueste Beiträge</h2>
+        <div class="feed-list feed-list--compact">
+          <FeedPostCard v-for="post in dashboardStore.latestPosts" :key="post.ID" :post="post" compact />
         </div>
-        <router-link to="/announcements" class="section_infobox_footer dashboard-announcements_footer">Alle Ankündigungen →</router-link>
+        <div class="section_infobox_footer">
+          <router-link to="/announcements">Zum Feed →</router-link>
+        </div>
       </div>
 
       <!-- Das steht heute an -->
@@ -96,6 +91,24 @@
         </div>
         <div class="section_infobox_footer">
           <router-link to="/tasks">Zu den Aufgaben →</router-link>
+        </div>
+      </div>
+
+      <!-- Als "Interessiert" / "Ich bin dabei" markierte Events der nächsten 4 Wochen -->
+      <div v-if="upcomingOrgEvents.length" class="section_infobox">
+        <h2 class="hl2">Deine anstehenden Events</h2>
+        <!-- Dieselben Karten wie in der Events-Übersicht, zwei pro Zeile -->
+        <ul class="dashboard-org-events">
+          <li v-for="orgEvent in upcomingOrgEvents" :key="orgEvent.ID">
+            <OrgEventCard
+              :event="orgEvent"
+              :to="{ name: 'EventDetail', params: { segment: orgEvent.URLSegment } }"
+              :show-organization="authStore.hasMultipleOrganizations"
+            />
+          </li>
+        </ul>
+        <div class="section_infobox_footer">
+          <router-link to="/events">Alle Events →</router-link>
         </div>
       </div>
 
@@ -175,8 +188,10 @@ import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/calendar/EventCard.vue'
 import EventMealsList from '@components/calendar/EventMealsList.vue'
+import OrgEventCard from '@components/events/OrgEventCard.vue'
+import { useOrgEventsStore } from '@stores/orgEvents'
 import TaskCard from '@components/tasks/TaskCard.vue'
-import AnnouncementCard from '@components/announcements/AnnouncementCard.vue'
+import FeedPostCard from '@components/announcements/FeedPostCard.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
@@ -195,9 +210,18 @@ function openTask(task) {
   router.push({ name: 'TaskDetail', params: { hash: task.Hash } })
 }
 
-function openAnnouncement(announcement) {
-  router.push({ name: 'AnnouncementDetail', params: { id: announcement.ID } })
-}
+
+const orgEventsStore = useOrgEventsStore()
+
+// Markierte Events, die in den nächsten 4 Wochen stattfinden (oder gerade laufen)
+const UPCOMING_ORG_EVENT_DAYS = 28
+const upcomingOrgEvents = computed(() => {
+  const today = new Date().toISOString().slice(0, 10)
+  const limit = new Date(Date.now() + UPCOMING_ORG_EVENT_DAYS * 86400000).toISOString().slice(0, 10)
+  return orgEventsStore.myEvents.filter(e =>
+    e.RangeStart && e.RangeStart <= limit && (e.RangeEnd ?? e.RangeStart) >= today
+  )
+})
 
 const todaysEvents = computed(() =>
   eventsStore.upcomingEvents.filter(e => e.isToday() && (e.hasUserAccepted() || e.hasUserMaybe()))
@@ -241,6 +265,7 @@ async function refresh() {
   const nextY = m === 12 ? y + 1 : y
   await Promise.all([
     dashboardStore.refresh(),
+    orgEventsStore.fetchMyEvents().catch(() => {}),
     eventsStore.fetchEvents(y, m, true),
     eventsStore.fetchEvents(nextY, nextM, true),
     new Promise(resolve => setTimeout(resolve, 650)),
@@ -255,6 +280,7 @@ onMounted(() => {
   const nextM = m === 12 ? 1 : m + 1
   const nextY = m === 12 ? y + 1 : y
   dashboardStore.fetchDashboardData()
+  orgEventsStore.fetchMyEvents().catch(() => {})
   eventsStore.fetchEvents(y, m)
   eventsStore.fetchEvents(nextY, nextM)
 })

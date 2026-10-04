@@ -8,7 +8,7 @@
 
       <template v-else>
         <AppToggle v-model="prefs.NotifyEvents" label="Termine" field-class="settings-toggle" @update:model-value="savePrefs" />
-        <AppToggle v-model="prefs.NotifyAnnouncements" label="Ankündigungen" field-class="settings-toggle" @update:model-value="savePrefs" />
+        <AppToggle v-model="prefs.NotifyAnnouncements" label="Beiträge von Organisationen" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyMeals" label="Essensvorschläge" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyMaps" label="Lagepläne" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyApplications" label="Organisationsbewerbungen" field-class="settings-toggle" @update:model-value="savePrefs" />

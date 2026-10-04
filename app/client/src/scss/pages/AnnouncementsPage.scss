@@ -1,21 +1,10 @@
 @use "../base/variables" as *;
 
+// Feed des Mitteilungs-Totems (views/Announcements.vue)
 .section.section--AnnouncementsPage {
-    .section_content{
-        .announcements-toolbar {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 10px;
-
-            .section_filter {
-                flex: 1;
-                margin-bottom: 0;
-            }
-
-            .announcements-toolbar_add {
-                margin-left: auto;
-            }
+    .section_content {
+        .announcements-composer {
+            margin-bottom: 20px;
         }
 
         .announcements-archive {
@@ -32,29 +21,9 @@
                 color: var(--ColorGray);
             }
 
-            .announcements-list--archive {
+            .feed-list--archive {
                 align-self: stretch;
                 opacity: 0.75;
-            }
-        }
-
-        .section_filter {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-
-            .button {
-                background-color: transparent;
-                border: 1px solid var(--ColorPrimary);
-                color: var(--ColorPrimary);
-                margin-top: 0;
-
-                &.active {
-                    background-color: var(--ColorPrimary);
-                    color: var(--ColorWhite);
-                }
             }
         }
     }

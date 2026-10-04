@@ -1,0 +1,15 @@
+@use "../../base/variables" as *;
+
+// "Interessiert" / "Ich bin dabei" auf der Event-Seite (OrgEventInterestButtons.vue)
+.org-event-interest-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .org-event-interest-buttons_error {
+        flex-basis: 100%;
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+}

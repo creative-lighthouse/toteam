@@ -1,125 +1,110 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { apiGet, apiPost, clearCacheForEndpoint } from '@utils/api'
+import { ref } from 'vue'
+import { apiGet, apiPost, apiDelete } from '@utils/api'
 
+/**
+ * Feed des Mitteilungs-Totems (FeedPost) — Beiträge als Person oder Organisation,
+ * öffentlich oder intern, optional geplant und mit Ablaufdatum. Ersetzt die früheren
+ * Mitteilungen; der Store-Name ist geblieben.
+ */
 export const useAnnouncementsStore = defineStore('announcements', () => {
-  const announcements = ref([])
-  const categories = ref([])
-  // Organisationen, in denen der Nutzer Mitteilungen erstellen darf
-  const createOrganizations = ref([])
-  const selectedCategory = ref(null)
+  // Aktuelle Beiträge, neueste zuerst (eigene geplante inklusive)
+  const posts = ref([])
+  // Auswahl fürs Eingabeformular: eigene Organisationen bzw. die, für die man posten darf
+  const feedOrganizations = ref([])
+  const postAsOrganizations = ref([])
   const loading = ref(false)
   const error = ref(null)
-  // Abgelaufene Mitteilungen, werden erst bei Bedarf geladen
-  const archivedAnnouncements = ref([])
+
+  // Abgelaufene Beiträge — erst bei Bedarf geladen
+  const archivedPosts = ref([])
   const archiveLoaded = ref(false)
   const archiveLoading = ref(false)
   const archiveError = ref(null)
 
-  function filterByCategory(list) {
-    if (!selectedCategory.value) return list
-    return list.filter(a => a.CategoryID === selectedCategory.value.ID)
-  }
-
-  const filteredAnnouncements = computed(() => filterByCategory(announcements.value))
-  const filteredArchivedAnnouncements = computed(() => filterByCategory(archivedAnnouncements.value))
-
-  const usedCategories = computed(() => {
-    const usedIDs = new Set(announcements.value.map(a => a.CategoryID).filter(Boolean))
-    return categories.value.filter(c => usedIDs.has(c.ID))
-  })
-
-  async function fetchAnnouncements(forceRefresh = false) {
+  async function fetchFeed() {
     try {
-      loading.value = true
+      loading.value = !posts.value.length
       error.value = null
-
-      if (forceRefresh) {
-        await clearCacheForEndpoint('/announcements')
-      }
-
-      const response = await apiGet('/announcements', !forceRefresh, 2 * 60 * 1000)
-
-      announcements.value = response.announcements || []
-      categories.value = response.categories || []
-      createOrganizations.value = response.createOrganizations || []
+      const response = await apiGet('/announcements/feed', false)
+      posts.value = response.posts || []
+      feedOrganizations.value = response.organizations || []
+      postAsOrganizations.value = response.postAsOrganizations || []
     } catch (err) {
-      console.error('Failed to fetch announcements:', err)
+      console.error('Failed to fetch feed:', err)
       error.value = err.message
     } finally {
       loading.value = false
     }
   }
 
-  async function fetchArchivedAnnouncements(forceRefresh = false) {
+  async function fetchArchive() {
     try {
       archiveLoading.value = true
       archiveError.value = null
-
-      if (forceRefresh) {
-        await clearCacheForEndpoint('/announcements?archive=1')
-      }
-
-      const response = await apiGet('/announcements?archive=1', !forceRefresh, 2 * 60 * 1000)
-      archivedAnnouncements.value = response.announcements || []
+      const response = await apiGet('/announcements/feed?archive=1', false)
+      archivedPosts.value = response.posts || []
       archiveLoaded.value = true
     } catch (err) {
-      console.error('Failed to fetch archived announcements:', err)
+      console.error('Failed to fetch feed archive:', err)
       archiveError.value = err.message
     } finally {
       archiveLoading.value = false
     }
   }
 
-  function getAnnouncementById(id) {
-    return announcements.value.find(a => a.ID === id)
-      ?? archivedAnnouncements.value.find(a => a.ID === id)
-      ?? null
+  /** Ein Beitrag (Detailseite) — aus den geladenen Listen oder frisch vom Server */
+  async function fetchPost(id) {
+    const known = posts.value.find(p => p.ID === id) ?? archivedPosts.value.find(p => p.ID === id)
+    if (known) return known
+    const response = await apiGet(`/announcements/post/${id}`, false)
+    if (response?.success === false) throw new Error(response.error || 'Beitrag nicht gefunden')
+    return response.post
   }
 
-  async function createAnnouncement(data) {
-    const response = await apiPost('/announcements/store', data)
-    if (response.success && response.data?.announcement) {
-      // Geplante oder bereits abgelaufene Mitteilungen gehören nicht in die aktuelle Liste
-      if (response.data.announcement.Status === 'active') {
-        announcements.value.unshift(response.data.announcement)
-      }
-      await clearCacheForEndpoint('/announcements')
-      archiveLoaded.value = false
-    }
-    return response
+  /** data: { Content, PostAs, OrganizationID?, Visibility, InternalOrganizationID?, ReleaseDate?, ExpiryDate? } */
+  async function createPost(data) {
+    const response = await apiPost('/announcements/feedStore', data)
+    if (!response?.success) throw new Error(response?.error || 'Beitrag konnte nicht veröffentlicht werden')
+    posts.value = [response.data.post, ...posts.value]
+      .sort((a, b) => (b.SortDate ?? '').localeCompare(a.SortDate ?? ''))
+    return response.data.post
   }
 
-  function setCategory(category) {
-    selectedCategory.value = category
+  async function deletePost(id) {
+    const response = await apiDelete(`/announcements/feedRemove/${id}`)
+    if (!response?.success) throw new Error(response?.error || 'Beitrag konnte nicht gelöscht werden')
+    posts.value = posts.value.filter(p => p.ID !== id)
+    archivedPosts.value = archivedPosts.value.filter(p => p.ID !== id)
+  }
+
+  /** Personen für @-Markierungen: [{ ID, Name, Username, Avatar }] */
+  async function searchMentions(query) {
+    const response = await apiGet(`/announcements/mentionSearch?q=${encodeURIComponent(query)}`, false)
+    return response.members || []
   }
 
   async function refresh() {
-    await fetchAnnouncements(true)
-    if (archiveLoaded.value) {
-      await fetchArchivedAnnouncements(true)
-    }
+    await fetchFeed()
+    if (archiveLoaded.value) await fetchArchive()
   }
 
   return {
-    announcements,
-    categories,
-    createOrganizations,
-    usedCategories,
-    selectedCategory,
+    posts,
+    feedOrganizations,
+    postAsOrganizations,
     loading,
     error,
-    filteredAnnouncements,
-    archivedAnnouncements,
+    archivedPosts,
     archiveLoaded,
     archiveLoading,
     archiveError,
-    filteredArchivedAnnouncements,
-    fetchAnnouncements,
-    fetchArchivedAnnouncements,
-    getAnnouncementById,
-    createAnnouncement,
-    setCategory,
-    refresh
+    fetchFeed,
+    fetchArchive,
+    fetchPost,
+    createPost,
+    deletePost,
+    searchMentions,
+    refresh,
   }
 })

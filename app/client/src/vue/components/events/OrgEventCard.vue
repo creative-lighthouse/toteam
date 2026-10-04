@@ -6,13 +6,14 @@
     <OrgEventCard :event="event" :to="{ name: 'EventDetail', params: { segment: event.URLSegment } }" />
 
   Ohne `to` wird die Karte als <article> statt als Link gerendert (z.B. in Storybook).
+  Mit `wide` liegt das Bild ab 700px Breite links neben dem Inhalt (z.B. im Feed).
 -->
 <template>
   <component
     :is="to ? 'router-link' : 'article'"
     :to="to ?? undefined"
     class="org-event-card"
-    :class="{ 'org-event-card--past': isPast }"
+    :class="{ 'org-event-card--past': isPast, 'org-event-card--wide': wide }"
   >
     <div class="org-event-card_media">
       <img v-if="event.ImageURL" :src="event.ImageURL" alt="" class="org-event-card_image" loading="lazy">
@@ -87,6 +88,8 @@ const props = defineProps({
   to: { type: [String, Object], default: null },
   // Namen der Organisation zusätzlich zum Icon im Fuß zeigen — sinnvoll, wenn man in mehreren Organisationen ist
   showOrganization: { type: Boolean, default: false },
+  // Breite Variante (Bild links), z.B. für geteilte Events im Feed
+  wide: { type: Boolean, default: false },
 })
 
 const badge = computed(() => dateBadge(props.event.RangeStart))

@@ -47,6 +47,18 @@
 
                 <div class="event-page_actions">
                   <span v-if="linkCopied" class="event-page_copied" role="status">Link kopiert</span>
+                  <span v-if="sharedToFeed" class="event-page_copied" role="status">
+                    Im Feed geteilt · <router-link :to="{ name: 'AnnouncementDetail', params: { id: sharedToFeed.ID } }">ansehen</router-link>
+                  </span>
+                  <AppIconButton
+                    v-if="authStore.isAuthenticated"
+                    variant="neutral"
+                    aria-label="Im Feed teilen"
+                    title="Im Feed teilen"
+                    @click="feedShareModal?.open()"
+                  >
+                    <span class="icon-mask" :style="iconStyle(actionAddMessage)" aria-hidden="true" />
+                  </AppIconButton>
                   <AppIconButton variant="neutral" aria-label="Teilen" title="Teilen" @click="share">
                     <span class="icon-mask" :style="iconStyle(actionShare)" aria-hidden="true" />
                   </AppIconButton>
@@ -67,6 +79,9 @@
                   <dd>{{ fact.value }}</dd>
                 </div>
               </dl>
+
+              <!-- "Interessiert" / "Ich bin dabei" — für alle, die das Event sehen (ohne Anmeldung → Login) -->
+              <OrgEventInterestButtons :event="event" @update="Object.assign(event, $event)" />
 
               <!-- Nur mit Koordinaten und wenn der Ort in den selbst gehosteten Kartendaten liegt -->
               <OrgEventMap
@@ -143,6 +158,7 @@
     </div>
 
     <AppLightbox ref="lightbox" />
+    <OrgEventFeedShareModal v-if="authStore.isAuthenticated" ref="feedShareModal" :event="event" @shared="onSharedToFeed" />
     <OrgEventFormModal v-if="event?.CanManage" ref="formModal" @saved="load" />
     <CalendarEntryCreateModal
       v-if="event?.CanManage"
@@ -209,7 +225,10 @@ import { morphIntoModal } from '@utils/viewTransition'
 import { useMasonry } from '@utils/useMasonry'
 import OrgEventFormModal from '@components/events/OrgEventFormModal.vue'
 import OrgEventMap from '@components/events/OrgEventMap.vue'
+import OrgEventInterestButtons from '@components/events/OrgEventInterestButtons.vue'
 import actionShare from '../../../icons/actions/action_share.svg'
+import actionAddMessage from '../../../icons/actions/action_addmessage.svg'
+import OrgEventFeedShareModal from '@components/events/OrgEventFeedShareModal.vue'
 import actionEdit from '../../../icons/actions/action_edit.svg'
 import actionTrash from '../../../icons/actions/action_trash.svg'
 
@@ -232,6 +251,14 @@ const error = ref(null)
 const deleting = ref(false)
 const actionError = ref(null)
 const linkCopied = ref(false)
+// Nach dem Teilen im Feed kurz anzeigen (mit Link zum Beitrag)
+const sharedToFeed = ref(null)
+const feedShareModal = ref(null)
+
+function onSharedToFeed(post) {
+  sharedToFeed.value = post
+  setTimeout(() => { sharedToFeed.value = null }, 5000)
+}
 const lightbox = ref(null)
 const formModal = ref(null)
 const appointmentModal = ref(null)

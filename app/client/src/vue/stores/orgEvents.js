@@ -14,6 +14,8 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
   // Im CMS gepflegte Auswahllisten fürs Event-Formular
   const types = ref([])
   const ageGroups = ref([])
+  // Als "Interessiert" oder "Ich bin dabei" markierte Events (GET /calendar/myOrgEvents)
+  const myEvents = ref([])
 
   // Laufende und kommende Events zuerst (nach Beginn), danach vergangene und
   // Events ohne Datum. RangeStart/RangeEnd sind die eigenen Daten des Events
@@ -116,6 +118,33 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     return res.data.event
   }
 
+  async function fetchMyEvents() {
+    const res = await apiGet('/calendar/myOrgEvents', false)
+    myEvents.value = res.events ?? []
+    return myEvents.value
+  }
+
+  /**
+   * "Interessiert" / "Ich bin dabei" setzen — type: 'Interested' | 'Going' | null (entfernen).
+   * Liefert { InterestedCount, GoingCount, UserInterest }.
+   */
+  async function setInterest(id, type) {
+    const res = await apiPost(`/calendar/orgEventInterest/${id}`, { type })
+    if (!res?.success) throw new Error(res?.error || 'Markierung konnte nicht gespeichert werden')
+    const counts = res.data
+    // Übersicht und eigene Liste aktuell halten
+    const index = events.value.findIndex(e => e.ID === id)
+    if (index !== -1) events.value.splice(index, 1, { ...events.value[index], ...counts })
+    if (counts.UserInterest) {
+      const mine = myEvents.value.findIndex(e => e.ID === id)
+      if (mine !== -1) myEvents.value.splice(mine, 1, { ...myEvents.value[mine], ...counts })
+    } else {
+      myEvents.value = myEvents.value.filter(e => e.ID !== id)
+    }
+    await clearCacheForEndpoint('/calendar')
+    return counts
+  }
+
   async function deleteEvent(id) {
     const res = await apiDelete(`/calendar/orgEvent/${id}`)
     if (!res?.success) throw new Error(res?.error || 'Event konnte nicht gelöscht werden')
@@ -136,6 +165,7 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     error,
     types,
     ageGroups,
+    myEvents,
     sortedEvents,
     fetchEvents,
     fetchEvent,
@@ -147,5 +177,7 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     uploadGallery,
     removeGalleryImage,
     deleteEvent,
+    fetchMyEvents,
+    setInterest,
   }
 })

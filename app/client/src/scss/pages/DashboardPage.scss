@@ -282,6 +282,22 @@
         }
 
         // Refresh button row
+        // ── Deine anstehenden Events: OrgEventCards wie in der Events-Übersicht ──
+        .dashboard-org-events {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            text-align: left;
+
+            @include media(smartphone) {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
         // ── My upcoming contributions block ───────────────────────────────────
 
         .contribution-item {

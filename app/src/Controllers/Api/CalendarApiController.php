@@ -16,6 +16,7 @@ use App\Teams\OrganizationMembership;
 use App\Skript\ScriptRoleAssignment;
 use App\Teams\OrgEvent;
 use App\Teams\OrgEventAgeGroup;
+use App\Teams\OrgEventInterest;
 use App\Teams\OrgEventType;
 use App\Teams\OrgPermissions;
 use App\Controllers\ApiController;
@@ -52,6 +53,8 @@ class CalendarApiController extends ApiController
         'orgEventOptions',
         'orgEventImage',
         'orgEventGallery',
+        'orgEventInterest',
+        'myOrgEvents',
         'meal',
         'agendaPoint',
         'members',
@@ -1587,7 +1590,10 @@ class CalendarApiController extends ApiController
         }
 
         if (!$event->isInternalFor($member)) {
-            return $this->jsonResponse(['isInternal' => false, 'event' => $event->toApiPublic()]);
+            return $this->jsonResponse([
+                'isInternal' => false,
+                'event'      => array_merge($event->toApiPublic(), $event->interestToApi($member)),
+            ]);
         }
 
         return $this->jsonResponse([
@@ -1595,6 +1601,71 @@ class CalendarApiController extends ApiController
             'event'        => $event->toApiSummary($member),
             'appointments' => $event->appointmentsToApi($member),
         ]);
+    }
+
+    /**
+     * "Interessiert" / "Ich bin dabei" setzen — jede angemeldete Person, die das Event sehen darf
+     * POST /api/v1/calendar/orgEventInterest/{id}  Body: { type: 'Interested' | 'Going' | null }
+     * (null entfernt die Markierung). Antwort: { InterestedCount, GoingCount, UserInterest }
+     */
+    public function orgEventInterest(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !$event->isViewableBy($member)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+
+        $body = json_decode($request->getBody() ?: '[]', true) ?? [];
+        $type = $body['type'] ?? null;
+        if ($type !== null && !in_array($type, [OrgEventInterest::TYPE_INTERESTED, OrgEventInterest::TYPE_GOING], true)) {
+            return $this->errorResponse('Ungültige Markierung', 400);
+        }
+
+        $interest = $event->Interests()->filter('MemberID', $member->ID)->first();
+        if ($type === null) {
+            $interest?->delete();
+        } else {
+            $interest ??= OrgEventInterest::create(['EventID' => $event->ID, 'MemberID' => $member->ID]);
+            $interest->Type = $type;
+            $interest->write();
+        }
+
+        return $this->successResponse($event->interestToApi($member), $type ? 'Markierung gespeichert' : 'Markierung entfernt');
+    }
+
+    /**
+     * Events, die man als "Interessiert" oder "Ich bin dabei" markiert hat (Dashboard, Profil)
+     * GET /api/v1/calendar/myOrgEvents — nach Beginn sortiert, ohne Datum am Ende.
+     * Mitglieder der Organisation bekommen die Summary, alle anderen die öffentlichen Daten.
+     */
+    public function myOrgEvents(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $events = [];
+        foreach (OrgEventInterest::get()->filter('MemberID', $member->ID) as $interest) {
+            $event = $interest->Event();
+            // Inzwischen nicht mehr öffentlich (oder gelöscht) — dann nicht anzeigen
+            if (!$event || !$event->exists() || !$event->isViewableBy($member)) {
+                continue;
+            }
+            $events[] = $event->isInternalFor($member)
+                ? $event->toApiSummary($member)
+                : array_merge($event->toApiPublic(), $event->interestToApi($member));
+        }
+        usort($events, fn ($a, $b) => [$a['RangeStart'] === null, $a['RangeStart'] ?? ''] <=> [$b['RangeStart'] === null, $b['RangeStart'] ?? '']);
+
+        return $this->jsonResponse(['events' => $events]);
     }
 
     /**

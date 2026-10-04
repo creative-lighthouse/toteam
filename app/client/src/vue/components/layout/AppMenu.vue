@@ -31,9 +31,6 @@
                         alt="Nachrichten"
                         class="nav_image"
                         >
-                        <p v-if="announcementsStore.unreadCount > 0" class="nav_badge">
-                            {{ announcementsStore.unreadCount }}<span class="nav_sr-only"> ungelesen</span>
-                        </p>
                     </div>
                 </router-link>
             </li>
@@ -226,7 +223,6 @@
 import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
-import { useAnnouncementsStore } from '@stores/announcements'
 import { useUiStore } from '@stores/ui'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import SettingsModal from '@components/layout/SettingsModal.vue'
@@ -253,7 +249,6 @@ import actionSettings from '../../../../icons/actions/action_settings.svg'
 import actionFeedback from '../../../../icons/feedback_admin.svg'
 const router = useRouter()
 const authStore = useAuthStore()
-const announcementsStore = useAnnouncementsStore()
 const uiStore = useUiStore()
 const isSecondaryMenuOpen = ref(false)
 const isProfileMenuOpen = ref(false)
@@ -442,11 +437,6 @@ onMounted(() => {
         document.body.classList.add('theme--dark')
     }
 
-    if (authStore.isAuthenticated) {
-        announcementsStore.fetchAnnouncements().catch(err => {
-            console.warn('Could not fetch announcements for badge:', err)
-        })
-    }
 })
 
 onUnmounted(() => {

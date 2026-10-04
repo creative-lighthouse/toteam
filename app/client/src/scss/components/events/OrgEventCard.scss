@@ -258,3 +258,30 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+
+// ── Breite Variante (wide): Bild links, Inhalt rechts — ab 700px ─────────────
+.org-event-card--wide {
+    @include media(medium) {
+        flex-direction: row;
+        height: auto;
+        min-height: 190px;
+
+        .org-event-card_media {
+            flex: 0 0 40%;
+            aspect-ratio: auto;
+        }
+
+        .org-event-card_body {
+            padding: 14px 18px;
+        }
+
+        // Ohne Bild darüber ragt der Datums-Badge nicht nach oben hinaus
+        .org-event-card_heading {
+            padding-top: 0;
+        }
+
+        .org-event-card_badge {
+            margin-top: 0;
+        }
+    }
+}
