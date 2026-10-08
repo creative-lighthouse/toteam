@@ -342,6 +342,33 @@
                     background-color: var(--ColorWhite);
                     border: 2px dashed var(--ColorPrimary);
                 }
+
+                // Abgesagter Termin: graues X statt eines Punkts
+                &.event-dot--cancelled {
+                    position: relative;
+                    background-color: transparent;
+                    border-radius: 0;
+
+                    &::before,
+                    &::after {
+                        content: "";
+                        position: absolute;
+                        top: 50%;
+                        left: 10%;
+                        width: 80%;
+                        height: 2px;
+                        border-radius: 1px;
+                        background-color: var(--ColorGray);
+                    }
+
+                    &::before {
+                        transform: translateY(-50%) rotate(45deg);
+                    }
+
+                    &::after {
+                        transform: translateY(-50%) rotate(-45deg);
+                    }
+                }
             }
 
             &:hover {

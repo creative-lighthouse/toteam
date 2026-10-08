@@ -1110,7 +1110,7 @@ class MapRenderer {
             }
             return;
         }
-        // Same for the inventory items of an event (EventSitePlan.vue)
+        // Same for the inventory items of an event (MapDetail.vue)
         if (poi.type === 'item') {
             if (typeof this.config.onItemPOIClick === 'function') {
                 this.config.onItemPOIClick(poiData);

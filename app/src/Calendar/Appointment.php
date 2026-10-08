@@ -50,6 +50,7 @@ use SilverStripe\Forms\TimeField;
  * @method \App\Calendar\AppointmentType Type()
  * @method \App\Teams\OrgEvent Event()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentParticipation[] Participations()
+ * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentParticipationStash[] ParticipationStashes()
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
@@ -100,6 +101,12 @@ class Appointment extends DataObject implements PermissionProvider
         'Participations' => AppointmentParticipation::class,
         'Meals' => Meal::class,
         'AgendaPoints' => AppointmentAgendaPoint::class,
+        // Zurückgelegte Angaben nach "Keine Antwort" (siehe AppointmentParticipationStash)
+        'ParticipationStashes' => AppointmentParticipationStash::class,
+    ];
+
+    private static $cascade_deletes = [
+        'ParticipationStashes',
     ];
 
     private static $owns = [

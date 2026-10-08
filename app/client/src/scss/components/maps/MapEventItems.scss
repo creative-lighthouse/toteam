@@ -1,39 +1,29 @@
-@use "../base/variables" as *;
+@use "../../base/variables" as *;
 
-// Lageplan eines Events (EventSitePlan.vue) — Grundlayout kommt von .section--MapView
-.section--EventSitePlanPage {
-    .event-site-plan_switch {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        margin-bottom: 1.5rem;
-        font-size: 0.875rem;
+// Ausgeliehenes Inventar in der Seitenleiste eines Event-Lageplans (MapEventItems.vue)
+.map-event-items {
+    margin-bottom: 1.5rem;
+
+    h4 {
+        margin: 0 0 0.75rem 0;
+        font-size: 1rem;
         font-weight: 600;
         color: var(--ColorDarkGray);
     }
 
-    .event-site-plan_items {
-        h4 {
-            margin: 0 0 0.75rem 0;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--ColorDarkGray);
-        }
-    }
-
-    .event-site-plan_hint {
+    .map-event-items_hint {
         margin: 0 0 0.75rem;
         font-size: 13px;
         color: var(--ColorGray);
     }
 
-    .event-site-plan_error {
+    .map-event-items_error {
         margin: 0.75rem 0 0;
         font-size: 13px;
         color: var(--ColorStatusBad);
     }
 
-    .event-site-plan_list {
+    .map-event-items_list {
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -42,7 +32,7 @@
         list-style: none;
     }
 
-    .event-site-plan_item {
+    .map-event-items_item {
         display: flex;
         align-items: center;
         gap: 6px;
@@ -55,7 +45,7 @@
         }
     }
 
-    .event-site-plan_item-main {
+    .map-event-items_main {
         display: flex;
         flex: 1;
         align-items: flex-start;
@@ -71,7 +61,7 @@
     }
 
     // Wie die Marker auf dem Plan
-    .event-site-plan_number {
+    .map-event-items_number {
         flex: none;
         display: flex;
         align-items: center;
@@ -86,28 +76,28 @@
         font-weight: 700;
     }
 
-    .event-site-plan_item-text {
+    .map-event-items_text {
         display: flex;
         flex-direction: column;
         min-width: 0;
         font-size: 0.875rem;
     }
 
-    .event-site-plan_item-title {
+    .map-event-items_title {
         font-weight: 600;
     }
 
-    .event-site-plan_item-inv {
+    .map-event-items_inv {
         font-weight: 400;
         color: var(--ColorGray);
     }
 
-    .event-site-plan_item-note {
+    .map-event-items_note {
         white-space: pre-line;
         overflow-wrap: anywhere;
     }
 
-    .event-site-plan_item-meta {
+    .map-event-items_meta {
         font-size: 12px;
         color: var(--ColorGray);
     }

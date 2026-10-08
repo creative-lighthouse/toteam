@@ -1,7 +1,16 @@
 @use "../base/variables" as *;
 
 .section.section--MapPage {
+    &.has-tab-nav .section_content {
+        // Platz für die Tab-Pille "Allgemein / Events" über dem Menü
+        padding-bottom: 80px;
+    }
+
     .section_content {
+        .map-list_archive {
+            margin-top: 24px;
+        }
+
         .map-list_actions {
             display: flex;
             align-items: center;

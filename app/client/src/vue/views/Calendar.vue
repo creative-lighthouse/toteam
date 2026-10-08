@@ -355,8 +355,13 @@ const getEventsCountForDay = (day, month = currentMonth.value, year = currentYea
 const getEventDotsForDay = (day, month = currentMonth.value, year = currentYear.value) => {
   const events = eventsByDate.value[makeDateKey(day, month, year)] || []
 
-  const counts = { poll: 0, accept: 0, maybe: 0, decline: 0, none: 0 }
+  const counts = { poll: 0, accept: 0, maybe: 0, decline: 0, none: 0, cancelled: 0 }
   events.forEach(e => {
+    // Abgesagt zählt vor der eigenen Rückmeldung: graues X statt Zusagefarbe
+    if (e.Status === 'Cancelled') {
+      counts.cancelled++
+      return
+    }
     if (e.IsPoll) {
       counts.poll++
       return

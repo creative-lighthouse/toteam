@@ -41,6 +41,7 @@ use SilverStripe\Security\Security;
  *
  *     private static $history_target = 'Parent';          // has_one zum Zielobjekt (braucht selbst die Extension)
  *     private static $history_delete_fields = ['Type'];   // beim Löschen protokollierte Felder (Standard: alle)
+ *     private static $history_empty_values = ['RideType' => ['None']]; // zählen beim Anlegen/Löschen als leer
  *     private static $history_target_set = 'AgendaPoints'; // optional, s. u.
  *     public function getHistoryContextLabel(): ?string   // optional, z. B. Name des Teilnehmers
  *
@@ -86,7 +87,7 @@ class HistoryExtension extends Extension
         foreach ($changed as $dbField => $values) {
             // Beim Anlegen eines Unterobjekts nur tatsächlich gesetzte Werte zeigen,
             // nicht z. B. "Eigene Uhrzeit: leer → Nein"
-            if ($isNew && $this->isEmptyHistoryValue($values['after'])) {
+            if ($isNew && $this->isEmptyHistoryValue($values['after'], $dbField)) {
                 continue;
             }
             $changes[] = $this->buildValueChange($fieldMap[$dbField], $dbField, $isNew ? null : $values['before'], $values['after']);
@@ -122,7 +123,7 @@ class HistoryExtension extends Extension
                 continue;
             }
             $value = $this->owner->getField($dbField);
-            if (!$this->isEmptyHistoryValue($value)) {
+            if (!$this->isEmptyHistoryValue($value, $dbField)) {
                 $changes[] = $this->buildValueChange($name, $dbField, $value, null);
             }
         }
@@ -279,9 +280,18 @@ class HistoryExtension extends Extension
         return $map;
     }
 
-    private function isEmptyHistoryValue($value): bool
+    /**
+     * Leere Werte erscheinen beim Anlegen und Löschen nicht im Verlauf. Über
+     * `history_empty_values` (Feld => Werte) zählen weitere Werte als leer,
+     * z.B. ein Enum-Standardwert wie "None".
+     */
+    private function isEmptyHistoryValue($value, ?string $dbField = null): bool
     {
-        return $value === null || $value === '' || $value === false || $value === 0 || $value === '0';
+        if ($value === null || $value === '' || $value === false || $value === 0 || $value === '0') {
+            return true;
+        }
+        $extra = $dbField ? ($this->owner->config()->get('history_empty_values')[$dbField] ?? []) : [];
+        return in_array($value, (array) $extra, true);
     }
 
     /**

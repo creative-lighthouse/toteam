@@ -143,11 +143,18 @@ export const useEventsStore = defineStore('events', () => {
             })
           }
         } else {
+          // Inkl. wiederhergestellter Angaben (siehe AppointmentParticipationStash)
+          const details = {
+            Notes: response.data.Notes ?? null,
+            RideType: response.data.RideType ?? 'None',
+            RideSeats: response.data.RideSeats ?? 0,
+          }
           if (existing) {
             existing.Type = response.data.Type
             existing.TimeStart = response.data.TimeStart
             existing.TimeEnd = response.data.TimeEnd
             existing.CustomTimeframe = response.data.CustomTimeframe ?? false
+            Object.assign(existing, details)
           } else if (event.Participations) {
             event.Participations.push({
               ID: response.data.ID,
@@ -158,6 +165,7 @@ export const useEventsStore = defineStore('events', () => {
               TimeStart: response.data.TimeStart,
               TimeEnd: response.data.TimeEnd,
               CustomTimeframe: response.data.CustomTimeframe ?? false,
+              ...details,
               IsCurrentUser: false,
             })
           }
@@ -217,11 +225,19 @@ export const useEventsStore = defineStore('events', () => {
           // Update in participations list
           if (event.Participations) {
             const existing = event.Participations.find(p => p.IsCurrentUser)
+            // Notiz und Mitfahrt kommen mit, falls der Server zurückgelegte Angaben
+            // wiederhergestellt hat (siehe AppointmentParticipationStash)
+            const details = {
+              Notes: response.data.Notes ?? null,
+              RideType: response.data.RideType ?? 'None',
+              RideSeats: response.data.RideSeats ?? 0,
+            }
             if (existing) {
               existing.Type = response.data.Type
               existing.TimeStart = response.data.TimeStart
               existing.TimeEnd = response.data.TimeEnd
               existing.CustomTimeframe = response.data.CustomTimeframe ?? false
+              Object.assign(existing, details)
             } else {
               // First RSVP — add a new entry so avatars + counts update immediately
               event.Participations.push({
@@ -234,6 +250,7 @@ export const useEventsStore = defineStore('events', () => {
                 TimeStart: response.data.TimeStart,
                 TimeEnd: response.data.TimeEnd,
                 CustomTimeframe: response.data.CustomTimeframe ?? false,
+                ...details,
                 IsCurrentUser: true,
               })
             }

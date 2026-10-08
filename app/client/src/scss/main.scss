@@ -69,7 +69,6 @@
 @use "landingpage/calendargraphic.scss";
 
 @use "pages/MapViewPage.scss";
-@use "pages/EventSitePlanPage.scss";
 @use "components/calendar/EventCard.scss";
 @use "components/calendar/EventMealsList.scss";
 @use "components/organizations/OrganizationCard.scss";
@@ -92,10 +91,13 @@
 @use "components/ui/AppCollapse.scss";
 @use "components/ui/AppCountButton.scss";
 @use "components/ui/AppSegmentedToggle.scss";
+@use "components/ui/AppTabNav.scss";
 @use "components/ui/AppChipSelect.scss";
 @use "components/ui/AppSearchBar.scss";
 @use "components/ui/AppLinkifiedText.scss";
 @use "components/maps/MapCreateModal.scss";
+@use "components/maps/MapEventItems.scss";
+@use "components/maps/MapEventPlanLink.scss";
 @use "components/calendar/CalendarEntryCreateModal.scss";
 @use "components/calendar/CalendarIcsLinkModal.scss";
 @use "components/calendar/PollDialog.scss";
@@ -115,7 +117,7 @@
 @use "components/events/OrgEventRoleTable.scss";
 @use "components/events/OrgEventScriptAddModal.scss";
 @use "components/events/OrgEventScripts.scss";
-@use "components/events/OrgEventSitePlanAddModal.scss";
+@use "components/events/OrgEventSitePlanCreateModal.scss";
 @use "components/events/OrgEventSitePlans.scss";
 @use "components/layout/PwaInstallBanner.scss";
 @use "components/tasks/TaskCard.scss";

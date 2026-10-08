@@ -24,6 +24,22 @@
         border-left: 4px dashed var(--EventAccent, var(--ColorPrimary));
     }
 
+    // Abgesagte Termine: ausgegraut und halb durchsichtig, damit man sie sofort erkennt
+    &.event-card--cancelled {
+        opacity: 0.5;
+        filter: grayscale(1);
+        box-shadow: none;
+
+        .event-card_title {
+            text-decoration: line-through;
+        }
+
+        &:hover,
+        &:focus-visible {
+            opacity: 0.75;
+        }
+    }
+
     // Header row: [logo + title] ........... [time]
     .event-card_header {
         display: flex;

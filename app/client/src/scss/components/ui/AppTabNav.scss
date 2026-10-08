@@ -1,0 +1,61 @@
+@use "../../base/variables" as *;
+
+// Tab-Pille über dem App-Menü (AppTabNav.vue), z.B. im Essen und bei den Lageplänen
+.app-tab-nav {
+    position: fixed;
+    left: 50%;
+    bottom: 90px;
+    transform: translateX(-50%);
+    z-index: 50;
+    display: flex;
+    gap: 4px;
+    width: max-content;
+    max-width: calc(100% - 30px);
+    padding: 4px;
+    border-radius: 60px;
+    background-color: var(--ColorWhite);
+    box-shadow: var(--BoxShadowMenu);
+
+    .app-tab-nav_item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 60px;
+        background: transparent;
+        color: var(--ColorGray);
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+
+        @include hover {
+            color: var(--ColorPrimary);
+        }
+
+        &.is-active {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 2px;
+        }
+    }
+
+    .app-tab-nav_icon {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        background-color: currentColor;
+        mask-repeat: no-repeat;
+        mask-position: center;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        -webkit-mask-size: contain;
+    }
+}

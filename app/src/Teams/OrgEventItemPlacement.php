@@ -19,6 +19,7 @@ use SilverStripe\ORM\DataObject;
  *
  * @property ?string $Coordinates
  * @property ?string $Note
+ * @property ?string $MarkerText
  * @property int $EventID
  * @property int $ItemID
  * @property int $MapID
@@ -31,6 +32,8 @@ class OrgEventItemPlacement extends DataObject
     private static $db = [
         "Coordinates" => "Varchar(100)",
         "Note"        => "Text",
+        // Text im Marker (wie MapPOI.MarkerText, max. 4 Zeichen) — leer: laufende Nummer
+        "MarkerText"  => "Varchar(4)",
     ];
 
     private static $has_one = [
@@ -49,6 +52,7 @@ class OrgEventItemPlacement extends DataObject
     private static $field_labels = [
         "Coordinates" => "Koordinaten",
         "Note"        => "Notiz",
+        "MarkerText"  => "Marker-Text",
         "Event"       => "Event",
         "Item"        => "Objekt",
         "Map"         => "Lageplan",

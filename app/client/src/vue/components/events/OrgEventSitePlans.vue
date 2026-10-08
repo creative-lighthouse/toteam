@@ -1,11 +1,12 @@
 <template>
-  <!-- Lagepläne-Karte der Event-Seite: jeder Plan führt auf die Lageplan-Seite des
-       Events, auf der die ausgeliehenen Objekte platziert werden -->
+  <!-- Lagepläne-Karte der Event-Seite: die eigenen Lagepläne des Events. Jeder führt auf
+       die normale Lageplan-Seite, dort werden im Bearbeiten-Modus auch die ausgeliehenen
+       Objekte platziert -->
   <div class="org-event-site-plans">
     <ul class="org-event-site-plans_list">
       <li v-for="plan in state.plans" :key="plan.ID" class="org-event-site-plans_plan">
         <router-link
-          :to="{ name: 'EventSitePlan', params: { segment: event.URLSegment, mapId: plan.ID } }"
+          :to="{ name: 'MapDetail', params: { id: plan.ID } }"
           class="org-event-site-plans_link"
         >
           <img v-if="plan.ThumbnailURL" :src="plan.ThumbnailURL" alt="" class="org-event-site-plans_thumb" loading="lazy">
@@ -18,10 +19,10 @@
         <AppIconButton
           v-if="editable"
           variant="ghost"
-          :aria-label="`Lageplan „${plan.Title}“ vom Event lösen`"
-          title="Vom Event lösen"
+          :aria-label="`Lageplan „${plan.Title}“ löschen`"
+          title="Lageplan löschen"
           :disabled="busy"
-          @click="detach(plan)"
+          @click="remove(plan)"
         >
           <span class="icon-mask" :style="trashIconStyle" aria-hidden="true" />
         </AppIconButton>
@@ -42,9 +43,9 @@ const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `u
 
 const props = defineProps({
   event: { type: Object, required: true },
-  // Stand aus GET /maps/eventPlans/{id}: { plans, availablePlans, items, CanManage, CanRequestRental }
+  // Stand aus GET /maps/eventPlans/{id}: { plans, copySources, items, CanManage, CanRequestRental }
   state: { type: Object, required: true },
-  // Lösen nur im Bearbeiten-Modus
+  // Löschen nur im Bearbeiten-Modus
   editable: { type: Boolean, default: false },
 })
 
@@ -60,13 +61,14 @@ function placedLabel(count) {
   return count === 1 ? '1 Objekt platziert' : `${count} Objekte platziert`
 }
 
-async function detach(plan) {
+async function remove(plan) {
   const hint = plan.PlacedCount ? ' Die Objekte darauf gelten danach als nicht platziert, ihre Notizen bleiben erhalten.' : ''
-  if (!confirm(`Lageplan „${plan.Title}“ von diesem Event lösen?${hint}`)) return
+  if (!confirm(`Lageplan „${plan.Title}“ dieses Events löschen?${hint}`)) return
   busy.value = true
   error.value = null
   try {
-    emit('update', await store.detachEventPlan(props.event.ID, plan.ID))
+    await store.deleteEventPlan(plan.ID)
+    emit('update', await store.fetchEventPlans(props.event.ID))
   } catch (e) {
     error.value = e.message
   } finally {

@@ -155,7 +155,7 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
   // ── Lagepläne & ausgeliehenes Inventar (MapsApiController) ────────────────
 
   /**
-   * Stand der Event-Seite: { plans, availablePlans, items, CanManage, CanRequestRental }.
+   * Stand der Event-Seite: { plans, copySources, items, CanManage, CanRequestRental }.
    * items sind die Objekte aus den Ausleihen des Events, mit Notiz und Platz.
    */
   async function fetchEventPlans(eventId) {
@@ -164,23 +164,21 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     return res
   }
 
-  async function attachEventPlan(eventId, mapId) {
-    const res = await apiPost(`/maps/eventPlanAttach/${eventId}`, { MapID: mapId })
-    if (!res?.success) throw new Error(res?.error || 'Lageplan konnte nicht hinzugefügt werden')
+  /**
+   * Eigenen Lageplan des Events anlegen — leer oder als Kopie (data: { Title, SourceMapID? }).
+   * Liefert { mapId, ...Stand wie fetchEventPlans }.
+   */
+  async function createEventPlan(eventId, data) {
+    const res = await apiPost(`/maps/eventPlanCreate/${eventId}`, data)
+    if (!res?.success) throw new Error(res?.error || 'Lageplan konnte nicht angelegt werden')
+    await clearCacheForEndpoint('/maps')
     return res.data
   }
 
-  async function detachEventPlan(eventId, mapId) {
-    const res = await apiDelete(`/maps/eventPlanDetach/${eventId}?map=${mapId}`)
-    if (!res?.success) throw new Error(res?.error || 'Lageplan konnte nicht gelöst werden')
-    return res.data
-  }
-
-  /** Ein Lageplan des Events: { map, event, plans, items, CanManage } — key: ID oder URL-Segment */
-  async function fetchEventPlanView(key, mapId) {
-    const res = await apiGet(`/maps/eventPlanView/${encodeURIComponent(key)}?map=${mapId}`, false)
-    if (res?.success === false) throw new Error(res.error || 'Lageplan konnte nicht geladen werden')
-    return res
+  async function deleteEventPlan(mapId) {
+    const res = await apiPost(`/maps/deletemap/${mapId}`, {})
+    if (!res?.success) throw new Error(res?.error || 'Lageplan konnte nicht gelöscht werden')
+    await clearCacheForEndpoint('/maps')
   }
 
   /**
@@ -221,9 +219,8 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     fetchMyEvents,
     setInterest,
     fetchEventPlans,
-    attachEventPlan,
-    detachEventPlan,
-    fetchEventPlanView,
+    createEventPlan,
+    deleteEventPlan,
     savePlacement,
   }
 })

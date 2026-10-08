@@ -1,9 +1,9 @@
 @use "../../base/variables" as *;
 
-// Lageplan zu einem Event hinzufügen (OrgEventSitePlanAddModal.vue)
-.org-event-site-plan-add-modal {
+// Lageplan für ein Event anlegen — neu oder als Kopie (OrgEventSitePlanCreateModal.vue)
+.org-event-site-plan-create-modal {
     // .modalform ist ein 6-Spalten-Grid — der Hinweis geht über die volle Breite
-    .org-event-site-plan-add-modal_hint {
+    .org-event-site-plan-create-modal_hint {
         grid-column: 1 / -1;
         margin: 0;
         font-size: 13px;

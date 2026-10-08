@@ -201,12 +201,12 @@
       :can-create="moneyState.CanCreate"
       @saved="moneyState = $event"
     />
-    <OrgEventSitePlanAddModal
+    <OrgEventSitePlanCreateModal
       v-if="planState?.CanManage"
-      ref="sitePlanAddModal"
+      ref="sitePlanCreateModal"
       :event-id="event.ID"
-      :available-plans="planState.availablePlans"
-      @saved="planState = $event"
+      :copy-sources="planState.copySources"
+      @created="onSitePlanCreated"
     />
     <OrgEventItemEditModal
       v-if="planState?.CanManage"
@@ -251,7 +251,7 @@ import OrgEventMoneyAddModal from '@components/events/OrgEventMoneyAddModal.vue'
 import { useMoneyStore } from '@stores/money'
 import { useInventoryStore } from '@stores/inventory'
 import OrgEventSitePlans from '@components/events/OrgEventSitePlans.vue'
-import OrgEventSitePlanAddModal from '@components/events/OrgEventSitePlanAddModal.vue'
+import OrgEventSitePlanCreateModal from '@components/events/OrgEventSitePlanCreateModal.vue'
 import OrgEventInventory from '@components/events/OrgEventInventory.vue'
 import OrgEventItemEditModal from '@components/events/OrgEventItemEditModal.vue'
 import InventoryRentalRequestModal from '@components/inventory/InventoryRentalRequestModal.vue'
@@ -310,7 +310,7 @@ const moneyState = ref(null)
 const moneyAddModal = ref(null)
 // Lagepläne und ausgeliehenes Inventar (GET /maps/eventPlans/{id}) — null, solange nicht geladen
 const planState = ref(null)
-const sitePlanAddModal = ref(null)
+const sitePlanCreateModal = ref(null)
 const itemEditModal = ref(null)
 const rentalRequestModal = ref(null)
 const rentalDetailModal = ref(null)
@@ -419,7 +419,7 @@ const addActions = computed(() => [
   planState.value?.CanManage && {
     key: 'sitePlan',
     label: 'Lageplan',
-    hint: 'Lageplan, auf dem du die ausgeliehenen Objekte platzierst (z.B. mit DMX-Adresse)',
+    hint: 'Neu oder als Kopie – darauf platzierst du die ausgeliehenen Objekte (z.B. mit DMX-Adresse)',
   },
 ].filter(Boolean))
 
@@ -429,7 +429,7 @@ function onAddAction(key) {
   }
   if (key === 'script') scriptAddModal.value?.open()
   if (key === 'money') moneyAddModal.value?.open()
-  if (key === 'sitePlan') sitePlanAddModal.value?.open()
+  if (key === 'sitePlan') sitePlanCreateModal.value?.open()
   if (key === 'rental') openRentalRequest()
 }
 
@@ -445,6 +445,11 @@ async function openRentalRequest() {
     eventIds: appointments.value.map(a => a.ID),
     purpose: e.Title,
   })
+}
+
+// Neuer Lageplan: gleich im Bearbeiten-Modus öffnen
+function onSitePlanCreated({ mapId }) {
+  router.push({ name: 'MapDetail', params: { id: mapId }, query: { edit: 1 } })
 }
 
 async function loadPlans() {

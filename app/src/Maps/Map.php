@@ -2,6 +2,8 @@
 
 namespace App\Maps;
 
+use App\Teams\OrgEvent;
+use App\Teams\OrgEventItemPlacement;
 use App\Teams\Organization;
 use SilverStripe\Assets\Image;
 use SilverStripe\ORM\DataObject;
@@ -23,9 +25,11 @@ use App\Notifications\PushNotificationService;
  * @property int $ParentID
  * @property int $AuthorID
  * @property int $BackgroundImageID
+ * @property int $EventID
  * @method \App\Teams\Organization Parent()
  * @method \SilverStripe\Security\Member Author()
  * @method \SilverStripe\Assets\Image BackgroundImage()
+ * @method \App\Teams\OrgEvent Event()
  * @method \SilverStripe\ORM\DataList|\App\Maps\MapLayer[] MapLayers()
  * @mixin \SilverStripe\Assets\AssetControlExtension
  * @mixin \SilverStripe\Assets\Shortcodes\FileLinkTracking
@@ -49,6 +53,9 @@ class Map extends DataObject implements PermissionProvider
         "Parent" => Organization::class,
         "Author" => Member::class,
         "BackgroundImage" => Image::class,
+        // Gesetzt bei Lageplänen eines Events (OrgEvent.SitePlans): sie erscheinen nicht
+        // in der allgemeinen Übersicht, und wer das Event verwalten darf, darf sie bearbeiten
+        "Event" => OrgEvent::class,
     ];
 
     private static $has_many = [
@@ -77,6 +84,7 @@ class Map extends DataObject implements PermissionProvider
         "Active" => "Aktiv",
         "BackgroundImage" => "Hintergrundbild",
         "Parent" => "Organisation",
+        "Event" => "Event",
     ];
 
     private static $summary_fields = [
@@ -111,9 +119,81 @@ class Map extends DataObject implements PermissionProvider
         $changedFields = $this->getChangedFields(false, 1);
         $isNew = isset($changedFields['ID']) && empty($changedFields['ID']['before']);
 
-        if ($isNew) {
+        // Lagepläne eines Events sind interne Planung — kein Hinweis an alle Mitglieder
+        if ($isNew && !$this->EventID) {
             PushNotificationService::notifyNewMap($this);
         }
+    }
+
+    /**
+     * Objekte eines Events, die auf diesem Plan standen, gelten danach als nicht
+     * platziert — ihre Notizen (z.B. DMX-Adressen) bleiben erhalten
+     */
+    protected function onBeforeDelete()
+    {
+        parent::onBeforeDelete();
+        foreach (OrgEventItemPlacement::get()->filter('MapID', $this->ID) as $placement) {
+            $placement->MapID = 0;
+            $placement->Coordinates = null;
+            if (trim((string) $placement->Note) === '' && trim((string) $placement->MarkerText) === '') {
+                $placement->delete();
+            } else {
+                $placement->write();
+            }
+        }
+    }
+
+    /**
+     * Kopiert den Plan samt Ebenen und Markern als eigenen Lageplan eines Events.
+     * Hintergrund- und Ebenenbilder werden nicht dupliziert, sondern mitbenutzt
+     * (Uploads ersetzen nur die Verknüpfung, sie löschen keine Dateien).
+     */
+    public function copyForEvent(OrgEvent $event, string $title, int $authorID): Map
+    {
+        $copy = Map::create([
+            'Title'                 => $title,
+            'ShortText'             => $this->ShortText,
+            'CoordinatesUpperLeft'  => $this->CoordinatesUpperLeft,
+            'CoordinatesUpperRight' => $this->CoordinatesUpperRight,
+            'CoordinatesLowerLeft'  => $this->CoordinatesLowerLeft,
+            'CoordinatesLowerRight' => $this->CoordinatesLowerRight,
+            'Active'                => true,
+            'ParentID'              => $event->OrganizationID,
+            'EventID'               => $event->ID,
+            'AuthorID'              => $authorID,
+            'BackgroundImageID'     => $this->BackgroundImageID,
+        ]);
+        $copy->write();
+
+        foreach ($this->MapLayers() as $layer) {
+            $layerCopy = MapLayer::create([
+                'Title'       => $layer->Title,
+                'Description' => $layer->Description,
+                'Active'      => $layer->Active,
+                'LayerColor'  => $layer->LayerColor,
+                'SortOrder'   => $layer->SortOrder,
+                'ImageID'     => $layer->ImageID,
+                'ParentID'    => $copy->ID,
+            ]);
+            $layerCopy->write();
+            // Räume gehören zur Organisation — beim Kopieren in eine andere werden
+            // Raummarker zu normalen Markern
+            $keepRooms = (int) $this->ParentID === (int) $event->OrganizationID;
+            foreach ($layer->POIs() as $poi) {
+                $isRoom = $poi->Type === 'room' && $keepRooms;
+                MapPOI::create([
+                    'Title'       => $poi->Title,
+                    'MarkerText'  => $poi->getField('MarkerText'),
+                    'Description' => $poi->Description,
+                    'Active'      => $poi->Active,
+                    'Coordinates' => $poi->Coordinates,
+                    'Type'        => $isRoom ? 'room' : 'marker',
+                    'RoomID'      => $isRoom ? $poi->RoomID : 0,
+                    'ParentID'    => $layerCopy->ID,
+                ])->write();
+            }
+        }
+        return $copy;
     }
 
     public function providePermissions()

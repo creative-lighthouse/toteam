@@ -27,6 +27,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { useNotificationsStore } from '@stores/notifications'
 import { useInventoryStore } from '@stores/inventory'
 import { useMoneyStore } from '@stores/money'
+import { useOrganizationsStore } from '@stores/organizations'
 import { registerPushToken, listenForForegroundMessages } from '@utils/push'
 import AppMenu from '@components/layout/AppMenu.vue'
 import AppHeader from '@components/layout/AppHeader.vue'
@@ -42,14 +43,17 @@ const pageHeaderStore = usePageHeaderStore()
 const notificationsStore = useNotificationsStore()
 const inventoryStore = useInventoryStore()
 const moneyStore = useMoneyStore()
+const organizationsStore = useOrganizationsStore()
 let foregroundListening = false
 
-// Zahlen im Header und Hauptmenü: ungelesene Mitteilungen, offene Ausleih-Anträge und
-// zu genehmigende Buchungen (beides zählt der Server nur, wenn man darüber entscheiden darf)
+// Zahlen im Header und Hauptmenü: ungelesene Mitteilungen, offene Ausleih-Anträge,
+// zu genehmigende Buchungen und offene Bewerbungen (der Server zählt nur, worüber man
+// entscheiden darf)
 function refreshBadges() {
   notificationsStore.fetchNotifications()
   if (authStore.hasTotem('inventory')) inventoryStore.fetchPendingCount()
   moneyStore.fetchPendingCount()
+  organizationsStore.fetchPendingCount()
 }
 
 // Nach dem Anmelden: Inbox laden und dieses Gerät für Push registrieren (nur wenn die
@@ -59,6 +63,7 @@ watch(() => authStore.isAuthenticated, (loggedIn) => {
     notificationsStore.reset()
     inventoryStore.pendingRentals = 0
     moneyStore.pendingEntries = 0
+    organizationsStore.pendingApplicants = 0
     return
   }
   refreshBadges()

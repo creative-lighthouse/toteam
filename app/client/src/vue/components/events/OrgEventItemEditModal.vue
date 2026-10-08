@@ -1,12 +1,29 @@
 <template>
   <AppModal ref="modal" class="org-event-item-edit-modal" :title="title" @close="close">
     <form v-if="item" id="org-event-item-edit-form" class="modalform" @submit.prevent="submit">
+      <!-- Bilder wie im Inventar-Detail: klein, Klick öffnet die Lightbox -->
+      <ul v-if="item.Images?.length" class="org-event-item-edit-modal_images">
+        <li v-for="(img, index) in item.Images" :key="img.ID">
+          <a :href="img.URL" target="_blank" rel="noopener" @click.prevent="lightbox?.open(item.Images, index)">
+            <img :src="img.Thumbnail" :alt="img.Name" loading="lazy">
+          </a>
+        </li>
+      </ul>
+
       <p class="org-event-item-edit-modal_meta">
         <span v-if="item.InventoryNumber">{{ item.InventoryNumber }}</span>
         <span v-if="item.Type">{{ item.Type }}</span>
         <span>{{ item.RentalStatusLabel || 'Keine Ausleihe mehr' }}</span>
         <span>{{ placementLabel }}</span>
       </p>
+
+      <label v-if="!readonly" class="field org-event-item-edit-modal_marker">
+        Text im Marker
+        <span class="org-event-item-edit-modal_marker-row">
+          <span class="org-event-item-edit-modal_marker-preview" :style="previewStyle">{{ markerText.trim() || item.Number }}</span>
+          <input v-model="markerText" type="text" maxlength="4" :placeholder="String(item.Number)" />
+        </span>
+      </label>
 
       <label v-if="!readonly" class="field">
         Notiz für dieses Event
@@ -21,7 +38,7 @@
       <p v-else class="org-event-item-edit-modal_hint">Keine Notiz für dieses Event.</p>
 
       <p v-if="!readonly" class="org-event-item-edit-modal_hint">
-        Die Notiz gilt nur für dieses Event – das Objekt im Inventar bleibt unverändert.
+        Marker-Text (max. 4 Zeichen, leer = laufende Nummer) und Notiz gelten nur für dieses Event – das Objekt im Inventar bleibt unverändert.
       </p>
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
@@ -40,6 +57,7 @@
       </template>
     </template>
   </AppModal>
+  <AppLightbox ref="lightbox" />
 </template>
 
 <script setup>
@@ -47,6 +65,8 @@ import { ref, computed } from 'vue'
 import { useOrgEventsStore } from '@stores/orgEvents'
 import AppButton from '@components/ui/AppButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
+import AppLightbox from '@components/ui/AppLightbox.vue'
+import { itemBadgeStyle, itemMarkerText } from '@utils/eventItems'
 
 const props = defineProps({
   eventId: { type: Number, required: true },
@@ -56,17 +76,23 @@ const props = defineProps({
   readonly: { type: Boolean, default: false },
 })
 
-// Aktualisierte Objektliste des Events
+// Aktualisierte Objektliste des Events; als zweites Argument { itemId, unplaced }
 const emit = defineEmits(['saved'])
 const store = useOrgEventsStore()
 
 const modal = ref(null)
+const lightbox = ref(null)
 const item = ref(null)
 const note = ref('')
 const saving = ref(false)
 const error = ref(null)
 
-const title = computed(() => (item.value ? `${item.value.Number}. ${item.value.Title}` : 'Objekt'))
+const markerText = ref('')
+
+const title = computed(() => (item.value ? `${itemMarkerText(item.value)}: ${item.value.Title}` : 'Objekt'))
+
+// Vorschau des Markers mit dem eingegebenen Text
+const previewStyle = computed(() => (item.value ? itemBadgeStyle(item.value) : null))
 
 const placementLabel = computed(() => {
   if (!item.value?.MapID) return 'nicht platziert'
@@ -78,6 +104,7 @@ const placementLabel = computed(() => {
 function open(eventItem) {
   item.value = eventItem
   note.value = eventItem.Note || ''
+  markerText.value = eventItem.MarkerText || ''
   error.value = null
   modal.value?.open()
 }
@@ -90,7 +117,8 @@ async function save(data) {
   saving.value = true
   error.value = null
   try {
-    emit('saved', await store.savePlacement(props.eventId, item.value.ItemID, data))
+    const items = await store.savePlacement(props.eventId, item.value.ItemID, data)
+    emit('saved', items, { itemId: item.value.ItemID, unplaced: 'MapID' in data && !data.MapID })
     close()
   } catch (e) {
     error.value = e.message
@@ -100,11 +128,11 @@ async function save(data) {
 }
 
 function submit() {
-  save({ Note: note.value })
+  save({ Note: note.value, MarkerText: markerText.value.trim() })
 }
 
 function unplace() {
-  save({ Note: note.value, MapID: null })
+  save({ Note: note.value, MarkerText: markerText.value.trim(), MapID: null })
 }
 
 defineExpose({ open, close })

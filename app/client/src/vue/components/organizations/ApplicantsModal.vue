@@ -48,6 +48,10 @@ import { apiGet, apiPost } from '@utils/api'
 import AppButton from '@components/ui/AppButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
+import { useOrganizationsStore } from '@stores/organizations'
+
+// Für die Zahl offener Bewerbungen im Hauptmenü
+const organizationsStore = useOrganizationsStore()
 
 const emit = defineEmits(['accepted'])
 
@@ -87,6 +91,7 @@ async function accept(membershipID) {
   try {
     await apiPost(`/organizations/accept/${membershipID}`, {})
     applicants.value = applicants.value.filter(a => a.MembershipID !== membershipID)
+    organizationsStore.fetchPendingCount()
     emit('accepted', org.value.ID)
   } catch (err) {
     console.error('Could not accept applicant:', err)
@@ -100,6 +105,7 @@ async function reject(membershipID) {
   try {
     await apiPost(`/organizations/reject/${membershipID}`, {})
     applicants.value = applicants.value.filter(a => a.MembershipID !== membershipID)
+    organizationsStore.fetchPendingCount()
   } catch (err) {
     console.error('Could not reject applicant:', err)
   } finally {

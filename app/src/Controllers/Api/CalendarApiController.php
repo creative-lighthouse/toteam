@@ -6,6 +6,7 @@ use App\Calendar\Absence;
 use App\Calendar\Appointment;
 use App\Calendar\AppointmentAgendaPoint;
 use App\Calendar\AppointmentParticipation;
+use App\Calendar\AppointmentParticipationStash;
 use App\Calendar\AppointmentType;
 use App\Calendar\SchedulingPollOption;
 use App\Food\Meal;
@@ -451,8 +452,10 @@ class CalendarApiController extends ApiController
         $participation = $appointment->Participations()->filter(['MemberID' => $targetMember->ID])->first();
 
         if (!$type) {
-            // Zurück auf "Ohne Antwort": komplette Teilnahme entfernen
+            // Zurück auf "Ohne Antwort": Teilnahme entfernen, Notiz/Zeitraum/Mitfahrt
+            // aber für die nächste Antwort aufheben (siehe AppointmentParticipationStash)
             if ($participation) {
+                AppointmentParticipationStash::stash($participation);
                 $participation->delete();
             }
             return $this->successResponse([
@@ -478,6 +481,7 @@ class CalendarApiController extends ApiController
             $participation->ParentID        = $appointment->ID;
             $participation->MemberID        = $targetMember->ID;
             $participation->CustomTimeframe = false;
+            AppointmentParticipationStash::restoreInto($participation);
         }
 
         $participation->Type = $type;

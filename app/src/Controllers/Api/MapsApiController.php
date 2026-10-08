@@ -26,6 +26,9 @@ use SilverStripe\Security\Member;
  */
 class MapsApiController extends ApiController
 {
+    // formatImages() für die Bilder der ausgeliehenen Objekte — wie im Inventar
+    use AttachmentUploads;
+
     private static $url_segment = 'api/v1/maps';
 
     private static $allowed_actions = [
@@ -33,6 +36,7 @@ class MapsApiController extends ApiController
         'view',
         'managedorgs',
         'createmap',
+        'updatemap',
         'deletemap',
         'uploadbackgroundimage',
         'savelayer',
@@ -41,9 +45,7 @@ class MapsApiController extends ApiController
         'createlayer',
         'reorderlayers',
         'eventPlans',
-        'eventPlanAttach',
-        'eventPlanDetach',
-        'eventPlanView',
+        'eventPlanCreate',
         'eventPlacementSave',
     ];
 
@@ -73,11 +75,12 @@ class MapsApiController extends ApiController
             }
 
             if (empty($organizationIDs)) {
-                return $this->jsonResponse(['maps' => [], 'canManageAny' => $canManageAny]);
+                return $this->jsonResponse(['maps' => [], 'eventPlans' => [], 'canManageAny' => $canManageAny]);
             }
 
+            // Lagepläne von Events stehen im Tab "Events" (eventPlansOverview())
             $maps = Map::get()
-                ->filter(['Active' => true, 'ParentID' => $organizationIDs])
+                ->filter(['Active' => true, 'ParentID' => $organizationIDs, 'EventID' => 0])
                 ->sort('Created', 'DESC');
 
             $mapsData = [];
@@ -95,7 +98,11 @@ class MapsApiController extends ApiController
                 ];
             }
 
-            return $this->jsonResponse(['maps' => $mapsData, 'canManageAny' => $canManageAny]);
+            return $this->jsonResponse([
+                'maps'         => $mapsData,
+                'eventPlans'   => $this->eventPlansOverview($organizationIDs),
+                'canManageAny' => $canManageAny,
+            ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Fehler beim Laden der Lagepläne: ' . $e->getMessage(), 500);
         }
@@ -121,15 +128,102 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Zugriff verweigert', 403);
             }
 
-            $org = $map->Parent();
-            $canEdit = $member->hasOrgPermission($org, OrgPermissions::MAPS_MANAGE_MAPS);
+            $data = $this->formatMap($map) + ['canEdit' => $this->canManageMap($map, $member)];
 
-            return $this->jsonResponse([
-                'map' => $this->formatMap($map) + ['canEdit' => $canEdit],
-            ]);
+            // Lageplan eines Events: dazu das Event und die dafür ausgeliehenen Objekte
+            $event = $map->EventID ? $map->Event() : null;
+            if ($event && $event->exists()) {
+                if (!$event->isInternalFor($member)) {
+                    return $this->errorResponse('Zugriff verweigert', 403);
+                }
+                $data['event'] = [
+                    'ID'         => $event->ID,
+                    'Title'      => $event->Title,
+                    'URLSegment' => $event->URLSegment,
+                ];
+                $data['eventPlans'] = array_map(
+                    fn (Map $plan) => ['ID' => $plan->ID, 'Title' => $plan->Title],
+                    $event->SitePlans()->sort('Title', 'ASC')->toArray()
+                );
+                $data['items'] = $this->eventItems($event);
+            }
+
+            return $this->jsonResponse(['map' => $data]);
         } catch (\Exception $e) {
             return $this->errorResponse('Fehler beim Laden des Lageplans: ' . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Lagepläne der Events, die man sehen darf (Events der eigenen Organisationen) —
+     * je Event und Plan ein Eintrag mit den Eckdaten des Events für die Übersicht
+     * (Tab "Events"). Reihenfolge und Aufteilung in kommend/vergangen macht das Frontend.
+     */
+    private function eventPlansOverview(array $organizationIDs): array
+    {
+        $maps = Map::get()->filter([
+            'EventID:GreaterThan'  => 0,
+            'Event.OrganizationID' => $organizationIDs ?: [0],
+        ]);
+        $entries = [];
+        $eventData = [];
+        foreach ($maps as $map) {
+            $event = $map->Event();
+            if (!isset($eventData[$event->ID])) {
+                $org = $event->Organization();
+                $eventData[$event->ID] = array_merge([
+                    'ID'                  => $event->ID,
+                    'Title'               => $event->Title,
+                    'URLSegment'          => $event->URLSegment,
+                    'DateStart'           => $event->DateStart ?: null,
+                    'DateEnd'             => $event->DateEnd ?: null,
+                    'TimeStart'           => $event->AllDay ? null : ($event->TimeStart ?: null),
+                    'TimeEnd'             => $event->AllDay ? null : ($event->TimeEnd ?: null),
+                    'AllDay'              => (bool) $event->AllDay,
+                    'OrganizationTitle'   => $org->exists() ? $org->Title : null,
+                    'OrganizationLogoURL' => $org->exists() ? $org->RenderLogo(80) : null,
+                ], $event->dateRange());
+            }
+            $placed = 0;
+            foreach ($event->ItemPlacements()->filter('MapID', $map->ID) as $placement) {
+                if ($placement->isPlaced()) {
+                    $placed++;
+                }
+            }
+            $entries[] = [
+                'mapId'        => $map->ID,
+                'title'        => $map->Title,
+                'thumbnailUrl' => $map->BackgroundImage()->exists()
+                    ? $map->BackgroundImage()->FillMax(400, 300)->getURL()
+                    : null,
+                'placedCount'  => $placed,
+                'event'        => $eventData[$event->ID],
+            ];
+        }
+        return $entries;
+    }
+
+    /**
+     * Lageplan bearbeiten/löschen und Hintergrund ändern: MAPS_MANAGE_MAPS in der
+     * Organisation — bei Lageplänen eines Events auch, wer das Event verwalten darf
+     */
+    private function canManageMap(Map $map, Member $member): bool
+    {
+        if ($member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_MAPS)) {
+            return true;
+        }
+        $event = $map->EventID ? $map->Event() : null;
+        return $event && $event->exists() && $this->canManageEventPlans($event, $member);
+    }
+
+    /** Ebenen und Marker bearbeiten: MAPS_MANAGE_LAYERS, bei Event-Lageplänen wie canManageMap() */
+    private function canManageLayers(Map $map, Member $member): bool
+    {
+        if ($member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_LAYERS)) {
+            return true;
+        }
+        $event = $map->EventID ? $map->Event() : null;
+        return $event && $event->exists() && $this->canManageEventPlans($event, $member);
     }
 
     /** Lageplan mit Ebenen und Markern im Format des MapRenderers */
@@ -229,7 +323,7 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Lageplan nicht gefunden', 404);
             }
 
-            if (!$member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_MAPS)) {
+            if (!$this->canManageMap($map, $member)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -287,6 +381,46 @@ class MapsApiController extends ApiController
         }
     }
 
+    /** POST /api/v1/maps/updatemap/$ID {title?, shortText?} — Titel und Beschreibung ändern */
+    public function updatemap(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $map = Map::get()->byID((int) $request->param('ID'));
+        if (!$map || !$map->exists()) {
+            return $this->errorResponse('Lageplan nicht gefunden', 404);
+        }
+
+        if (!$this->canManageMap($map, $member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $data = $this->getJsonBody();
+        if (array_key_exists('title', $data)) {
+            $title = trim((string) $data['title']);
+            if ($title === '') {
+                return $this->errorResponse('Titel ist erforderlich', 400);
+            }
+            if (mb_strlen($title) > 255) {
+                return $this->errorResponse('Der Titel ist zu lang', 400);
+            }
+            $map->Title = $title;
+        }
+        if (array_key_exists('shortText', $data)) {
+            $map->ShortText = trim((string) $data['shortText']);
+        }
+        $map->write();
+
+        return $this->successResponse([], 'Lageplan gespeichert');
+    }
+
     public function uploadbackgroundimage(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
@@ -302,7 +436,7 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Lageplan nicht gefunden', 404);
             }
 
-            if (!$member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_MAPS)) {
+            if (!$this->canManageMap($map, $member)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -357,7 +491,7 @@ class MapsApiController extends ApiController
 
             $layerMap = $layer->Parent();
             $layerOrg = ($layerMap && $layerMap->exists()) ? $layerMap->Parent() : null;
-            if (!$layerOrg || !$layerOrg->exists() || !$member->hasOrgPermission($layerOrg, OrgPermissions::MAPS_MANAGE_LAYERS)) {
+            if (!$layerOrg || !$layerOrg->exists() || !$this->canManageLayers($layerMap, $member)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -393,7 +527,7 @@ class MapsApiController extends ApiController
 
             $layerMap = $layer->Parent();
             $layerOrg = ($layerMap && $layerMap->exists()) ? $layerMap->Parent() : null;
-            if (!$layerOrg || !$layerOrg->exists() || !$member->hasOrgPermission($layerOrg, OrgPermissions::MAPS_MANAGE_LAYERS)) {
+            if (!$layerOrg || !$layerOrg->exists() || !$this->canManageLayers($layerMap, $member)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -504,7 +638,7 @@ class MapsApiController extends ApiController
 
             $layerMap = $layer->Parent();
             $layerOrg = ($layerMap && $layerMap->exists()) ? $layerMap->Parent() : null;
-            if (!$layerOrg || !$layerOrg->exists() || !$member->hasOrgPermission($layerOrg, OrgPermissions::MAPS_MANAGE_LAYERS)) {
+            if (!$layerOrg || !$layerOrg->exists() || !$this->canManageLayers($layerMap, $member)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -557,7 +691,7 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Lageplan nicht gefunden', 404);
             }
 
-            if (!$member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_LAYERS)) {
+            if (!$this->canManageLayers($map, $member)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -608,7 +742,7 @@ class MapsApiController extends ApiController
                 return $this->errorResponse('Lageplan nicht gefunden', 404);
             }
 
-            if (!$member->hasOrgPermission($map->Parent(), OrgPermissions::MAPS_MANAGE_LAYERS)) {
+            if (!$this->canManageLayers($map, $member)) {
                 return $this->errorResponse('Keine Berechtigung', 403);
             }
 
@@ -696,10 +830,14 @@ class MapsApiController extends ApiController
             'Title'             => $item->Title,
             'InventoryNumber'   => $item->InventoryNumber,
             'Type'              => $type && $type->exists() ? $type->Title : null,
+            // Bilder des Objekts für den Detail-Dialog — Format wie im Inventar (Lightbox)
+            'Images'            => $this->formatImages($item->Images()),
             'RentalID'          => $rental?->ID,
             'RentalStatus'      => $rental?->Status,
             'RentalStatusLabel' => $rental ? (InventoryRental::STATUS_LABELS[$rental->Status] ?? $rental->Status) : null,
             'Note'              => $placement ? (string) $placement->Note : '',
+            // Eigener Text im Marker — leer: das Frontend zeigt die laufende Nummer
+            'MarkerText'        => $placement ? (string) $placement->MarkerText : '',
             'MapID'             => $placed ? (int) $placement->MapID : null,
             'Position'          => $placed ? $placement->Coordinates : null,
         ];
@@ -712,9 +850,7 @@ class MapsApiController extends ApiController
         $placedCounts = array_count_values(array_filter(array_column($items, 'MapID')));
 
         $plans = [];
-        $linkedIDs = [];
         foreach ($event->SitePlans()->sort('Title', 'ASC') as $map) {
-            $linkedIDs[] = $map->ID;
             $plans[] = [
                 'ID'           => $map->ID,
                 'Title'        => $map->Title,
@@ -723,29 +859,29 @@ class MapsApiController extends ApiController
             ];
         }
 
+        // Vorlagen zum Kopieren: alle Lagepläne der eigenen Organisationen, auch die
+        // anderer Events (z.B. der Plan vom letzten Jahr)
         $canManage = $this->canManageEventPlans($event, $member);
-        // Auch Lagepläne anderer eigener Organisationen (z.B. des Veranstaltungsorts) —
-        // über das Event sehen ihn dann alle Mitglieder der Event-Organisation
-        $available = [];
+        $sources = [];
         if ($canManage) {
             $maps = Map::get()->filter(['ParentID' => $member->getOrganizationIDs() ?: [0], 'Active' => true])
-                ->exclude('ID', $linkedIDs ?: [0])
                 ->sort('Title', 'ASC');
             foreach ($maps as $map) {
-                $available[] = [
+                $mapEvent = $map->EventID ? $map->Event() : null;
+                $sources[] = [
                     'ID'                => $map->ID,
                     'Title'             => $map->Title,
                     'OrganizationTitle' => $map->Parent()->exists() ? $map->Parent()->Title : null,
-                    'IsEventOrg'        => (int) $map->ParentID === (int) $event->OrganizationID,
+                    'EventTitle'        => $mapEvent && $mapEvent->exists() ? $mapEvent->Title : null,
                 ];
             }
         }
 
         return [
-            'plans'          => $plans,
-            'availablePlans' => $available,
-            'items'          => $items,
-            'CanManage'      => $canManage,
+            'plans'            => $plans,
+            'copySources'      => $sources,
+            'items'            => $items,
+            'CanManage'        => $canManage,
             'CanRequestRental' => $member->hasOrgPermission($event->Organization(), OrgPermissions::INVENTORY_REQUEST_RENTAL),
         ];
     }
@@ -764,8 +900,13 @@ class MapsApiController extends ApiController
         return $this->jsonResponse($this->formatEventPlans($event, $member));
     }
 
-    /** POST /api/v1/maps/eventPlanAttach/$ID {MapID} — ordnet einen Lageplan der Organisation zu */
-    public function eventPlanAttach(HTTPRequest $request): HTTPResponse
+    /**
+     * POST /api/v1/maps/eventPlanCreate/$ID {Title, SourceMapID?}
+     * Legt einen eigenen Lageplan des Events an — leer oder als Kopie eines Lageplans
+     * der eigenen Organisationen (samt Ebenen und Markern). Antwort: { mapId, ...Stand }.
+     * Das Hintergrundbild eines leeren Plans lädt das Frontend danach hoch.
+     */
+    public function eventPlanCreate(HTTPRequest $request): HTTPResponse
     {
         $member = $this->requireAuth();
         if (!$member) {
@@ -781,86 +922,36 @@ class MapsApiController extends ApiController
         if (!$this->canManageEventPlans($event, $member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
+
         $body = $this->getJsonBody();
-        $map = Map::get()->filter(['ID' => (int) ($body['MapID'] ?? 0), 'ParentID' => $member->getOrganizationIDs() ?: [0]])->first();
-        if (!$map) {
-            return $this->errorResponse('Lageplan nicht gefunden', 404);
+        $title = trim((string) ($body['Title'] ?? ''));
+        if ($title === '') {
+            return $this->errorResponse('Titel ist erforderlich', 400);
         }
-        $event->SitePlans()->add($map);
 
-        return $this->successResponse($this->formatEventPlans($event, $member), 'Lageplan hinzugefügt');
+        $sourceID = (int) ($body['SourceMapID'] ?? 0);
+        if ($sourceID) {
+            $source = Map::get()->filter(['ID' => $sourceID, 'ParentID' => $member->getOrganizationIDs() ?: [0]])->first();
+            if (!$source) {
+                return $this->errorResponse('Vorlage nicht gefunden', 404);
+            }
+            $map = $source->copyForEvent($event, $title, $member->ID);
+        } else {
+            $map = Map::create([
+                'Title'    => $title,
+                'ParentID' => $event->OrganizationID,
+                'EventID'  => $event->ID,
+                'AuthorID' => $member->ID,
+                'Active'   => true,
+            ]);
+            $map->write();
+        }
+
+        return $this->successResponse(['mapId' => $map->ID] + $this->formatEventPlans($event, $member), 'Lageplan angelegt');
     }
 
     /**
-     * DELETE /api/v1/maps/eventPlanDetach/$ID?map={MapID}
-     * Löst den Lageplan vom Event. Die Objekte darauf gelten wieder als nicht
-     * platziert, ihre Notizen bleiben erhalten.
-     */
-    public function eventPlanDetach(HTTPRequest $request): HTTPResponse
-    {
-        $member = $this->requireAuth();
-        if (!$member) {
-            return $this->errorResponse('Unauthorized', 401);
-        }
-        if ($request->httpMethod() !== 'DELETE') {
-            return $this->errorResponse('Method not allowed', 405);
-        }
-        $event = $this->findEventFor((string) $request->param('ID'), $member);
-        if (!$event) {
-            return $this->errorResponse('Event nicht gefunden', 404);
-        }
-        if (!$this->canManageEventPlans($event, $member)) {
-            return $this->errorResponse('Keine Berechtigung', 403);
-        }
-        $map = $event->SitePlans()->byID((int) $request->getVar('map'));
-        if (!$map) {
-            return $this->errorResponse('Lageplan gehört nicht zu diesem Event', 404);
-        }
-        $event->SitePlans()->remove($map);
-        foreach ($event->ItemPlacements()->filter('MapID', $map->ID) as $placement) {
-            $placement->MapID = 0;
-            $placement->Coordinates = null;
-            $this->writeOrDropPlacement($placement);
-        }
-
-        return $this->successResponse($this->formatEventPlans($event, $member), 'Lageplan vom Event gelöst');
-    }
-
-    /**
-     * GET /api/v1/maps/eventPlanView/$ID?map={MapID}
-     * Ein Lageplan des Events mit seinen Ebenen (nur lesend) und den Objekten des Events.
-     */
-    public function eventPlanView(HTTPRequest $request): HTTPResponse
-    {
-        $member = $this->requireAuth();
-        if (!$member) {
-            return $this->errorResponse('Unauthorized', 401);
-        }
-        $event = $this->findEventFor((string) $request->param('ID'), $member);
-        if (!$event) {
-            return $this->errorResponse('Event nicht gefunden', 404);
-        }
-        $map = $event->SitePlans()->byID((int) $request->getVar('map'));
-        if (!$map) {
-            return $this->errorResponse('Lageplan gehört nicht zu diesem Event', 404);
-        }
-
-        $state = $this->formatEventPlans($event, $member);
-        return $this->jsonResponse([
-            'map'   => $this->formatMap($map),
-            'event' => [
-                'ID'         => $event->ID,
-                'Title'      => $event->Title,
-                'URLSegment' => $event->URLSegment,
-            ],
-            'plans'     => $state['plans'],
-            'items'     => $state['items'],
-            'CanManage' => $state['CanManage'],
-        ]);
-    }
-
-    /**
-     * POST /api/v1/maps/eventPlacementSave/$ID {ItemID, MapID?, Position?, Note?}
+     * POST /api/v1/maps/eventPlacementSave/$ID {ItemID, MapID?, Position?, Note?, MarkerText?}
      * Platziert ein Objekt des Events (MapID + Position "lat,lng"), nimmt es vom
      * Lageplan (MapID null/0) und/oder ändert die Notiz. Nur übergebene Schlüssel
      * werden geändert. Antwort: die aktualisierte Objektliste.
@@ -908,6 +999,13 @@ class MapsApiController extends ApiController
                 $placement->Coordinates = null;
             }
         }
+        if (array_key_exists('MarkerText', $body)) {
+            $markerText = trim((string) $body['MarkerText']);
+            if (mb_strlen($markerText) > 4) {
+                return $this->errorResponse('Der Marker-Text darf höchstens 4 Zeichen haben', 400);
+            }
+            $placement->MarkerText = $markerText;
+        }
         if (array_key_exists('Note', $body)) {
             $note = trim((string) $body['Note']);
             if (mb_strlen($note) > 2000) {
@@ -938,10 +1036,10 @@ class MapsApiController extends ApiController
         return $format($lat) . ',' . $format($lng);
     }
 
-    /** Ein Eintrag ohne Platz und ohne Notiz hat keinen Inhalt mehr */
+    /** Ein Eintrag ohne Platz, Notiz und Marker-Text hat keinen Inhalt mehr */
     private function writeOrDropPlacement(OrgEventItemPlacement $placement): void
     {
-        if (!$placement->MapID && trim((string) $placement->Note) === '') {
+        if (!$placement->MapID && trim((string) $placement->Note) === '' && trim((string) $placement->MarkerText) === '') {
             if ($placement->isInDB()) {
                 $placement->delete();
             }

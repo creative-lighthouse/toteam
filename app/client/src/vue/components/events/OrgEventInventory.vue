@@ -1,10 +1,10 @@
 <template>
   <!-- Inventar-Karte der Event-Seite: die Objekte aus den Ausleihen des Events mit
        ihrer Event-Notiz (z.B. DMX-Adresse) und dem Lageplan, auf dem sie stehen.
-       Die Nummer ist dieselbe wie auf den Markern im Lageplan. -->
+       Die Plakette sieht aus wie der Marker im Lageplan (Farbe nach Objektname). -->
   <ul class="org-event-inventory">
     <li v-for="item in items" :key="item.ItemID" class="org-event-inventory_item">
-      <span class="org-event-inventory_number">{{ item.Number }}</span>
+      <span class="org-event-inventory_number" :style="itemBadgeStyle(item)">{{ itemMarkerText(item) }}</span>
 
       <div class="org-event-inventory_body">
         <p class="org-event-inventory_head">
@@ -41,6 +41,7 @@
 
 <script setup>
 import AppIconButton from '@components/ui/AppIconButton.vue'
+import { itemBadgeStyle, itemMarkerText } from '@utils/eventItems'
 import actionEdit from '../../../../icons/actions/action_edit.svg'
 
 const editIconStyle = { maskImage: `url("${actionEdit}")`, WebkitMaskImage: `url("${actionEdit}")` }

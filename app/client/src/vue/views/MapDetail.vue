@@ -54,14 +54,40 @@
                   </div>
                 </div>
               </div>
-              <div class="map-controls_info">
-                <p v-if="map.shortText"><AppLinkifiedText :text="map.shortText" /></p>
+              <!-- Beschreibung des Lageplans (beim Anlegen angegeben) — ohne sie kein leerer Kasten -->
+              <div v-if="map.shortText" class="map-controls_info">
+                <p><AppLinkifiedText :text="map.shortText" /></p>
               </div>
+              <MapEventItems
+                v-if="map.event"
+                :items="eventItems"
+                :plans="map.eventPlans"
+                :is-here="isItemHere"
+                @select="onItemSelect"
+              />
             </template>
 
             <!-- EDIT MODE -->
             <template v-else>
               <div class="map-controls_edit">
+
+                <!-- Titel und Beschreibung (die Beschreibung steht im Ansichtsmodus über den Ebenen) -->
+                <div class="map-controls_edit-fields">
+                  <div class="edit-field">
+                    <label for="mapEditTitle">Titel</label>
+                    <input id="mapEditTitle" v-model="editTitle" type="text" class="form-control" maxlength="255" required />
+                  </div>
+                  <div class="edit-field">
+                    <label for="mapEditShortText">Beschreibung</label>
+                    <textarea
+                      id="mapEditShortText"
+                      v-model="editShortText"
+                      class="form-control"
+                      rows="3"
+                      placeholder="Optional, z.B. Hinweise zum Gelände"
+                    ></textarea>
+                  </div>
+                </div>
 
                 <!-- Background image -->
                 <div class="edit-bg-image">
@@ -81,6 +107,17 @@
                     {{ pendingBgImage ? '✓ Bild gewählt' : 'Bild ändern' }}
                   </label>
                 </div>
+
+                <!-- Lageplan eines Events: ausgeliehene Objekte platzieren -->
+                <MapEventItems
+                  v-if="map.event"
+                  :items="eventItems"
+                  :plans="map.eventPlans"
+                  :is-here="isItemHere"
+                  editing
+                  @select="onItemSelect"
+                  @place="placeItem"
+                />
 
                 <!-- Layer cards -->
                 <div
@@ -217,7 +254,12 @@
 
           <div class="map-controls_actions">
             <template v-if="!isEditMode">
-              <AppButton to="/map" variant="primary">← Alle Lagepläne</AppButton>
+              <AppButton
+                v-if="map.event"
+                :to="{ name: 'EventDetail', params: { segment: map.event.URLSegment } }"
+                variant="primary"
+              >← Zum Event</AppButton>
+              <AppButton v-else to="/map" variant="primary">← Alle Lagepläne</AppButton>
               <button class="button action_recenter" @click="resetView">
                 <div
                   class="resetMapView_button icon--small"
@@ -248,6 +290,15 @@
     </div>
 
     <RoomDetailModal ref="roomDetailModal" />
+    <!-- Notiz eines ausgeliehenen Objekts: nur im Bearbeiten-Modus änderbar -->
+    <OrgEventItemEditModal
+      v-if="map?.event"
+      ref="itemEditModal"
+      :event-id="map.event.ID"
+      :plans="map.eventPlans"
+      :readonly="!isEditMode"
+      @saved="onItemSaved"
+    />
   </div>
 </template>
 
@@ -262,12 +313,17 @@ import { apiGet, apiPost, apiPostForm } from '@utils/api'
 import MapRenderer from '../../js/maprenderer.js'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
+import MapEventItems from '@components/maps/MapEventItems.vue'
+import OrgEventItemEditModal from '@components/events/OrgEventItemEditModal.vue'
+import { useOrgEventsStore } from '@stores/orgEvents'
+import { itemColor, itemMarkerText } from '@utils/eventItems'
 
 const route = useRoute()
 const router = useRouter()
 usePageHeaderStore().setHeader('Lageplan', '')
 
 const roomsStore = useRoomsStore()
+const orgEventsStore = useOrgEventsStore()
 const map = ref(null)
 const loading = ref(true)
 const error = ref(null)
@@ -284,16 +340,121 @@ const selectedRoomId = reactive({})
 // Edit mode state
 const isEditMode = ref(false)
 const editLayers = ref([])
+const editTitle = ref('')
+const editShortText = ref('')
 const pendingImages = ref({})
 const pendingBgImage = ref(null)
 const bgPreviewUrl = ref('')
 const saving = ref(false)
 
+// ── Lageplan eines Events: ausgeliehene Objekte als eigene Ebene ────────────
+// Die Ebene hängt immer als letzte an map.layers (= renderer.layers), gehört aber
+// nicht zu den Ebenen des Plans: editLayers kennt sie nicht, gespeichert werden nur
+// die Positionen der Objekte (beim "Speichern", wie bei normalen Markern).
+// Farbe der Ebene (Checkbox); die Marker selbst sind nach Objektname eingefärbt
+// (utils/eventItems.js) — wie --ColorPlanItem, das Canvas braucht den Hex-Wert
+const ITEM_COLOR = '#e67e22'
+const ITEM_LAYER_ID = 'event-items'
+const itemEditModal = ref(null)
+const eventItems = ref([])
+// Im Bearbeiten-Modus verschobene/platzierte Objekte: { [ItemID]: "lat,lng" }
+const pendingItemPositions = ref({})
+
+function isItemHere(item) {
+  return !!pendingItemPositions.value[item.ItemID] || (item.MapID === map.value?.id && !!item.Position)
+}
+
+function firstLine(text) {
+  const line = (text || '').split('\n')[0].trim()
+  return line.length > 40 ? line.slice(0, 39) + '…' : line
+}
+
+function itemPOIs() {
+  return eventItems.value.filter(isItemHere).map(item => ({
+    id: `item-${item.ItemID}`,
+    itemId: item.ItemID,
+    title: `${itemMarkerText(item)}: ${item.Title}${item.Note ? ' – ' + firstLine(item.Note) : ''}`,
+    description: item.Note || '',
+    active: true,
+    position: pendingItemPositions.value[item.ItemID] || item.Position,
+    markerColor: itemColor(item.Title),
+    markerText: itemMarkerText(item),
+    type: 'item',
+  }))
+}
+
+function itemLayer() {
+  return map.value?.layers.find(l => l.id === ITEM_LAYER_ID) ?? null
+}
+
+/** Neue Objektliste (z.B. nach dem Speichern einer Notiz) übernehmen und Marker neu zeichnen */
+function applyItems(items) {
+  eventItems.value = items
+  const layer = itemLayer()
+  if (layer) {
+    layer.pois = itemPOIs()
+    renderer?.render()
+  }
+}
+
+// Notiz gespeichert oder vom Plan genommen — eine ungespeicherte Verschiebung gilt dann nicht mehr
+function onItemSaved(items, { itemId, unplaced } = {}) {
+  if (unplaced && pendingItemPositions.value[itemId]) {
+    const { [itemId]: _removed, ...rest } = pendingItemPositions.value
+    pendingItemPositions.value = rest
+  }
+  applyItems(items)
+}
+
+function onItemSelect(item) {
+  if (isItemHere(item) && renderer) {
+    const [lat, lng] = (pendingItemPositions.value[item.ItemID] || item.Position).split(',').map(Number)
+    renderer.panToPOI(lat, lng)
+  }
+  itemEditModal.value?.open(item)
+}
+
+function onItemPOIClick(poiData) {
+  const item = eventItems.value.find(i => i.ItemID === poiData.poi.itemId)
+  if (item) itemEditModal.value?.open(item)
+}
+
+// Nur im Bearbeiten-Modus verschiebbar (renderer.isEditMode) — gemerkt bis "Speichern"
+function onPOIMoved(poiData) {
+  if (poiData.poi.type !== 'item') return
+  pendingItemPositions.value = { ...pendingItemPositions.value, [poiData.poi.itemId]: poiData.poi.position }
+}
+
+function placeItem(item) {
+  if (!renderer) return
+  if (item.MapID && item.MapID !== map.value.id) {
+    const plan = map.value.eventPlans.find(p => p.ID === item.MapID)
+    if (!confirm(`„${item.Title}“ steht auf „${plan?.Title ?? 'einem anderen Lageplan'}“. Auf diesen Lageplan verschieben?`)) return
+  }
+  // Ausgeblendete Objekt-Ebene einblenden, sonst wäre der neue Marker unsichtbar
+  if (!renderer.activeLayers.has(ITEM_LAYER_ID)) renderer.toggleLayer(ITEM_LAYER_ID)
+  pendingItemPositions.value = { ...pendingItemPositions.value, [item.ItemID]: renderer.getViewCenterPosition() }
+  applyItems(eventItems.value)
+}
+
 async function loadMap() {
   try {
     const data = await apiGet(`/maps/view/${route.params.id}`, false)
+    pendingItemPositions.value = {}
+    eventItems.value = data.map.items || []
+    if (data.map.event) {
+      data.map.layers.push({
+        id: ITEM_LAYER_ID,
+        title: 'Ausgeliehenes Inventar',
+        active: true,
+        imageUrl: '',
+        layerColor: ITEM_COLOR,
+        pois: [],
+      })
+    }
     map.value = data.map
-    usePageHeaderStore().setHeader(data.map.title, '')
+    if (data.map.event) itemLayer().pois = itemPOIs()
+    usePageHeaderStore().setHeader(data.map.title, data.map.event?.Title ?? '')
     loading.value = false
     await nextTick()
     initRenderer()
@@ -335,6 +496,8 @@ function initRenderer() {
     layers: map.value.layers,
     editMode: false,
     onRoomPOIClick,
+    onItemPOIClick,
+    onPOIMoved,
   })
   window.mapRenderer = renderer
 }
@@ -366,7 +529,10 @@ function toggleEditMode() {
 }
 
 function enterEditMode() {
-  editLayers.value = map.value.layers.map(l => ({
+  editTitle.value = map.value.title || ''
+  editShortText.value = map.value.shortText || ''
+  // Die Objekt-Ebene eines Event-Lageplans ist keine Ebene des Plans (siehe ITEM_LAYER_ID)
+  editLayers.value = map.value.layers.filter(l => l.id !== ITEM_LAYER_ID).map(l => ({
     id: l.id,
     title: l.title,
     description: l.description || '',
@@ -387,7 +553,7 @@ async function deleteMap() {
   if (!confirm(`Lageplan "${map.value.title}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return
   try {
     await apiPost(`/maps/deletemap/${map.value.id}`, {})
-    router.push('/map')
+    router.push(map.value.event ? { name: 'EventDetail', params: { segment: map.value.event.URLSegment } } : '/map')
   } catch (e) {
     alert('Fehler beim Löschen: ' + e.message)
   }
@@ -493,9 +659,11 @@ async function addLayer() {
   try {
     const result = await apiPost(`/maps/createlayer/${map.value.id}`, { title })
     const newLayer = result.data.layer
-    // Add to map and renderer live
-    map.value.layers.push(newLayer)
-    renderer?.layers.push(newLayer)
+    // map.value.layers ist dasselbe Array wie renderer.layers — einmal einfügen,
+    // vor der Objekt-Ebene eines Event-Lageplans (die bleibt immer die letzte)
+    const layers = map.value.layers
+    const at = layers.findIndex(l => l.id === ITEM_LAYER_ID)
+    layers.splice(at === -1 ? layers.length : at, 0, newLayer)
     editLayers.value.push({
       id: newLayer.id,
       title: newLayer.title,
@@ -510,8 +678,19 @@ async function addLayer() {
 }
 
 async function saveAll() {
+  if (!editTitle.value.trim()) {
+    alert('Bitte gib einen Titel für den Lageplan an.')
+    return
+  }
   saving.value = true
   try {
+    const updated = await apiPost(`/maps/updatemap/${map.value.id}`, {
+      title: editTitle.value.trim(),
+      shortText: editShortText.value.trim(),
+    })
+    // apiPost wirft bei Fehlern nicht, sondern liefert { success: false, error }
+    if (!updated?.success) throw new Error(updated?.error || 'Titel und Beschreibung konnten nicht gespeichert werden')
+
     if (pendingBgImage.value) {
       const formData = new FormData()
       formData.append('image', pendingBgImage.value)
@@ -554,6 +733,12 @@ async function saveAll() {
       layerIds: editLayers.value.map(l => l.id),
     })
 
+    // Verschobene/platzierte Objekte des Events
+    for (const [itemId, position] of Object.entries(pendingItemPositions.value)) {
+      await orgEventsStore.savePlacement(map.value.event.ID, Number(itemId), { MapID: map.value.id, Position: position })
+    }
+    pendingItemPositions.value = {}
+
     isEditMode.value = false
     editLayers.value = []
     pendingImages.value = {}
@@ -565,7 +750,15 @@ async function saveAll() {
   }
 }
 
-onMounted(loadMap)
+// Neu angelegter Lageplan (z.B. von der Event-Seite): direkt im Bearbeiten-Modus öffnen
+onMounted(async () => {
+  await loadMap()
+  if (route.query.edit && map.value?.canEdit) {
+    enterEditMode()
+    const { edit: _edit, ...query } = route.query
+    router.replace({ query })
+  }
+})
 
 onUnmounted(() => {
   window.mapRenderer = null

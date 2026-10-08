@@ -171,9 +171,10 @@
                 </li>
 
                 <li>
-                    <router-link data-secondary-item to="/organizations" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Organizations' }" @click="closeAllMenus">
+                    <router-link data-secondary-item to="/organizations" :aria-label="pendingApplicants ? `Organisationen, ${pendingApplicants === 1 ? '1 offene Bewerbung' : `${pendingApplicants} offene Bewerbungen`}` : undefined" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Organizations' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="organizationsTotem" alt="" class="nav_image">
+                            <span v-if="pendingApplicants" class="nav_badge" aria-hidden="true">{{ formatBadge(pendingApplicants) }}</span>
                         </div>
                         <p class="nav_title">Organisationen</p>
                     </router-link>
@@ -228,6 +229,7 @@ import { useAuthStore } from '@stores/auth'
 import { useUiStore } from '@stores/ui'
 import { useInventoryStore } from '@stores/inventory'
 import { useMoneyStore } from '@stores/money'
+import { useOrganizationsStore } from '@stores/organizations'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import SettingsModal from '@components/layout/SettingsModal.vue'
 import FeedbackModal from '@components/layout/FeedbackModal.vue'
@@ -258,11 +260,14 @@ const authStore = useAuthStore()
 const uiStore = useUiStore()
 const inventoryStore = useInventoryStore()
 const moneyStore = useMoneyStore()
+const organizationsStore = useOrganizationsStore()
 
 // Offene Ausleih-Anträge, über die man entscheiden darf (der Server zählt nur die)
 const pendingRentals = computed(() => (authStore.hasTotem('inventory') ? inventoryStore.pendingRentals : 0))
 // Buchungen, die man noch genehmigen muss (MONEY_APPROVE_ENTRIES)
 const pendingEntries = computed(() => moneyStore.pendingEntries)
+// Bewerbungen, die man annehmen darf (ORG_MANAGE_MEMBERS)
+const pendingApplicants = computed(() => organizationsStore.pendingApplicants)
 
 function formatBadge(count) {
     return count > 9 ? '9+' : count

@@ -338,7 +338,7 @@ async function onMealDeleted() {
 
 // Menü und Tab-Leiste sind unten fest — dort ebenfalls mitscrollen
 const bottomInset = () => {
-  const nav = document.querySelector('.food-tab-nav')
+  const nav = document.querySelector('.app-tab-nav')
   return nav ? window.innerHeight - nav.getBoundingClientRect().top : 0
 }
 
