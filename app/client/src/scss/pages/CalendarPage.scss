@@ -415,13 +415,6 @@
             color: var(--ColorGray);
             font-weight: 400;
         }
-
-        .copy-btn--copied {
-            background-color: var(--ColorStatusGood);
-            border-color: var(--ColorStatusGood);
-            color: var(--ColorWhite);
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-        }
     }
 }
 

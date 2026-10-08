@@ -141,12 +141,18 @@
                 </div>
                 <div class="copy-container">
                     <button
+                    v-if="authStore.user?.Hash"
                     type="button"
                     class="button copy-btn"
-                    :class="{ 'copy-btn--copied': icsCopied }"
-                    @click="copyICSLink"
-                    >{{ icsCopied ? '✓ Link kopiert' : 'ICS-Link für externe Kalender kopieren →' }}</button>
+                    @click="icsLinkModalRef.open()"
+                    >ICS-Link für externe Kalender kopieren →</button>
                 </div>
+                <CalendarIcsLinkModal
+                    v-if="authStore.user?.Hash"
+                    ref="icsLinkModalRef"
+                    :hash="authStore.user.Hash"
+                    :organizations="memberOrgs"
+                />
             </div>
 
 
@@ -209,6 +215,7 @@ import { MODAL_FOCUS_FALLBACK } from '@utils/modalFocus'
 import EventCard from '@components/calendar/EventCard.vue'
 import AppMenu from '@components/layout/AppMenu.vue'
 import CalendarEntryCreateModal from '@components/calendar/CalendarEntryCreateModal.vue'
+import CalendarIcsLinkModal from '@components/calendar/CalendarIcsLinkModal.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
@@ -774,20 +781,9 @@ async function onAppointmentDeleted() {
   await refreshEvents()
 }
 
-// ICS link copy
-const icsCopied = ref(false)
-const icsLink = computed(() => {
-  const hash = authStore.user?.Hash
-  if (!hash) return null
-  return `${window.location.origin}/ics?user=${hash}`
-})
-
-async function copyICSLink() {
-  if (!icsLink.value) return
-  await navigator.clipboard.writeText(icsLink.value)
-  icsCopied.value = true
-  setTimeout(() => { icsCopied.value = false }, 3000)
-}
+// ICS link (Konfiguration im Modal)
+const icsLinkModalRef = ref(null)
+const memberOrgs = computed(() => orgsStore.organizations.filter(o => o.MembershipStatus === 'member'))
 
 // Load events on mount
 // ── Per Link (eventID) geöffneter Termin ──────────────────────────────────────
