@@ -151,6 +151,10 @@ body {
     --ColorStatusBad: #F44336;
     --ColorStatusBadAccent: #ffe7e5;
 
+    // Marker der ausgeliehenen Objekte auf dem Lageplan eines Events — wie ITEM_COLOR
+    // in EventSitePlan.vue (das Canvas braucht dort den Hex-Wert)
+    --ColorPlanItem: #e67e22;
+
     --BoxShadowLight: 5px 5px 5px rgba(0,0,0,0.03);
     --BoxShadowMenu: 0 2px 10px rgba(0,0,0,0.1);
 }

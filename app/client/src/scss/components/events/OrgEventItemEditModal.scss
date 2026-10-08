@@ -1,0 +1,29 @@
+@use "../../base/variables" as *;
+
+// Notiz eines ausgeliehenen Objekts für ein Event (OrgEventItemEditModal.vue)
+.org-event-item-edit-modal {
+    .org-event-item-edit-modal_meta,
+    .org-event-item-edit-modal_hint,
+    .org-event-item-edit-modal_note {
+        grid-column: 1 / -1;
+        margin: 0;
+    }
+
+    .org-event-item-edit-modal_meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-item-edit-modal_hint {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-item-edit-modal_note {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+}

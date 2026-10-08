@@ -151,18 +151,20 @@
                 </li>
 
                 <li v-if="authStore.hasTotem('inventory')">
-                    <router-link data-secondary-item to="/inventory" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Inventory' || $route.name === 'InventoryRentals' }" @click="closeAllMenus">
+                    <router-link data-secondary-item to="/inventory" :aria-label="pendingRentals ? `Inventar, ${pendingRentals === 1 ? '1 offener Antrag' : `${pendingRentals} offene Anträge`}` : undefined" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Inventory' || $route.name === 'InventoryRentals' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="inventarTotem" alt="" class="nav_image">
+                            <span v-if="pendingRentals" class="nav_badge" aria-hidden="true">{{ formatBadge(pendingRentals) }}</span>
                         </div>
                         <p class="nav_title">Inventar <span class="nav_alpha">Alpha</span></p>
                     </router-link>
                 </li>
 
                 <li>
-                    <router-link data-secondary-item to="/money" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
+                    <router-link data-secondary-item to="/money" :aria-label="pendingEntries ? `Geld, ${pendingEntries === 1 ? '1 Buchung zu genehmigen' : `${pendingEntries} Buchungen zu genehmigen`}` : undefined" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="geldTotem" alt="" class="nav_image">
+                            <span v-if="pendingEntries" class="nav_badge" aria-hidden="true">{{ formatBadge(pendingEntries) }}</span>
                         </div>
                         <p class="nav_title">Geld</p>
                     </router-link>
@@ -220,10 +222,12 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { useUiStore } from '@stores/ui'
+import { useInventoryStore } from '@stores/inventory'
+import { useMoneyStore } from '@stores/money'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import SettingsModal from '@components/layout/SettingsModal.vue'
 import FeedbackModal from '@components/layout/FeedbackModal.vue'
@@ -252,6 +256,17 @@ const logoutIconStyle = { maskImage: `url("${actionLogout}")`, WebkitMaskImage: 
 const router = useRouter()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
+const inventoryStore = useInventoryStore()
+const moneyStore = useMoneyStore()
+
+// Offene Ausleih-Anträge, über die man entscheiden darf (der Server zählt nur die)
+const pendingRentals = computed(() => (authStore.hasTotem('inventory') ? inventoryStore.pendingRentals : 0))
+// Buchungen, die man noch genehmigen muss (MONEY_APPROVE_ENTRIES)
+const pendingEntries = computed(() => moneyStore.pendingEntries)
+
+function formatBadge(count) {
+    return count > 9 ? '9+' : count
+}
 const isSecondaryMenuOpen = ref(false)
 const isProfileMenuOpen = ref(false)
 const settingsModal = ref(null)

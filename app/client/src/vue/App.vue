@@ -25,6 +25,8 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useNotificationsStore } from '@stores/notifications'
+import { useInventoryStore } from '@stores/inventory'
+import { useMoneyStore } from '@stores/money'
 import { registerPushToken, listenForForegroundMessages } from '@utils/push'
 import AppMenu from '@components/layout/AppMenu.vue'
 import AppHeader from '@components/layout/AppHeader.vue'
@@ -38,27 +40,40 @@ const pageHeaderStore = usePageHeaderStore()
 // ── Benachrichtigungen ───────────────────────────────────────────────────────
 
 const notificationsStore = useNotificationsStore()
+const inventoryStore = useInventoryStore()
+const moneyStore = useMoneyStore()
 let foregroundListening = false
+
+// Zahlen im Header und Hauptmenü: ungelesene Mitteilungen, offene Ausleih-Anträge und
+// zu genehmigende Buchungen (beides zählt der Server nur, wenn man darüber entscheiden darf)
+function refreshBadges() {
+  notificationsStore.fetchNotifications()
+  if (authStore.hasTotem('inventory')) inventoryStore.fetchPendingCount()
+  moneyStore.fetchPendingCount()
+}
 
 // Nach dem Anmelden: Inbox laden und dieses Gerät für Push registrieren (nur wenn die
 // Berechtigung schon erteilt ist — aktiviert wird Push in den Einstellungen)
 watch(() => authStore.isAuthenticated, (loggedIn) => {
   if (!loggedIn) {
     notificationsStore.reset()
+    inventoryStore.pendingRentals = 0
+    moneyStore.pendingEntries = 0
     return
   }
-  notificationsStore.fetchNotifications()
+  refreshBadges()
   registerPushToken()
   if (!foregroundListening) {
     foregroundListening = true
-    listenForForegroundMessages(() => notificationsStore.fetchNotifications())
+    // z.B. ein neuer Ausleih-Antrag kommt auch als Push
+    listenForForegroundMessages(refreshBadges)
   }
 }, { immediate: true })
 
 // Zurück in die App (z.B. nach einem Push im Hintergrund): Badge aktualisieren
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && authStore.isAuthenticated) {
-    notificationsStore.fetchNotifications()
+    refreshBadges()
   }
 })
 

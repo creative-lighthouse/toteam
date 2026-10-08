@@ -1,0 +1,70 @@
+@use "../../base/variables" as *;
+
+// Lagepläne-Karte der Event-Seite (OrgEventSitePlans.vue)
+.org-event-site-plans {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .org-event-site-plans_list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .org-event-site-plans_plan {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+    }
+
+    .org-event-site-plans_link {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        color: inherit;
+        text-decoration: none;
+
+        &:hover .org-event-site-plans_title {
+            text-decoration: underline;
+        }
+    }
+
+    .org-event-site-plans_thumb {
+        flex: none;
+        width: 72px;
+        height: 54px;
+        border-radius: var(--BorderRadiusSmall);
+        object-fit: cover;
+        background-color: var(--ColorLightGray);
+    }
+
+    .org-event-site-plans_text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .org-event-site-plans_title {
+        font-weight: 700;
+    }
+
+    .org-event-site-plans_meta {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-site-plans_error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+}

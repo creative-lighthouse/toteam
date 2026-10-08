@@ -6,6 +6,7 @@ import Dashboard from '@views/Dashboard.vue'
 import Calendar from '@views/Calendar.vue'
 import Events from '@views/Events.vue'
 import EventDetail from '@views/EventDetail.vue'
+import EventSitePlan from '@views/EventSitePlan.vue'
 import Food from '@views/Food.vue'
 import Announcements from '@views/Announcements.vue'
 import AnnouncementDetail from '@views/AnnouncementDetail.vue'
@@ -70,6 +71,13 @@ const routes = [
     name: 'EventDetail',
     component: EventDetail,
     meta: { requiresAuth: false }
+  },
+  {
+    // Lageplan eines Events mit den dafür ausgeliehenen Objekten (nur für Mitglieder, prüft die API)
+    path: '/events/:segment/lageplan/:mapId',
+    name: 'EventSitePlan',
+    component: EventSitePlan,
+    meta: { requiresAuth: true }
   },
   {
     path: '/food/meal/:id',

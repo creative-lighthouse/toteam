@@ -4,6 +4,8 @@ namespace App\Inventory;
 
 use App\Calendar\Appointment;
 use App\Rooms\Room;
+use App\Teams\OrgEvent;
+use App\Teams\OrgEventItemPlacement;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use SilverStripe\ORM\DataList;
@@ -33,6 +35,10 @@ use SilverStripe\Security\Member;
  * konkrete, freie Objekte der Gruppe (`Items`). Wer verleiht, kann sie gegen
  * andere freie Objekte derselben Gruppe tauschen (siehe swapItem()).
  *
+ * Optional gehört eine Ausleihe zu einem Event (`OrgEvent`) der Organisation —
+ * dann lassen sich ihre Objekte auf den Lageplänen des Events platzieren
+ * (siehe OrgEventItemPlacement).
+ *
  * Bei der Genehmigung wird eine Auflage (`UsageCondition`) festgelegt: frei nutzbar,
  * nur unter einer Bedingung (`ConditionComment`) oder nicht benutzen (z.B. nur
  * transportieren/lagern).
@@ -52,11 +58,13 @@ use SilverStripe\Security\Member;
  * @property int $DecidedByID
  * @property int $LenderID
  * @property int $LenderOrganizationID
+ * @property int $OrgEventID
  * @method \App\Teams\Organization Organization()
  * @method \SilverStripe\Security\Member Member()
  * @method \SilverStripe\Security\Member DecidedBy()
  * @method \SilverStripe\Security\Member Lender()
  * @method \App\Teams\Organization LenderOrganization()
+ * @method \App\Teams\OrgEvent OrgEvent()
  * @method \SilverStripe\ORM\ManyManyList|\App\Inventory\InventoryItem[] Items()
  * @method \SilverStripe\ORM\DataList|\App\Inventory\InventoryDamageReport[] DamageReports()
  * @method \SilverStripe\ORM\ManyManyList|\App\Rooms\Room[] Rooms()
@@ -108,6 +116,8 @@ class InventoryRental extends DataObject
         "Lender"       => Member::class,
         // Besitzende Organisation (leer bei älteren Ausleihen → Organization)
         "LenderOrganization" => Organization::class,
+        // Event der Organisation, für das ausgeliehen wird ("Events" sind die Termine)
+        "OrgEvent" => OrgEvent::class,
     ];
 
     private static $has_many = [
@@ -157,6 +167,7 @@ class InventoryRental extends DataObject
         "Items"            => "Objekte",
         "Rooms"            => "Räume",
         "Events"           => "Termine",
+        "OrgEvent"         => "Event",
         "DamageReports"    => "Schadensmeldungen",
     ];
 
@@ -298,6 +309,14 @@ class InventoryRental extends DataObject
         }
         $this->Items()->remove($old);
         $this->Items()->add($new);
+        // Platz und Notiz auf dem Lageplan des Events gelten für das Ersatzobjekt weiter
+        if ($this->OrgEventID) {
+            $placement = OrgEventItemPlacement::get()->filter(['EventID' => $this->OrgEventID, 'ItemID' => $old->ID])->first();
+            if ($placement && !OrgEventItemPlacement::get()->filter(['EventID' => $this->OrgEventID, 'ItemID' => $new->ID])->exists()) {
+                $placement->ItemID = $new->ID;
+                $placement->write();
+            }
+        }
         $this->recordHistoryValueChange('Items', 'Getauscht', $old->getTitleWithNumber(), $new->getTitleWithNumber());
         return null;
     }

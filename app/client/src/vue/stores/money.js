@@ -9,6 +9,17 @@ export const useMoneyStore = defineStore('money', () => {
   const currentEntry = ref(null)
   const loading = ref(false)
   const error = ref(null)
+  // Noch nicht genehmigte Buchungen, die man genehmigen darf — für die Zahl im Hauptmenü
+  const pendingEntries = ref(0)
+
+  async function fetchPendingCount() {
+    try {
+      const response = await apiGet('/money/pendingCount', false)
+      pendingEntries.value = response.pendingEntries || 0
+    } catch {
+      // Ohne Verbindung bleibt die letzte Zahl stehen
+    }
+  }
 
   async function fetchOverview(forceRefresh = false) {
     try {
@@ -132,6 +143,7 @@ export const useMoneyStore = defineStore('money', () => {
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
+      fetchPendingCount()
     }
     return response
   }
@@ -141,6 +153,7 @@ export const useMoneyStore = defineStore('money', () => {
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
+      fetchPendingCount()
     }
     return response
   }
@@ -150,6 +163,7 @@ export const useMoneyStore = defineStore('money', () => {
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
+      fetchPendingCount()
     }
     return response
   }
@@ -159,6 +173,7 @@ export const useMoneyStore = defineStore('money', () => {
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
+      fetchPendingCount()
     }
     return response
   }
@@ -204,6 +219,8 @@ export const useMoneyStore = defineStore('money', () => {
     currentEntry,
     loading,
     error,
+    pendingEntries,
+    fetchPendingCount,
     fetchOverview,
     fetchAccount,
     fetchBudgetEntries,

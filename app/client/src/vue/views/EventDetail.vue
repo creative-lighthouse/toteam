@@ -137,6 +137,22 @@
               <h2 class="hl3 event-page_subtitle">Rollenverteilung</h2>
               <OrgEventScripts :event="event" :state="visibleScriptState" @update="scriptState = $event" />
             </section>
+
+            <section v-if="planState?.plans.length" class="event-page_section">
+              <h2 class="hl3 event-page_subtitle">{{ planState.plans.length === 1 ? 'Lageplan' : 'Lagepläne' }}</h2>
+              <OrgEventSitePlans :event="event" :state="planState" :editable="editing && planState.CanManage" @update="planState = $event" />
+            </section>
+
+            <section v-if="planState?.items.length" class="event-page_section">
+              <h2 class="hl3 event-page_subtitle">Ausgeliehenes Inventar</h2>
+              <OrgEventInventory
+                :items="planState.items"
+                :plans="planState.plans"
+                :editable="editing && planState.CanManage"
+                @edit="itemEditModal?.open($event)"
+                @open-rental="rentalDetailModal?.open($event)"
+              />
+            </section>
           </template>
 
           <!-- In der öffentlichen Vorschau so, wie es nicht angemeldete Besucher sehen -->
@@ -185,6 +201,22 @@
       :can-create="moneyState.CanCreate"
       @saved="moneyState = $event"
     />
+    <OrgEventSitePlanAddModal
+      v-if="planState?.CanManage"
+      ref="sitePlanAddModal"
+      :event-id="event.ID"
+      :available-plans="planState.availablePlans"
+      @saved="planState = $event"
+    />
+    <OrgEventItemEditModal
+      v-if="planState?.CanManage"
+      ref="itemEditModal"
+      :event-id="event.ID"
+      :plans="planState.plans"
+      @saved="loadPlans"
+    />
+    <InventoryRentalRequestModal v-if="canRequestRental" ref="rentalRequestModal" @saved="loadPlans" />
+    <InventoryRentalDetailModal v-if="planState?.items.length" ref="rentalDetailModal" @changed="loadPlans" />
     <OrgEventScriptAddModal
       v-if="scriptState?.CanManageScripts"
       ref="scriptAddModal"
@@ -217,6 +249,13 @@ import OrgEventScriptAddModal from '@components/events/OrgEventScriptAddModal.vu
 import OrgEventMoney from '@components/events/OrgEventMoney.vue'
 import OrgEventMoneyAddModal from '@components/events/OrgEventMoneyAddModal.vue'
 import { useMoneyStore } from '@stores/money'
+import { useInventoryStore } from '@stores/inventory'
+import OrgEventSitePlans from '@components/events/OrgEventSitePlans.vue'
+import OrgEventSitePlanAddModal from '@components/events/OrgEventSitePlanAddModal.vue'
+import OrgEventInventory from '@components/events/OrgEventInventory.vue'
+import OrgEventItemEditModal from '@components/events/OrgEventItemEditModal.vue'
+import InventoryRentalRequestModal from '@components/inventory/InventoryRentalRequestModal.vue'
+import InventoryRentalDetailModal from '@components/inventory/InventoryRentalDetailModal.vue'
 import CalendarEntryCreateModal from '@components/calendar/CalendarEntryCreateModal.vue'
 import EventDialog from '@components/calendar/event-dialog/EventDialog.vue'
 import EventDialogSkeleton from '@components/calendar/event-dialog/EventDialogSkeleton.vue'
@@ -241,6 +280,7 @@ const orgEventsStore = useOrgEventsStore()
 const skriptStore = useSkriptStore()
 const eventsStore = useEventsStore()
 const moneyStore = useMoneyStore()
+const inventoryStore = useInventoryStore()
 const pageHeader = usePageHeaderStore()
 
 const event = ref(null)
@@ -268,6 +308,15 @@ const scriptState = ref(null)
 // Kassen des Events (GET /money/eventAccounts/{id}) — null, solange nicht geladen
 const moneyState = ref(null)
 const moneyAddModal = ref(null)
+// Lagepläne und ausgeliehenes Inventar (GET /maps/eventPlans/{id}) — null, solange nicht geladen
+const planState = ref(null)
+const sitePlanAddModal = ref(null)
+const itemEditModal = ref(null)
+const rentalRequestModal = ref(null)
+const rentalDetailModal = ref(null)
+
+// Ausleihen fürs Event beantragen (nur, wenn das Inventar-Totem aktiv ist)
+const canRequestRental = computed(() => !!planState.value?.CanRequestRental && authStore.hasTotem('inventory'))
 
 // Kasse hinzufügen: eine vorhandene zuordnen oder eine neue anlegen
 const canAddMoney = computed(() => !!(moneyState.value?.CanCreate || moneyState.value?.availableAccounts.length))
@@ -288,6 +337,8 @@ const canEdit = computed(() => !!(
   || scriptState.value?.scripts.some(s => s.CanEdit)
   || canAddMoney.value
   || moneyState.value?.accounts.some(a => a.CanUnlink)
+  || planState.value?.CanManage
+  || canRequestRental.value
 ))
 
 const viewModes = computed(() => (isInternal.value ? [
@@ -324,6 +375,7 @@ const showLogin = computed(() =>
 // Zweispaltig nur, wenn es neben den Eckdaten etwas gibt — sonst bleibt die Seite einspaltig schmal
 const hasAside = computed(() => showLogin.value || (showInternal.value && !!(
   appointments.value.length || scriptState.value?.scripts.length || moneyState.value?.accounts.length
+  || planState.value?.plans.length || planState.value?.items.length
 )))
 
 const layoutEl = ref(null)
@@ -359,6 +411,16 @@ const addActions = computed(() => [
     label: 'Skript',
     hint: 'Neues oder vorhandenes Skript mit Rollen und Rollenzuteilung',
   },
+  canRequestRental.value && {
+    key: 'rental',
+    label: 'Ausleihe',
+    hint: 'Objekte aus dem Inventar für das Event ausleihen',
+  },
+  planState.value?.CanManage && {
+    key: 'sitePlan',
+    label: 'Lageplan',
+    hint: 'Lageplan, auf dem du die ausgeliehenen Objekte platzierst (z.B. mit DMX-Adresse)',
+  },
 ].filter(Boolean))
 
 function onAddAction(key) {
@@ -367,6 +429,31 @@ function onAddAction(key) {
   }
   if (key === 'script') scriptAddModal.value?.open()
   if (key === 'money') moneyAddModal.value?.open()
+  if (key === 'sitePlan') sitePlanAddModal.value?.open()
+  if (key === 'rental') openRentalRequest()
+}
+
+async function openRentalRequest() {
+  // Der Antrag braucht die Organisationen samt Antragsrecht aus dem Inventar-Store
+  if (!inventoryStore.organizations.length) await inventoryStore.fetchRentals()
+  const e = event.value
+  rentalRequestModal.value?.open({
+    organizationId: e.OrganizationID,
+    orgEvent: { ID: e.ID, Title: e.Title },
+    dateStart: e.RangeStart,
+    dateEnd: e.RangeEnd,
+    eventIds: appointments.value.map(a => a.ID),
+    purpose: e.Title,
+  })
+}
+
+async function loadPlans() {
+  try {
+    planState.value = await orgEventsStore.fetchEventPlans(event.value.ID)
+  } catch {
+    // Ohne Lageplan-Daten bleibt die Seite benutzbar, nur die Karten fehlen
+    planState.value = null
+  }
 }
 
 // ── Termin-Dialog ─────────────────────────────────────────────────────────────
@@ -479,6 +566,7 @@ async function load() {
     if (isInternal.value) {
       loadScripts()
       loadMoney()
+      loadPlans()
     }
     pageHeader.setHeader(event.value.Title, event.value.OrganizationTitle ?? 'Event')
   } catch (e) {
@@ -535,6 +623,7 @@ watch(() => route.params.segment, segment => {
   event.value = null
   scriptState.value = null
   moneyState.value = null
+  planState.value = null
   load()
 }, { immediate: true })
 </script>

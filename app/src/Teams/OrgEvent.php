@@ -5,7 +5,9 @@ namespace App\Teams;
 use App\Announcements\FeedPost;
 use App\Calendar\Appointment;
 use App\Food\Food;
+use App\Inventory\InventoryRental;
 use App\Maps\Geocoder;
+use App\Maps\Map;
 use App\Maps\MapTilesSettings;
 use App\Money\MoneyAccount;
 use App\Skript\Script;
@@ -66,6 +68,9 @@ use SilverStripe\View\Parsers\URLSegmentFilter;
  * @method \SilverStripe\ORM\DataList|\App\Skript\ScriptRoleAssignment[] RoleAssignments()
  * @method \SilverStripe\ORM\DataList|\App\Money\MoneyAccount[] MoneyAccounts()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrgEventInterest[] Interests()
+ * @method \SilverStripe\ORM\DataList|\App\Inventory\InventoryRental[] Rentals()
+ * @method \SilverStripe\ORM\DataList|\App\Teams\OrgEventItemPlacement[] ItemPlacements()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Maps\Map[] SitePlans()
  */
 class OrgEvent extends DataObject
 {
@@ -121,6 +126,10 @@ class OrgEvent extends DataObject
         "MoneyAccounts" => MoneyAccount::class . '.Event',
         // "Interessiert" / "Ich bin dabei" der Mitglieder
         "Interests" => OrgEventInterest::class . '.Event',
+        // Ausleihen aus dem Inventar-Totem, die für dieses Event beantragt wurden
+        "Rentals" => InventoryRental::class . '.OrgEvent',
+        // Wo die ausgeliehenen Objekte auf den Lageplänen stehen, samt Notiz (z.B. DMX-Adresse)
+        "ItemPlacements" => OrgEventItemPlacement::class . '.Event',
     ];
 
     private static $many_many = [
@@ -129,12 +138,16 @@ class OrgEvent extends DataObject
         // Skripte der Organisation, die bei diesem Event gespielt werden — ein Skript
         // kann zu mehreren Events gehören
         "Scripts"   => Script::class,
+        // Lagepläne der Organisation, auf denen die ausgeliehenen Objekte platziert werden
+        // ("Map" ist in toApi() schon die Umgebungskarte)
+        "SitePlans" => Map::class,
     ];
 
     private static $cascade_deletes = [
         "Prices",
         "RoleAssignments",
         "Interests",
+        "ItemPlacements",
     ];
 
     private static $default_sort = "Title ASC";
@@ -638,6 +651,12 @@ class OrgEvent extends DataObject
             $account->EventID = 0;
             $account->write();
         }
+        // Ausleihen und Lagepläne bleiben bestehen, nur die Zuordnung fällt weg
+        foreach ($this->Rentals() as $rental) {
+            $rental->OrgEventID = 0;
+            $rental->write();
+        }
+        $this->SitePlans()->removeAll();
         // Dateien sind versioniert: doArchive() entfernt sie aus Entwurf und Live
         if ($this->ImageID && $this->Image()->exists()) {
             $this->Image()->deleteFile();

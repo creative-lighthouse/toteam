@@ -152,6 +152,47 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     await clearCacheForEndpoint('/calendar')
   }
 
+  // ── Lagepläne & ausgeliehenes Inventar (MapsApiController) ────────────────
+
+  /**
+   * Stand der Event-Seite: { plans, availablePlans, items, CanManage, CanRequestRental }.
+   * items sind die Objekte aus den Ausleihen des Events, mit Notiz und Platz.
+   */
+  async function fetchEventPlans(eventId) {
+    const res = await apiGet(`/maps/eventPlans/${eventId}`, false)
+    if (res?.success === false) throw new Error(res.error || 'Lagepläne konnten nicht geladen werden')
+    return res
+  }
+
+  async function attachEventPlan(eventId, mapId) {
+    const res = await apiPost(`/maps/eventPlanAttach/${eventId}`, { MapID: mapId })
+    if (!res?.success) throw new Error(res?.error || 'Lageplan konnte nicht hinzugefügt werden')
+    return res.data
+  }
+
+  async function detachEventPlan(eventId, mapId) {
+    const res = await apiDelete(`/maps/eventPlanDetach/${eventId}?map=${mapId}`)
+    if (!res?.success) throw new Error(res?.error || 'Lageplan konnte nicht gelöst werden')
+    return res.data
+  }
+
+  /** Ein Lageplan des Events: { map, event, plans, items, CanManage } — key: ID oder URL-Segment */
+  async function fetchEventPlanView(key, mapId) {
+    const res = await apiGet(`/maps/eventPlanView/${encodeURIComponent(key)}?map=${mapId}`, false)
+    if (res?.success === false) throw new Error(res.error || 'Lageplan konnte nicht geladen werden')
+    return res
+  }
+
+  /**
+   * Platz und/oder Notiz eines Objekts ändern — data: { MapID?, Position?, Note? }
+   * (MapID null nimmt es vom Lageplan). Liefert die aktualisierte Objektliste.
+   */
+  async function savePlacement(eventId, itemId, data) {
+    const res = await apiPost(`/maps/eventPlacementSave/${eventId}`, { ItemID: itemId, ...data })
+    if (!res?.success) throw new Error(res?.error || 'Konnte nicht gespeichert werden')
+    return res.data.items
+  }
+
   function replace(event) {
     if (!event) return
     const index = events.value.findIndex(e => e.ID === event.ID)
@@ -179,5 +220,10 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     deleteEvent,
     fetchMyEvents,
     setInterest,
+    fetchEventPlans,
+    attachEventPlan,
+    detachEventPlan,
+    fetchEventPlanView,
+    savePlacement,
   }
 })

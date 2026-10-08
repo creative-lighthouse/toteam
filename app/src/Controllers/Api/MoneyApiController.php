@@ -47,6 +47,7 @@ class MoneyApiController extends ApiController
         'eventAccounts',
         'eventAccountAttach',
         'eventAccountDetach',
+        'pendingCount',
     ];
 
     private const RECEIPT_MAX_SIZE = 5 * 1024 * 1024;
@@ -84,6 +85,31 @@ class MoneyApiController extends ApiController
         }
 
         return $this->jsonResponse(['accounts' => $accounts]);
+    }
+
+    /**
+     * GET /api/v1/money/pendingCount — Zahl für das Hauptmenü: noch nicht
+     * genehmigte Buchungen in Kassen, deren Buchungen man genehmigen darf
+     */
+    public function pendingCount(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $orgIDs = $member->getOrganizationIDs();
+        $accountIDs = [];
+        foreach (MoneyAccount::get()->filter('ParentID', $orgIDs ?: [0]) as $account) {
+            if ($account->canViewInApp($member) && $account->canApproveEntriesInApp($member)) {
+                $accountIDs[] = $account->ID;
+            }
+        }
+        $count = $accountIDs
+            ? MoneyHistory::get()->filter(['ParentID' => $accountIDs, 'Approved' => false])->count()
+            : 0;
+
+        return $this->jsonResponse(['pendingEntries' => $count]);
     }
 
     /** GET /api/v1/money/account/$ID */

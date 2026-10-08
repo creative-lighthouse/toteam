@@ -69,6 +69,7 @@
 @use "landingpage/calendargraphic.scss";
 
 @use "pages/MapViewPage.scss";
+@use "pages/EventSitePlanPage.scss";
 @use "components/calendar/EventCard.scss";
 @use "components/calendar/EventMealsList.scss";
 @use "components/organizations/OrganizationCard.scss";
@@ -104,6 +105,8 @@
 @use "components/events/OrgEventFeedShareModal.scss";
 @use "components/events/OrgEventFormModal.scss";
 @use "components/events/OrgEventInterestButtons.scss";
+@use "components/events/OrgEventInventory.scss";
+@use "components/events/OrgEventItemEditModal.scss";
 @use "components/events/OrgEventListItem.scss";
 @use "components/events/OrgEventMap.scss";
 @use "components/events/OrgEventMoney.scss";
@@ -112,6 +115,8 @@
 @use "components/events/OrgEventRoleTable.scss";
 @use "components/events/OrgEventScriptAddModal.scss";
 @use "components/events/OrgEventScripts.scss";
+@use "components/events/OrgEventSitePlanAddModal.scss";
+@use "components/events/OrgEventSitePlans.scss";
 @use "components/layout/PwaInstallBanner.scss";
 @use "components/tasks/TaskCard.scss";
 @use "components/tasks/TaskProgressBar.scss";
