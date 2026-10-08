@@ -32,7 +32,6 @@ class SkriptApiController extends ApiController
         'roleStore',
         'roleUpdate',
         'roleRemove',
-        'roleAssignMembers',
         'paragraphSync',
         'orgMembers',
         'eventScripts',
@@ -59,21 +58,57 @@ class SkriptApiController extends ApiController
         ];
     }
 
+    /**
+     * Rolle mit ihrer Besetzung. Besetzt wird nur über die Rollenverteilung der
+     * Events (ScriptRoleAssignment, pro Tag): `EventCasting` gruppiert sie nach Event,
+     * `MemberIDs`/`Members` sind alle, die heute oder später besetzt sind — danach
+     * richten sich Fokus- und Lernmodus ("deine Rollen").
+     */
     private function formatRole(ScriptRole $role): array
     {
-        $memberIDs = [];
-        $members   = [];
-        foreach ($role->Members() as $m) {
-            $memberIDs[] = $m->ID;
-            $members[]   = $this->formatMember($m);
+        $today = date('Y-m-d');
+        $events = [];
+        $current = [];
+        foreach ($role->Assignments()->sort(['Date' => 'ASC', 'TimeStart' => 'ASC']) as $assignment) {
+            $event = $assignment->Event();
+            $member = $assignment->Member();
+            if (!$event || !$event->exists() || !$member || !$member->exists()) {
+                continue;
+            }
+            if (!isset($events[$event->ID])) {
+                $events[$event->ID] = [
+                    'EventID'    => $event->ID,
+                    'Title'      => $event->Title,
+                    'URLSegment' => $event->URLSegment,
+                    'IsPast'     => true,
+                    'Days'       => [],
+                ];
+            }
+            $day = $assignment->toApi();
+            unset($day['RoleID']);
+            $events[$event->ID]['Days'][] = $day;
+            if ($assignment->Date >= $today) {
+                $events[$event->ID]['IsPast'] = false;
+                $current[$member->ID] = $this->formatMember($member);
+            }
         }
 
+        // Laufende/kommende Events zuerst (nach erstem Tag), vergangene danach (jüngstes zuerst)
+        $events = array_values($events);
+        usort($events, fn ($a, $b) => ($a['IsPast'] <=> $b['IsPast'])
+            ?: ($a['IsPast']
+                ? strcmp($b['Days'][0]['Date'], $a['Days'][0]['Date'])
+                : strcmp($a['Days'][0]['Date'], $b['Days'][0]['Date'])));
+
+        usort($current, fn ($a, $b) => strnatcasecmp($a['Name'], $b['Name']));
+
         return [
-            'ID'          => $role->ID,
-            'Title'       => $role->Title,
-            'Description' => $role->Description,
-            'MemberIDs'   => $memberIDs,
-            'Members'     => $members,
+            'ID'           => $role->ID,
+            'Title'        => $role->Title,
+            'Description'  => $role->Description,
+            'MemberIDs'    => array_column($current, 'ID'),
+            'Members'      => array_values($current),
+            'EventCasting' => $events,
         ];
     }
 
@@ -425,44 +460,6 @@ class SkriptApiController extends ApiController
         return $this->successResponse([], 'Rolle gelöscht');
     }
 
-    /** PUT /api/v1/skript/roleAssignMembers/$ID — body {MemberIDs: number[]} */
-    public function roleAssignMembers(HTTPRequest $request): HTTPResponse
-    {
-        $member = $this->requireAuth();
-        if (!$member) {
-            return $this->errorResponse('Unauthorized', 401);
-        }
-        if ($request->httpMethod() !== 'PUT') {
-            return $this->errorResponse('Method not allowed', 405);
-        }
-
-        $role = ScriptRole::get()->byID((int) $request->param('ID'));
-        if (!$role || !$role->exists()) {
-            return $this->errorResponse('Rolle nicht gefunden', 404);
-        }
-
-        $script = $role->Script();
-        $org    = $script->Organization();
-        if (!$org || !$org->exists() || !$this->canManageRoles($org, $member)) {
-            return $this->errorResponse('Keine Berechtigung', 403);
-        }
-
-        $body      = $this->getJsonBody();
-        $memberIDs = is_array($body['MemberIDs'] ?? null) ? array_map('intval', $body['MemberIDs']) : [];
-
-        // Nur Mitglieder der Skript-Organisation dürfen zugewiesen werden
-        // (filter() on an empty ID array throws in this ORM version, so an
-        // empty selection — unassigning everyone — is short-circuited here)
-        $validMemberIDs = $memberIDs ? OrganizationMembership::get()->filter([
-            'OrganizationID' => $org->ID,
-            'Role'           => 'member',
-            'MemberID'       => $memberIDs,
-        ])->column('MemberID') : [];
-
-        $role->Members()->setByIDList($validMemberIDs);
-
-        return $this->successResponse(['role' => $this->formatRole($role)], 'Zuweisung gespeichert');
-    }
 
     /**
      * PUT /api/v1/skript/paragraphSync — body {ScriptID, Paragraphs: [{ID?, Content, RoleIDs?}]}

@@ -29,7 +29,7 @@
         <summary class="script-roles-view_role-summary">
           <span class="script-roles-view_role-title">{{ role.Title }}</span>
           <span v-if="role.Description" class="script-roles-view_role-description">{{ role.Description }}</span>
-          <span class="script-roles-view_role-count">{{ role.MemberIDs?.length || 0 }} Mitglied(er)</span>
+          <span class="script-roles-view_role-count">{{ castLabel(role) }}</span>
         </summary>
 
         <!-- Anzeigemodus: schneller Überblick, Bearbeitung erfolgt über den Edit-Button im Modal -->
@@ -57,18 +57,12 @@
             <AppLinkifiedText :text="role.Description || 'Keine Beschreibung.'" />
           </p>
 
-          <div class="script-roles-view_role-members">
-            <span class="script-roles-view_role-members-label">Gespielt von:</span>
-            <span v-if="!role.Members?.length" class="script-roles-view_role-members-empty">Niemandem zugewiesen</span>
-            <span v-else class="script-roles-view_role-members-list">
-              {{ role.Members.map(m => m.Name).join(', ') }}
-            </span>
-          </div>
+          <ScriptRoleEventCasting :role="role" />
         </div>
       </details>
     </div>
 
-    <ScriptRoleEditModal ref="editModal" :org-members="orgMembers" />
+    <ScriptRoleEditModal ref="editModal" />
   </div>
 </template>
 
@@ -79,6 +73,7 @@ import AppButton from '@components/ui/AppButton.vue'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import ScriptRoleEditModal from '@components/skript/ScriptRoleEditModal.vue'
+import ScriptRoleEventCasting from '@components/skript/ScriptRoleEventCasting.vue'
 import actionEdit from '../../../../icons/actions/action_edit.svg'
 import actionTrash from '../../../../icons/actions/action_trash.svg'
 
@@ -87,8 +82,15 @@ const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `u
 
 const props = defineProps({
   script: { type: Object, default: null },
-  orgMembers: { type: Array, default: () => [] },
 })
+
+// Besetzt wird nur über die Rollenverteilung der Events — hier zählen alle, die
+// heute oder später für die Rolle eingeteilt sind
+function castLabel(role) {
+  const count = role.Members?.length || 0
+  if (!count) return role.EventCasting?.length ? 'aktuell nicht besetzt' : 'nicht besetzt'
+  return count === 1 ? `besetzt: ${role.Members[0].Name}` : `${count} Personen besetzt`
+}
 const store = useSkriptStore()
 
 const saving = ref(false)

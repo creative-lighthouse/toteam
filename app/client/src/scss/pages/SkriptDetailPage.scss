@@ -1,5 +1,15 @@
 @use "../base/variables" as *;
 
+// Mobil: gleicher Abstand nach unten wie bei allen anderen Seiten (die letzte .section
+// bekommt global margin-bottom: 100px, das unten per !important überschrieben wird) —
+// sonst steht das Skriptende hinter dem schwebenden Menü. Mit body .area_content davor,
+// weil die globale Regel `body .area_content .section { padding: 0 10px }` sonst gewinnt.
+body .area_content .section.section--SkriptDetailPage {
+    @include media(max-medium) {
+        padding-bottom: 100px;
+    }
+}
+
 .section.section--SkriptDetailPage {
     // Fills the viewport below the fixed 70px app header and above the
     // floating bottom app bar (same pattern as TasksPage.scss) so the toolbar
@@ -14,7 +24,6 @@
         // Short on mobile anyway — revert to normal document flow.
         display: block;
         height: auto;
-        padding-bottom: 80px;
     }
 
     .section_content {

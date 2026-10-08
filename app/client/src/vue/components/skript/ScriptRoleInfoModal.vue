@@ -12,11 +12,7 @@
         <AppLinkifiedText :text="role.Description || 'Keine Beschreibung.'" />
       </p>
 
-      <p class="script-role-info-modal_members">
-        <span class="script-role-info-modal_members-label">Gespielt von:</span>
-        <span v-if="!role.Members?.length" class="script-role-info-modal_members-empty">Niemandem zugewiesen</span>
-        <span v-else>{{ role.Members.map(m => m.Name).join(', ') }}</span>
-      </p>
+      <ScriptRoleEventCasting :role="role" />
     </div>
   </AppModal>
 </template>
@@ -25,6 +21,7 @@
 import { ref } from 'vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
+import ScriptRoleEventCasting from '@components/skript/ScriptRoleEventCasting.vue'
 
 const modal = ref(null)
 const roles = ref([])

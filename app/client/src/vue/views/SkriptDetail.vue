@@ -117,7 +117,6 @@
             <ScriptRolesView
               v-else-if="store.activeMode === 'roles' && script.CanManageRoles"
               :script="script"
-              :org-members="orgMembers"
             />
 
             <!-- Ansicht / Fokus / Lernen: gerenderte Absätze aus dem zuletzt gespeicherten Stand -->

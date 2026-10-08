@@ -143,15 +143,6 @@ export const useSkriptStore = defineStore('skript', () => {
     return response
   }
 
-  async function assignRoleMembers(roleId, memberIds) {
-    const response = await apiPut(`/skript/roleAssignMembers/${roleId}`, { MemberIDs: memberIds })
-    if (response.success && response.data?.role && currentScript.value) {
-      const idx = currentScript.value.Roles.findIndex(r => r.ID === roleId)
-      if (idx !== -1) currentScript.value.Roles[idx] = response.data.role
-    }
-    return response
-  }
-
   // Reconciles the full, ordered list of paragraphs extracted from the
   // continuous script editor against the backend in one call: known IDs are
   // updated, entries without an ID are created, and paragraphs that no longer
@@ -228,7 +219,6 @@ export const useSkriptStore = defineStore('skript', () => {
     createRole,
     updateRole,
     deleteRole,
-    assignRoleMembers,
     syncParagraphs,
     fetchEventScripts,
     attachEventScript,
