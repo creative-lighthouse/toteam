@@ -17,15 +17,9 @@
         />
       </label>
 
-      <div class="field">
-        <label>Mitglieder</label>
-        <MemberPicker
-          :members="orgMembers"
-          v-model="form.MemberIDs"
-          multiple
-          show-select-all
-        />
-      </div>
+      <p class="field script-role-edit-modal_hint">
+        Wer die Rolle spielt, legst du in der Rollenverteilung eines Events fest – pro Tag für die Termine mit Rollenplan.
+      </p>
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -44,11 +38,7 @@ import { ref, reactive } from 'vue'
 import { useSkriptStore } from '@stores/skript'
 import AppButton from '@components/ui/AppButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
-import MemberPicker from '@components/ui/MemberPicker.vue'
 
-const props = defineProps({
-  orgMembers: { type: Array, default: () => [] },
-})
 const emit = defineEmits(['saved'])
 const store = useSkriptStore()
 
@@ -60,14 +50,12 @@ let currentRole = null
 const form = reactive({
   Title: '',
   Description: '',
-  MemberIDs: [],
 })
 
 function open(role) {
   currentRole = role
   form.Title = role.Title
   form.Description = role.Description || ''
-  form.MemberIDs = [...(role.MemberIDs || [])]
   error.value = null
   modal.value?.open()
 }
@@ -83,21 +71,13 @@ async function submit() {
   error.value = null
 
   try {
-    // Sequential, not Promise.all: both calls read-modify-write the same
-    // ScriptRole row and each overwrites the store's cached copy of it with
-    // its own response. Firing them in parallel races two independent reads
-    // against each other — whichever response lands second wins and can
-    // silently revert the other's change (e.g. the title reverting to its
-    // old value after the member-assignment response overwrites it with a
-    // row it read before the title write had committed).
-    const fieldsResponse = await store.updateRole(currentRole.ID, { Title: form.Title.trim(), Description: form.Description.trim() })
-    const membersResponse = await store.assignRoleMembers(currentRole.ID, form.MemberIDs)
+    const response = await store.updateRole(currentRole.ID, { Title: form.Title.trim(), Description: form.Description.trim() })
 
-    if (fieldsResponse.success && membersResponse.success) {
-      emit('saved', membersResponse.data.role)
+    if (response.success) {
+      emit('saved', response.data.role)
       close()
     } else {
-      error.value = fieldsResponse.error || membersResponse.error || 'Fehler beim Speichern der Rolle.'
+      error.value = response.error || 'Fehler beim Speichern der Rolle.'
     }
   } catch (err) {
     error.value = err.message || 'Unbekannter Fehler.'

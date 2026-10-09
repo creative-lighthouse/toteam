@@ -39,6 +39,33 @@
         }
     }
 
+    // Mahlzeit zwischen den Punkten — nur zur Orientierung, nicht bearbeitbar
+    &_meal {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px dashed var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 13px;
+    }
+
+    &_meal-time {
+        font-weight: 600;
+        color: var(--ColorGray);
+    }
+
+    &_meal-icon {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        background-color: var(--ColorPrimary);
+    }
+
+    &_meal-title {
+        font-weight: 600;
+    }
+
     &_row-error {
         margin: 0;
         font-size: 13px;

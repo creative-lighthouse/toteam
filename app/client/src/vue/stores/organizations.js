@@ -17,6 +17,17 @@ export const useOrganizationsStore = defineStore('organizations', () => {
   const organizations = ref([])
   const loading = ref(false)
   const error = ref(null)
+  // Offene Bewerbungen, die man annehmen darf (ORG_MANAGE_MEMBERS) — für die Zahl im Hauptmenü
+  const pendingApplicants = ref(0)
+
+  async function fetchPendingCount() {
+    try {
+      const response = await apiGet('/organizations/pendingCount', false)
+      pendingApplicants.value = response.pendingApplicants || 0
+    } catch {
+      // Ohne Verbindung bleibt die letzte Zahl stehen
+    }
+  }
 
   // Persisted across the whole app so any single-organization picker can
   // default to the org the user last worked in, instead of always falling
@@ -87,6 +98,8 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     loading,
     error,
     lastOrganizationId,
+    pendingApplicants,
+    fetchPendingCount,
     fetchOrganizations,
     createOrganization,
     joinOrganization,

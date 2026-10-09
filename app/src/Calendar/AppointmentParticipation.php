@@ -73,8 +73,11 @@ class AppointmentParticipation extends DataObject implements PermissionProvider
         'RideSeats',
     ];
 
-    // Beim Zurücksetzen auf "Ohne Antwort" wird die Teilnahme gelöscht — dann nur die Antwort zeigen
-    private static $history_delete_fields = ['Type'];
+    // Beim Zurücksetzen auf "Ohne Antwort" wird die Teilnahme gelöscht — dann alle Angaben
+    // protokollieren, sonst verschwindet z.B. eine Notiz unbemerkt (und beim Zusammenfassen
+    // mehrerer Änderungen bliebe sie im Verlauf stehen, obwohl es sie nicht mehr gibt).
+    // "Keine" Mitfahrgelegenheit ist dabei kein Wert, der wegfällt.
+    private static $history_empty_values = ['RideType' => ['None']];
 
     private static $history_field_labels = [
         'CustomTimeframe' => 'Eigener Zeitraum',

@@ -12,8 +12,8 @@ const urlsToCache = [
 ];
 
 // Firebase Cloud Messaging
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.6.0/firebase-messaging-compat.js');
 
 // Initialize Firebase in the service worker
 firebase.initializeApp({
@@ -42,7 +42,7 @@ messaging.onBackgroundMessage((payload) => {
     icon: '/_resources/app/client/icons/icon_192.png',
     badge: '/_resources/app/client/icons/ToTeam-Favicon-x64.png',
     data: {
-      url: payload.data?.url || '/'
+      url: payload.data?.url || '/app/dashboard'
     }
   };
 
@@ -51,17 +51,29 @@ messaging.onBackgroundMessage((payload) => {
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// Handle notification click
+// Klick auf eine Benachrichtigung: vorhandenes App-Fenster nutzen, sonst neues öffnen
 self.addEventListener('notificationclick', (event) => {
-  console.log('[service-worker.js] Notification click received.');
-
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+  const urlToOpen = new URL(event.notification.data?.url || '/app/dashboard', self.location.origin).href;
 
-  event.waitUntil(
-    clients.openWindow(urlToOpen)
-  );
+  event.waitUntil((async () => {
+    const windows = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const appWindow = windows.find(client => new URL(client.url).origin === self.location.origin);
+    if (appWindow) {
+      await appWindow.focus();
+      // navigate() geht nur bei kontrollierten Fenstern — sonst neues öffnen
+      if ('navigate' in appWindow) {
+        try {
+          await appWindow.navigate(urlToOpen);
+          return;
+        } catch (e) {
+          // fällt auf openWindow zurück
+        }
+      }
+    }
+    await clients.openWindow(urlToOpen);
+  })());
 });
 
 self.addEventListener('install', event => {

@@ -11,6 +11,7 @@ use App\Inventory\InventoryTypeField;
 use App\Inventory\InventoryRental;
 use App\Notifications\PushNotificationService;
 use App\Rooms\Room;
+use App\Teams\OrgEvent;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use SilverStripe\Assets\Image;
@@ -49,6 +50,7 @@ class InventoryApiController extends ApiController
         'rentals',
         'rentalDetail',
         'rentalOptions',
+        'pendingCount',
         'rentalStore',
         'rentalDecide',
         'rentalStatus',
@@ -290,6 +292,11 @@ class InventoryApiController extends ApiController
             'IsLentByMe'       => $rental->isLentBy($member),
             'Items'            => $items,
             'Rooms'            => $rooms,
+            'OrgEvent'         => $rental->OrgEventID && $rental->OrgEvent()->exists() ? [
+                'ID'    => $rental->OrgEventID,
+                'Title' => $rental->OrgEvent()->Title,
+                'URLSegment' => $rental->OrgEvent()->URLSegment,
+            ] : null,
             'IsMine'           => $rental->isRequestedBy($member),
             'CanDecide'        => $rental->canBeDecidedBy($member),
             'CanHandOver'      => $rental->canBeHandedOverBy($member),
@@ -591,7 +598,22 @@ class InventoryApiController extends ApiController
             $statuses[] = ['value' => $value, 'label' => $label];
         }
 
-        $pendingRentals = 0;
+        return $this->jsonResponse([
+            'items'            => $itemData,
+            'types'            => $typeData,
+            'organizations'    => $this->orgsWithPermissions($member),
+            'fieldFormats'     => $this->fieldFormats(),
+            'statuses'         => $statuses,
+            'pendingRentals'   => $this->countPendingRentals($member, $orgIDs),
+        ]);
+    }
+
+    /**
+     * Offene Anträge, über die das Mitglied entscheiden darf (INVENTORY_APPROVE_RENTALS
+     * in der verleihenden Organisation bzw. eigenes privates Equipment)
+     */
+    private function countPendingRentals(Member $member, array $orgIDs): int
+    {
         $requested = InventoryRental::get()
             ->filter('Status', 'requested')
             ->filterAny([
@@ -599,19 +621,24 @@ class InventoryApiController extends ApiController
                 'LenderOrganizationID' => $orgIDs ?: [0],
                 'LenderID'             => $member->ID,
             ]);
+        $count = 0;
         foreach ($requested as $rental) {
             if ($rental->canBeDecidedBy($member)) {
-                $pendingRentals++;
+                $count++;
             }
         }
+        return $count;
+    }
 
+    /** GET /api/v1/inventory/pendingCount — Zahl für das Hauptmenü */
+    public function pendingCount(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
         return $this->jsonResponse([
-            'items'            => $itemData,
-            'types'            => $typeData,
-            'organizations'    => $this->orgsWithPermissions($member),
-            'fieldFormats'     => $this->fieldFormats(),
-            'statuses'         => $statuses,
-            'pendingRentals'   => $pendingRentals,
+            'pendingRentals' => $this->countPendingRentals($member, $this->inventoryOrgIDs($member)),
         ]);
     }
 
@@ -1578,6 +1605,15 @@ class InventoryApiController extends ApiController
         $eventIDs = array_values(array_unique(array_map('intval', (array) ($body['EventIDs'] ?? []))));
         $events = $eventIDs && $org ? Appointment::get()->filter(['ID' => $eventIDs, 'Organisations.ID' => $org->ID])->toArray() : [];
 
+        // Ausleihe für ein Event der Organisation (Lagepläne des Events)
+        $orgEventID = (int) ($body['OrgEventID'] ?? 0);
+        if ($orgEventID) {
+            $orgEvent = OrgEvent::get()->byID($orgEventID);
+            if (!$org || !$orgEvent || (int) $orgEvent->OrganizationID !== (int) $org->ID || !$orgEvent->isInternalFor($member)) {
+                return $this->errorResponse('Das Event gehört nicht zu dieser Organisation', 400);
+            }
+        }
+
         $created = [];
         foreach ($groups as $key => $group) {
             $sourceID = (int) substr($key, 1);
@@ -1590,6 +1626,7 @@ class InventoryApiController extends ApiController
             $rental->StartDate = $start;
             $rental->EndDate = $end;
             $rental->Purpose = trim((string) ($body['Purpose'] ?? ''));
+            $rental->OrgEventID = $orgEventID;
             $ownEquipment = $lenderID === (int) $member->ID;
             if ($ownEquipment) {
                 $rental->Status = 'approved';

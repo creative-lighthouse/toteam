@@ -1,0 +1,72 @@
+@use "../../base/variables" as *;
+
+// Notiz eines ausgeliehenen Objekts für ein Event (OrgEventItemEditModal.vue)
+.org-event-item-edit-modal {
+    .org-event-item-edit-modal_meta,
+    .org-event-item-edit-modal_hint,
+    .org-event-item-edit-modal_note {
+        grid-column: 1 / -1;
+        margin: 0;
+    }
+
+    .org-event-item-edit-modal_meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-item-edit-modal_hint {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-item-edit-modal_note {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+}
+
+// "Text im Marker" mit Vorschau der Plakette (Farbe nach Objektname)
+.org-event-item-edit-modal .org-event-item-edit-modal_marker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    input {
+        width: 8em;
+    }
+}
+
+.org-event-item-edit-modal .org-event-item-edit-modal_marker-preview {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+// Bilder des Objekts wie im Inventar-Detail (InventoryItemDetailModal), Klick → Lightbox
+.org-event-item-edit-modal .org-event-item-edit-modal_images {
+    grid-column: 1 / -1;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+
+    img {
+        display: block;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: var(--BorderRadiusSmall);
+    }
+}

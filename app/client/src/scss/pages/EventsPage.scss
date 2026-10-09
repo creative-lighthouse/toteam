@@ -1,0 +1,27 @@
+@use "../base/variables" as *;
+
+.section--EventsPage {
+
+    .events-group {
+        margin-top: 20px;
+    }
+
+    .events-group_title {
+        margin: 0 0 10px;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--ColorGray);
+    }
+
+    // Karten (OrgEventCard) im Raster: so viele Spalten wie passen, auf dem Handy eine
+    .org-event-grid {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+    }
+}

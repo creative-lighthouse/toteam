@@ -4,6 +4,8 @@ import { useAuthStore } from '@stores/auth'
 // Views
 import Dashboard from '@views/Dashboard.vue'
 import Calendar from '@views/Calendar.vue'
+import Events from '@views/Events.vue'
+import EventDetail from '@views/EventDetail.vue'
 import Food from '@views/Food.vue'
 import Announcements from '@views/Announcements.vue'
 import AnnouncementDetail from '@views/AnnouncementDetail.vue'
@@ -28,6 +30,7 @@ import Skript from '@views/Skript.vue'
 import SkriptDetail from '@views/SkriptDetail.vue'
 import Marketing from '@views/Marketing.vue'
 import MarketingStatistics from '@views/MarketingStatistics.vue'
+import MarketingMap from '@views/MarketingMap.vue'
 import Inventory from '@views/Inventory.vue'
 import InventoryRentals from '@views/InventoryRentals.vue'
 import InventoryItemPublic from '@views/InventoryItemPublic.vue'
@@ -55,6 +58,20 @@ const routes = [
     component: Calendar,
     meta: { requiresAuth: true, totem: 'calendar' }
   },
+  {
+    path: '/events',
+    name: 'Events',
+    component: Events,
+    meta: { requiresAuth: true, totem: 'calendar' }
+  },
+  {
+    // Eigene Seite je Event — öffentliche Events auch ohne Anmeldung (Zugriff prüft die API)
+    path: '/events/:segment',
+    name: 'EventDetail',
+    component: EventDetail,
+    meta: { requiresAuth: false }
+  },
+
   {
     path: '/food/meal/:id',
     name: 'MealDetail',
@@ -203,6 +220,12 @@ const routes = [
     path: '/marketing/statistics',
     name: 'MarketingStatistics',
     component: MarketingStatistics,
+    meta: { requiresAuth: true, totem: 'marketing' }
+  },
+  {
+    path: '/marketing/map',
+    name: 'MarketingMap',
+    component: MarketingMap,
     meta: { requiresAuth: true, totem: 'marketing' }
   },
   {

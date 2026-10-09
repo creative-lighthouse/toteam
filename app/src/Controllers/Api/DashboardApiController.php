@@ -3,7 +3,6 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
-use App\Announcements\Announcement;
 use App\Food\Food;
 use App\SuggestionBox\Suggestion;
 use App\Tasks\Task;
@@ -31,36 +30,6 @@ class DashboardApiController extends ApiController
         }
 
         $organizationIDs = $member->getOrganizationIDs();
-
-        // Latest notices for the user's organisations (max 2)
-        $latestAnnouncements = [];
-        if (!empty($organizationIDs)) {
-            $announcements = Announcement::get()
-                ->filter(['Organisations.ID' => $organizationIDs])
-                ->distinct(true)
-                ->sort('Created DESC')
-                ->limit(2);
-            foreach ($announcements as $announcement) {
-                $orgs = [];
-                foreach ($announcement->Organisations() as $org) {
-                    $orgs[] = [
-                        'ID' => $org->ID,
-                        'Title' => $org->Title,
-                        'LogoURL' => $org->RenderLogo(40),
-                    ];
-                }
-
-                $latestAnnouncements[] = [
-                    'ID' => $announcement->ID,
-                    'Title' => $announcement->Title,
-                    'ShortText' => $announcement->ShortText,
-                    'Created' => $announcement->dbObject('Created')->Nice(),
-                    'Category' => $announcement->Category()->exists() ? $announcement->Category()->Title : null,
-                    'AuthorName' => $announcement->Author()->exists() ? $announcement->Author()->FirstName : null,
-                    'Organisations' => $orgs,
-                ];
-            }
-        }
 
         // Unseen feedback addressed to the current user
         $newFeedback = [];
@@ -176,7 +145,6 @@ class DashboardApiController extends ApiController
 
         return $this->jsonResponse([
             'myTasks'                   => $myTasks,
-            'latestAnnouncements'       => $latestAnnouncements,
             'newFeedback'               => $newFeedback,
             'myUpcomingContributions'   => $myUpcomingContributions,
         ]);

@@ -1,50 +1,59 @@
 <template>
   <AppModal ref="modal" class="event-agenda-modal" title="Tagesordnung bearbeiten" @close="close">
-    <div v-for="row in rows" :key="row._key" class="event-agenda-modal_row">
-      <div class="event-agenda-modal_row-top">
-        <input
-          type="text"
-          v-model="row.Title"
-          placeholder="Titel *"
+    <template v-for="item in items" :key="item.key">
+      <!-- Mahlzeiten nur zur Orientierung (bearbeitet werden sie im Termin) -->
+      <div v-if="item.meal" class="event-agenda-modal_meal">
+        <span class="event-agenda-modal_meal-time">{{ item.meal.RenderTime }}</span>
+        <span class="icon-mask event-agenda-modal_meal-icon" :style="foodIconStyle" aria-hidden="true"></span>
+        <span class="event-agenda-modal_meal-title">{{ item.meal.Title }}</span>
+      </div>
+
+      <div v-else class="event-agenda-modal_row">
+        <div class="event-agenda-modal_row-top">
+          <input
+            type="text"
+            v-model="item.row.Title"
+            placeholder="Titel *"
+            class="input"
+            maxlength="255"
+            aria-label="Titel des Tagesordnungspunkts"
+            @input="scheduleSave(item.row)"
+            @blur="saveNow(item.row)"
+          >
+          <AppIconButton
+            variant="danger"
+            :disabled="item.row.saving"
+            aria-label="Tagesordnungspunkt entfernen"
+            @click="removeRow(item.row)"
+          >
+            <span class="icon-mask" :style="trashIconStyle" />
+          </AppIconButton>
+        </div>
+
+        <div class="event-agenda-modal_row-times">
+          <label>
+            Von
+            <input type="time" v-model="item.row.StartTime" class="input" aria-label="Startzeit" @change="saveNow(item.row)">
+          </label>
+          <label>
+            Bis
+            <input type="time" v-model="item.row.EndTime" class="input" aria-label="Endzeit" @change="saveNow(item.row)">
+          </label>
+        </div>
+
+        <textarea
+          v-model="item.row.Description"
+          placeholder="Beschreibung"
           class="input"
-          maxlength="255"
-          aria-label="Titel des Tagesordnungspunkts"
-          @input="scheduleSave(row)"
-          @blur="saveNow(row)"
-        >
-        <AppIconButton
-          variant="danger"
-          :disabled="row.saving"
-          aria-label="Tagesordnungspunkt entfernen"
-          @click="removeRow(row)"
-        >
-          <span class="icon-mask" :style="trashIconStyle" />
-        </AppIconButton>
+          rows="2"
+          aria-label="Beschreibung"
+          @input="scheduleSave(item.row)"
+          @blur="saveNow(item.row)"
+        ></textarea>
+
+        <p v-if="item.row.error" class="event-agenda-modal_row-error">{{ item.row.error }}</p>
       </div>
-
-      <div class="event-agenda-modal_row-times">
-        <label>
-          Von
-          <input type="time" v-model="row.StartTime" class="input" aria-label="Startzeit" @change="saveNow(row)">
-        </label>
-        <label>
-          Bis
-          <input type="time" v-model="row.EndTime" class="input" aria-label="Endzeit" @change="saveNow(row)">
-        </label>
-      </div>
-
-      <textarea
-        v-model="row.Description"
-        placeholder="Beschreibung"
-        class="input"
-        rows="2"
-        aria-label="Beschreibung"
-        @input="scheduleSave(row)"
-        @blur="saveNow(row)"
-      ></textarea>
-
-      <p v-if="row.error" class="event-agenda-modal_row-error">{{ row.error }}</p>
-    </div>
+    </template>
 
     <p v-if="!rows.length" class="event-agenda-modal_empty">Noch keine Tagesordnungspunkte geplant.</p>
 
@@ -57,14 +66,16 @@
 </template>
 
 <script setup>
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import actionTrash from '../../../../../icons/actions/action_trash.svg'
+import actionFood from '../../../../../icons/actions/action_food.svg'
 
 const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
+const foodIconStyle = { maskImage: `url("${actionFood}")`, WebkitMaskImage: `url("${actionFood}")` }
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -89,6 +100,25 @@ function makeRow(point = null) {
     error: null,
   }
 }
+
+// Mahlzeiten zwischen die Punkte einsortieren: Die Punkte behalten beim Bearbeiten ihre
+// Reihenfolge, jede Mahlzeit steht vor dem ersten Punkt, der später beginnt — so wandert
+// sie beim Ändern einer Startzeit mit. Punkte ohne Startzeit werden übersprungen.
+const items = computed(() => {
+  const meals = props.event.EnableMeals
+    ? [...(props.event.Meals || [])].sort((a, b) => (a.Time || '').localeCompare(b.Time || ''))
+    : []
+  const result = []
+  let m = 0
+  for (const row of rows.value) {
+    while (row.StartTime && m < meals.length && (meals[m].Time || '').substring(0, 5) < row.StartTime) {
+      result.push({ key: `meal-${meals[m].ID}`, meal: meals[m++] })
+    }
+    result.push({ key: row._key, row })
+  }
+  for (; m < meals.length; m++) result.push({ key: `meal-${meals[m].ID}`, meal: meals[m] })
+  return result
+})
 
 function open() {
   rows.value = (props.event.AgendaPoints || []).map(p => makeRow(p))

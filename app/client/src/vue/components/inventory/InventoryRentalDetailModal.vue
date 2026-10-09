@@ -41,6 +41,12 @@
           <dt>{{ rental.Lender || rental.LenderOrganization ? 'Für Organisation' : 'Organisation' }}</dt>
           <dd>{{ rental.Organization.Title }}</dd>
         </div>
+        <div v-if="rental.OrgEvent" class="inventory-rental-detail-modal_fact--wide">
+          <dt>Für Event</dt>
+          <dd>
+            <router-link :to="{ name: 'EventDetail', params: { segment: rental.OrgEvent.URLSegment } }" @click="close">{{ rental.OrgEvent.Title }}</router-link>
+          </dd>
+        </div>
         <div v-if="rental.Purpose" class="inventory-rental-detail-modal_fact--wide">
           <dt>Zweck</dt>
           <dd><AppLinkifiedText :text="rental.Purpose" /></dd>

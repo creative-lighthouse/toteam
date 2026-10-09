@@ -1,0 +1,41 @@
+@use "../../base/variables" as *;
+
+// Karte zum Veranstaltungsort auf der Event-Seite (OrgEventMap.vue)
+.org-event-map {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .org-event-map_frame {
+        position: relative;
+    }
+
+    .org-event-map_canvas {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        min-height: 220px;
+        overflow: hidden;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+    }
+
+    .org-event-map_error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+
+    // Im Stil der MapLibre-Bedienelemente, damit es auf jedem Kartenhintergrund lesbar bleibt
+    .org-event-map_link {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        z-index: 2;
+        padding: 3px 8px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+}

@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Calendar\Appointment;
+use App\Calendar\AppointmentParticipation;
+use App\Teams\Organization;
 use SilverStripe\Security\Member;
 use App\Controllers\BaseController;
 use SilverStripe\Control\HTTPResponse;
@@ -18,6 +20,16 @@ class ICSController extends BaseController
     private static $allowed_actions = [
     ];
 
+    /**
+     * Welche Termine im Abo landen (?filter=…, im Frontend: CalendarIcsLinkModal).
+     * Ohne/mit unbekanntem Wert gilt 'all' — bestehende Abos ändern sich nicht.
+     *   all         – alle nicht abgesagten Termine der eigenen Organisationen
+     *   notdeclined – ohne die, für die man selbst abgesagt hat
+     *   invited     – nur die, zu denen man eingeladen ist, ohne eigene Absagen
+     *   accepted    – nur die mit eigener Zusage oder "Vielleicht"
+     */
+    private const FILTERS = ['all', 'notdeclined', 'invited', 'accepted'];
+
     public function index()
     {
         $userHash = $this->request->getVar('user');
@@ -27,7 +39,12 @@ class ICSController extends BaseController
             return $this->httpError(403, 'Access denied');
         }
 
-        $icsContent = $this->generateICS($currentUser);
+        $filter = $this->request->getVar('filter');
+        if (!in_array($filter, self::FILTERS, true)) {
+            $filter = 'all';
+        }
+
+        $icsContent = $this->generateICS($currentUser, $filter, $this->parseAllDayTimes(), $this->parseOrgIDs());
 
         $response = HTTPResponse::create($icsContent);
         $response->addHeader('Content-Type', 'text/calendar; charset=utf-8');
@@ -38,9 +55,77 @@ class ICSController extends BaseController
         return $response;
     }
 
-    private function generateICS($user)
+    /**
+     * ?allday=HH:MM-HH:MM: ganztägige Termine bekommen statt eines Ganztags-Eintrags
+     * diese Uhrzeit (mehrtägige: vom ersten Tag Start bis zum letzten Tag Ende).
+     * Ungültig oder leer → null, also echte Ganztags-Einträge.
+     *
+     * @return array{0: string, 1: string}|null
+     */
+    private function parseAllDayTimes(): ?array
+    {
+        $value = (string) $this->request->getVar('allday');
+        if (!preg_match('/^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$/', $value, $m)) {
+            return null;
+        }
+        $start = $m[1] . ':' . $m[2];
+        $end = $m[3] . ':' . $m[4];
+
+        return $start < $end ? [$start, $end] : null;
+    }
+
+    /**
+     * ?orgs=ottos.halloweenhaus,der_verein: nur Termine dieser Organisationen
+     * (wird mit den eigenen Mitgliedschaften geschnitten). Erkannt wird der
+     * Benutzername, für Organisationen ohne Benutzernamen die ID.
+     * Ohne Parameter: alle eigenen Organisationen.
+     *
+     * @return int[]|null
+     */
+    private function parseOrgIDs(): ?array
+    {
+        $tokens = array_values(array_filter(array_map('trim', explode(',', (string) $this->request->getVar('orgs')))));
+        if (!$tokens) {
+            return null;
+        }
+
+        $ids = Organization::get()->filter('Username', $tokens)->column('ID');
+        $numeric = array_map('intval', array_filter($tokens, 'ctype_digit'));
+        if ($numeric) {
+            $ids = array_merge($ids, Organization::get()->filter('ID', $numeric)->column('ID'));
+        }
+
+        return array_map('intval', $ids);
+    }
+
+    private function filterAppointments($appointments, Member $user, string $filter)
+    {
+        if ($filter === 'all') {
+            return $appointments;
+        }
+
+        $participations = AppointmentParticipation::get()->filter('MemberID', $user->ID);
+
+        if ($filter === 'accepted') {
+            $ids = $participations->filter('Type', ['Accept', 'Maybe'])->column('ParentID');
+            return $appointments->filter('ID', $ids ?: [0]);
+        }
+
+        if ($filter === 'invited') {
+            $appointments = $appointments->filter('InvitedMembers.ID', $user->ID);
+        }
+
+        $declinedIDs = $participations->filter('Type', 'Decline')->column('ParentID');
+
+        return $declinedIDs ? $appointments->exclude('ID', $declinedIDs) : $appointments;
+    }
+
+    private function generateICS(Member $user, string $filter, ?array $allDayTimes, ?array $orgIDs)
     {
         $organizationIDs = $user->getOrganizationIDs();
+        if ($orgIDs !== null) {
+            $organizationIDs = array_intersect($organizationIDs, $orgIDs);
+        }
 
         if (empty($organizationIDs)) {
             $appointments = Appointment::get()->filter('ID', 0);
@@ -49,6 +134,7 @@ class ICSController extends BaseController
                 ->exclude('Status', 'Cancelled')
                 ->filter('Organisations.ID', $organizationIDs)
                 ->distinct(true);
+            $appointments = $this->filterAppointments($appointments, $user, $filter);
         }
 
         $ics = "BEGIN:VCALENDAR\r\n";
@@ -67,9 +153,12 @@ class ICSController extends BaseController
             $ics .= "DTSTAMP:" . gmdate('Ymd\THis\Z', strtotime($appointment->LastEdited)) . "\r\n";
             $ics .= "LAST-MODIFIED:" . gmdate('Ymd\THis\Z', strtotime($appointment->LastEdited)) . "\r\n";
 
-            if ($appointment->AllDay) {
+            $endDate = $appointment->DateEnd ?: $appointment->DateStart;
+            if ($appointment->AllDay && $allDayTimes) {
+                $ics .= "DTSTART:" . gmdate('Ymd\THis\Z', strtotime($appointment->DateStart . ' ' . $allDayTimes[0])) . "\r\n";
+                $ics .= "DTEND:" . gmdate('Ymd\THis\Z', strtotime($endDate . ' ' . $allDayTimes[1])) . "\r\n";
+            } elseif ($appointment->AllDay) {
                 $ics .= "DTSTART;VALUE=DATE:" . date('Ymd', strtotime($appointment->DateStart)) . "\r\n";
-                $endDate = $appointment->DateEnd ?: $appointment->DateStart;
                 // ICS all-day DTEND is exclusive, so add one day
                 $ics .= "DTEND;VALUE=DATE:" . date('Ymd', strtotime($endDate . ' +1 day')) . "\r\n";
             } else {

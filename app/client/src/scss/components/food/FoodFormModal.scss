@@ -1,0 +1,11 @@
+.food-form-modal {
+    text-align: left;
+    max-width: 420px;
+    max-height: 90dvh;
+
+    // Löschen links, wie in den Kalender-Modals
+    .food-form-modal_delete {
+        margin-right: auto;
+        align-self: center;
+    }
+}

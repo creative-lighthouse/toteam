@@ -1,3 +1,5 @@
+@use "../../base/variables" as *;
+
 .script-toc {
     position: sticky;
     top: 1rem;
@@ -7,6 +9,38 @@
 
     &--collapsed {
         min-width: 0;
+    }
+
+    // Mobil scrollt die ganze Seite unter dem festen App-Header (52px, siehe
+    // AppHeader.scss) — darunter kleben bleiben, immer mit Hintergrund (auch
+    // eingeklappt als Titelzeile), damit der Skripttext nicht durchscheint.
+    // Lange Gliederungen scrollen selbst.
+    @include media(max-medium) {
+        top: calc(52px + 0.5rem);
+        z-index: 5;
+        max-width: none;
+        margin-bottom: 1rem;
+        padding: 0.5rem 0.75rem;
+        background: var(--ColorWhite);
+        border: 1px solid var(--ColorLightGray);
+        border-radius: 0.5rem;
+        box-shadow: var(--BoxShadowMenu);
+
+        .script-toc_list {
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        // Eingeklappt bleibt die Titelzeile "Gliederung" stehen (auf dem Desktop nur der Pfeil)
+        &.script-toc--collapsed {
+            .script-toc_toggle {
+                margin-bottom: 0;
+            }
+
+            .script-toc_toggle-label {
+                display: inline;
+            }
+        }
     }
 }
 

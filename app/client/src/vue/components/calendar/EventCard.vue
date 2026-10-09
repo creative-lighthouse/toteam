@@ -8,6 +8,7 @@
       event.IsPoll ? 'event-card--poll' : '',
       compact ? 'event-card--compact' : '',
     ]"
+    :style="accentStyle"
     role="button"
     tabindex="0"
     @click="openEventDetails($event)"
@@ -105,6 +106,7 @@ import ParticipationIcon from './ParticipationIcon.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 import { isMultiDay, formatEventRange } from '@utils/eventDates'
+import { orgAccentColor } from '@utils/orgColor'
 import ScheduleIcon from '../../../../icons/actions/action_schedule.svg'
 
 const scheduleIconStyle = {
@@ -139,6 +141,13 @@ const primaryOrg = computed(() =>
   props.event.OrganizationLogos?.[0]
     || (props.event.OrganizationLogoURL ? { LogoURL: props.event.OrganizationLogoURL, Title: '' } : null)
 )
+
+// Markierung links in der Farbe der ersten Organisation (aus dem Logo bzw. ohne Logo
+// aus dem Namen wie der Platzhalter), sonst Primärfarbe (CSS-Fallback)
+const accentStyle = computed(() => {
+  const color = orgAccentColor(props.event.OrganizationLogos?.[0])
+  return color ? { '--EventAccent': color } : null
+})
 
 const multiDay = computed(() => isMultiDay(props.event))
 

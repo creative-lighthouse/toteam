@@ -1,0 +1,106 @@
+@use "../../base/variables" as *;
+
+// Ausgeliehenes Inventar auf der Event-Seite (OrgEventInventory.vue)
+.org-event-inventory {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    .org-event-inventory_item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorVeryLightGray);
+    }
+
+    // Wie die Marker auf dem Lageplan (MapDetail.vue)
+    .org-event-inventory_number {
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 4px;
+        border-radius: 12px;
+        background-color: var(--ColorPlanItem);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .org-event-inventory_body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    .org-event-inventory_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0 8px;
+    }
+
+    .org-event-inventory_title {
+        font-weight: 700;
+    }
+
+    .org-event-inventory_inv {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-inventory_note {
+        font-size: 14px;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+
+    .org-event-inventory_meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 8px;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-event-inventory_status {
+        padding: 1px 8px;
+        border: 0;
+        border-radius: 10px;
+        background-color: var(--ColorLightGray);
+        color: var(--ColorBlack);
+        font: inherit;
+        font-size: 12px;
+
+        &:is(button) {
+            cursor: pointer;
+        }
+
+        &--requested {
+            background-color: var(--ColorStatusWarningAccent);
+        }
+
+        &--approved,
+        &--handed_over {
+            background-color: var(--ColorStatusGoodAccent);
+        }
+
+        &--none {
+            background-color: var(--ColorStatusBadAccent);
+        }
+    }
+}

@@ -143,11 +143,18 @@ export const useEventsStore = defineStore('events', () => {
             })
           }
         } else {
+          // Inkl. wiederhergestellter Angaben (siehe AppointmentParticipationStash)
+          const details = {
+            Notes: response.data.Notes ?? null,
+            RideType: response.data.RideType ?? 'None',
+            RideSeats: response.data.RideSeats ?? 0,
+          }
           if (existing) {
             existing.Type = response.data.Type
             existing.TimeStart = response.data.TimeStart
             existing.TimeEnd = response.data.TimeEnd
             existing.CustomTimeframe = response.data.CustomTimeframe ?? false
+            Object.assign(existing, details)
           } else if (event.Participations) {
             event.Participations.push({
               ID: response.data.ID,
@@ -158,6 +165,7 @@ export const useEventsStore = defineStore('events', () => {
               TimeStart: response.data.TimeStart,
               TimeEnd: response.data.TimeEnd,
               CustomTimeframe: response.data.CustomTimeframe ?? false,
+              ...details,
               IsCurrentUser: false,
             })
           }
@@ -217,11 +225,19 @@ export const useEventsStore = defineStore('events', () => {
           // Update in participations list
           if (event.Participations) {
             const existing = event.Participations.find(p => p.IsCurrentUser)
+            // Notiz und Mitfahrt kommen mit, falls der Server zurückgelegte Angaben
+            // wiederhergestellt hat (siehe AppointmentParticipationStash)
+            const details = {
+              Notes: response.data.Notes ?? null,
+              RideType: response.data.RideType ?? 'None',
+              RideSeats: response.data.RideSeats ?? 0,
+            }
             if (existing) {
               existing.Type = response.data.Type
               existing.TimeStart = response.data.TimeStart
               existing.TimeEnd = response.data.TimeEnd
               existing.CustomTimeframe = response.data.CustomTimeframe ?? false
+              Object.assign(existing, details)
             } else {
               // First RSVP — add a new entry so avatars + counts update immediately
               event.Participations.push({
@@ -234,6 +250,7 @@ export const useEventsStore = defineStore('events', () => {
                 TimeStart: response.data.TimeStart,
                 TimeEnd: response.data.TimeEnd,
                 CustomTimeframe: response.data.CustomTimeframe ?? false,
+                ...details,
                 IsCurrentUser: true,
               })
             }
@@ -466,6 +483,48 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
+  /**
+   * Gericht wurde im FoodFormModal gespeichert (Antwort im camelCase-Format der Essens-API):
+   * in allen Mahlzeiten nachziehen und bei geänderter Art zwischen Products/Foods verschieben.
+   */
+  async function applyMealFoodSaved(food) {
+    for (const event of events.value) {
+      for (const meal of event.Meals || []) {
+        const old = [...(meal.Products || []), ...(meal.Foods || [])].find(f => f.ID === food.id)
+        if (!old) continue
+        meal.Products = (meal.Products || []).filter(f => f.ID !== food.id)
+        meal.Foods = (meal.Foods || []).filter(f => f.ID !== food.id)
+        const entry = {
+          ID: food.id,
+          Title: food.title,
+          Preference: food.preference ?? 'None',
+          Supplier: food.supplier ?? null,
+          SupplierID: food.supplierId ?? null,
+          OrganizationID: food.organizationId ?? old.OrganizationID,
+        }
+        if (food.isOrderable) {
+          meal.Products.push({ ...entry, MaxQuantity: food.maxQuantity ?? 0, UserQuantity: old.UserQuantity ?? 0 })
+          meal.Products.sort((a, b) => a.ID - b.ID)
+        } else {
+          meal.Foods.push(entry)
+          meal.Foods.sort((a, b) => a.ID - b.ID)
+        }
+      }
+    }
+    await clearCacheForEndpoint('/calendar')
+  }
+
+  /** Gericht wurde im FoodFormModal gelöscht: aus allen Mahlzeiten entfernen */
+  async function removeMealFood(foodId) {
+    for (const event of events.value) {
+      for (const meal of event.Meals || []) {
+        meal.Products = (meal.Products || []).filter(f => f.ID !== foodId)
+        meal.Foods = (meal.Foods || []).filter(f => f.ID !== foodId)
+      }
+    }
+    await clearCacheForEndpoint('/calendar')
+  }
+
   async function addAgendaPoint(appointmentId, data) {
     const response = await apiPost(`/calendar/agendaPoint/${appointmentId}`, data)
     const event = getEventById(appointmentId)
@@ -688,6 +747,8 @@ export const useEventsStore = defineStore('events', () => {
     voteOnPollOption,
     fetchAbsencesForDate,
     fetchCalendarMembers,
+    applyMealFoodSaved,
+    removeMealFood,
     fetchAbsenceCountsForMonth,
     saveMealProductOrders,
   }

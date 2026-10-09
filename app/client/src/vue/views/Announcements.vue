@@ -1,77 +1,34 @@
 <template>
   <div class="section section--AnnouncementsPage">
     <div class="section_content">
-      <div class="announcements-toolbar">
-        <!-- Category Filter -->
-        <div class="section_filter" role="group" aria-label="Nach Kategorie filtern">
-          <button
-            type="button"
-            @click="announcementsStore.setCategory(null)"
-            class="button"
-            :class="{ active: !announcementsStore.selectedCategory }"
-            :aria-pressed="!announcementsStore.selectedCategory"
-          >
-            Alle
-          </button>
-          <button
-            v-for="category in announcementsStore.usedCategories"
-            :key="category.ID"
-            type="button"
-            @click="announcementsStore.setCategory(category)"
-            class="button"
-            :class="{ active: announcementsStore.selectedCategory?.ID === category.ID }"
-            :aria-pressed="announcementsStore.selectedCategory?.ID === category.ID"
-          >
-            {{ category.Title }}
-          </button>
-        </div>
+      <!-- Neuer Beitrag (Text, als Person oder Organisation, öffentlich oder intern, optional geplant) -->
+      <FeedComposer class="announcements-composer" />
 
-        <!-- Neue Mitteilung (nur mit Berechtigung in mindestens einer Organisation) -->
-        <AppIconButton
-          v-if="announcementsStore.createOrganizations.length"
-          variant="primary"
-          class="announcements-toolbar_add"
-          aria-label="Neue Mitteilung"
-          title="Neue Mitteilung"
-          @click="createModal?.open()"
-        >
-          <span class="icon-mask" :style="addMessageIconStyle"></span>
-        </AppIconButton>
+      <div v-if="store.loading" class="section_infobox">
+        <p>Lade Feed...</p>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="announcementsStore.loading" class="section_infobox">
-        <p>Lade Mitteilungen...</p>
+      <div v-else-if="store.error" class="section_infobox error">
+        <p>Fehler beim Laden: {{ store.error }}</p>
+        <AppButton variant="primary" @click="store.refresh()">Erneut versuchen</AppButton>
       </div>
 
-      <!-- Error State -->
-      <div v-if="announcementsStore.error" class="section_infobox error">
-        <p>Fehler beim Laden: {{ announcementsStore.error }}</p>
-        <AppButton variant="primary" @click="announcementsStore.refresh()">Erneut versuchen</AppButton>
-      </div>
+      <!-- Feed: neueste Beiträge zuerst -->
+      <div v-else class="feed-list">
+        <FeedPostCard v-for="post in store.posts" :key="post.ID" :post="post" @delete="deletePost" />
 
-      <!-- Announcements List -->
-      <div v-if="!announcementsStore.loading && !announcementsStore.error" class="announcements-list">
-        <AnnouncementCard
-          v-for="announcement in announcementsStore.filteredAnnouncements"
-          :key="announcement.ID"
-          :id="`announcement-${announcement.ID}`"
-          :announcement="announcement"
-          @click="openAnnouncement"
-        />
-
-        <div v-if="announcementsStore.filteredAnnouncements.length === 0" class="section_infobox">
-          <p>Keine Mitteilungen gefunden.</p>
+        <div v-if="store.posts.length === 0" class="section_infobox">
+          <p>Noch keine Beiträge — schreib den ersten!</p>
         </div>
       </div>
 
-      <!-- Vergangene Mitteilungen -->
-      <div v-if="!announcementsStore.loading && !announcementsStore.error" class="announcements-archive">
+      <!-- Abgelaufene Beiträge -->
+      <div v-if="!store.loading && !store.error" class="announcements-archive">
         <AppIconButton
           variant="neutral"
           class="announcements-archive_toggle"
-          :aria-label="showArchive ? 'Vergangene Mitteilungen ausblenden' : 'Vergangene Mitteilungen anzeigen'"
-          :title="showArchive ? 'Vergangene Mitteilungen ausblenden' : 'Vergangene Mitteilungen anzeigen'"
+          :aria-label="showArchive ? 'Vergangene Beiträge ausblenden' : 'Vergangene Beiträge anzeigen'"
+          :title="showArchive ? 'Vergangene Beiträge ausblenden' : 'Vergangene Beiträge anzeigen'"
           :aria-expanded="showArchive"
           @click="toggleArchive"
         >
@@ -79,75 +36,60 @@
         </AppIconButton>
 
         <template v-if="showArchive">
-          <h2 class="announcements-archive_title">Vergangene Mitteilungen</h2>
+          <h2 class="announcements-archive_title">Vergangene Beiträge</h2>
 
-          <div v-if="announcementsStore.archiveLoading" class="section_infobox">
-            <p>Lade vergangene Mitteilungen...</p>
+          <div v-if="store.archiveLoading" class="section_infobox">
+            <p>Lade vergangene Beiträge...</p>
           </div>
 
-          <div v-else-if="announcementsStore.archiveError" class="section_infobox error">
-            <p>Fehler beim Laden: {{ announcementsStore.archiveError }}</p>
-            <AppButton variant="primary" @click="announcementsStore.fetchArchivedAnnouncements(true)">Erneut versuchen</AppButton>
+          <div v-else-if="store.archiveError" class="section_infobox error">
+            <p>Fehler beim Laden: {{ store.archiveError }}</p>
+            <AppButton variant="primary" @click="store.fetchArchive()">Erneut versuchen</AppButton>
           </div>
 
-          <div v-else class="announcements-list announcements-list--archive">
-            <AnnouncementCard
-              v-for="announcement in announcementsStore.filteredArchivedAnnouncements"
-              :key="announcement.ID"
-              :id="`announcement-${announcement.ID}`"
-              :announcement="announcement"
-              @click="openAnnouncement"
-            />
+          <div v-else class="feed-list feed-list--archive">
+            <FeedPostCard v-for="post in store.archivedPosts" :key="post.ID" :post="post" @delete="deletePost" />
 
-            <div v-if="announcementsStore.filteredArchivedAnnouncements.length === 0" class="section_infobox">
-              <p>Keine vergangenen Mitteilungen gefunden.</p>
+            <div v-if="store.archivedPosts.length === 0" class="section_infobox">
+              <p>Keine vergangenen Beiträge.</p>
             </div>
           </div>
         </template>
       </div>
     </div>
-
-    <AnnouncementCreateModal ref="createModal" @created="onCreated" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAnnouncementsStore } from '@stores/announcements'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import AnnouncementCard from '@components/announcements/AnnouncementCard.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
-import AnnouncementCreateModal from '@components/announcements/AnnouncementCreateModal.vue'
-import AddMessageIcon from '../../../icons/actions/action_addmessage.svg'
+import FeedComposer from '@components/announcements/FeedComposer.vue'
+import FeedPostCard from '@components/announcements/FeedPostCard.vue'
 import HistoryIcon from '../../../icons/actions/action_history.svg'
 
-const router = useRouter()
-const announcementsStore = useAnnouncementsStore()
-const createModal = ref(null)
-const addMessageIconStyle = { maskImage: `url("${AddMessageIcon}")`, WebkitMaskImage: `url("${AddMessageIcon}")` }
+const store = useAnnouncementsStore()
 const historyIconStyle = { maskImage: `url("${HistoryIcon}")`, WebkitMaskImage: `url("${HistoryIcon}")` }
 const showArchive = ref(false)
-usePageHeaderStore().setHeader('Mitteilungen', 'Hier findest du alle wichtigen Mitteilungen deines Teams.')
+usePageHeaderStore().setHeader('Mitteilungen', 'Beiträge aus deinen Organisationen und ganz ToTeam.')
 
-function openAnnouncement(announcement) {
-  router.push({ name: 'AnnouncementDetail', params: { id: announcement.ID } })
-}
-
-// Geplante Mitteilungen sind noch nicht sichtbar, daher nur aktive direkt öffnen
-function onCreated(announcement) {
-  if (announcement.Status === 'active') openAnnouncement(announcement)
+async function deletePost(post) {
+  if (!confirm('Diesen Beitrag wirklich löschen?')) return
+  try {
+    await store.deletePost(post.ID)
+  } catch (e) {
+    alert(e.message)
+  }
 }
 
 async function toggleArchive() {
   showArchive.value = !showArchive.value
-  if (showArchive.value && !announcementsStore.archiveLoaded) {
-    await announcementsStore.fetchArchivedAnnouncements(true)
+  if (showArchive.value && !store.archiveLoaded) {
+    await store.fetchArchive()
   }
 }
 
-onMounted(async () => {
-  await announcementsStore.fetchAnnouncements(true)
-})
+onMounted(() => store.fetchFeed())
 </script>

@@ -1,0 +1,229 @@
+@use "../../base/variables" as *;
+
+// Neuer Feed-Beitrag (FeedComposer.vue)
+.feed-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    padding: 16px;
+    background-color: var(--ColorWhite);
+    border-radius: var(--BorderRadiusMedium);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    text-align: left;
+
+    .feed-composer_input {
+        position: relative;
+    }
+
+    // Werkzeugleiste wie im Skript-Editor, direkt über dem Textfeld
+    .feed-composer_toolbar {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid var(--ColorLightGray);
+        border-bottom: none;
+        border-radius: var(--BorderRadiusSmall) var(--BorderRadiusSmall) 0 0;
+        background-color: var(--ColorVeryLightGray);
+    }
+
+    .feed-composer_toolbar-btn {
+        min-width: 30px;
+        height: 30px;
+        padding: 0 8px;
+        border: 1px solid transparent;
+        border-radius: var(--BorderRadiusSmall);
+        background: none;
+        color: inherit;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+
+        @include hover {
+            border-color: var(--ColorLightGray);
+            background-color: var(--ColorWhite);
+        }
+
+        &--active {
+            border-color: var(--ColorPrimary);
+            background-color: var(--ColorPrimaryLight);
+            color: var(--ColorPrimaryDark);
+        }
+    }
+
+    // Textfeld mit dem Zeichenzähler unten rechts darin
+    .feed-composer_field {
+        position: relative;
+    }
+
+    .feed-composer_editor {
+        .ProseMirror {
+            min-height: 130px;
+            padding-bottom: 28px;
+            max-height: 50vh;
+            overflow-y: auto;
+            padding: 12px;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: 0 0 var(--BorderRadiusSmall) var(--BorderRadiusSmall);
+            font-size: 15px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+            box-sizing: border-box;
+
+            &:focus {
+                outline: none;
+                border-color: var(--ColorPrimary);
+            }
+
+            p {
+                margin: 0 0 0.5em;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+
+        // Platzhalter, solange nichts eingegeben ist
+        &--empty .ProseMirror > p:first-child::before {
+            content: var(--placeholder);
+            float: left;
+            height: 0;
+            color: var(--ColorGray);
+            pointer-events: none;
+        }
+    }
+
+    // Vorschläge für @-Markierungen, unter dem Textfeld schwebend
+    .feed-composer_suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 5;
+        width: min(320px, 100%);
+        max-height: 280px;
+        margin: 4px 0 0;
+        padding: 4px;
+        overflow-y: auto;
+        list-style: none;
+        background-color: var(--ColorWhite);
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .feed-composer_suggestion {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 6px 8px;
+        border: none;
+        border-radius: var(--BorderRadiusSmall);
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        &--active,
+        &:hover {
+            background-color: var(--ColorVeryLightGray);
+        }
+    }
+
+    .feed-composer_suggestion-avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        object-fit: cover;
+
+        &--placeholder {
+            background-color: var(--ColorLightGray);
+            font-size: 10px;
+            font-weight: 700;
+        }
+    }
+
+    .feed-composer_suggestion-name {
+        font-weight: 600;
+    }
+
+    .feed-composer_suggestion-username {
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .feed-composer_options {
+        gap: 12px 10px;
+
+        // Auf dem Handy wären "Posten als" und "Sichtbarkeit" nebeneinander zu breit
+        @include media(max-medium) {
+            .field--3 {
+                grid-column: 1 / -1;
+            }
+        }
+    }
+
+    // .modalform ist ein 6-Spalten-Grid — der Hinweis geht über die volle Breite
+    .feed-composer_schedule-hint {
+        grid-column: 1 / -1;
+        margin: 0;
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .feed-composer_footer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        // Auf dem Handy steht "Posten" in einer eigenen Zeile
+        @include media(max-medium) {
+            flex-wrap: wrap;
+
+            .feed-composer_submit {
+                flex-basis: 100%;
+            }
+        }
+    }
+
+    .feed-composer_hint {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .feed-composer_count {
+        position: absolute;
+        right: 10px;
+        bottom: 6px;
+        pointer-events: none;
+        font-size: 11px;
+        color: var(--ColorGray);
+        font-variant-numeric: tabular-nums;
+
+        &--near {
+            color: var(--ColorStatusWarning);
+        }
+
+        &--over {
+            color: var(--ColorStatusBad);
+            font-weight: 700;
+        }
+    }
+
+    .feed-composer_error {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+
+}

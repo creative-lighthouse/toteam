@@ -8,6 +8,8 @@ export const useMarketingStore = defineStore('marketing', () => {
   const organizations = ref([])
   const years = ref([])
   const canManageSizes = ref(false)
+  // Kartenkonfiguration (TilesURL, AssetsURL, MaxZoom, BBox) oder null ohne Kartendaten
+  const mapConfig = ref(null)
   const loading = ref(false)
   const error = ref(null)
 
@@ -57,6 +59,7 @@ export const useMarketingStore = defineStore('marketing', () => {
       organizations.value = response.organizations || []
       years.value = response.years || []
       canManageSizes.value = !!response.canManageSizes
+      mapConfig.value = response.map || null
     } catch (err) {
       console.error('Failed to fetch marketing distributions:', err)
       error.value = err.message
@@ -91,6 +94,13 @@ export const useMarketingStore = defineStore('marketing', () => {
       await clearCacheForEndpoint('/marketing')
     }
     return response
+  }
+
+  // Adresse zu Koordinaten (Nominatim, serverseitig) — nicht gecacht, jede
+  // Position ist ohnehin ein Einzelfall.
+  async function reverseGeocode(lat, lng) {
+    const response = await apiGet(`/marketing/reverseGeocode?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`, false)
+    return response.success ? response.data?.address || null : null
   }
 
   async function createSize(organizationId, title) {
@@ -133,7 +143,13 @@ export const useMarketingStore = defineStore('marketing', () => {
         await clearCacheForEndpoint('/marketing/statistics')
       }
 
-      statistics.value = await apiGet(endpoint, !forceRefresh)
+      let response = await apiGet(endpoint, !forceRefresh)
+      // Zwischengespeicherte Antwort aus einer älteren Version (ohne Orte) — neu laden
+      if (!response.cityLabels && !forceRefresh) {
+        await clearCacheForEndpoint('/marketing/statistics')
+        response = await apiGet(endpoint, false)
+      }
+      statistics.value = response
     } catch (err) {
       console.error('Failed to fetch marketing statistics:', err)
       statisticsError.value = err.message
@@ -166,6 +182,7 @@ export const useMarketingStore = defineStore('marketing', () => {
     filterOrganization,
     filterSize,
     filteredDistributions,
+    mapConfig,
     statistics,
     statisticsLoading,
     statisticsError,
@@ -174,6 +191,7 @@ export const useMarketingStore = defineStore('marketing', () => {
     createDistribution,
     updateDistribution,
     deleteDistribution,
+    reverseGeocode,
     createSize,
     updateSize,
     deleteSize,

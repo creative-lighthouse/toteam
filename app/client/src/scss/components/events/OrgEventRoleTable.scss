@@ -1,0 +1,174 @@
+@use "../../base/variables" as *;
+
+// Rollenplan eines Skripts: Tage × Rollen (OrgEventRoleTable.vue). Bei vielen Tagen
+// scrollt das Raster seitwärts, die Rollenspalte bleibt stehen.
+.org-event-role-table {
+    overflow-x: auto;
+    border: 1px solid var(--ColorLightGray);
+    border-radius: var(--BorderRadiusSmall);
+    background-color: var(--ColorWhite);
+    -webkit-overflow-scrolling: touch;
+
+    .org-event-role-table_grid {
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 100%;
+        font-size: 13px;
+
+        th,
+        td {
+            border-bottom: 1px solid var(--ColorVeryLightGray);
+            border-right: 1px solid var(--ColorVeryLightGray);
+            text-align: center;
+            vertical-align: top;
+        }
+
+        tr:last-child > * {
+            border-bottom: none;
+        }
+
+        tr > *:last-child {
+            border-right: none;
+        }
+    }
+
+    .org-event-role-table_corner,
+    .org-event-role-table_day {
+        padding: 6px 8px;
+        background-color: var(--ColorVeryLightGray);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .org-event-role-table_corner {
+        text-align: left;
+        color: var(--ColorGray);
+    }
+
+    .org-event-role-table_day-date,
+    .org-event-role-table_day-label {
+        display: block;
+    }
+
+    .org-event-role-table_day-label {
+        max-width: 110px;
+        margin: 0 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+
+    // Rollenspalte bleibt beim Scrollen stehen
+    .org-event-role-table_corner,
+    .org-event-role-table_role {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.12);
+    }
+
+    .org-event-role-table_role {
+        padding: 8px 10px;
+        background-color: var(--ColorWhite);
+        font-weight: 600;
+        text-align: left;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .org-event-role-table_cell {
+        min-width: 84px;
+        padding: 0;
+    }
+
+    // Mehrere Personen (z.B. Schichten) stehen untereinander, chronologisch
+    .org-event-role-table_cell-inner {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 64px;
+        padding: 6px;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+        box-sizing: border-box;
+
+        &--editable {
+            cursor: pointer;
+
+            @include hover {
+                background-color: var(--ColorVeryLightGray);
+
+                .org-event-role-table_empty {
+                    color: var(--ColorPrimary);
+                }
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: -2px;
+            }
+        }
+    }
+
+    .org-event-role-table_empty {
+        margin: auto 0;
+        font-size: 18px;
+        color: var(--ColorLightGray);
+    }
+
+    // Eine Person: Avatar, darunter ganz klein Name und ggf. Uhrzeit
+    .org-event-role-table_person {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 64px;
+        line-height: 1.2;
+
+        &--me .org-event-role-table_avatar {
+            box-shadow: 0 0 0 2px var(--ColorPrimary);
+        }
+
+        &--warn .org-event-role-table_avatar {
+            box-shadow: 0 0 0 2px var(--ColorStatusWarning);
+        }
+    }
+
+    .org-event-role-table_avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        margin-bottom: 3px;
+        border-radius: 50%;
+        object-fit: cover;
+
+        &--placeholder {
+            background-color: var(--ColorLightGray);
+            font-size: 11px;
+            font-weight: 700;
+        }
+    }
+
+    .org-event-role-table_name {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .org-event-role-table_time {
+        font-size: 9px;
+        color: var(--ColorGray);
+        white-space: nowrap;
+    }
+}

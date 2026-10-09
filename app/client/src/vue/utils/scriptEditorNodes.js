@@ -61,7 +61,20 @@ function withScriptAttributes(NodeType) {
       }
     },
     addNodeView() {
-      return VueNodeViewRenderer(ScriptBlockView)
+      return VueNodeViewRenderer(ScriptBlockView, {
+        // ScriptBlockView rendert den Inhalt je nach Ebene als <h2>/<h3>/<h4>. Ändert
+        // sich nur die Ebene (gleicher Node-Typ), würde ProseMirror die Node-View
+        // behalten, Vue aber ein neues Element erzeugen — ProseMirror schriebe den Text
+        // weiter ins alte, nicht mehr eingehängte Element und er wäre unsichtbar.
+        // Dann also eine neue Node-View anlegen lassen.
+        update: ({ oldNode, newNode, updateProps }) => {
+          if (oldNode.type !== newNode.type || oldNode.attrs.level !== newNode.attrs.level) {
+            return false
+          }
+          updateProps()
+          return true
+        },
+      })
     },
   })
 }

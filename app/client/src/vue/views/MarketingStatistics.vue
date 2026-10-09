@@ -47,6 +47,22 @@
             <canvas ref="memberChartCanvas" />
           </div>
         </div>
+
+        <div class="marketing-stats-card">
+          <div class="marketing-stats-card_header">
+            <h3 class="hl3 marketing-stats-card_title">Verteilte Plakate pro Ort</h3>
+            <label v-if="store.statistics.districtLabels?.length" class="marketing-stats-card_toggle">
+              <input v-model="showDistricts" type="checkbox" @change="renderCityChart" />
+              Stadtteile
+            </label>
+          </div>
+          <div class="marketing-stats-card_canvas">
+            <canvas ref="cityChartCanvas" />
+          </div>
+          <p class="marketing-stats-card_hint">
+            Ort und Stadtteil werden aus der GPS-Position oder dem eingegebenen Ort ermittelt.
+          </p>
+        </div>
       </div>
 
     </div>
@@ -54,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Chart, BarController, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js'
 import { useMarketingStore } from '@stores/marketing'
@@ -77,11 +93,30 @@ const orgFilter = ref(store.filterOrganization)
 
 const sizeChartCanvas = ref(null)
 const memberChartCanvas = ref(null)
+const cityChartCanvas = ref(null)
+const showDistricts = ref(false)
 let sizeChart = null
 let memberChart = null
+let cityChart = null
+
+// Nach Ort oder — falls gewählt und vorhanden — nach Stadtteil
+const cityData = computed(() => {
+  const stats = store.statistics || {}
+  return showDistricts.value && stats.districtLabels?.length
+    ? { labels: stats.districtLabels, datasets: stats.districtDatasetsBySize || [] }
+    : { labels: stats.cityLabels || [], datasets: stats.cityDatasetsBySize || [] }
+})
+
+// Während des Ladens wird das Raster ausgeblendet und danach mit neuen
+// Canvas-Elementen eingeblendet — ein Chart am alten Canvas zeichnet ins Leere
+function recreate(chart) {
+  chart?.destroy()
+  return null
+}
 
 function renderSizeChart() {
   if (!sizeChartCanvas.value) return
+  if (sizeChart?.canvas !== sizeChartCanvas.value) sizeChart = recreate(sizeChart)
   const sizes = store.statistics?.sizes || []
   const labels = sizes.map(s => s.Title)
   const data = sizes.map(s => s.Total)
@@ -112,6 +147,7 @@ function renderSizeChart() {
 
 function renderMemberChart() {
   if (!memberChartCanvas.value) return
+  if (memberChart?.canvas !== memberChartCanvas.value) memberChart = recreate(memberChart)
   const labels = store.statistics?.memberLabels || []
   const datasets = (store.statistics?.datasetsBySize || []).map(entry => ({
     label: entry.size,
@@ -140,10 +176,42 @@ function renderMemberChart() {
   })
 }
 
+function renderCityChart() {
+  if (!cityChartCanvas.value) return
+  if (cityChart?.canvas !== cityChartCanvas.value) cityChart = recreate(cityChart)
+  const { labels } = cityData.value
+  const datasets = cityData.value.datasets.map(entry => ({
+    label: entry.size,
+    data: entry.data,
+    backgroundColor: pastelColorForId(entry.sizeId),
+  }))
+
+  if (cityChart) {
+    cityChart.data.labels = labels
+    cityChart.data.datasets = datasets
+    cityChart.update()
+    return
+  }
+
+  cityChart = new Chart(cityChartCanvas.value, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+      },
+    },
+  })
+}
+
 watch(() => store.statistics, async () => {
   await nextTick()
   renderSizeChart()
   renderMemberChart()
+  renderCityChart()
 }, { deep: true })
 
 function onFilterChange() {
@@ -162,5 +230,6 @@ onMounted(async () => {
 onUnmounted(() => {
   sizeChart?.destroy()
   memberChart?.destroy()
+  cityChart?.destroy()
 })
 </script>

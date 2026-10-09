@@ -331,7 +331,19 @@ export const useInventoryStore = defineStore('inventory', () => {
     }
   }
 
+  /** Offene Anträge, über die man entscheiden darf — für die Zahl im Hauptmenü */
+  async function fetchPendingCount() {
+    try {
+      const response = await apiGet('/inventory/pendingCount', false)
+      pendingRentals.value = response.pendingRentals || 0
+    } catch {
+      // Ohne Verbindung bleibt die letzte Zahl stehen
+    }
+  }
+
   async function afterRentalChange(response) {
+    // Jede Änderung (neuer Antrag, Entscheidung, Storno) kann die offenen Anträge ändern
+    if (response.success) fetchPendingCount()
     if (response.success && response.data?.rental) {
       // Ein Antrag kann beim Anlegen in mehrere (pro Quelle) aufgeteilt werden
       for (const rental of response.data.rentals || [response.data.rental]) {
@@ -349,9 +361,7 @@ export const useInventoryStore = defineStore('inventory', () => {
   }
 
   async function decideRental(id, data) {
-    const response = await afterRentalChange(await apiPost(`/inventory/rentalDecide/${id}`, data))
-    if (response.success && pendingRentals.value > 0) pendingRentals.value--
-    return response
+    return afterRentalChange(await apiPost(`/inventory/rentalDecide/${id}`, data))
   }
 
   async function swapRentalItem(rentalId, itemId, newItemId) {
@@ -451,6 +461,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     fetchRentals,
     fetchRentalDetail,
     fetchRentalOptions,
+    fetchPendingCount,
     createRental,
     decideRental,
     setRentalStatus,

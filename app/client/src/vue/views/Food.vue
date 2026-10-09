@@ -80,20 +80,7 @@
     <FoodSuggestionsModal ref="suggestionsModal" :foods="myFoods" />
 
     <!-- ── Tabs unten (nur für Essensplaner) ─────────────────────────────── -->
-    <nav v-if="canPlan" class="food-tab-nav" aria-label="Essen">
-      <button
-        v-for="tab in TABS"
-        :key="tab.id"
-        type="button"
-        class="food-tab-nav_item"
-        :class="{ 'is-active': activeTab === tab.id }"
-        :aria-current="activeTab === tab.id ? 'page' : null"
-        @click="selectTab(tab.id)"
-      >
-        <span class="food-tab-nav_icon" :style="tab.iconStyle" aria-hidden="true"></span>
-        {{ tab.label }}
-      </button>
-    </nav>
+    <AppTabNav v-if="canPlan" :tabs="TABS" :model-value="activeTab" label="Essen" @update:model-value="selectTab" />
 
     <Transition name="fade">
       <div v-if="statusMessage" :class="['status-message', `status-message--${statusMessage.type}`]" role="status">
@@ -116,6 +103,7 @@ import MealCard from '@components/food/MealCard.vue'
 import FoodPlanner from '@components/food/FoodPlanner.vue'
 import FoodEventSuggestModal from '@components/food/FoodEventSuggestModal.vue'
 import FoodSuggestionsModal from '@components/food/FoodSuggestionsModal.vue'
+import AppTabNav from '@components/ui/AppTabNav.vue'
 import FoodIcon from '../../../icons/actions/action_food.svg'
 import PlanFoodIcon from '../../../icons/actions/action_planfood.svg'
 
@@ -125,10 +113,9 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const maskStyle = icon => ({ maskImage: `url("${icon}")`, WebkitMaskImage: `url("${icon}")` })
 const TABS = [
-  { id: 'overview', label: 'Übersicht', iconStyle: maskStyle(FoodIcon) },
-  { id: 'plan', label: 'Planen', iconStyle: maskStyle(PlanFoodIcon) },
+  { id: 'overview', label: 'Übersicht', icon: FoodIcon },
+  { id: 'plan', label: 'Planen', icon: PlanFoodIcon },
 ]
 
 

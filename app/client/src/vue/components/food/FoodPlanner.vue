@@ -110,10 +110,9 @@
     <FoodPreferenceLegend v-if="plan && !loadError" :preferences="hasFoodPreferences" />
 
     <ContextMenu ref="mealMenu" />
-    <FoodEditModal ref="foodModal" @saved="onFoodSaved" @deleted="onFoodDeleted" />
+    <FoodFormModal ref="foodModal" allow-orderable @saved="onFoodSaved" @deleted="onFoodDeleted" />
     <MealFormModal
       ref="mealModal"
-      deletable
       @saved="onMealSaved"
       @deleted="onMealDeleted"
     />
@@ -135,7 +134,7 @@ import AppButton from '@components/ui/AppButton.vue'
 import FoodPlanCard from '@components/food/FoodPlanCard.vue'
 import FoodPreferenceLegend from '@components/food/FoodPreferenceLegend.vue'
 import MealFormModal from '@components/food/MealFormModal.vue'
-import FoodEditModal from '@components/food/FoodEditModal.vue'
+import FoodFormModal from '@components/food/FoodFormModal.vue'
 import ContextMenu from '@components/ui/ContextMenu.vue'
 import { vContextMenu } from '@utils/contextMenu'
 import AcceptIcon from '../../../../icons/states/participation_accept.svg'
@@ -339,7 +338,7 @@ async function onMealDeleted() {
 
 // Menü und Tab-Leiste sind unten fest — dort ebenfalls mitscrollen
 const bottomInset = () => {
-  const nav = document.querySelector('.food-tab-nav')
+  const nav = document.querySelector('.app-tab-nav')
   return nav ? window.innerHeight - nav.getBoundingClientRect().top : 0
 }
 

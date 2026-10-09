@@ -21,42 +21,39 @@
         <AppButton variant="primary" @click="refresh()">Erneut versuchen</AppButton>
       </div>
 
-      <!-- Aktuelle Ankündigungen -->
-      <div v-if="dashboardStore.hasLatestAnnouncements" class="section_infobox">
-        <h2 class="hl2 dashboard-announcements_title">Aktuelle Ankündigungen</h2>
-        <div class="announcements-list announcements-list--compact">
-          <AnnouncementCard
-            v-for="announcement in dashboardStore.latestAnnouncements"
-            :key="announcement.ID"
-            :announcement="announcement"
-            compact
-            :hide-org-logo="!authStore.hasMultipleOrganizations"
-            @click="openAnnouncement"
-          />
-        </div>
-        <router-link to="/announcements" class="section_infobox_footer dashboard-announcements_footer">Alle Ankündigungen →</router-link>
-      </div>
-
       <!-- Das steht heute an -->
       <div v-if="todaysEvents.length" class="section_infobox">
         <h2 class="hl2">Das steht heute an</h2>
         <ul class="infobox_list infobox_list--events">
           <li v-for="event in todaysEvents" :key="event.ID">
             <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
-            <ul v-if="event.Meals?.length" class="event-meals-list">
-              <li v-for="meal in event.Meals" :key="meal.ID">
-                <router-link :to="`/food/meal/${meal.ID}`" class="event-meal-link">
-                  <span class="event-meal-time">{{ meal.RenderTime }} Uhr</span>
-                  <span class="event-meal-name">{{ meal.Title }}</span>
-                  <span class="event-meal-response" :class="mealResponseClass(meal.UserResponse)">
-                    {{ mealResponseLabel(meal.UserResponse) }}
-                  </span>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:.4;flex-shrink:0">
-                    <path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/>
-                  </svg>
-                </router-link>
-              </li>
-            </ul>
+            <EventMealsList :meals="event.Meals ?? []" />
+          </li>
+        </ul>
+        <div class="section_infobox_footer">
+          <router-link to="/calendar">Zum Kalender →</router-link>
+        </div>
+      </div>
+
+      <!-- Offene Termine ohne Rückmeldung -->
+      <div v-if="pendingFeedback.length" class="section_infobox">
+        <h2 class="hl2">Offene Termine ohne Rückmeldung</h2>
+        <ul class="infobox_list infobox_list--events">
+          <li v-for="event in pendingFeedback" :key="event.ID">
+            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
+          </li>
+        </ul>
+        <div class="section_infobox_footer">
+          <router-link to="/calendar">Zum Kalender →</router-link>
+        </div>
+      </div>
+
+      <!-- Deine nächsten Termine -->
+      <div v-if="upcomingAccepted.length" class="section_infobox">
+        <h2 class="hl2">Deine nächsten Termine</h2>
+        <ul class="infobox_list infobox_list--events">
+          <li v-for="event in upcomingAccepted" :key="event.ID">
+            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
           </li>
         </ul>
         <div class="section_infobox_footer">
@@ -112,29 +109,21 @@
         </div>
       </div>
 
-      <!-- Deine nächsten Termine -->
-      <div v-if="upcomingAccepted.length" class="section_infobox">
-        <h2 class="hl2">Deine nächsten Termine</h2>
-        <ul class="infobox_list infobox_list--events">
-          <li v-for="event in upcomingAccepted" :key="event.ID">
-            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
+      <!-- Als "Interessiert" / "Ich bin dabei" markierte Events der nächsten 4 Wochen -->
+      <div v-if="upcomingOrgEvents.length" class="section_infobox">
+        <h2 class="hl2">Deine anstehenden Events</h2>
+        <!-- Dieselben Karten wie in der Events-Übersicht, zwei pro Zeile -->
+        <ul class="dashboard-org-events">
+          <li v-for="orgEvent in upcomingOrgEvents" :key="orgEvent.ID">
+            <OrgEventCard
+              :event="orgEvent"
+              :to="{ name: 'EventDetail', params: { segment: orgEvent.URLSegment } }"
+              :show-organization="authStore.hasMultipleOrganizations"
+            />
           </li>
         </ul>
         <div class="section_infobox_footer">
-          <router-link to="/calendar">Zum Kalender →</router-link>
-        </div>
-      </div>
-
-      <!-- Offene Termine ohne Rückmeldung -->
-      <div v-if="pendingFeedback.length" class="section_infobox">
-        <h2 class="hl2">Offene Termine ohne Rückmeldung</h2>
-        <ul class="infobox_list infobox_list--events">
-          <li v-for="event in pendingFeedback" :key="event.ID">
-            <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
-          </li>
-        </ul>
-        <div class="section_infobox_footer">
-          <router-link to="/calendar">Zum Kalender →</router-link>
+          <router-link to="/events">Alle Events →</router-link>
         </div>
       </div>
 
@@ -187,8 +176,10 @@ import { useDashboardStore } from '@stores/dashboard'
 import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/calendar/EventCard.vue'
+import EventMealsList from '@components/calendar/EventMealsList.vue'
+import OrgEventCard from '@components/events/OrgEventCard.vue'
+import { useOrgEventsStore } from '@stores/orgEvents'
 import TaskCard from '@components/tasks/TaskCard.vue'
-import AnnouncementCard from '@components/announcements/AnnouncementCard.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
@@ -207,9 +198,18 @@ function openTask(task) {
   router.push({ name: 'TaskDetail', params: { hash: task.Hash } })
 }
 
-function openAnnouncement(announcement) {
-  router.push({ name: 'AnnouncementDetail', params: { id: announcement.ID } })
-}
+
+const orgEventsStore = useOrgEventsStore()
+
+// Markierte Events, die in den nächsten 4 Wochen stattfinden (oder gerade laufen)
+const UPCOMING_ORG_EVENT_DAYS = 28
+const upcomingOrgEvents = computed(() => {
+  const today = new Date().toISOString().slice(0, 10)
+  const limit = new Date(Date.now() + UPCOMING_ORG_EVENT_DAYS * 86400000).toISOString().slice(0, 10)
+  return orgEventsStore.myEvents.filter(e =>
+    e.RangeStart && e.RangeStart <= limit && (e.RangeEnd ?? e.RangeStart) >= today
+  )
+})
 
 const todaysEvents = computed(() =>
   eventsStore.upcomingEvents.filter(e => e.isToday() && (e.hasUserAccepted() || e.hasUserMaybe()))
@@ -230,18 +230,6 @@ const pendingFeedback = computed(() =>
 const spinning = ref(false)
 const isLoading = computed(() => dashboardStore.loading || eventsStore.loading)
 const hasError = computed(() => !!(dashboardStore.error || eventsStore.error))
-
-function mealResponseClass(response) {
-  if (response === 'Accept')  return 'response--accept'
-  if (response === 'Decline') return 'response--decline'
-  return 'response--pending'
-}
-
-function mealResponseLabel(response) {
-  if (response === 'Accept')  return '✓ Zugesagt'
-  if (response === 'Decline') return '✗ Abgesagt'
-  return '?'
-}
 
 function formatDate(dateString) {
   if (!dateString) return ''
@@ -265,6 +253,7 @@ async function refresh() {
   const nextY = m === 12 ? y + 1 : y
   await Promise.all([
     dashboardStore.refresh(),
+    orgEventsStore.fetchMyEvents().catch(() => {}),
     eventsStore.fetchEvents(y, m, true),
     eventsStore.fetchEvents(nextY, nextM, true),
     new Promise(resolve => setTimeout(resolve, 650)),
@@ -279,6 +268,7 @@ onMounted(() => {
   const nextM = m === 12 ? 1 : m + 1
   const nextY = m === 12 ? y + 1 : y
   dashboardStore.fetchDashboardData()
+  orgEventsStore.fetchMyEvents().catch(() => {})
   eventsStore.fetchEvents(y, m)
   eventsStore.fetchEvents(nextY, nextM)
 })

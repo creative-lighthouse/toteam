@@ -31,9 +31,6 @@
                         alt="Nachrichten"
                         class="nav_image"
                         >
-                        <p v-if="announcementsStore.unreadCount > 0" class="nav_badge">
-                            {{ announcementsStore.unreadCount }}<span class="nav_sr-only"> ungelesen</span>
-                        </p>
                     </div>
                 </router-link>
             </li>
@@ -90,6 +87,15 @@
         <!-- Geschlossen: inert, damit Tab und Screenreader die ausgeblendeten Links überspringen -->
         <div id="app-menu-secondary" ref="secondaryMenu" class="secondarynav" :inert="!isSecondaryMenuOpen">
             <ul class="secondary_menu">
+                <li v-if="authStore.hasTotem('calendar')">
+                    <router-link data-secondary-item to="/events" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Events' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="kalenderTotem" alt="" class="nav_image">
+                        </div>
+                        <p class="nav_title">Events <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
                 <li v-if="authStore.hasTotem('food')">
                     <router-link data-secondary-item to="/food" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Food' }" @click="closeAllMenus">
                         <div class="nav_icon">
@@ -145,27 +151,30 @@
                 </li>
 
                 <li v-if="authStore.hasTotem('inventory')">
-                    <router-link data-secondary-item to="/inventory" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Inventory' || $route.name === 'InventoryRentals' }" @click="closeAllMenus">
+                    <router-link data-secondary-item to="/inventory" :aria-label="pendingRentals ? `Inventar, ${pendingRentals === 1 ? '1 offener Antrag' : `${pendingRentals} offene Anträge`}` : undefined" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Inventory' || $route.name === 'InventoryRentals' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="inventarTotem" alt="" class="nav_image">
+                            <span v-if="pendingRentals" class="nav_badge" aria-hidden="true">{{ formatBadge(pendingRentals) }}</span>
                         </div>
                         <p class="nav_title">Inventar <span class="nav_alpha">Alpha</span></p>
                     </router-link>
                 </li>
 
                 <li>
-                    <router-link data-secondary-item to="/money" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
+                    <router-link data-secondary-item to="/money" :aria-label="pendingEntries ? `Geld, ${pendingEntries === 1 ? '1 Buchung zu genehmigen' : `${pendingEntries} Buchungen zu genehmigen`}` : undefined" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="geldTotem" alt="" class="nav_image">
+                            <span v-if="pendingEntries" class="nav_badge" aria-hidden="true">{{ formatBadge(pendingEntries) }}</span>
                         </div>
                         <p class="nav_title">Geld</p>
                     </router-link>
                 </li>
 
                 <li>
-                    <router-link data-secondary-item to="/organizations" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Organizations' }" @click="closeAllMenus">
+                    <router-link data-secondary-item to="/organizations" :aria-label="pendingApplicants ? `Organisationen, ${pendingApplicants === 1 ? '1 offene Bewerbung' : `${pendingApplicants} offene Bewerbungen`}` : undefined" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Organizations' }" @click="closeAllMenus">
                         <div class="nav_icon">
                             <img :src="organizationsTotem" alt="" class="nav_image">
+                            <span v-if="pendingApplicants" class="nav_badge" aria-hidden="true">{{ formatBadge(pendingApplicants) }}</span>
                         </div>
                         <p class="nav_title">Organisationen</p>
                     </router-link>
@@ -191,7 +200,7 @@
                 </router-link>
                 <button type="button" @click="handleLogout" class="nav_logout" title="Abmelden" aria-label="Abmelden">
                     <div class="nav_icon nav_icon--logout">
-                        <img :src="actionLogout" alt="" class="logout_image">
+                        <span class="icon-mask" :style="logoutIconStyle" aria-hidden="true"></span>
                     </div>
                 </button>
                 <button type="button" @click="openFeedback" class="nav_feedback" title="Feedback geben" aria-label="Feedback geben">
@@ -214,11 +223,13 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
-import { useAnnouncementsStore } from '@stores/announcements'
 import { useUiStore } from '@stores/ui'
+import { useInventoryStore } from '@stores/inventory'
+import { useMoneyStore } from '@stores/money'
+import { useOrganizationsStore } from '@stores/organizations'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import SettingsModal from '@components/layout/SettingsModal.vue'
 import FeedbackModal from '@components/layout/FeedbackModal.vue'
@@ -242,10 +253,25 @@ import organizationsTotem from '../../../../icons/totems/organizations_totem.png
 import actionLogout from '../../../../icons/actions/action_logout.svg'
 import actionSettings from '../../../../icons/actions/action_settings.svg'
 import actionFeedback from '../../../../icons/feedback_admin.svg'
+
+const logoutIconStyle = { maskImage: `url("${actionLogout}")`, WebkitMaskImage: `url("${actionLogout}")` }
 const router = useRouter()
 const authStore = useAuthStore()
-const announcementsStore = useAnnouncementsStore()
 const uiStore = useUiStore()
+const inventoryStore = useInventoryStore()
+const moneyStore = useMoneyStore()
+const organizationsStore = useOrganizationsStore()
+
+// Offene Ausleih-Anträge, über die man entscheiden darf (der Server zählt nur die)
+const pendingRentals = computed(() => (authStore.hasTotem('inventory') ? inventoryStore.pendingRentals : 0))
+// Buchungen, die man noch genehmigen muss (MONEY_APPROVE_ENTRIES)
+const pendingEntries = computed(() => moneyStore.pendingEntries)
+// Bewerbungen, die man annehmen darf (ORG_MANAGE_MEMBERS)
+const pendingApplicants = computed(() => organizationsStore.pendingApplicants)
+
+function formatBadge(count) {
+    return count > 9 ? '9+' : count
+}
 const isSecondaryMenuOpen = ref(false)
 const isProfileMenuOpen = ref(false)
 const settingsModal = ref(null)
@@ -426,19 +452,6 @@ async function handleLogout() {
     closeProfileMenu()
     router.push({ name: 'Login' })
 }
-
-onMounted(() => {
-    // Restore saved theme
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('theme--dark')
-    }
-
-    if (authStore.isAuthenticated) {
-        announcementsStore.fetchAnnouncements().catch(err => {
-            console.warn('Could not fetch announcements for badge:', err)
-        })
-    }
-})
 
 onUnmounted(() => {
     // Clean up body class when component is destroyed

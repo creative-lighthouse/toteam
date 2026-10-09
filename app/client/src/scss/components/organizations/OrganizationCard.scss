@@ -120,8 +120,8 @@
                 letter-spacing: 0.03em;
 
                 &--open {
-                    background-color: color-mix(in srgb, var(--ColorSuccess, #4caf50) 15%, transparent);
-                    color: var(--ColorSuccess, #4caf50);
+                    background-color: color-mix(in srgb, var(--ColorStatusGood) 15%, transparent);
+                    color: var(--ColorStatusGood);
                 }
 
                 &--application {

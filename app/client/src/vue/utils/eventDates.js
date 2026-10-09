@@ -45,9 +45,10 @@ const MONTHS = ['Jan.', 'Feb.', 'Mär.', 'Apr.', 'Mai', 'Jun.', 'Jul.', 'Aug.', 
  * - weekday: "Fr., 30.10. – So., 01.11."
  * - long:    "Fr., 30. Okt., 18:00 – So., 1. Nov. 26, 14:00"
  * Gleiches Jahr bzw. gleicher Monat stehen nur beim Enddatum ("Fr., 2. – So., 4. Okt. 26").
- * Die Kurzform nennt das Jahr nur, wenn der Termin über den Jahreswechsel geht.
+ * Die Kurzform nennt das Jahr nur, wenn der Termin über den Jahreswechsel geht —
+ * mit `withYear` immer am Ende ("30.09. – 30.10.26", z.B. für Events auf Karten).
  */
-export function formatEventRange(event, { weekday = false, long = false } = {}) {
+export function formatEventRange(event, { weekday = false, long = false, withYear = false } = {}) {
   const start = parseDate(event.DateStart)
   const end = parseDate(event.DateEnd || event.DateStart)
   const sameYear = start.getFullYear() === end.getFullYear()
@@ -65,6 +66,6 @@ export function formatEventRange(event, { weekday = false, long = false } = {}) 
     text + (!event.AllDay && time ? timeSep + formatTime(time) : '')
 
   const startText = format(start, { month: !sameMonth, year: !sameYear })
-  const endText = format(end, { month: true, year: long || !sameYear })
+  const endText = format(end, { month: true, year: long || withYear || !sameYear })
   return `${withTime(startText, event.TimeStart)} – ${withTime(endText, event.TimeEnd)}`
 }

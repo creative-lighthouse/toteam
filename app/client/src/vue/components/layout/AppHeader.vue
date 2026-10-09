@@ -3,7 +3,7 @@
         <div class="AppHeader_backbutton">
             <button v-if="$route.name !== 'Dashboard'" type="button" class="back_link" aria-label="Zurück" @click="goBack">
                 <span class="nav_icon nav_icon--back">
-                    <img :src="actionBack" alt="" class="back_image">
+                    <span class="icon-mask" :style="backIconStyle" aria-hidden="true"></span>
                 </span>
             </button>
         </div>
@@ -22,7 +22,7 @@
                     aria-controls="AppHeader_info_popup"
                     @click.stop="toggleInfo"
                 >
-                    <img :src="actionInfo" alt="" class="infobutton_image">
+                    <span class="icon-mask" :style="infoIconStyle" aria-hidden="true"></span>
                 </button>
                 <Transition name="info-popup">
                     <div v-if="infoVisible" id="AppHeader_info_popup" class="AppHeader_info_popup" role="status" @click.stop>
@@ -37,7 +37,7 @@
                 :aria-expanded="notificationsOpen"
                 @click.stop="toggleNotifications"
             >
-                <img :src="actionNotification" alt="" class="notifications_image">
+                <span class="icon-mask" :style="notificationIconStyle" aria-hidden="true"></span>
                 <span v-if="notificationsStore.unreadCount > 0" class="AppHeader_badge" aria-hidden="true">
                     {{ notificationsStore.unreadCount > 9 ? '9+' : notificationsStore.unreadCount }}
                 </span>
@@ -60,6 +60,10 @@
     import actionInfo from '../../../../icons/actions/action_help.svg'
     import actionNotification from '../../../../icons/actions/action_notifications.svg'
 
+    const backIconStyle = { maskImage: `url("${actionBack}")`, WebkitMaskImage: `url("${actionBack}")` }
+    const infoIconStyle = { maskImage: `url("${actionInfo}")`, WebkitMaskImage: `url("${actionInfo}")` }
+    const notificationIconStyle = { maskImage: `url("${actionNotification}")`, WebkitMaskImage: `url("${actionNotification}")` }
+
     const props = defineProps({
         title: {
             type: String,
@@ -81,7 +85,6 @@
             router.push({ name: 'Dashboard' })
         }
     }
-    notificationsStore.fetchNotifications()
 
     const infoVisible = ref(false)
     const notificationsOpen = ref(false)

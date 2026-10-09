@@ -1,0 +1,104 @@
+@use "../../base/variables" as *;
+
+// Ausgeliehenes Inventar in der Seitenleiste eines Event-Lageplans (MapEventItems.vue)
+.map-event-items {
+    margin-bottom: 1.5rem;
+
+    h4 {
+        margin: 0 0 0.75rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--ColorDarkGray);
+    }
+
+    .map-event-items_hint {
+        margin: 0 0 0.75rem;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .map-event-items_error {
+        margin: 0.75rem 0 0;
+        font-size: 13px;
+        color: var(--ColorStatusBad);
+    }
+
+    .map-event-items_list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .map-event-items_item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px;
+        border-radius: 4px;
+        background: var(--ColorVeryLightGray);
+
+        &--here {
+            box-shadow: inset 3px 0 0 var(--ColorPlanItem);
+        }
+    }
+
+    .map-event-items_main {
+        display: flex;
+        flex: 1;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    // Wie die Marker auf dem Plan
+    .map-event-items_number {
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 4px;
+        border-radius: 11px;
+        background-color: var(--ColorPlanItem);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .map-event-items_text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        font-size: 0.875rem;
+    }
+
+    .map-event-items_title {
+        font-weight: 600;
+    }
+
+    .map-event-items_inv {
+        font-weight: 400;
+        color: var(--ColorGray);
+    }
+
+    .map-event-items_note {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+
+    .map-event-items_meta {
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+}

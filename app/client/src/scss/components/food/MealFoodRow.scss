@@ -1,7 +1,7 @@
 @use "../../base/variables" as *;
 
 // Eine Gericht-Zeile einer Mahlzeit mit Bestell-Stepper — im Termin-Dialog
-// (EventMealsSection) und in der Mahlzeit-Detailansicht
+// (EventAgendaMeal) und in der Mahlzeit-Detailansicht
 .meal-food-row {
     display: grid;
     align-items: center;

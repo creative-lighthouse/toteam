@@ -7,6 +7,7 @@ use App\Money\MoneyAccount;
 use App\Money\MoneyBudget;
 use App\Money\MoneyHistory;
 use App\Money\MoneySettlement;
+use App\Teams\OrgEvent;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
@@ -43,6 +44,10 @@ class MoneyApiController extends ApiController
         'accountMembers',
         'entryHistory',
         'accountHistory',
+        'eventAccounts',
+        'eventAccountAttach',
+        'eventAccountDetach',
+        'pendingCount',
     ];
 
     private const RECEIPT_MAX_SIZE = 5 * 1024 * 1024;
@@ -80,6 +85,31 @@ class MoneyApiController extends ApiController
         }
 
         return $this->jsonResponse(['accounts' => $accounts]);
+    }
+
+    /**
+     * GET /api/v1/money/pendingCount — Zahl für das Hauptmenü: noch nicht
+     * genehmigte Buchungen in Kassen, deren Buchungen man genehmigen darf
+     */
+    public function pendingCount(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $orgIDs = $member->getOrganizationIDs();
+        $accountIDs = [];
+        foreach (MoneyAccount::get()->filter('ParentID', $orgIDs ?: [0]) as $account) {
+            if ($account->canViewInApp($member) && $account->canApproveEntriesInApp($member)) {
+                $accountIDs[] = $account->ID;
+            }
+        }
+        $count = $accountIDs
+            ? MoneyHistory::get()->filter(['ParentID' => $accountIDs, 'Approved' => false])->count()
+            : 0;
+
+        return $this->jsonResponse(['pendingEntries' => $count]);
     }
 
     /** GET /api/v1/money/account/$ID */
@@ -877,6 +907,165 @@ class MoneyApiController extends ApiController
         );
     }
 
+    // ── Kassen eines Events (Event-Seite) ──────────────────────────────────────
+
+    /** Event per ID, nur für Mitglieder seiner Organisation */
+    private function findEventFor(int $eventID, Member $member): ?OrgEvent
+    {
+        $event = $eventID ? OrgEvent::get()->byID($eventID) : null;
+        return $event && $event->isInternalFor($member) ? $event : null;
+    }
+
+    /**
+     * Gesamter Stand für die Kassen-Karte der Event-Seite — auch nach jeder Änderung,
+     * damit das Frontend einfach neu rendern kann. Nur Kontostand, Ziel und Budgets,
+     * keine Buchungen.
+     */
+    private function formatEventAccounts(OrgEvent $event, Member $member): array
+    {
+        $org = $event->Organization();
+
+        $accounts = [];
+        foreach ($event->MoneyAccounts() as $account) {
+            if (!$account->canViewInApp($member)) {
+                continue;
+            }
+            $budgets = [];
+            foreach ($account->MoneyBudget() as $budget) {
+                $budgets[] = $this->formatBudget($budget);
+            }
+            $accounts[] = [
+                'ID'                   => $account->ID,
+                'Title'                => $account->Title,
+                'CachedCurrentBalance' => (float) $account->CachedCurrentBalance,
+                'TargetAmount'         => (float) $account->TargetAmount,
+                'Budgets'              => $budgets,
+                'CanUnlink'            => $account->canEditInApp($member),
+            ];
+        }
+
+        // Vorhandene Kassen der Organisation, die man diesem Event zuordnen darf
+        $available = [];
+        foreach (MoneyAccount::get()->filter('ParentID', $event->OrganizationID)->exclude('EventID', $event->ID) as $account) {
+            if (!$account->canEditInApp($member)) {
+                continue;
+            }
+            $available[] = [
+                'ID'         => $account->ID,
+                'Title'      => $account->Title,
+                // Gehört schon zu einem anderen Event — wird beim Zuordnen umgehängt
+                'EventTitle' => $account->EventID && $account->Event()->exists() ? $account->Event()->Title : null,
+            ];
+        }
+
+        return [
+            'accounts'          => $accounts,
+            'availableAccounts' => $available,
+            'CanCreate'         => $org && $org->exists() && $member->hasOrgPermission($org, OrgPermissions::MONEY_ACCOUNTS_CREATE),
+        ];
+    }
+
+    /** GET /api/v1/money/eventAccounts/$ID — Kassen eines Events */
+    public function eventAccounts(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        $event = $this->findEventFor((int) $request->param('ID'), $member);
+        if (!$event) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+        return $this->jsonResponse($this->formatEventAccounts($event, $member));
+    }
+
+    /**
+     * POST /api/v1/money/eventAccountAttach/$ID
+     * Body {AccountID} ordnet eine vorhandene Kasse der Organisation zu (braucht
+     * MONEY_ACCOUNTS_EDIT), Body {Title, TargetAmount?} legt eine neue an (braucht
+     * MONEY_ACCOUNTS_CREATE).
+     */
+    public function eventAccountAttach(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $event = $this->findEventFor((int) $request->param('ID'), $member);
+        if (!$event) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+
+        $body = $this->getJsonBody();
+        $accountID = (int) ($body['AccountID'] ?? 0);
+        $title = trim($body['Title'] ?? '');
+
+        if ($accountID) {
+            $account = MoneyAccount::get()->filter(['ID' => $accountID, 'ParentID' => $event->OrganizationID])->first();
+            if (!$account) {
+                return $this->errorResponse('Kasse nicht gefunden', 404);
+            }
+            if (!$account->canEditInApp($member)) {
+                return $this->errorResponse('Keine Berechtigung', 403);
+            }
+            $account->EventID = $event->ID;
+            $account->write();
+            return $this->successResponse($this->formatEventAccounts($event, $member), 'Kasse zugeordnet');
+        }
+
+        if ($title === '') {
+            return $this->errorResponse('Kasse oder Titel ist erforderlich', 400);
+        }
+        if (!$member->hasOrgPermission($event->Organization(), OrgPermissions::MONEY_ACCOUNTS_CREATE)) {
+            return $this->errorResponse('Keine Berechtigung, Kassen anzulegen', 403);
+        }
+        if ($this->bodyAmountTooHigh($body, ['TargetAmount'])) {
+            return $this->amountTooHighError();
+        }
+        $account = MoneyAccount::create();
+        $account->Title = $title;
+        $account->TargetAmount = (float) ($body['TargetAmount'] ?? 0);
+        $account->ParentID = $event->OrganizationID;
+        $account->EventID = $event->ID;
+        $account->write();
+        $this->recalculateBalances($account);
+
+        return $this->successResponse($this->formatEventAccounts($event, $member), 'Kasse angelegt');
+    }
+
+    /**
+     * DELETE /api/v1/money/eventAccountDetach/$ID?account={AccountID}
+     * Löst die Kasse vom Event — die Kasse samt Buchungen bleibt erhalten.
+     */
+    public function eventAccountDetach(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'DELETE') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $event = $this->findEventFor((int) $request->param('ID'), $member);
+        if (!$event) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+        $account = $event->MoneyAccounts()->byID((int) $request->getVar('account'));
+        if (!$account) {
+            return $this->errorResponse('Kasse gehört nicht zu diesem Event', 404);
+        }
+        if (!$account->canEditInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+        $account->EventID = 0;
+        $account->write();
+
+        return $this->successResponse($this->formatEventAccounts($event, $member), 'Kasse vom Event gelöst');
+    }
+
     private function applyAccountFields(MoneyAccount $account, array $body, bool $isCreate = true): void
     {
         if ($isCreate || isset($body['Title'])) {
@@ -900,6 +1089,19 @@ class MoneyApiController extends ApiController
         if (isset($body['RequiresReceiptWithdrawal'])) {
             $account->RequiresReceiptWithdrawal = (bool) $body['RequiresReceiptWithdrawal'];
         }
+        if (array_key_exists('EventID', $body)) {
+            $account->EventID = $this->resolveEventID((int) $body['EventID'], (int) ($body['OrganizationID'] ?? $account->ParentID));
+        }
+    }
+
+    /** Event-ID nur übernehmen, wenn das Event zur Organisation der Kasse gehört — sonst 0 */
+    private function resolveEventID(int $eventID, int $orgID): int
+    {
+        if (!$eventID) {
+            return 0;
+        }
+        $event = OrgEvent::get()->byID($eventID);
+        return $event && (int) $event->OrganizationID === $orgID ? $event->ID : 0;
     }
 
     private function applyBudgetFields(MoneyBudget $budget, array $body, bool $isCreate = true): void
@@ -1078,6 +1280,12 @@ class MoneyApiController extends ApiController
             'RequiresReceiptDeposit' => (bool) $account->RequiresReceiptDeposit,
             'RequiresReceiptWithdrawal' => (bool) $account->RequiresReceiptWithdrawal,
             'CachedCurrentBalance' => (float) $account->CachedCurrentBalance,
+            'EventID' => (int) $account->EventID ?: null,
+            'Event' => $account->EventID && $account->Event()->exists() ? [
+                'ID' => $account->Event()->ID,
+                'Title' => $account->Event()->Title,
+                'URLSegment' => $account->Event()->URLSegment,
+            ] : null,
             'Organization' => $org && $org->exists() ? [
                 'ID' => $org->ID,
                 'Title' => $org->Title,

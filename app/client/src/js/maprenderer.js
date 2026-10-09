@@ -488,8 +488,8 @@ class MapRenderer {
         this.canvas.addEventListener('mousedown', (e) => {
             // Check if clicking on a POI
             if (this.hoveredPOI) {
-                if (this.isEditMode) {
-                    // In edit mode, start dragging the POI
+                if (this.canDragPOI(this.hoveredPOI.poi)) {
+                    // In edit mode (or for POIs the host allows to move), start dragging the POI
                     this.draggedPOI = this.hoveredPOI;
                     this.isDraggingPOI = true;
                     this.dragStartX = this.mouseCanvasX;
@@ -563,8 +563,10 @@ class MapRenderer {
         this.canvas.addEventListener('mouseup', () => {
             if (this.isDraggingPOI && this.draggedPOI) {
                 // Only show popup if POI was clicked (not dragged)
-                if (this.isEditMode && !this.poiWasDragged) {
+                if (!this.poiWasDragged) {
                     this.showPOIPopup(this.draggedPOI);
+                } else {
+                    this.notifyPOIMoved(this.draggedPOI);
                 }
             }
             this.isDragging = false;
@@ -607,6 +609,16 @@ class MapRenderer {
             e.preventDefault();
             this.touches = Array.from(e.touches);
 
+            // Tap/drag on a marker: remember it; a tap opens it, a movable one can be dragged
+            this.touchPOI = null;
+            this.touchMoved = false;
+            if (this.touches.length === 1) {
+                const { x, y } = this.touchToMap(this.touches[0]);
+                this.touchStartX = this.touches[0].clientX;
+                this.touchStartY = this.touches[0].clientY;
+                this.touchPOI = this.getPOIAtPosition(x, y);
+            }
+
             if (this.touches.length === 1) {
                 this.isDragging = true;
                 this.lastX = this.touches[0].clientX;
@@ -620,6 +632,19 @@ class MapRenderer {
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             this.touches = Array.from(e.touches);
+
+            if (this.touches.length === 1 && this.touchPOI) {
+                const moved = Math.abs(this.touches[0].clientX - this.touchStartX) + Math.abs(this.touches[0].clientY - this.touchStartY);
+                if (moved > 8) {
+                    this.touchMoved = true;
+                }
+                if (this.touchMoved && this.canDragPOI(this.touchPOI.poi)) {
+                    const { x, y } = this.touchToMap(this.touches[0]);
+                    this.updatePOIPosition(this.touchPOI, x, y);
+                    this.render();
+                    return;
+                }
+            }
 
             if (this.touches.length === 1 && this.isDragging) {
                 const dx = this.touches[0].clientX - this.lastX;
@@ -656,6 +681,14 @@ class MapRenderer {
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
             this.touches = Array.from(e.touches);
+            if (this.touches.length === 0 && this.touchPOI) {
+                if (!this.touchMoved) {
+                    this.showPOIPopup(this.touchPOI);
+                } else if (this.canDragPOI(this.touchPOI.poi)) {
+                    this.notifyPOIMoved(this.touchPOI);
+                }
+                this.touchPOI = null;
+            }
             if (this.touches.length === 0) {
                 this.isDragging = false;
                 this.lastTouchDistance = 0;
@@ -750,6 +783,44 @@ class MapRenderer {
         const dx = this.touches[1].clientX - this.touches[0].clientX;
         const dy = this.touches[1].clientY - this.touches[0].clientY;
         return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Whether a POI can be dragged: all of them in edit mode, otherwise only
+     * those the host app allows via config.canDragPOI(poi) (e.g. the items of
+     * an event on a plan that is itself read-only).
+     */
+    canDragPOI(poi) {
+        if (this.isEditMode) {
+            return true;
+        }
+        return typeof this.config.canDragPOI === 'function' && !!this.config.canDragPOI(poi);
+    }
+
+    notifyPOIMoved(poiData) {
+        if (typeof this.config.onPOIMoved === 'function') {
+            const layer = this.layers.find(l => l.id === poiData.layerId);
+            const poi = layer?.pois?.find(p => p.id === poiData.poiId) || poiData.poi;
+            this.config.onPOIMoved({ ...poiData, poi });
+        }
+    }
+
+    /** Touch point → map coordinates (same space as mouseCanvasX/Y) */
+    touchToMap(touch) {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: (touch.clientX - rect.left - this.offsetX) / this.scale,
+            y: (touch.clientY - rect.top - this.offsetY) / this.scale,
+        };
+    }
+
+    /** Geo coordinates ("lat,lng") of the point currently in the middle of the canvas */
+    getViewCenterPosition() {
+        const { lat, lng } = this.canvasToGeo(
+            (this.canvas.width / 2 - this.offsetX) / this.scale,
+            (this.canvas.height / 2 - this.offsetY) / this.scale
+        );
+        return `${lat},${lng}`;
     }
 
     /**
@@ -1036,6 +1107,13 @@ class MapRenderer {
         if (poi.type === 'room') {
             if (typeof this.config.onRoomPOIClick === 'function') {
                 this.config.onRoomPOIClick(poiData);
+            }
+            return;
+        }
+        // Same for the inventory items of an event (MapDetail.vue)
+        if (poi.type === 'item') {
+            if (typeof this.config.onItemPOIClick === 'function') {
+                this.config.onItemPOIClick(poiData);
             }
             return;
         }

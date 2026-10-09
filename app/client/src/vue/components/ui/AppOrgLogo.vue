@@ -5,6 +5,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { orgHue } from '@utils/orgColor'
 
 // Eigenständig von AppAvatar (Personen-Profilbilder) getrennt: Organisations-Icons
 // sind quadratisch/abgerundet statt kreisförmig und zeigen im Fallback nur eine
@@ -46,22 +47,12 @@ const sizeStyle = computed(() => {
 // Quelle für Initiale und Farbe: der Organisationsname
 const source = computed(() => (props.name || props.alt || '').trim())
 
-// Pastellfarbe aus einem Hash des Namens (FNV-1a): gleicher Name → immer derselbe
-// Farbton, ohne etwas speichern zu müssen. Sättigung/Helligkeit sind fest, damit
-// alle Platzhalter gleich pastellig wirken; die Schrift nimmt denselben Farbton dunkel.
-function hashString(value) {
-  let hash = 0x811c9dc5
-  for (let i = 0; i < value.length; i++) {
-    hash ^= value.charCodeAt(i)
-    hash = Math.imul(hash, 0x01000193)
-  }
-  return hash >>> 0
-}
-
+// Pastellfarbe aus dem Namens-Hash (utils/orgColor): Sättigung/Helligkeit sind fest
+// (im SCSS), damit alle Platzhalter gleich pastellig wirken; die Schrift nimmt
+// denselben Farbton dunkel.
 const colorStyle = computed(() => {
-  if (!source.value) return {}
-  const hue = hashString(source.value.toLowerCase()) % 360
-  return { '--apporglogo-hue': hue }
+  const hue = orgHue(source.value)
+  return hue === null ? {} : { '--apporglogo-hue': hue }
 })
 
 const initials = computed(() => {

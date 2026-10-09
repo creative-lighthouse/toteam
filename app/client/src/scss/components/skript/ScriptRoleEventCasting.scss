@@ -1,0 +1,52 @@
+@use "../../base/variables" as *;
+
+// Besetzung einer Skript-Rolle aus der Rollenverteilung der Events (ScriptRoleEventCasting.vue)
+.script-role-event-casting {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 14px;
+
+    .script-role-event-casting_empty {
+        margin: 0;
+        color: var(--ColorGray);
+    }
+
+    .script-role-event-casting_title {
+        font-weight: 700;
+        color: inherit;
+    }
+
+    .script-role-event-casting_days {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0 8px;
+        }
+    }
+
+    .script-role-event-casting_date {
+        min-width: 6.5em;
+        color: var(--ColorGray);
+    }
+
+    .script-role-event-casting_time {
+        color: var(--ColorGray);
+    }
+
+    .script-role-event-casting_past summary {
+        cursor: pointer;
+        color: var(--ColorGray);
+    }
+
+    .script-role-event-casting_past .script-role-event-casting_event {
+        margin-top: 8px;
+    }
+}

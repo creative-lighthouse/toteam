@@ -3,28 +3,25 @@
 namespace App\Controllers;
 
 use App\Notifications\NotificationToken;
+use App\Notifications\PushNotificationService;
 use App\Notifications\SavedNotification;
-use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
 
 /**
- * Class \App\Controllers\NotificationApiController
- *
+ * Benachrichtigungs-Inbox und Push-Tokens. Erreichbar unter /api/v1/notifications (Vue-App,
+ * Anmeldung per Bearer-Token) und /api/notifications (alte Seiten, Anmeldung per Session).
  */
-// TODO(Benachrichtigungen, bekannter Bug): Seit dem Umbau auf JWT-Login liefert jeder
-// Endpoint hier 401, weil Security::getCurrentUser() nur die alte PHP-Session kennt und
-// die Vue-App sich per Bearer-Token anmeldet. Zum Beheben von App\Controllers\ApiController
-// erben und $this->requireAuth() statt Security::getCurrentUser() verwenden (siehe
-// auch app/client/src/vue/stores/notifications.js, das den Token noch nicht mitschickt).
-class NotificationApiController extends Controller
+class NotificationApiController extends ApiController
 {
     private static $url_handlers = [
         'POST save-token' => 'saveToken',
+        'POST remove-token' => 'removeToken',
         'POST update-preferences' => 'updatePreferences',
         'GET preferences' => 'getPreferences',
-        'GET test-notification' => 'testNotification',
+        'POST test-notification' => 'testNotification',
         'GET inbox' => 'getInbox',
         'GET unread-count' => 'getUnreadCount',
         'POST $ID/mark-read' => 'markAsRead',
@@ -33,6 +30,7 @@ class NotificationApiController extends Controller
 
     private static $allowed_actions = [
         'saveToken',
+        'removeToken',
         'updatePreferences',
         'getPreferences',
         'testNotification',
@@ -43,11 +41,19 @@ class NotificationApiController extends Controller
     ];
 
     /**
+     * Bearer-Token der Vue-App, sonst die PHP-Session der alten Seiten
+     */
+    private function currentMember(): ?Member
+    {
+        return $this->requireAuth() ?? Security::getCurrentUser();
+    }
+
+    /**
      * Save FCM token for current user
      */
     public function saveToken(HTTPRequest $request)
     {
-        $member = Security::getCurrentUser();
+        $member = $this->currentMember();
 
         if (!$member) {
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
@@ -69,11 +75,32 @@ class NotificationApiController extends Controller
     }
 
     /**
+     * Token dieses Geräts entfernen (beim Abmelden), damit es keine Pushes mehr bekommt
+     */
+    public function removeToken(HTTPRequest $request)
+    {
+        $member = $this->currentMember();
+
+        if (!$member) {
+            return $this->jsonResponse(['error' => 'Not authenticated'], 401);
+        }
+
+        $data = json_decode($request->getBody(), true);
+        $token = $data['token'] ?? null;
+
+        if ($token) {
+            NotificationToken::get()->filter(['Token' => $token, 'MemberID' => $member->ID])->removeAll();
+        }
+
+        return $this->jsonResponse(['success' => true]);
+    }
+
+    /**
      * Update notification preferences
      */
     public function updatePreferences(HTTPRequest $request)
     {
-        $member = Security::getCurrentUser();
+        $member = $this->currentMember();
 
         if (!$member) {
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
@@ -81,10 +108,18 @@ class NotificationApiController extends Controller
 
         $data = json_decode($request->getBody(), true);
 
-        if (isset($data['events']))  $member->NotifyEvents  = (bool)$data['events'];
-        if (isset($data['announcements'])) $member->NotifyAnnouncements = (bool)$data['announcements'];
-        if (isset($data['meals']))   $member->NotifyMeals   = (bool)$data['meals'];
-        if (isset($data['maps']))    $member->NotifyMaps    = (bool)$data['maps'];
+        if (isset($data['events'])) {
+            $member->NotifyEvents  = (bool)$data['events'];
+        }
+        if (isset($data['announcements'])) {
+            $member->NotifyAnnouncements = (bool)$data['announcements'];
+        }
+        if (isset($data['meals'])) {
+            $member->NotifyMeals   = (bool)$data['meals'];
+        }
+        if (isset($data['maps'])) {
+            $member->NotifyMaps    = (bool)$data['maps'];
+        }
 
         $member->write();
         return $this->jsonResponse(['success' => true]);
@@ -95,7 +130,7 @@ class NotificationApiController extends Controller
      */
     public function getPreferences(HTTPRequest $request)
     {
-        $member = Security::getCurrentUser();
+        $member = $this->currentMember();
 
         if (!$member) {
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
@@ -110,41 +145,52 @@ class NotificationApiController extends Controller
     }
 
     /**
-     * Test notification endpoint
+     * Test-Push an alle Geräte des aktuellen Nutzers (ohne Inbox-Eintrag)
      */
     public function testNotification(HTTPRequest $request)
     {
-        $member = Security::getCurrentUser();
+        $member = $this->currentMember();
 
         if (!$member) {
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
         }
 
-        try {
-            \App\Notifications\PushNotificationService::sendToMember(
-                $member,
-                'Test Benachrichtigung',
-                'Dies ist eine Test-Nachricht von ToTeam!',
-                '/dashboard'
-            );
+        $devices = NotificationToken::get()->filter('MemberID', $member->ID)->count();
+        if (!$devices) {
+            return $this->jsonResponse(['success' => false, 'error' => 'Für dein Konto ist kein Gerät registriert.'], 400);
+        }
 
+        if (!PushNotificationService::isConfigured()) {
             return $this->jsonResponse([
-                'success' => true,
-                'message' => 'Test notification sent to ' . $member->getName()
-            ]);
-        } catch (\Exception $e) {
-            return $this->jsonResponse([
-                'error' => $e->getMessage()
+                'success' => false,
+                'error' => 'Push ist auf dem Server nicht eingerichtet (firebase-service-account.json fehlt).'
             ], 500);
         }
+
+        $sent = PushNotificationService::sendToMember(
+            $member,
+            '🔔 Test-Benachrichtigung',
+            'Push-Benachrichtigungen funktionieren auf diesem Gerät.',
+            '/app/dashboard'
+        );
+
+        if (!$sent) {
+            return $this->jsonResponse([
+                'success' => false,
+                'error' => 'Die Benachrichtigung konnte nicht verschickt werden (Server-Log prüfen).'
+            ], 500);
+        }
+
+        return $this->jsonResponse(['success' => true, 'devices' => $sent]);
     }
 
     /**
-     * Get notification inbox for current user
+     * Ungelesene Benachrichtigungen des aktuellen Nutzers, neueste zuerst.
+     * Gelesene bleiben in der DB (CMS), werden aber nicht mehr ausgeliefert.
      */
     public function getInbox(HTTPRequest $request)
     {
-        $member = Security::getCurrentUser();
+        $member = $this->currentMember();
 
         if (!$member) {
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
@@ -153,12 +199,14 @@ class NotificationApiController extends Controller
         $limit = max(1, min(50, (int)($request->getVar('limit') ?? 20)));
         $offset = max(0, (int)($request->getVar('offset') ?? 0));
 
-        $base = SavedNotification::get()->filter('MemberID', $member->ID);
+        $base = SavedNotification::get()->filter([
+            'MemberID' => $member->ID,
+            'IsRead' => false
+        ]);
         $total = $base->count();
 
-        // Unread first, then by Created DESC
         $notifications = $base
-            ->sort('IsRead ASC, Created DESC')
+            ->sort('Created DESC')
             ->limit($limit, $offset);
 
         $data = [];
@@ -170,7 +218,7 @@ class NotificationApiController extends Controller
                 'type' => $notification->Type,
                 'url' => $notification->URL,
                 'icon' => $notification->getIcon(),
-                'isRead' => (bool)$notification->IsRead,
+                'isRead' => false,
                 'created' => $notification->Created
             ];
         }
@@ -189,7 +237,7 @@ class NotificationApiController extends Controller
      */
     public function getUnreadCount(HTTPRequest $request)
     {
-        $member = Security::getCurrentUser();
+        $member = $this->currentMember();
 
         if (!$member) {
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
@@ -205,7 +253,7 @@ class NotificationApiController extends Controller
      */
     public function markAsRead(HTTPRequest $request)
     {
-        $member = Security::getCurrentUser();
+        $member = $this->currentMember();
 
         if (!$member) {
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
@@ -228,7 +276,7 @@ class NotificationApiController extends Controller
      */
     public function markAllAsRead(HTTPRequest $request)
     {
-        $member = Security::getCurrentUser();
+        $member = $this->currentMember();
 
         if (!$member) {
             return $this->jsonResponse(['error' => 'Not authenticated'], 401);
@@ -237,15 +285,5 @@ class NotificationApiController extends Controller
         SavedNotification::markAllAsRead($member->ID);
 
         return $this->jsonResponse(['success' => true]);
-    }
-
-    /**
-     * Return JSON response
-     */
-    private function jsonResponse($data, $status = 200)
-    {
-        $response = new HTTPResponse(json_encode($data), $status);
-        $response->addHeader('Content-Type', 'application/json');
-        return $response;
     }
 }

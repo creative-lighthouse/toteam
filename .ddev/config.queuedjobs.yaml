@@ -1,0 +1,6 @@
+# Arbeitet die Job-Queue (silverstripe-queuedjobs) jede Minute ab — lokal anstelle des
+# Cronjobs auf dem Server: * * * * * php vendor/bin/sake tasks:ProcessJobQueueTask
+web_extra_daemons:
+  - name: "job-queue"
+    command: "bash -c 'while true; do php vendor/bin/sake tasks:ProcessJobQueueTask --quiet; sleep 60; done'"
+    directory: /var/www/html

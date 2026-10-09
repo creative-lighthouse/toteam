@@ -2,7 +2,11 @@
   <AppModal ref="modal" class="inventory-rental-request-modal" title="Ausleihe beantragen" @close="close">
     <form id="inventory-rental-request-form" class="modalform" @submit.prevent="submit">
 
-      <div class="field">
+      <!-- Für ein Event: die Organisation steht fest -->
+      <p v-if="orgEvent" class="field inventory-rental-request-modal_hint">
+        Für das Event „{{ orgEvent.Title }}“ ({{ contextOrgTitle }}) – die Objekte kannst du danach auf den Lageplänen des Events platzieren.
+      </p>
+      <div v-else class="field">
         <label>Ausleihen für</label>
         <OrganizationPicker v-model="form.OrganizationID" :orgs="contextOptions" :searchable="contextOptions.length > 6" />
       </div>
@@ -169,6 +173,9 @@ const form = reactive({
 })
 
 const period = ref({ dateStart: todayIso(), dateEnd: todayIso() })
+
+// Event (OrgEvent), für das ausgeliehen wird — { ID, Title } oder null
+const orgEvent = ref(null)
 
 // Nur, was man im gewählten Kontext auch beantragen kann: ohne Antrags-Berechtigung
 // bleibt nur das eigene Equipment (privat liefert der Server schon gefiltert)
@@ -342,7 +349,11 @@ watch(() => [period.value.dateStart, period.value.dateEnd], () => {
 })
 
 /**
- * @param {{ organizationId?: number, groups?: Record<string, number>, roomIds?: number[] }} preset
+ * @param {{
+ *   organizationId?: number, groups?: Record<string, number>, roomIds?: number[],
+ *   orgEvent?: { ID: number, Title: string }, dateStart?: string, dateEnd?: string,
+ *   eventIds?: number[], purpose?: string
+ * }} preset — mit orgEvent wird für dieses Event (der Organisation organizationId) ausgeliehen
  */
 function open(preset = {}) {
   const orgs = contextOptions.value
@@ -352,9 +363,12 @@ function open(preset = {}) {
 
   error.value = null
   itemQuery.value = ''
-  period.value = { dateStart: todayIso(), dateEnd: todayIso() }
-  form.EventIDs = []
-  form.Purpose = ''
+  orgEvent.value = presetOrg && preset.orgEvent ? preset.orgEvent : null
+  const dateStart = preset.dateStart || todayIso()
+  period.value = { dateStart, dateEnd: preset.dateEnd && preset.dateEnd >= dateStart ? preset.dateEnd : dateStart }
+  // Termine werden nach dem Laden der Optionen auf die im Zeitraum vorhandenen gefiltert
+  form.EventIDs = presetOrg ? [...(preset.eventIds || [])] : []
+  form.Purpose = preset.purpose || ''
   form.Groups = presetOrg ? { ...(preset.groups || {}) } : {}
   form.RoomIDs = presetOrg ? [...(preset.roomIds || [])] : []
   if (form.OrganizationID === orgId) {
@@ -381,6 +395,7 @@ async function submit() {
       GroupQuantities: form.Groups,
       RoomIDs: form.RoomIDs,
       EventIDs: form.EventIDs,
+      OrgEventID: orgEvent.value?.ID ?? null,
       StartDate: period.value.dateStart,
       EndDate: period.value.dateEnd || period.value.dateStart,
       Purpose: form.Purpose.trim(),

@@ -4,7 +4,7 @@ namespace App\Tasks;
 
 use App\Calendar\Appointment;
 use App\Calendar\SchedulingPoll;
-use App\Announcements\Announcement;
+use App\Announcements\FeedPost;
 use App\Notifications\PendingNotificationJob;
 use App\Notifications\PushNotificationService;
 use SilverStripe\Dev\BuildTask;
@@ -24,7 +24,7 @@ class ProcessPendingNotificationsTask extends BuildTask
         $count = $jobs->count();
 
         foreach ($jobs as $job) {
-            // Mitteilungen mit Veröffentlichungsdatum in der Zukunft erst ab diesem Zeitpunkt melden
+            // Geplante Feed-Beiträge erst ab ihrem Veröffentlichungszeitpunkt melden
             if ($this->isDeferred($job)) {
                 $count--;
                 continue;
@@ -48,22 +48,23 @@ class ProcessPendingNotificationsTask extends BuildTask
 
     private function isDeferred(PendingNotificationJob $job): bool
     {
-        if ($job->EventType !== 'new_announcement') {
+        if ($job->EventType !== 'new_feed_post') {
             return false;
         }
-        $announcement = Announcement::get()->byID($job->SourceID);
-        return $announcement
-            && $announcement->ReleaseDate
-            && strtotime($announcement->ReleaseDate) > DBDatetime::now()->getTimestamp();
+        $post = FeedPost::get()->byID($job->SourceID);
+        return $post
+            && $post->ReleaseDate
+            && strtotime($post->ReleaseDate) > DBDatetime::now()->getTimestamp();
     }
 
     private function processJob(PendingNotificationJob $job): void
     {
         switch ($job->EventType) {
-            case 'new_announcement':
-                $announcement = Announcement::get()->byID($job->SourceID);
-                if ($announcement) {
-                    PushNotificationService::notifyNewAnnouncement($announcement);
+            case 'new_feed_post':
+                $post = FeedPost::get()->byID($job->SourceID);
+                // Inzwischen gelöscht oder schon abgelaufen — dann nicht mehr melden
+                if ($post && !$post->isExpired()) {
+                    PushNotificationService::notifyNewFeedPost($post);
                 }
                 break;
 

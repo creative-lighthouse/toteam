@@ -5,7 +5,7 @@ namespace App\Notifications;
 use App\Maps\Map;
 use App\Food\Food;
 use App\Food\Meal;
-use App\Announcements\Announcement;
+use App\Announcements\FeedPost;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
@@ -19,330 +19,376 @@ use SilverStripe\Security\Member;
 use SilverStripe\Core\Environment;
 
 /**
- * Service to send push notifications via Firebase Cloud Messaging
+ * Benachrichtigungen: Inbox-Eintrag (SavedNotification) + Push via Firebase Cloud Messaging.
+ *
+ * Jede notify*()-Methode bestimmt nur, WER betroffen ist und zu welcher Organisation die
+ * Sache gehört, und übergibt an {@see deliver()}. Dort gilt für alle gleich:
+ *  - nur Mitglieder (Role "member", keine Bewerber) dieser Organisation(en) kommen in Frage,
+ *  - ob sie die Benachrichtigung bekommen, entscheidet allein ihre Einstellung
+ *    (Member.Notify<Typ>): an → Inbox-Eintrag und Push auf alle registrierten Geräte,
+ *    aus → gar nichts.
  */
 class PushNotificationService
 {
+    /** Benachrichtigungs-Typ → Einstellung am Member (siehe SettingsModal) */
+    public const TYPE_SETTINGS = [
+        'events'        => 'NotifyEvents',
+        'announcements' => 'NotifyAnnouncements',
+        'meals'         => 'NotifyMeals',
+        'maps'          => 'NotifyMaps',
+        'applications'  => 'NotifyApplications',
+        'inventory'     => 'NotifyInventory',
+    ];
+
     private static ?string $cachedAccessToken = null;
+    private static int $cachedAccessTokenExpires = 0;
+
     /**
-     * Send notification to all users with specific preference enabled
+     * Zentrale Zustellung: an alle $memberIDs (ohne $excludeIDs), die Mitglied in einer der
+     * $orgIDs sind und den Typ in ihren Einstellungen aktiviert haben — Inbox-Eintrag und
+     * Push auf alle ihre Geräte. $orgIDs = null nur für rein persönliche Dinge ohne
+     * Organisation (privat verliehenes Equipment).
      */
-    public static function sendToUsers($type, $title, $body, $url = null, array $excludeMembers = [])
+    public static function deliver(iterable $memberIDs, ?array $orgIDs, string $type, string $title, string $body, ?string $url = null, array $excludeIDs = []): void
     {
-        // Get all member IDs who want this type of notification
-        $memberIDs = self::getMembersForNotification($type, $excludeMembers);
-
-        foreach ($memberIDs as $memberID) {
-            // Save notification to inbox
-            self::saveNotification($memberID, $type, $title, $body, $url);
-
-            // Send push notification
-            $member = Member::get()->byID($memberID);
-            if ($member) {
-                self::sendToMember($member, $title, $body, $url);
-            }
+        $setting = self::TYPE_SETTINGS[$type] ?? null;
+        if (!$setting) {
+            throw new \InvalidArgumentException('Unbekannter Benachrichtigungs-Typ: ' . $type);
         }
-    }    /**
-     * Send notification to specific member
+
+        $ids = array_diff(
+            array_unique(array_map('intval', is_array($memberIDs) ? $memberIDs : iterator_to_array($memberIDs, false))),
+            array_map('intval', $excludeIDs),
+            [0]
+        );
+
+        if ($orgIDs !== null) {
+            $orgIDs = array_filter(array_map('intval', $orgIDs));
+            $orgMemberIDs = $orgIDs
+                ? OrganizationMembership::get()->filter([
+                    'OrganizationID' => $orgIDs,
+                    'Role'           => 'member',
+                ])->column('MemberID')
+                : [];
+            $ids = array_intersect($ids, array_map('intval', $orgMemberIDs));
+        }
+
+        if (empty($ids)) {
+            return;
+        }
+
+        foreach (Member::get()->filter(['ID' => $ids, $setting => true]) as $member) {
+            SavedNotification::createNotification($member->ID, $type, $title, $body, $url);
+            self::sendToMember($member, $title, $body, $url);
+        }
+    }
+
+    /**
+     * Push an alle registrierten Geräte eines Members, ohne Inbox-Eintrag und ohne
+     * Einstellungs-Prüfung (nur für den Test-Button) — gibt die Zahl erreichter Geräte zurück
      */
-    public static function sendToMember(Member $member, $title, $body, $url = null)
+    public static function sendToMember(Member $member, $title, $body, $url = null): int
     {
         $tokens = NotificationToken::get()->filter('MemberID', $member->ID);
+        $sent = 0;
 
         foreach ($tokens as $tokenObj) {
-            self::sendNotification($tokenObj->Token, $title, $body, $url);
-        }
-    }
-
-    /**
-     * Save notification to inbox for member
-     */
-    private static function saveNotification($memberID, $type, $title, $body, $url = null)
-    {
-        SavedNotification::createNotification($memberID, $type, $title, $body, $url);
-    }
-
-    /**
-     * Send notification to a specific, pre-scoped list of member IDs (e.g. invited members
-     * of an appointment), still respecting each member's Notify{Type} preference.
-     */
-    private static function sendToMemberList(array $memberIDs, $type, $title, $body, $url = null)
-    {
-        $field = 'Notify' . ucfirst($type);
-
-        foreach ($memberIDs as $memberID) {
-            self::saveNotification($memberID, $type, $title, $body, $url);
-
-            $member = Member::get()->byID($memberID);
-            if ($member && $member->$field) {
-                self::sendToMember($member, $title, $body, $url);
-            }
-        }
-    }    /**
-     * Send notification for suggested event
-     */
-    public static function notifyEventSuggested(EventDay $event)
-    {
-        $title = '💡 Terminvorschlag';
-        $body = $event->Title . ' am ' . $event->RenderDate();
-        $url = $event->getLink();
-
-        self::sendToUsers('events', $title, $body, $url);
-    }
-
-    /**
-     * Send notification for scheduled event
-     */
-    public static function notifyEventScheduled(EventDay $event)
-    {
-        $title = '📅 Neuer Termin festgelegt';
-        $body = $event->Title . ' am ' . $event->RenderDate();
-        $url = $event->getLink();
-
-        self::sendToUsers('events', $title, $body, $url);
-    }
-
-    /**
-     * Send notification for cancelled event
-     */
-    public static function notifyEventCancelled(EventDay $event)
-    {
-        $title = '❌ Termin abgesagt';
-        $body = $event->Title . ' am ' . $event->RenderDate() . ' wurde abgesagt.';
-        $url = $event->getLink();
-
-        self::sendToUsers('events', $title, $body, $url);
-    }
-
-    /**
-     * Send notification for suggested appointment
-     */
-    public static function notifyAppointmentSuggested(Appointment $appointment)
-    {
-        $title = '💡 Terminvorschlag';
-        $body = $appointment->Title . ' am ' . $appointment->RenderDate();
-        $url = $appointment->getLink();
-
-        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
-    }
-
-    /**
-     * Send notification for scheduled appointment
-     */
-    public static function notifyAppointmentScheduled(Appointment $appointment)
-    {
-        $title = '📅 Neuer Termin festgelegt';
-        $body = $appointment->Title . ' am ' . $appointment->RenderDate();
-        $url = $appointment->getLink();
-
-        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
-    }
-
-    /**
-     * Send notification for cancelled appointment
-     */
-    public static function notifyAppointmentCancelled(Appointment $appointment)
-    {
-        $title = '❌ Termin abgesagt';
-        $body = $appointment->Title . ' am ' . $appointment->RenderDate() . ' wurde abgesagt.';
-        $url = $appointment->getLink();
-
-        self::sendToMemberList($appointment->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
-    }
-
-    /**
-     * Send notification for a new scheduling poll (Terminfindung)
-     */
-    public static function notifyPollCreated(SchedulingPoll $poll)
-    {
-        $title = '🗳️ Neue Terminfindung';
-        $body = $poll->Title;
-        $url = $poll->getLink();
-
-        self::sendToMemberList($poll->InvitedMembers()->column('ID'), 'events', $title, $body, $url);
-    }
-
-    /**
-     * Send notification for new notice – only to members of linked organisations
-     */
-    public static function notifyNewAnnouncement(Announcement $announcement)
-    {
-        $organisations = $announcement->Organisations();
-
-        if (!$organisations->exists()) {
-            return;
-        }
-
-        $title = '📢 Neue Ankündigung';
-        $body = $announcement->Title;
-        $url = $announcement->getLink();
-
-        $memberIDs = [];
-        foreach ($organisations as $organisation) {
-            $activeMembers = OrganizationMembership::get()->filter([
-                'OrganizationID' => $organisation->ID,
-                'Role'           => 'member',
-            ]);
-            foreach ($activeMembers as $membership) {
-                $memberIDs[$membership->MemberID] = $membership->MemberID;
+            if (self::sendNotification($tokenObj->Token, $title, $body, $url)) {
+                $sent++;
             }
         }
 
-        foreach ($memberIDs as $memberID) {
-            self::saveNotification($memberID, 'announcements', $title, $body, $url);
-
-            $member = Member::get()->byID($memberID);
-            if ($member && $member->NotifyAnnouncements) {
-                self::sendToMember($member, $title, $body, $url);
-            }
-        }
+        return $sent;
     }
 
-    public static function notifyNewApplication(OrganizationMembership $membership): void
+    /** IDs der (existierenden) Organisationen */
+    private static function orgIDs(?Organization ...$orgs): array
     {
-        $org      = $membership->Organization();
-        $applicant = $membership->Member();
+        return array_values(array_unique(array_map(
+            fn (Organization $org) => (int) $org->ID,
+            array_filter($orgs, fn (?Organization $org) => $org && $org->exists())
+        )));
+    }
 
-        if (!$org || !$applicant) {
-            return;
+    /** Mitglieder (keine Bewerber) einer Organisation */
+    private static function orgMemberIDs(?Organization $org): array
+    {
+        if (!$org || !$org->exists()) {
+            return [];
         }
 
-        $title = '📋 Neue Bewerbung';
-        $body  = $applicant->FirstName . ' ' . $applicant->Surname . ' möchte "' . $org->Title . '" beitreten.';
-        $url   = '/app/organizations?applicants=' . $org->ID;
-
-        $candidateMemberships = OrganizationMembership::get()->filter([
+        return OrganizationMembership::get()->filter([
             'OrganizationID' => $org->ID,
             'Role'           => 'member',
-        ]);
+        ])->column('MemberID');
+    }
 
-        foreach ($candidateMemberships as $candidateMembership) {
-            $admin = $candidateMembership->Member();
-            if (!$admin || !$admin->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
-                continue;
-            }
+    /** Mitglieder einer Organisation mit einer bestimmten Org-Berechtigung */
+    private static function orgMemberIDsWithPermission(?Organization $org, string $permission): array
+    {
+        if (!$org || !$org->exists()) {
+            return [];
+        }
 
-            self::saveNotification($admin->ID, 'applications', $title, $body, $url);
-
-            if ($admin->NotifyApplications) {
-                self::sendToMember($admin, $title, $body, $url);
+        $ids = [];
+        foreach (Member::get()->filter('ID', self::orgMemberIDs($org) ?: [0]) as $member) {
+            if ($member->hasOrgPermission($org, $permission)) {
+                $ids[] = $member->ID;
             }
         }
+        return $ids;
     }
 
+    // ── Termine (alt: EventDay) ─────────────────────────────────────────────
+
+    public static function notifyEventSuggested(EventDay $event)
+    {
+        self::deliver(
+            self::orgMemberIDs($event->Organisation()),
+            self::orgIDs($event->Organisation()),
+            'events',
+            '💡 Terminvorschlag',
+            $event->Title . ' am ' . $event->RenderDate(),
+            $event->getLink()
+        );
+    }
+
+    public static function notifyEventScheduled(EventDay $event)
+    {
+        self::deliver(
+            self::orgMemberIDs($event->Organisation()),
+            self::orgIDs($event->Organisation()),
+            'events',
+            '📅 Neuer Termin festgelegt',
+            $event->Title . ' am ' . $event->RenderDate(),
+            $event->getLink()
+        );
+    }
+
+    public static function notifyEventCancelled(EventDay $event)
+    {
+        self::deliver(
+            self::orgMemberIDs($event->Organisation()),
+            self::orgIDs($event->Organisation()),
+            'events',
+            '❌ Termin abgesagt',
+            $event->Title . ' am ' . $event->RenderDate() . ' wurde abgesagt.',
+            $event->getLink()
+        );
+    }
+
+    // ── Termine (Appointment) und Terminfindungen: an die Eingeladenen ──────
+
+    public static function notifyAppointmentSuggested(Appointment $appointment)
+    {
+        self::deliver(
+            $appointment->InvitedMembers()->column('ID'),
+            $appointment->Organisations()->column('ID'),
+            'events',
+            '💡 Terminvorschlag',
+            $appointment->Title . ' am ' . $appointment->RenderDate(),
+            $appointment->getLink()
+        );
+    }
+
+    public static function notifyAppointmentScheduled(Appointment $appointment)
+    {
+        self::deliver(
+            $appointment->InvitedMembers()->column('ID'),
+            $appointment->Organisations()->column('ID'),
+            'events',
+            '📅 Neuer Termin festgelegt',
+            $appointment->Title . ' am ' . $appointment->RenderDate(),
+            $appointment->getLink()
+        );
+    }
+
+    public static function notifyAppointmentCancelled(Appointment $appointment)
+    {
+        self::deliver(
+            $appointment->InvitedMembers()->column('ID'),
+            $appointment->Organisations()->column('ID'),
+            'events',
+            '❌ Termin abgesagt',
+            $appointment->Title . ' am ' . $appointment->RenderDate() . ' wurde abgesagt.',
+            $appointment->getLink()
+        );
+    }
+
+    public static function notifyPollCreated(SchedulingPoll $poll)
+    {
+        self::deliver(
+            $poll->InvitedMembers()->column('ID'),
+            $poll->Organisations()->column('ID'),
+            'events',
+            '🗳️ Neue Terminfindung',
+            $poll->Title,
+            $poll->getLink()
+        );
+    }
+
+    // ── Feed ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Neuer Feed-Beitrag im Namen einer Organisation — an deren Mitglieder (außer
+     * dem Verfasser)
+     */
+    public static function notifyNewFeedPost(FeedPost $post): void
+    {
+        $org = $post->Organization();
+        if (!$org || !$org->exists()) {
+            return;
+        }
+
+        $event = $post->EventID ? $post->Event() : null;
+        // Geteiltes Event ohne eigenen Text: das Event nennen
+        $body = $post->getExcerpt() ?: ($event && $event->exists() ? '📅 ' . $event->Title : '');
+
+        self::deliver(
+            self::orgMemberIDs($org),
+            self::orgIDs($org),
+            'announcements',
+            '📢 ' . $org->Title,
+            $body,
+            $post->getLink(),
+            [$post->AuthorID]
+        );
+    }
+
+    // ── Organisationen ───────────────────────────────────────────────────────
+
+    /** Neue Bewerbung — an alle, die Mitglieder der Organisation verwalten dürfen */
+    public static function notifyNewApplication(OrganizationMembership $membership): void
+    {
+        $org = $membership->Organization();
+        $applicant = $membership->Member();
+
+        if (!$org || !$org->exists() || !$applicant || !$applicant->exists()) {
+            return;
+        }
+
+        self::deliver(
+            self::orgMemberIDsWithPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS),
+            self::orgIDs($org),
+            'applications',
+            '📋 Neue Bewerbung',
+            $applicant->FirstName . ' ' . $applicant->Surname . ' möchte "' . $org->Title . '" beitreten.',
+            '/app/organizations?applicants=' . $org->ID
+        );
+    }
+
+    // ── Lagepläne ────────────────────────────────────────────────────────────
+
+    /** Neuer Lageplan — an die Mitglieder der Organisation, der er gehört (außer dem Autor) */
     public static function notifyNewMap(Map $map)
     {
-        $title = 'Neuer Lageplan verfügbar';
-        $body = $map->Title;
-        $url = '/app/map';
-
-        self::sendToUsers('maps', $title, $body, $url);
+        self::deliver(
+            self::orgMemberIDs($map->Parent()),
+            self::orgIDs($map->Parent()),
+            'maps',
+            '🗺️ Neuer Lageplan verfügbar',
+            (string) $map->Title,
+            '/app/map/' . $map->ID,
+            [$map->AuthorID]
+        );
     }
 
-    /**
-     * Send notification for new meal
-     */
+    // ── Essen ────────────────────────────────────────────────────────────────
+
+    /** Neue Mahlzeit — an die zum Termin eingeladenen Personen */
     public static function notifyNewMeal(Meal $meal)
     {
-        $title = 'Neuer Essensvorschlag';
-        $body = $meal->Title;
-        $url = '/app/food';
+        $appointment = $meal->Parent();
+        if (!$appointment || !$appointment->exists()) {
+            return;
+        }
 
-        self::sendToUsers('meals', $title, $body, $url);
+        self::deliver(
+            $appointment->InvitedMembers()->column('ID'),
+            $appointment->Organisations()->column('ID'),
+            'meals',
+            '🍽️ Neue Mahlzeit',
+            $meal->Title . ' – ' . $appointment->Title . ' am ' . $appointment->RenderDate(),
+            '/app/food/meal/' . $meal->ID
+        );
     }
 
     /**
-     * Benachrichtigt alle Mitglieder mit FOOD_APPROVE_SUGGESTIONS in der Organisation
-     * über einen neuen, noch offenen Essens-Vorschlag.
+     * Neuer, noch offener Essens-Vorschlag für eine Mahlzeit — an alle mit
+     * FOOD_APPROVE_SUGGESTIONS in der Organisation des Termins
      */
     public static function notifyFoodSuggestionPending(Food $food, Meal $meal): void
     {
         $appointment = $meal->Parent();
         $org = ($appointment && $appointment->exists()) ? $appointment->Organisations()->first() : null;
-        if (!$org || !$org->exists()) {
-            return;
-        }
 
-        $supplier = $food->Supplier();
-        $title    = '🍽️ Neuer Essens-Vorschlag';
-        $body     = ($supplier && $supplier->exists() ? trim($supplier->FirstName . ' ' . $supplier->Surname) . ' schlägt "' : 'Vorschlag: "')
-            . $food->Title . '" für "' . $meal->Title . '" vor.';
-        $url      = '/app/food/meal/' . $meal->ID;
-
-        $candidateMemberships = OrganizationMembership::get()->filter([
-            'OrganizationID' => $org->ID,
-            'Role'           => 'member',
-        ]);
-
-        foreach ($candidateMemberships as $candidateMembership) {
-            $approver = $candidateMembership->Member();
-            if (!$approver || !$approver->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
-                continue;
-            }
-
-            self::saveNotification($approver->ID, 'meals', $title, $body, $url);
-
-            if ($approver->NotifyMeals) {
-                self::sendToMember($approver, $title, $body, $url);
-            }
-        }
+        self::deliver(
+            self::orgMemberIDsWithPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS),
+            self::orgIDs($org),
+            'meals',
+            '🍽️ Neuer Essens-Vorschlag',
+            self::suggestionText($food, $meal->Title),
+            '/app/food/meal/' . $meal->ID,
+            [$food->SupplierID]
+        );
     }
 
-    /**
-     * Benachrichtigt den Vorschlagenden über die Entscheidung des Essensorganisators.
-     */
     /**
      * Neuer Vorschlag für ein Event (noch ohne Mahlzeit): an alle Essensplaner der
      * Organisation, mit Link direkt in den Planer dieses Events.
      */
     public static function notifyFoodSuggestionForEvent(Food $food, OrgEvent $event): void
     {
-        $org = $event->Organization();
-        if (!$org || !$org->exists()) {
-            return;
-        }
-
-        $supplier = $food->Supplier();
-        $title    = '🍽️ Neuer Essens-Vorschlag';
-        $body     = ($supplier && $supplier->exists() ? trim($supplier->FirstName . ' ' . $supplier->Surname) . ' schlägt "' : 'Vorschlag: "')
-            . $food->Title . '" für "' . $event->Title . '" vor.';
-        $url      = '/app/food?tab=plan&event=' . $event->ID;
-
-        foreach (OrganizationMembership::get()->filter(['OrganizationID' => $org->ID, 'Role' => 'member']) as $membership) {
-            $planner = $membership->Member();
-            if (!$planner || !$planner->hasOrgPermission($org, OrgPermissions::FOOD_APPROVE_SUGGESTIONS)) {
-                continue;
-            }
-            self::saveNotification($planner->ID, 'meals', $title, $body, $url);
-            if ($planner->NotifyMeals) {
-                self::sendToMember($planner, $title, $body, $url);
-            }
-        }
+        self::deliver(
+            self::orgMemberIDsWithPermission($event->Organization(), OrgPermissions::FOOD_APPROVE_SUGGESTIONS),
+            self::orgIDs($event->Organization()),
+            'meals',
+            '🍽️ Neuer Essens-Vorschlag',
+            self::suggestionText($food, $event->Title),
+            '/app/food?tab=plan&event=' . $event->ID,
+            [$food->SupplierID]
+        );
     }
 
-    public static function notifyFoodSuggestionDecision(Food $food): void
+    private static function suggestionText(Food $food, ?string $target): string
     {
         $supplier = $food->Supplier();
-        if (!$supplier || !$supplier->exists()) {
-            return;
-        }
-
-        $accepted = $food->Status === 'Accepted';
-        $title    = $accepted ? '✅ Vorschlag bestätigt' : '❌ Vorschlag abgelehnt';
-        $body     = 'Dein Vorschlag "' . $food->Title . '" wurde ' . ($accepted ? 'bestätigt' : 'abgelehnt') . '.';
-        $url      = '/app/food';
-
-        self::saveNotification($supplier->ID, 'meals', $title, $body, $url);
-
-        if ($supplier->NotifyMeals) {
-            self::sendToMember($supplier, $title, $body, $url);
-        }
+        return ($supplier && $supplier->exists() ? trim($supplier->FirstName . ' ' . $supplier->Surname) . ' schlägt "' : 'Vorschlag: "')
+            . $food->Title . '" für "' . $target . '" vor.';
     }
 
+    /** Entscheidung des Essensplaners — an die vorschlagende Person */
+    public static function notifyFoodSuggestionDecision(Food $food): void
+    {
+        $accepted = $food->Status === 'Accepted';
+        // Organisation des Vorschlags, sonst die des Events bzw. des Termins der Mahlzeit
+        $orgs = [$food->Parent()];
+        $event = $food->Event();
+        if ($event->exists()) {
+            $orgs[] = $event->Organization();
+        }
+        foreach ($food->Meals() as $meal) {
+            $appointment = $meal->Parent();
+            if ($appointment && $appointment->exists()) {
+                array_push($orgs, ...$appointment->Organisations()->toArray());
+            }
+        }
+
+        self::deliver(
+            [$food->SupplierID],
+            self::orgIDs(...$orgs),
+            'meals',
+            $accepted ? '✅ Vorschlag bestätigt' : '❌ Vorschlag abgelehnt',
+            'Dein Vorschlag "' . $food->Title . '" wurde ' . ($accepted ? 'bestätigt' : 'abgelehnt') . '.',
+            '/app/food'
+        );
+    }
+
+    // ── Inventar ─────────────────────────────────────────────────────────────
+
     /**
-     * Benachrichtigt über einen neuen Ausleih-Antrag: bei Org-Inventar alle Mitglieder
-     * mit INVENTORY_APPROVE_RENTALS (außer der antragstellenden Person), bei privatem
-     * Equipment nur dessen Besitzer.
+     * Neuer Ausleih-Antrag: bei Org-Inventar alle Mitglieder mit INVENTORY_APPROVE_RENTALS
+     * (außer der antragstellenden Person), bei privatem Equipment nur dessen Besitzer.
      */
     public static function notifyRentalRequested(InventoryRental $rental): void
     {
@@ -362,17 +408,11 @@ class PushNotificationService
 
         // Privates Equipment: nur der Besitzer entscheidet und wird benachrichtigt
         if ($rental->isPrivateLending()) {
-            $lender = $rental->Lender();
-            if ($lender && $lender->exists()) {
-                $body = str_replace(' ausleihen (', ' von dir ausleihen (', $body);
-                if ($rental->isPrivateUse()) {
-                    $body = rtrim($body, '.') . ' für private Zwecke.';
-                }
-                self::saveNotification($lender->ID, 'inventory', $title, $body, $url);
-                if ($lender->NotifyInventory) {
-                    self::sendToMember($lender, $title, $body, $url);
-                }
+            $body = str_replace(' ausleihen (', ' von dir ausleihen (', $body);
+            if ($rental->isPrivateUse()) {
+                $body = rtrim($body, '.') . ' für private Zwecke.';
             }
+            self::deliver([$rental->LenderID], null, 'inventory', $title, $body, $url);
             return;
         }
 
@@ -384,29 +424,20 @@ class PushNotificationService
             $body = rtrim($body, '.') . ' für ' . $context->Title . '.';
         }
 
-        $candidateMemberships = OrganizationMembership::get()->filter([
-            'OrganizationID' => $org->ID,
-            'Role'           => 'member',
-        ])->exclude('MemberID', $rental->MemberID ?: 0);
-
-        foreach ($candidateMemberships as $candidateMembership) {
-            $approver = $candidateMembership->Member();
-            if (!$approver || !$approver->hasOrgPermission($org, OrgPermissions::INVENTORY_APPROVE_RENTALS)) {
-                continue;
-            }
-
-            self::saveNotification($approver->ID, 'inventory', $title, $body, $url);
-
-            if ($approver->NotifyInventory) {
-                self::sendToMember($approver, $title, $body, $url);
-            }
-        }
+        self::deliver(
+            self::orgMemberIDsWithPermission($org, OrgPermissions::INVENTORY_APPROVE_RENTALS),
+            self::orgIDs($org),
+            'inventory',
+            $title,
+            $body,
+            $url,
+            [$rental->MemberID]
+        );
     }
 
     /**
-     * Benachrichtigt den Verleiher über einen gemeldeten Schaden: bei privatem
-     * Equipment den Besitzer, sonst die Genehmiger der verleihenden Organisation
-     * (jeweils nicht die meldende Person selbst).
+     * Gemeldeter Schaden: bei privatem Equipment an den Besitzer, sonst an die Genehmiger
+     * der verleihenden Organisation (jeweils nicht die meldende Person selbst).
      */
     public static function notifyDamageReported(InventoryDamageReport $report): void
     {
@@ -416,58 +447,41 @@ class PushNotificationService
         }
 
         $reporter = $report->ReportedBy();
-        $title = $report->MakesUnusable ? '⚠️ Schaden gemeldet – unbenutzbar' : '⚠️ Schaden gemeldet';
-        $body  = ($reporter->exists() ? $reporter->getDisplayName() : 'Jemand') . ' hat einen Schaden an „'
-            . $report->getTargetTitle() . '“ gemeldet.';
-        $url   = '/app/inventory/rentals/' . $rental->ID;
+        $private = $rental->isPrivateLending();
+        $org = $private ? null : $rental->getSourceOrganization();
 
-        $recipients = [];
-        if ($rental->isPrivateLending()) {
-            $recipients[] = $rental->Lender();
-        } elseif ($org = $rental->getSourceOrganization()) {
-            foreach (OrganizationMembership::get()->filter(['OrganizationID' => $org->ID, 'Role' => 'member']) as $membership) {
-                $candidate = $membership->Member();
-                if ($candidate && $candidate->hasOrgPermission($org, OrgPermissions::INVENTORY_APPROVE_RENTALS)) {
-                    $recipients[] = $candidate;
-                }
-            }
-        }
-
-        foreach ($recipients as $recipient) {
-            if (!$recipient || !$recipient->exists() || (int) $recipient->ID === (int) $report->ReportedByID) {
-                continue;
-            }
-            self::saveNotification($recipient->ID, 'inventory', $title, $body, $url);
-            if ($recipient->NotifyInventory) {
-                self::sendToMember($recipient, $title, $body, $url);
-            }
-        }
+        self::deliver(
+            $private ? [$rental->LenderID] : self::orgMemberIDsWithPermission($org, OrgPermissions::INVENTORY_APPROVE_RENTALS),
+            $private ? null : self::orgIDs($org),
+            'inventory',
+            $report->MakesUnusable ? '⚠️ Schaden gemeldet – unbenutzbar' : '⚠️ Schaden gemeldet',
+            ($reporter->exists() ? $reporter->getDisplayName() : 'Jemand') . ' hat einen Schaden an „'
+                . $report->getTargetTitle() . '“ gemeldet.',
+            '/app/inventory/rentals/' . $rental->ID,
+            [$report->ReportedByID]
+        );
     }
 
-    /**
-     * Benachrichtigt die antragstellende Person über Genehmigung oder Ablehnung.
-     */
+    /** Genehmigung oder Ablehnung — an die antragstellende Person */
     public static function notifyRentalDecision(InventoryRental $rental): void
     {
-        $requester = $rental->Member();
-        if (!$requester || !$requester->exists()) {
-            return;
-        }
-
         $approved = $rental->Status === 'approved';
-        $title    = $approved ? '✅ Ausleihe genehmigt' : '❌ Ausleihe abgelehnt';
         $body     = 'Deine Ausleihe (' . self::formatDateRange($rental->StartDate, $rental->EndDate) . ') wurde '
             . ($approved ? 'genehmigt' : 'abgelehnt') . '.';
         if ($approved && $rental->UsageCondition !== 'free') {
             $body .= ' Auflage: ' . (InventoryRental::CONDITION_LABELS[$rental->UsageCondition] ?? $rental->UsageCondition) . '.';
         }
-        $url      = '/app/inventory/rentals/' . $rental->ID;
 
-        self::saveNotification($requester->ID, 'inventory', $title, $body, $url);
-
-        if ($requester->NotifyInventory) {
-            self::sendToMember($requester, $title, $body, $url);
-        }
+        // Privat verliehenes Equipment ist persönlich; sonst muss die Person der verleihenden
+        // oder der ausleihenden Organisation angehören
+        self::deliver(
+            [$rental->MemberID],
+            $rental->isPrivateLending() ? null : self::orgIDs($rental->getSourceOrganization(), $rental->Organization()),
+            'inventory',
+            $approved ? '✅ Ausleihe genehmigt' : '❌ Ausleihe abgelehnt',
+            $body,
+            '/app/inventory/rentals/' . $rental->ID
+        );
     }
 
     private static function formatDateRange(?string $start, ?string $end): string
@@ -476,90 +490,121 @@ class PushNotificationService
         return $start === $end ? $format($start) : $format($start) . ' – ' . $format($end);
     }
 
-    /**
-     * Get members who want to receive notification of specific type
-     */
-    private static function getMembersForNotification($type, $excludeMembers = [])
-    {
-        $field = 'Notify' . ucfirst($type);
-
-        $membersWithTokens = NotificationToken::get()->column('MemberID');
-
-        if (empty($membersWithTokens)) {
-            return [];
-        }
-
-        $memberIDs = Member::get()
-            ->filter(['ID' => $membersWithTokens, $field => true])
-            ->column('ID');
-
-        if (!empty($excludeMembers)) {
-            $excludeIDs = array_map(fn($m) => is_object($m) ? $m->ID : $m, $excludeMembers);
-            $memberIDs = array_diff($memberIDs, $excludeIDs);
-        }
-
-        return array_values($memberIDs);
-    }
+    // ── Firebase Cloud Messaging ─────────────────────────────────────────────
 
     /**
-     * Send actual FCM notification
+     * Send actual FCM notification. Ungültige Tokens (App deinstalliert, Berechtigung
+     * entzogen, abgelaufen) werden dabei aus der DB entfernt.
      */
-    private static function sendNotification($token, $title, $body, $url = null)
+    private static function sendNotification($token, $title, $body, $url = null): bool
     {
-        if (!self::$cachedAccessToken) {
-            self::$cachedAccessToken = self::getAccessToken();
-        }
+        $accessToken = self::getCachedAccessToken();
+        $projectId = self::getProjectId();
 
-        $accessToken = self::$cachedAccessToken;
-
-        if (!$accessToken) {
-            error_log('Failed to get FCM access token');
+        if (!$accessToken || !$projectId) {
+            error_log('FCM: kein Access-Token oder keine Projekt-ID — Push nicht gesendet');
             return false;
         }
 
-        $projectId = Environment::getEnv('VITE_FIREBASE_PROJECT_ID');        // Use data-only messages to avoid duplicate notifications
-        // Service Worker will handle creating the notification
+        // Data-only, damit nur der Service Worker die Benachrichtigung anzeigt (keine
+        // Duplikate). FCM verlangt dabei ausschließlich String-Werte.
         $data = [
             'message' => [
                 'token' => $token,
                 'data' => [
-                    'title' => $title,
-                    'body' => $body,
-                    'url' => $url ?? '/'
+                    'title' => (string) $title,
+                    'body' => (string) $body,
+                    'url' => (string) ($url ?: '/app/dashboard')
+                ],
+                // Ohne "high" stellen mobile Browser Pushes im Energiesparmodus u. U.
+                // stark verzögert zu; nach einem Tag ist die Benachrichtigung hinfällig
+                'webpush' => [
+                    'headers' => [
+                        'Urgency' => 'high',
+                        'TTL' => '86400'
+                    ]
                 ]
             ]
         ];
 
-        $headers = [
-            'Authorization: Bearer ' . $accessToken,
-            'Content-Type: application/json'
-        ];
+        [$httpCode, $result] = self::postMessage($projectId, $accessToken, $data);
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send");
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        // Access-Token abgelaufen (lange laufender Prozess) — einmal neu holen
+        if ($httpCode === 401) {
+            self::$cachedAccessToken = null;
+            $accessToken = self::getCachedAccessToken();
+            if ($accessToken) {
+                [$httpCode, $result] = self::postMessage($projectId, $accessToken, $data);
+            }
+        }
 
-        $result = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        if ($httpCode === 200) {
+            return true;
+        }
 
-        if ($httpCode !== 200) {
-            error_log('FCM Error (HTTP ' . $httpCode . '): ' . $result);
+        if (self::isInvalidTokenError($httpCode, (string) $result)) {
+            NotificationToken::get()->filter('Token', $token)->removeAll();
             return false;
         }
 
-        return true;
+        error_log('FCM Error (HTTP ' . $httpCode . '): ' . $result);
+        return false;
+    }
+
+    private static function postMessage(string $projectId, string $accessToken, array $data): array
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        $result = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($result === false) {
+            $result = 'cURL: ' . curl_error($ch);
+        }
+
+        return [$httpCode, $result];
     }
 
     /**
-     * Get OAuth2 access token for FCM using service account
+     * Token existiert bei FCM nicht (mehr) bzw. gehört zu einem anderen Projekt
      */
-    private static function getAccessToken()
+    private static function isInvalidTokenError(int $httpCode, string $result): bool
     {
-        $serviceAccountPath = BASE_PATH . '/firebase-service-account.json';
+        if ($httpCode === 404 || str_contains($result, 'UNREGISTERED')) {
+            return true;
+        }
+        if ($httpCode === 403 && str_contains($result, 'SENDER_ID_MISMATCH')) {
+            return true;
+        }
+        return $httpCode === 400
+            && str_contains($result, 'INVALID_ARGUMENT')
+            && str_contains($result, 'registration token');
+    }
+
+    /** Ob der Server überhaupt Pushes verschicken kann (Service-Account vorhanden) */
+    public static function isConfigured(): bool
+    {
+        return self::getServiceAccount() !== null && self::getProjectId();
+    }
+
+    private static function getProjectId(): ?string
+    {
+        return Environment::getEnv('VITE_FIREBASE_PROJECT_ID')
+            ?: (self::getServiceAccount()['project_id'] ?? null);
+    }
+
+    private static function getServiceAccount(): ?array
+    {
+        $serviceAccountPath = Environment::getEnv('FIREBASE_SERVICE_ACCOUNT_PATH')
+            ?: BASE_PATH . '/firebase-service-account.json';
 
         if (!file_exists($serviceAccountPath)) {
             error_log('Firebase service account file not found at: ' . $serviceAccountPath);
@@ -573,6 +618,32 @@ class PushNotificationService
             return null;
         }
 
+        return $serviceAccount;
+    }
+
+    /**
+     * Access-Token wiederverwenden, bis kurz vor Ablauf (gültig 1 Stunde)
+     */
+    private static function getCachedAccessToken(): ?string
+    {
+        if (!self::$cachedAccessToken || time() >= self::$cachedAccessTokenExpires) {
+            self::$cachedAccessToken = self::getAccessToken();
+            self::$cachedAccessTokenExpires = time() + 3000;
+        }
+
+        return self::$cachedAccessToken;
+    }
+
+    /**
+     * Get OAuth2 access token for FCM using service account
+     */
+    private static function getAccessToken(): ?string
+    {
+        $serviceAccount = self::getServiceAccount();
+
+        if (!$serviceAccount) {
+            return null;
+        }
         // Create JWT
         $now = time();
         $payload = [
@@ -609,8 +680,6 @@ class PushNotificationService
         ]));
 
         $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
 
         $data = json_decode($response, true);
 

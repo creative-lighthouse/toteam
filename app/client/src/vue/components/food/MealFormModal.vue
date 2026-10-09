@@ -1,8 +1,8 @@
 <!--
-  Mahlzeit anlegen, bearbeiten und (optional) löschen — genutzt im Termin-Dialog
-  und auf der Mahlzeit-Detailseite.
+  Mahlzeit anlegen, bearbeiten und löschen — überall gleich: im Termin-Dialog,
+  im Essensplaner und auf der Mahlzeit-Detailseite.
 
-    <MealFormModal ref="mealModal" :appointment-id="event.ID" deletable @saved="…" @deleted="…" />
+    <MealFormModal ref="mealModal" :appointment-id="event.ID" @saved="…" @deleted="…" />
     mealModal.value.open()                         // neue Mahlzeit für appointmentId
     mealModal.value.open({ id, title, time, description, acceptsContributions })  // bearbeiten
 
@@ -36,10 +36,20 @@
     </form>
 
     <template #actions>
-      <AppButton v-if="isEdit && deletable" variant="danger" :disabled="saving" @click="remove">Löschen</AppButton>
+      <AppIconButton
+        v-if="isEdit"
+        variant="danger"
+        class="meal-form-modal_delete"
+        aria-label="Mahlzeit löschen"
+        title="Löschen"
+        :disabled="saving"
+        @click="remove"
+      >
+        <span class="icon-mask" :style="trashIconStyle" />
+      </AppIconButton>
       <AppButton variant="secondary" :disabled="saving" @click="close">Abbrechen</AppButton>
       <AppButton type="submit" form="meal-form" variant="primary" :disabled="saving || !form.title.trim() || !form.time">
-        {{ saving ? 'Speichern…' : 'Speichern' }}
+        {{ saving ? 'Speichern…' : (isEdit ? 'Speichern' : 'Hinzufügen') }}
       </AppButton>
     </template>
   </AppModal>
@@ -49,15 +59,17 @@
 import { ref, computed } from 'vue'
 import { useEventsStore } from '@stores/events'
 import AppButton from '@components/ui/AppButton.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppModal from '@components/ui/AppModal.vue'
 import AppTextField from '@components/ui/AppTextField.vue'
 import AppToggle from '@components/ui/AppToggle.vue'
+import actionTrash from '../../../../icons/actions/action_trash.svg'
+
+const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 
 const props = defineProps({
   // Termin, zu dem neue Mahlzeiten angelegt werden (nur fürs Anlegen nötig)
   appointmentId: { type: Number, default: null },
-  // Zeigt beim Bearbeiten einen Löschen-Button
-  deletable: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['saved', 'deleted'])

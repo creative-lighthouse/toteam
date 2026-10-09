@@ -121,7 +121,7 @@ class OrgPermissions
                 self::MARKETING_MANAGE_ENTRIES => 'Fremde Verteil-Einträge bearbeiten/löschen',
             ],
             'Mitteilungen' => [
-                self::ANNOUNCEMENTS_CREATE => 'Mitteilungen erstellen',
+                self::ANNOUNCEMENTS_CREATE => 'Im Feed im Namen der Organisation posten',
             ],
             'Inventar' => [
                 self::INVENTORY_CREATE => 'Inventar anlegen',

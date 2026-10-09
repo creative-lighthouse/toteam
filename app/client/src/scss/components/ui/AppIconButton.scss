@@ -78,10 +78,11 @@
         object-fit: contain;
     }
 
-    // Icon-Buttons füllen einen größeren Anteil ihrer runden Fläche als die
-    // 16px-Icons in Text+Icon-Buttons (siehe generische .icon-mask-Regel unten).
+    // Einheitliche Icon-Größe für alle Icon-Buttons (etwas größer als die
+    // 16px-Icons in Text+Icon-Buttons, siehe base/icon-mask.scss) — bitte nicht
+    // pro Komponente überschreiben.
     .icon-mask {
-        width: 72%;
-        height: 72%;
+        width: 18px;
+        height: 18px;
     }
 }

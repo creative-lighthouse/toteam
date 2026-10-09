@@ -3,7 +3,7 @@
 .section.section--SuggestionPage {
     .section_content {
         .suggestion {
-            border: 1px solid var(--ColorBorder);
+            border: 1px solid var(--ColorLightGray);
             border-radius: var(--BorderRadiusMedium);
             padding: 15px;
             margin-bottom: 15px;
@@ -18,7 +18,7 @@
             p {
                 margin: 0;
                 font-size: 14px;
-                color: var(--ColorText);
+                color: var(--ColorBlack);
             }
 
             .btn_markone{
@@ -29,7 +29,7 @@
 
         .section_newsuggestions{
             .btn_markall{
-                background-color: var(--ColorExtraDarkGray);
+                background-color: var(--ColorPrimary);
                 color: var(--ColorWhite);
                 padding: 8px 12px;
                 border: none;
@@ -40,7 +40,7 @@
                 font-weight: 300;
 
                 &:hover {
-                    background-color: var(--ColorDarkGray);
+                    background-color: var(--ColorPrimaryDark);
                 }
             }
         }

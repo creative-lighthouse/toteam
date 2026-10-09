@@ -22,28 +22,23 @@
                 </div>
 
                 <p v-else-if="store.notifications.length === 0" class="AppNotifications_empty">
-                    Keine Benachrichtigungen vorhanden.
+                    Keine neuen Benachrichtigungen.
                 </p>
 
-                <ul v-else class="AppNotifications_list">
+                <TransitionGroup v-else tag="ul" name="notification-item" class="AppNotifications_list">
                     <li
                         v-for="notification in store.notifications"
                         :key="notification.id"
                         class="AppNotifications_item"
-                        :class="{
-                            'AppNotifications_item--read': notification.isRead,
-                            'AppNotifications_item--linked': notification.url
-                        }"
+                        :class="{ 'AppNotifications_item--linked': notification.url }"
                     >
                         <!-- Inhalt als Button: öffnet das Ziel (und markiert als gelesen), auch per Tastatur -->
                         <button type="button" class="AppNotifications_item_content" @click="navigateTo(notification)">
-                            <span v-if="!notification.isRead" class="AppNotifications_sr-only">Ungelesen: </span>
                             <span class="AppNotifications_item_title">{{ notification.title }}</span>
                             <span class="AppNotifications_item_body">{{ notification.body }}</span>
                             <span class="AppNotifications_item_date">{{ formatDate(notification.created) }}</span>
                         </button>
                         <AppIconButton
-                            v-if="!notification.isRead"
                             variant="ghost"
                             class="AppNotifications_item_close"
                             :aria-label="`„${notification.title}“ als gelesen markieren`"
@@ -52,10 +47,10 @@
                     </li>
 
                     <!-- Infinite scroll sentinel -->
-                    <li v-if="store.hasMore" ref="sentinel" class="AppNotifications_sentinel">
+                    <li v-if="store.hasMore" key="sentinel" ref="sentinel" class="AppNotifications_sentinel">
                         <span v-if="store.loadingMore" class="AppNotifications_loading_more">Lade...</span>
                     </li>
-                </ul>
+                </TransitionGroup>
             </div>
         </aside>
     </Transition>
@@ -107,10 +102,8 @@
         }
     })
 
-    async function navigateTo(notification) {
-        if (!notification.isRead) {
-            await store.markAsRead(notification.id)
-        }
+    function navigateTo(notification) {
+        store.markAsRead(notification.id)
         if (notification.url) {
             // Strip the /app prefix since Vue router already knows it
             const path = notification.url.replace(/^\/app/, '') || '/'

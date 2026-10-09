@@ -1,0 +1,12 @@
+@use "../../base/variables" as *;
+
+// Konfiguration des ICS-Abo-Links (CalendarIcsLinkModal.vue)
+.calendar-ics-link-modal {
+    // .modalform ist ein 6-Spalten-Grid — Hinweise gehen über die volle Breite
+    .calendar-ics-link-modal_hint {
+        grid-column: 1 / -1;
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+}

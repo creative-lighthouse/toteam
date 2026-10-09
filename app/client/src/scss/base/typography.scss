@@ -39,7 +39,7 @@ p {
 
 a {
     cursor: pointer;
-    color: var(--ColorLink);
+    color: inherit;
     text-decoration: none;
 }
 
@@ -121,8 +121,8 @@ a {
 }
 
 .link--button {
-    background-color: var(--ColorButton);
-    color: var(--ColorButtonText);
+    background-color: var(--ColorPrimary);
+    color: var(--ColorWhite);
     display: inline-block;
     font-size: 16px;
     text-wrap: nowrap;
@@ -134,7 +134,7 @@ a {
     align-self: flex-end;
 
     &:hover {
-        background-color: var(--ColorButtonHover);
+        background-color: var(--ColorPrimaryDark);
     }
 
     @include media(max-desktop) {
@@ -149,7 +149,7 @@ kbd {
     width: auto;
     border-radius: var(--BorderRadiusSmall);
     border: 1px solid #b4b4b4;
-    color: #333333;
+    color: var(--ColorDarkGray);
     display: inline-block;
     font-size: 0.85em;
     font-weight: 700;

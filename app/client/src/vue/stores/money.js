@@ -9,6 +9,17 @@ export const useMoneyStore = defineStore('money', () => {
   const currentEntry = ref(null)
   const loading = ref(false)
   const error = ref(null)
+  // Noch nicht genehmigte Buchungen, die man genehmigen darf — für die Zahl im Hauptmenü
+  const pendingEntries = ref(0)
+
+  async function fetchPendingCount() {
+    try {
+      const response = await apiGet('/money/pendingCount', false)
+      pendingEntries.value = response.pendingEntries || 0
+    } catch {
+      // Ohne Verbindung bleibt die letzte Zahl stehen
+    }
+  }
 
   async function fetchOverview(forceRefresh = false) {
     try {
@@ -132,6 +143,7 @@ export const useMoneyStore = defineStore('money', () => {
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
+      fetchPendingCount()
     }
     return response
   }
@@ -141,6 +153,7 @@ export const useMoneyStore = defineStore('money', () => {
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
+      fetchPendingCount()
     }
     return response
   }
@@ -150,6 +163,7 @@ export const useMoneyStore = defineStore('money', () => {
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
+      fetchPendingCount()
     }
     return response
   }
@@ -159,6 +173,7 @@ export const useMoneyStore = defineStore('money', () => {
     if (response.success) {
       if (response.data?.account) currentAccount.value = response.data.account
       await clearCacheForEndpoint('/money')
+      fetchPendingCount()
     }
     return response
   }
@@ -172,6 +187,31 @@ export const useMoneyStore = defineStore('money', () => {
     return response
   }
 
+  // ── Kassen eines Events (Event-Seite) ──
+  // Alle Aufrufe liefern den vollständigen Stand: { accounts, availableAccounts, CanCreate }
+
+  async function fetchEventAccounts(eventId) {
+    const response = await apiGet(`/money/eventAccounts/${eventId}`, false)
+    if (response?.success === false) throw new Error(response.error || 'Kassen konnten nicht geladen werden')
+    return response
+  }
+
+  async function eventAccountMutation(promise, fallbackError) {
+    const response = await promise
+    if (!response?.success) throw new Error(response?.error || fallbackError)
+    await clearCacheForEndpoint('/money')
+    return response.data
+  }
+
+  /** data: { AccountID } für eine vorhandene Kasse oder { Title, TargetAmount? } für eine neue */
+  function attachEventAccount(eventId, data) {
+    return eventAccountMutation(apiPost(`/money/eventAccountAttach/${eventId}`, data), 'Kasse konnte nicht hinzugefügt werden')
+  }
+
+  function detachEventAccount(eventId, accountId) {
+    return eventAccountMutation(apiDelete(`/money/eventAccountDetach/${eventId}?account=${accountId}`), 'Kasse konnte nicht gelöst werden')
+  }
+
   return {
     accounts,
     currentAccount,
@@ -179,6 +219,8 @@ export const useMoneyStore = defineStore('money', () => {
     currentEntry,
     loading,
     error,
+    pendingEntries,
+    fetchPendingCount,
     fetchOverview,
     fetchAccount,
     fetchBudgetEntries,
@@ -195,5 +237,8 @@ export const useMoneyStore = defineStore('money', () => {
     approveEntry,
     removeEntry,
     settleEntry,
+    fetchEventAccounts,
+    attachEventAccount,
+    detachEventAccount,
   }
 })

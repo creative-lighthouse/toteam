@@ -1,0 +1,37 @@
+@use "../../base/variables" as *;
+
+// Event-Lageplan in der Lageplan-Übersicht (MapEventPlanLink.vue) — Karte und
+// Vorschaubild kommen von .map-entry in MapPage.scss
+.map-event-plan-link {
+    display: block;
+    color: inherit;
+
+    p {
+        margin: 0;
+    }
+
+    .map-event-plan-link_event {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 10px;
+    }
+
+    .map-event-plan-link_event-title {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--ColorPrimary);
+    }
+
+    .map-event-plan-link_event-date {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .map-event-plan-link_meta {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+}

@@ -1,0 +1,12 @@
+@use "../../base/variables" as *;
+
+// Skript zu einem Event hinzufügen (OrgEventScriptAddModal.vue)
+.org-event-script-add-modal {
+    .org-event-script-add-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+        // .modalform ist ein 6-Spalten-Grid — der Hinweis geht über die volle Breite
+        grid-column: 1 / -1;
+    }
+}

@@ -195,25 +195,6 @@
 
 // ── Meal products ─────────────────────────────────────────────────────────────
 
-.meal-product-add-row {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-
-    label {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 0.8rem;
-        font-weight: 600;
-
-        input { width: 100%; }
-    }
-
-    .button { margin: 0; flex-shrink: 0; }
-}
-
 .meal-product-item {
     background: var(--ColorVeryLightGray);
     border-radius: var(--BorderRadiusSmall);
@@ -270,22 +251,6 @@
         color: var(--ColorGray);
 
         &::before { content: '·'; margin-right: 4px; }
-    }
-}
-
-.meal-food-edit-form {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex-basis: 100%;
-    padding: 10px;
-    background: var(--ColorVeryLightGray);
-    border-radius: var(--BorderRadiusSmall);
-
-    .form-control {
-        padding: 7px 10px;
-        border: 1px solid var(--ColorLightGray);
-        border-radius: var(--BorderRadiusSmall);
     }
 }
 

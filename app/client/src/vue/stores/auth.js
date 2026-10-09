@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiPost, setAccessToken, refreshAccessToken } from '@utils/api'
+import { unregisterPushToken } from '@utils/push'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -204,6 +205,8 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout() {
     try {
       loading.value = true
+      // Solange der Access-Token noch gilt: dieses Gerät bekommt keine Pushes mehr
+      await unregisterPushToken()
       await apiPost('/auth/logout')
     } catch (err) {
       console.error('Logout failed:', err)

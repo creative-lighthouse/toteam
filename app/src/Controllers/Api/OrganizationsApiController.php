@@ -29,6 +29,7 @@ class OrganizationsApiController extends ApiController
         'accept',
         'reject',
         'uploadLogo',
+        'pendingCount',
     ];
 
     protected function getDefaultAction()
@@ -299,6 +300,30 @@ class OrganizationsApiController extends ApiController
         return $this->successResponse([
             'MembershipStatus' => $role,
         ], $role === 'member' ? 'Erfolgreich beigetreten' : 'Bewerbung erfolgreich eingereicht');
+    }
+
+    /**
+     * GET /api/v1/organizations/pendingCount — Zahl für das Hauptmenü: offene
+     * Bewerbungen in allen eigenen Organisationen, in denen man Mitglieder annehmen darf
+     */
+    public function pendingCount(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $orgIDs = [];
+        foreach (Organization::get()->filter('ID', $member->getOrganizationIDs() ?: [0]) as $org) {
+            if ($member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
+                $orgIDs[] = $org->ID;
+            }
+        }
+        $count = $orgIDs
+            ? OrganizationMembership::get()->filter(['OrganizationID' => $orgIDs, 'Role' => 'applicant'])->count()
+            : 0;
+
+        return $this->jsonResponse(['pendingApplicants' => $count]);
     }
 
     public function applicants(HTTPRequest $request): HTTPResponse

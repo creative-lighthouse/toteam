@@ -42,6 +42,7 @@ use SilverStripe\Forms\TimeField;
  * @property ?string $Status
  * @property bool $EnableMeals
  * @property bool $EnableAgenda
+ * @property bool $EnableRoleCasting
  * @property int $ImageID
  * @property int $TypeID
  * @property int $EventID
@@ -49,6 +50,7 @@ use SilverStripe\Forms\TimeField;
  * @method \App\Calendar\AppointmentType Type()
  * @method \App\Teams\OrgEvent Event()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentParticipation[] Participations()
+ * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentParticipationStash[] ParticipationStashes()
  * @method \SilverStripe\ORM\DataList|\App\Food\Meal[] Meals()
  * @method \SilverStripe\ORM\DataList|\App\Calendar\AppointmentAgendaPoint[] AgendaPoints()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] Organisations()
@@ -78,6 +80,9 @@ class Appointment extends DataObject implements PermissionProvider
 
         "EnableMeals" => "Boolean(1)",
         "EnableAgenda" => "Boolean(1)",
+        // Rollenplan: an den Tagen dieses Termins werden die Skript-Rollen des Events
+        // zugeteilt (siehe ScriptRoleAssignment) — nur sinnvoll mit Event
+        "EnableRoleCasting" => "Boolean",
     ];
 
     private static $has_one = [
@@ -96,6 +101,12 @@ class Appointment extends DataObject implements PermissionProvider
         'Participations' => AppointmentParticipation::class,
         'Meals' => Meal::class,
         'AgendaPoints' => AppointmentAgendaPoint::class,
+        // Zurückgelegte Angaben nach "Keine Antwort" (siehe AppointmentParticipationStash)
+        'ParticipationStashes' => AppointmentParticipationStash::class,
+    ];
+
+    private static $cascade_deletes = [
+        'ParticipationStashes',
     ];
 
     private static $owns = [
@@ -123,6 +134,7 @@ class Appointment extends DataObject implements PermissionProvider
         "Status" => "Status",
         "EnableMeals" => "Mahlzeiten aktiviert",
         "EnableAgenda" => "Tagesordnung aktiviert",
+        "EnableRoleCasting" => "Rollenplan aktiviert",
         "Organisations" => "Organisationen",
         "InvitedMembers" => "Eingeladene Mitglieder",
     ];
@@ -146,6 +158,7 @@ class Appointment extends DataObject implements PermissionProvider
         'Event',
         'EnableMeals',
         'EnableAgenda',
+        'EnableRoleCasting',
     ];
 
     private static $history_field_labels = [
