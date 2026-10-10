@@ -358,10 +358,13 @@ function toParticipation(a, type) {
   }
 }
 
+// Innerhalb jeder Gruppe alphabetisch nach Namen
+const byName = (a, b) => (a.MemberName ?? '').localeCompare(b.MemberName ?? '', 'de', { sensitivity: 'base' })
+
 const groupedAttendees = computed(() => ({
-  Accept: (meal.value?.attendees ?? []).map(a => toParticipation(a, 'Accept')),
-  Decline: (meal.value?.declinedAttendees ?? []).map(a => toParticipation(a, 'Decline')),
-  Pending: (meal.value?.pendingAttendees ?? []).map(a => toParticipation(a, 'Pending')),
+  Accept: (meal.value?.attendees ?? []).map(a => toParticipation(a, 'Accept')).sort(byName),
+  Decline: (meal.value?.declinedAttendees ?? []).map(a => toParticipation(a, 'Decline')).sort(byName),
+  Pending: (meal.value?.pendingAttendees ?? []).map(a => toParticipation(a, 'Pending')).sort(byName),
 }))
 
 // Legende nur für das zeigen, was tatsächlich jemand hinterlegt hat
