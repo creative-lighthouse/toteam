@@ -195,12 +195,12 @@ export const useStorageStore = defineStore('storage', () => {
   }
 
   /**
-   * Drag & Drop: Objekt/Fahrzeug (kind 'item'/'vehicle') oder Raum ('room') in einen
-   * Lagerpunkt legen (locationId null = "Nicht einsortiert"). In einen Lagerpunkt sofort
+   * Drag & Drop: Objekt/Fahrzeug (kind 'item'/'vehicle') in einen Lagerpunkt (auch einen
+   * Raum) legen (locationId null = "Nicht einsortiert"). In einen Lagerpunkt sofort
    * lokal übernommen; zurück nach "Nicht einsortiert" lädt neu (Gruppe nach Besitzer).
    */
   async function placeEntity(kind, entity, locationId) {
-    const listKey = kind === 'room' ? 'Rooms' : 'Items'
+    const listKey = 'Items'
     const strip = list => (list ?? []).filter(e => e.ID !== entity.ID)
     if (locationId) {
       locations.value = locations.value.map(location => {
@@ -214,7 +214,6 @@ export const useStorageStore = defineStore('storage', () => {
     }
     try {
       const response = await apiPost('/storage/place', {
-        Kind: kind === 'room' ? 'room' : 'item',
         ID: entity.ID,
         StorageLocationID: locationId ?? 0,
       })

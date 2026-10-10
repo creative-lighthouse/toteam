@@ -6,7 +6,6 @@ use App\Controllers\ApiController;
 use App\Inventory\InventoryItem;
 use App\Inventory\InventoryItemType;
 use App\Inventory\StorageLocation;
-use App\Rooms\Room;
 use App\Teams\Organization;
 use App\Teams\OrgPermissions;
 use SilverStripe\Control\Director;
@@ -78,9 +77,14 @@ class StorageApiController extends ApiController
         $type = $location->Type();
         $org = $location->Organization();
         $owner = $location->OwnerMember();
+        $room = $location->isRoom() ? $location->Room() : null;
+        $roomType = $room && $room->exists() ? $room->Type() : null;
 
         return [
             'ID'             => $location->ID,
+            // Lagerpunkt eines Raums: Raum öffnen statt bearbeiten, nur verschiebbar
+            'IsRoom'         => $location->isRoom(),
+            'Room'           => $room && $room->exists() ? ['ID' => $room->ID, 'Title' => $room->Title] : null,
             'Title'          => $location->Title,
             'Description'    => $location->Description,
             'ParentID'       => (int) $location->ParentID ?: null,
@@ -97,7 +101,10 @@ class StorageApiController extends ApiController
                 : null,
             'SharedWith'     => array_map(fn (Organization $o) => ['ID' => $o->ID, 'Title' => $o->Title], $location->getActiveSharedOrgs()),
             'TypeID'         => (int) $location->TypeID ?: null,
-            'Type'           => $type && $type->exists() ? ['ID' => $type->ID, 'Title' => $type->Title] : null,
+            // Räume: ihre Raum-Art (oder einfach "Raum")
+            'Type'           => $room
+                ? ['ID' => null, 'Title' => $roomType && $roomType->exists() ? $roomType->Title : 'Raum']
+                : ($type && $type->exists() ? ['ID' => $type->ID, 'Title' => $type->Title] : null),
             'Fields'         => $type && $type->exists() ? $type->getFieldsForApi() : [],
             // Werte der Zusatzfelder: { "<Feld-ID>": "<Wert>" }
             'Values'         => (object) $location->getMetaValueMap(),
@@ -106,7 +113,9 @@ class StorageApiController extends ApiController
             'Rooms'          => $rooms,
             // Öffentlicher Teilen-Link (auch fürs NFC-Tag) — nur für Bearbeitende
             'ShareURL'       => $location->ShareToken && $location->isEditableBy($member) ? $this->shareURL($location) : null,
+            // CanEdit = verschieben/einsortieren; Name, Art usw. nur bei normalen Lagerpunkten
             'CanEdit'        => $location->isEditableBy($member),
+            'CanEditDetails' => !$location->isRoom() && $location->isEditableBy($member),
             'CanDelete'      => $location->isDeletableBy($member),
         ];
     }
@@ -139,15 +148,6 @@ class StorageApiController extends ApiController
         ];
     }
 
-    private function formatContentRoom(Room $room, Member $member): array
-    {
-        return [
-            'ID'      => $room->ID,
-            'Title'   => $room->Title,
-            'CanEdit' => $room->isEditableBy($member),
-        ];
-    }
-
     /**
      * Objekte/Fahrzeuge und Räume in den angegebenen Lagerpunkten, gruppiert nach
      * Lagerpunkt — jeweils nur die, die der Nutzer sehen darf.
@@ -168,17 +168,13 @@ class StorageApiController extends ApiController
             }
         }
 
-        foreach (Room::get()->filter('StorageLocationID', $locationIDs) as $room) {
-            if ($room->isViewableBy($member)) {
-                $rooms[(int) $room->StorageLocationID][] = $this->formatContentRoom($room, $member);
-            }
-        }
-
+        // Räume sind keine Inhalte mehr, sondern eigene Lagerpunkte (StorageLocation::isRoom())
         return [$items, $rooms];
     }
 
     /**
-     * Sichtbare Objekte, Fahrzeuge und Räume ohne Lagerort ("Nicht einsortiert"),
+     * Sichtbare Objekte und Fahrzeuge ohne Lagerort ("Nicht einsortiert"; Räume stehen
+     * als eigene Lagerpunkte im Baum),
      * gruppiert nach Besitzer: je Organisation bzw. je Person (privates Equipment).
      * Nur Gruppen mit Inhalt; eigene private Objekte zuerst, dann nach Name.
      */
@@ -218,15 +214,6 @@ class StorageApiController extends ApiController
                 $key = $group('org:' . (int) $item->OrganizationID, (string) $org->Title, $org->RenderLogo(40), false);
             }
             $groups[$key]['Items'][] = $this->formatContentItem($item, $member);
-        }
-
-        foreach (Room::get()->filter(['StorageLocationID' => 0, 'OrganizationID' => $orgIDs ?: [0]]) as $room) {
-            if (!$room->isViewableBy($member)) {
-                continue;
-            }
-            $org = $room->Organization();
-            $key = $group('org:' . (int) $room->OrganizationID, (string) $org->Title, $org->RenderLogo(40), false);
-            $groups[$key]['Rooms'][] = $this->formatContentRoom($room, $member);
         }
 
         $groups = array_values($groups);
@@ -407,6 +394,9 @@ class StorageApiController extends ApiController
         if (!$location->isEditableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
         }
+        if ($location->isRoom()) {
+            return $this->errorResponse('Räume werden im Räume-Tab bearbeiten', 400);
+        }
 
         $body = $this->getJsonBody();
         if ($error = $this->applyBody($location, $body, $member)) {
@@ -478,9 +468,9 @@ class StorageApiController extends ApiController
     }
 
     /**
-     * POST /api/v1/storage/place { Kind: 'item'|'room', ID, StorageLocationID } — Objekt,
-     * Fahrzeug oder Raum per Drag & Drop einsortieren (StorageLocationID 0 = "Nicht
-     * einsortiert"). Erlaubt, wer das Objekt bzw. den Raum bearbeiten darf.
+     * POST /api/v1/storage/place { ID, StorageLocationID } — Objekt oder Fahrzeug
+     * per Drag & Drop einsortieren (StorageLocationID 0 = "Nicht
+     * einsortiert"). Erlaubt, wer das Objekt bearbeiten darf.
      */
     public function place(HTTPRequest $request): HTTPResponse
     {
@@ -493,9 +483,8 @@ class StorageApiController extends ApiController
         }
 
         $body = $this->getJsonBody();
-        $record = ($body['Kind'] ?? '') === 'room'
-            ? Room::get()->byID((int) ($body['ID'] ?? 0))
-            : InventoryItem::get()->byID((int) ($body['ID'] ?? 0));
+        // Räume sind eigene Lagerpunkte und werden mit move verschoben
+        $record = InventoryItem::get()->byID((int) ($body['ID'] ?? 0));
         if (!$record || !$record->exists()) {
             return $this->errorResponse('Nicht gefunden', 404);
         }
@@ -530,6 +519,9 @@ class StorageApiController extends ApiController
         }
         if (!$location->isEditableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);
+        }
+        if ($location->isRoom()) {
+            return $this->errorResponse('Räume haben ihren eigenen Teilen-Link im Räume-Tab', 400);
         }
 
         if (!empty($this->getJsonBody()['Revoke'])) {
@@ -570,7 +562,7 @@ class StorageApiController extends ApiController
                     $data['Children'][] = [
                         'ID'    => $child->ID,
                         'Title' => $child->Title,
-                        'Type'  => $childType && $childType->exists() ? $childType->Title : null,
+                        'Type'  => $child->isRoom() ? 'Raum' : ($childType && $childType->exists() ? $childType->Title : null),
                         // Direkter Inhalt des enthaltenen Lagerpunkts (ohne weitere Ebenen)
                         'Count' => count($childItems[$child->ID] ?? []) + count($childRooms[$child->ID] ?? []),
                     ];
@@ -629,24 +621,22 @@ class StorageApiController extends ApiController
             ];
         }
 
+        // Räume sind eigene Lagerpunkte (siehe Children)
         $rooms = [];
-        foreach ($location->Rooms() as $room) {
-            $rooms[] = [
-                'ID'         => $room->ID,
-                'Title'      => $room->Title,
-                'PublicPath' => $room->ShareToken ? '/rooms/share/' . $room->ShareToken : null,
-            ];
-        }
 
         $children = [];
         foreach ($location->Children() as $child) {
             $type = $child->Type();
+            $room = $child->isRoom() ? $child->Room() : null;
             $children[] = [
                 'ID'         => $child->ID,
                 'Title'      => $child->Title,
-                'Type'       => $type && $type->exists() ? $type->Title : null,
-                'Count'      => $child->Items()->exclude('Status', 'retired')->count() + $child->Rooms()->count(),
-                'PublicPath' => $child->ShareToken ? '/storage/share/' . $child->ShareToken : null,
+                'Type'       => $room ? 'Raum' : ($type && $type->exists() ? $type->Title : null),
+                'Count'      => $child->Items()->exclude('Status', 'retired')->count() + $child->Children()->count(),
+                // Räume verlinken auf ihre eigene geteilte Seite
+                'PublicPath' => $room
+                    ? ($room->exists() && $room->ShareToken ? '/rooms/share/' . $room->ShareToken : null)
+                    : ($child->ShareToken ? '/storage/share/' . $child->ShareToken : null),
             ];
         }
 
@@ -670,6 +660,9 @@ class StorageApiController extends ApiController
         $location = StorageLocation::get()->byID((int) $request->param('ID'));
         if (!$location || !$location->exists()) {
             return $this->errorResponse('Lagerpunkt nicht gefunden', 404);
+        }
+        if ($location->isRoom()) {
+            return $this->errorResponse('Räume werden im Räume-Tab gelöscht', 400);
         }
         if (!$location->isDeletableBy($member)) {
             return $this->errorResponse('Keine Berechtigung', 403);

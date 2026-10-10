@@ -42,7 +42,8 @@
 
       <InventoryFieldInputs v-if="selectedType" v-model="form.values" :fields="selectedType.Fields" />
 
-      <InventoryStorageSelect v-model="form.StorageLocationID" label="Liegt in (Lager)" />
+      <!-- Der Raum ist selbst ein Lagerpunkt — nicht in sich selbst oder seinen Inhalt legen -->
+      <InventoryStorageSelect v-model="form.StorageLocationID" label="Liegt in (Lager)" :exclude-id="form.StorageNodeID" />
 
       <AppToggle v-model="form.IsRentable" label="Kann reserviert werden" />
 
@@ -172,6 +173,7 @@ const defaultForm = () => ({
   TaskIDs: [],
   TypeID: null,
   StorageLocationID: null,
+  StorageNodeID: null,
   values: {},
 })
 
@@ -242,6 +244,7 @@ function openForEdit(room) {
     TaskIDs: (room.Tasks || []).map(t => t.ID),
     TypeID: room.TypeID ?? null,
     StorageLocationID: room.StorageLocationID ?? null,
+    StorageNodeID: room.StorageNodeID ?? null,
     values: { ...(room.Values || {}) },
   })
   error.value = null

@@ -82,12 +82,12 @@
       </li>
     </ul>
 
-    <RoomFormModal ref="formModal" @saved="store.fetchRooms(true)" />
+    <RoomFormModal ref="formModal" @saved="onRoomsChanged" />
     <RoomDetailModal
       ref="detailModal"
       show-reserve
       @edit="onEditRoom"
-      @deleted="store.fetchRooms(true)"
+      @deleted="onRoomsChanged"
       @reserve="room => emit('reserve', room)"
     />
   </div>
@@ -96,6 +96,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoomsStore } from '@stores/rooms'
+import { useStorageStore } from '@stores/storage'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import { useInventoryStore } from '@stores/inventory'
@@ -129,6 +130,13 @@ function metaParts(room) {
     store.organizations.length > 1 ? room.Organization?.Title : null,
     room.Description,
   ].filter(Boolean)
+}
+
+// Räume sind auch Lagerpunkte (Tab "Lager") — dessen Baum ggf. mit aktualisieren
+const storageStore = useStorageStore()
+function onRoomsChanged() {
+  store.fetchRooms(true)
+  if (storageStore.locations.length) storageStore.fetchLocations(true)
 }
 
 function initials(title) {

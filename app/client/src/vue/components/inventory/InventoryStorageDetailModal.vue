@@ -8,7 +8,8 @@
           {{ [location.Type?.Title, ownerLabel].filter(Boolean).join(' · ') }}
         </p>
         <!-- Teilen-Link/QR-Code und NFC-Tag: führen auf die Seite des Lagerpunkts, auch ohne Anmeldung -->
-        <div v-if="location.CanEdit" class="inventory-storage-detail-modal_toolbar">
+        <!-- Räume haben ihren eigenen Teilen-Link/NFC-Tag im Räume-Tab -->
+        <div v-if="location.CanEditDetails" class="inventory-storage-detail-modal_toolbar">
           <AppIconButton variant="neutral" aria-label="Teilen" title="Öffentlichen Link teilen" @click="openShare">
             <span class="icon-mask" :style="shareIconStyle" />
           </AppIconButton>
@@ -74,10 +75,13 @@
 
     <p v-else class="inventory-storage-detail-modal_empty">Dieser Lagerpunkt wurde nicht gefunden.</p>
 
-    <template v-if="location && (location.CanDelete || location.CanEdit || canCreate)" #actions>
+    <template v-if="location" #actions>
       <AppButton v-if="location.CanDelete" variant="danger" @click="emit('delete', location)">Löschen</AppButton>
       <AppButton v-if="canCreate" variant="secondary" @click="emit('add-inside', location)">+ Lagerpunkt hierin</AppButton>
-      <AppButton v-if="location.CanEdit" variant="primary" @click="emit('edit', location)">Bearbeiten</AppButton>
+      <AppButton v-if="location.CanEditDetails" variant="primary" @click="emit('edit', location)">Bearbeiten</AppButton>
+      <!-- Raum: Details, Bearbeiten und Löschen im Räume-Tab -->
+      <AppButton v-if="location.IsRoom && location.Room" variant="primary" @click="openRoom">Raum öffnen</AppButton>
+      <AppButton v-if="!location.CanDelete && !canCreate && !location.CanEditDetails && !location.IsRoom" variant="secondary" @click="close">Schließen</AppButton>
     </template>
   </AppModal>
 
@@ -167,6 +171,12 @@ async function openNfc() {
   } finally {
     nfcLoading.value = false
   }
+}
+
+function openRoom() {
+  const room = location.value.Room
+  close()
+  emit('open-room', room)
 }
 
 /** Lagerpunkt anzeigen; ist das Modal schon offen, wird nur der Inhalt gewechselt */

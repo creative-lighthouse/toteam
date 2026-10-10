@@ -46,7 +46,7 @@
     </div>
 
     <p v-else-if="canDrag && !store.matchingIds" class="inventory-storage-tab_hint">
-      Am Griff ziehen: Lagerpunkte auf einen anderen Lagerpunkt, um sie hineinzulegen, oder an dessen oberen/unteren Rand, um sie davor oder dahinter einzusortieren. Objekte, Fahrzeuge und Räume – auch aus „Nicht einsortiert“ – einfach auf den Lagerpunkt ziehen.
+      Am Griff ziehen: Lagerpunkte und Räume auf einen anderen Lagerpunkt oder Raum, um sie hineinzulegen, oder an dessen oberen/unteren Rand, um sie davor oder dahinter einzusortieren. Objekte und Fahrzeuge – auch aus „Nicht einsortiert“ – einfach darauf ziehen.
     </p>
 
     <ul v-if="store.locations.length && !store.loading && !store.error && !(store.matchingIds && !store.matchingIds.size)" class="inventory-storage-tree inventory-storage-tree--root">
@@ -155,8 +155,8 @@ const EDGE = 0.25
 
 // Gibt es überhaupt etwas, das der Nutzer ziehen darf?
 const canDrag = computed(() =>
-  store.locations.some(l => l.CanEdit || l.Items?.some(i => i.CanEdit) || l.Rooms?.some(r => r.CanEdit))
-  || store.unassigned.some(g => g.Items.some(i => i.CanEdit) || g.Rooms.some(r => r.CanEdit))
+  store.locations.some(l => l.CanEdit || l.Items?.some(i => i.CanEdit))
+  || store.unassigned.some(g => g.Items.some(i => i.CanEdit))
 )
 // Bei aktiver Suche ist der Baum gefiltert — dann nicht ziehen
 const dragEnabled = computed(() => !store.matchingIds)
@@ -203,7 +203,7 @@ const dropTarget = computed(() => {
     : resolvePlaceTarget(payload, overZone.value)
 })
 
-// Für InventoryStorageNode/-Contents/-Unassigned. Payload: { kind: 'location'|'item'|'vehicle'|'room', entity }
+// Für InventoryStorageNode/-Contents/-Unassigned. Payload: { kind: 'location'|'item'|'vehicle', entity } (Räume sind Lagerpunkte)
 provide('storageDrag', {
   start: (event, payload) => {
     if (dragEnabled.value) start(event, payload)
@@ -253,17 +253,18 @@ async function drop(location, zone, ratio) {
   if (parentId && !expandedIds.value.has(parentId)) toggle(parentId)
   const response = await store.moveLocation(location.ID, parentId, orderedIds)
   if (!response.success) alert('Fehler: ' + (response.error || 'Lagerpunkt konnte nicht verschoben werden.'))
+  // Raum verschoben: "Liegt in" steht auch am Raum
+  else if (location.IsRoom && roomsStore.rooms.length) roomsStore.fetchRooms(true)
 }
 
 const roomsStore = useRoomsStore()
 
-/** Objekt/Fahrzeug/Raum in einen Lagerpunkt legen bzw. zurück nach "Nicht einsortiert" */
+/** Objekt/Fahrzeug in einen Lagerpunkt (auch einen Raum) legen bzw. zurück nach "Nicht einsortiert" */
 async function place(payload, zone) {
   clearTimeout(expandTimer)
   const target = resolvePlaceTarget(payload, zone)
   if (!target) return
-  const listKey = payload.kind === 'room' ? 'Rooms' : 'Items'
-  const current = store.locations.find(l => l[listKey]?.some(e => e.ID === payload.entity.ID)) ?? null
+  const current = store.locations.find(l => l.Items?.some(e => e.ID === payload.entity.ID)) ?? null
   const locationId = target.unassigned ? null : target.targetId
   if ((current?.ID ?? null) === locationId) return
 
@@ -274,12 +275,8 @@ async function place(payload, zone) {
     alert('Fehler: ' + (response.error || 'Konnte nicht einsortiert werden.'))
     return
   }
-  // Lagerort steht auch in Objekt- und Raumliste — dort im Hintergrund aktualisieren
-  if (payload.kind === 'room') {
-    if (roomsStore.rooms.length) roomsStore.fetchRooms(true)
-  } else if (inventoryStore.items.length) {
-    inventoryStore.fetchItems(true)
-  }
+  // Lagerort steht auch in der Objektliste — dort im Hintergrund aktualisieren
+  if (inventoryStore.items.length) inventoryStore.fetchItems(true)
 }
 
 async function remove(location) {
