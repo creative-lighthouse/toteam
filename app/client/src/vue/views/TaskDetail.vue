@@ -143,14 +143,34 @@
 
           <TaskProgressBar :subtasks="task.SubTasks || []" />
 
-          <div v-if="task.SubTasks?.length" class="tasks-list">
-            <TaskCard
-              v-for="sub in task.SubTasks"
-              :key="sub.ID"
-              :task="sub"
-              @click="openTask"
+          <template v-if="task.SubTasks?.length">
+            <!-- Filter und Ansicht wie in der Übersicht, aber lokal (unabhängig von deren Filtern) -->
+            <AppSearchBar v-model="subFilters.search" placeholder="Unteraufgaben suchen…">
+              <template #filters>
+                <TaskFilterControls
+                  v-model:organization-id="subFilters.organizationId"
+                  v-model:state="subFilters.state"
+                  v-model:person-id="subFilters.personId"
+                  v-model:view-mode="subViewMode"
+                  :organizations="subtaskOrganizations"
+                />
+              </template>
+            </AppSearchBar>
+
+            <TaskBoard
+              v-if="filteredSubTasks.length"
+              :tasks="filteredSubTasks"
+              :view-mode="effectiveSubViewMode"
+              :collapsed-groups="subCollapsedGroups"
+              @toggle-group="toggleSubGroup"
+              @open="openTask"
+              @move="onSubtaskMove"
             />
-          </div>
+            <div v-else class="section_infobox">
+              <p>Keine passenden Unteraufgaben.</p>
+              <AppButton size="small" variant="secondary" @click="resetSubFilters">Filter zurücksetzen</AppButton>
+            </div>
+          </template>
           <div v-else class="section_infobox"><p>Noch keine Unteraufgaben.</p></div>
         </div>
 
@@ -210,11 +230,16 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
-import TaskCard from '@components/tasks/TaskCard.vue'
+import TaskBoard from '@components/tasks/TaskBoard.vue'
+import TaskFilterControls from '@components/tasks/TaskFilterControls.vue'
+import AppSearchBar from '@components/ui/AppSearchBar.vue'
+import { filterTasks } from '@utils/taskFilters'
+import { getCookie, setCookie } from '@utils/cookies'
+import { useMediaQuery } from '@utils/useMediaQuery'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
@@ -261,6 +286,55 @@ const isOverdue = computed(() => {
   if (!task.value?.Deadline || task.value?.State === 'finished') return false
   return new Date(task.value.Deadline) < new Date()
 })
+
+// ── Unteraufgaben: Filter, Ansicht ────────────────────────────────────────────
+// Eigene Filter (nicht die der Übersicht); sie bleiben beim Wechsel zwischen Aufgaben erhalten
+const subFilters = reactive({ search: '', organizationId: null, state: null, personId: null })
+const subCollapsedGroups = ref(new Set())
+
+const SUB_VIEW_MODE_COOKIE = 'toteam_subtasks_view_mode'
+const subViewMode = ref(['kanban', 'table'].includes(getCookie(SUB_VIEW_MODE_COOKIE)) ? getCookie(SUB_VIEW_MODE_COOKIE) : 'list')
+watch(subViewMode, mode => setCookie(SUB_VIEW_MODE_COOKIE, mode))
+
+// Mobile only ever shows the list view (wie in der Übersicht)
+const isMobile = useMediaQuery('(max-width: 700px)')
+const effectiveSubViewMode = computed(() => isMobile.value ? 'list' : subViewMode.value)
+
+const filteredSubTasks = computed(() => filterTasks(task.value?.SubTasks ?? [], subFilters))
+
+// Organisationen der Unteraufgaben — der Filter erscheint nur, wenn es mehrere sind
+const subtaskOrganizations = computed(() => {
+  const byId = new Map()
+  for (const sub of task.value?.SubTasks ?? []) {
+    if (sub.Organization) byId.set(sub.Organization.ID, sub.Organization)
+  }
+  return [...byId.values()]
+})
+
+function toggleSubGroup(stateValue) {
+  const next = new Set(subCollapsedGroups.value)
+  if (next.has(stateValue)) next.delete(stateValue)
+  else next.add(stateValue)
+  subCollapsedGroups.value = next
+}
+
+function resetSubFilters() {
+  Object.assign(subFilters, { search: '', organizationId: null, state: null, personId: null })
+}
+
+// Kanban: Unteraufgabe in eine andere Spalte gezogen
+async function onSubtaskMove(sub, newState) {
+  const response = await store.updateTaskState(sub.ID, newState)
+  if (!response.success) {
+    alert('Fehler: ' + (response.error || 'Status konnte nicht geändert werden.'))
+    return
+  }
+  const updated = response.data.task
+  task.value = {
+    ...task.value,
+    SubTasks: task.value.SubTasks.map(s => (s.ID === sub.ID ? { ...s, ...updated } : s)),
+  }
+}
 
 watch(task, (val) => {
   pageHeaderStore.setTitle(val?.Title ?? 'Aufgabe')

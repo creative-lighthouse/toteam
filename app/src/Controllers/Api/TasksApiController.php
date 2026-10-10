@@ -55,7 +55,7 @@ class TasksApiController extends ApiController
      *     ParentID (see {@see loadSubtasksByParent}). When null, subtasks are queried
      *     individually for this task — only acceptable when formatting a single task.
      */
-    private function formatTask(Task $task, Member $member, bool $withSubTasks = true, ?array $subtasksByParent = null): array
+    private function formatTask(Task $task, Member $member, bool $withSubTasks = true, ?array $subtasksByParent = null, ?array $subtaskCounts = null): array
     {
         $org = $task->Organization();
         $owner = $task->Owner();
@@ -76,8 +76,13 @@ class TasksApiController extends ApiController
                 ? ($subtasksByParent[$task->ID] ?? [])
                 : Task::get()->filter('ParentID', $task->ID)->sort('Created ASC');
 
+            // Unteraufgaben werden ohne eigene SubTasks ausgegeben — für die Anzahl
+            // (Tabellenansicht) deren Kinder einmal gesammelt zählen
+            $subtaskRecords = is_array($subtaskRecords) ? $subtaskRecords : $subtaskRecords->toArray();
+            $subtaskCounts ??= $this->countSubtasksByParent(array_map(fn (Task $sub) => $sub->ID, $subtaskRecords));
+
             foreach ($subtaskRecords as $sub) {
-                $subTasks[] = $this->formatTask($sub, $member, false);
+                $subTasks[] = $this->formatTask($sub, $member, false, null, $subtaskCounts);
             }
         }
 
@@ -104,6 +109,7 @@ class TasksApiController extends ApiController
             'Supporters'     => $supporters,
             'Rooms'          => $rooms,
             'SubTasks'       => $subTasks,
+            'SubTaskCount'   => $withSubTasks ? count($subTasks) : ($subtaskCounts[$task->ID] ?? 0),
             'CanEdit'        => $task->isEditableBy($member),
             'CanDelete'      => $task->isDeletableBy($member),
         ];
@@ -128,6 +134,21 @@ class TasksApiController extends ApiController
         }
 
         return $byParent;
+    }
+
+    /**
+     * Number of direct subtasks per parent task ID, in a single query.
+     *
+     * @param int[] $parentIDs
+     * @return array<int, int>
+     */
+    private function countSubtasksByParent(array $parentIDs): array
+    {
+        if (!$parentIDs) {
+            return [];
+        }
+
+        return array_count_values(Task::get()->filter('ParentID', $parentIDs)->column('ParentID'));
     }
 
     /** GET /api/v1/tasks */
@@ -166,10 +187,17 @@ class TasksApiController extends ApiController
             }
 
             $subtasksByParent = $this->loadSubtasksByParent($tasks->column('ID'));
+            $subtaskIDs = [];
+            foreach ($subtasksByParent as $subs) {
+                foreach ($subs as $sub) {
+                    $subtaskIDs[] = $sub->ID;
+                }
+            }
+            $subtaskCounts = $this->countSubtasksByParent($subtaskIDs);
 
             $data = [];
             foreach ($tasks as $task) {
-                $data[] = $this->formatTask($task, $member, true, $subtasksByParent);
+                $data[] = $this->formatTask($task, $member, true, $subtasksByParent, $subtaskCounts);
             }
 
             $orgData = [];

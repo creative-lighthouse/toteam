@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { apiGet, apiGetSWR, apiPost, apiPut, apiDelete, clearCacheForEndpoint } from '@utils/api'
 import { getJSONCookie, setJSONCookie } from '@utils/cookies'
+import { TASK_STATES, filterTasks, groupTasksByState } from '@utils/taskFilters'
 
 const FILTERS_COOKIE = 'toteam_tasks_filters'
 
@@ -49,65 +50,17 @@ export const useTasksStore = defineStore('tasks', () => {
     collapsedGroups.value = next
   }
 
-  const STATES = [
-    { value: 'open',        label: 'Offen' },
-    { value: 'in_progress', label: 'In Bearbeitung' },
-    { value: 'feedback',    label: 'Feedback' },
-    { value: 'finished',    label: 'Abgeschlossen' },
-  ]
+  const STATES = TASK_STATES
 
-  // A task is "mine" if I'm its owner/supporter, or if I'm assigned to one of
-  // its subtasks — a subtask-only assignment should still surface the parent
-  // card, since subtasks aren't shown as their own entries in the list/kanban.
-  function isTaskAssignedToMember(task, memberId) {
-    if (task.Owner?.ID === memberId) return true
-    if (task.Supporters?.some(s => s.ID === memberId)) return true
-    return false
-  }
+  const filteredTasks = computed(() => filterTasks(tasks.value, {
+    organizationId: filterOrganization.value?.ID ?? null,
+    personId: filterPersonId.value,
+    state: filterState.value,
+    deadline: filterDeadline.value,
+    search: filterSearch.value,
+  }))
 
-  function isTaskMine(task, memberId) {
-    if (isTaskAssignedToMember(task, memberId)) return true
-    return task.SubTasks?.some(sub => isTaskAssignedToMember(sub, memberId)) ?? false
-  }
-
-  const filteredTasks = computed(() => {
-    let result = tasks.value
-
-    if (filterOrganization.value) {
-      result = result.filter(t => t.Organization?.ID === filterOrganization.value.ID)
-    }
-
-    if (filterPersonId.value) {
-      result = result.filter(t => isTaskMine(t, filterPersonId.value))
-    }
-
-    if (filterState.value) {
-      result = result.filter(t => t.State === filterState.value)
-    }
-
-    if (filterDeadline.value) {
-      result = result.filter(t => t.Deadline && t.Deadline <= filterDeadline.value + 'T23:59:59')
-    }
-
-    if (filterSearch.value.trim()) {
-      const q = filterSearch.value.toLowerCase()
-      result = result.filter(t =>
-        t.Title?.toLowerCase().includes(q) ||
-        t.Description?.toLowerCase().includes(q)
-      )
-    }
-
-    return result
-  })
-
-  const tasksByState = computed(() => {
-    const grouped = { open: [], in_progress: [], feedback: [], finished: [] }
-    for (const task of filteredTasks.value) {
-      const state = task.State || 'open'
-      if (grouped[state]) grouped[state].push(task)
-    }
-    return grouped
-  })
+  const tasksByState = computed(() => groupTasksByState(filteredTasks.value))
 
   function applyTasksResponse(response) {
     tasks.value = response.tasks || []

@@ -1,0 +1,135 @@
+@use "../../base/variables" as *;
+
+// Tabellenansicht der Aufgaben (siehe TaskTable.vue)
+.task-table {
+    overflow-x: auto;
+    border-radius: var(--BorderRadiusMedium);
+    background-color: var(--ColorWhite);
+    box-shadow: var(--BoxShadowLight);
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 10px 12px;
+        background-color: var(--ColorWhite);
+        border-bottom: 2px solid var(--ColorLightGray);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ColorGray);
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--ColorLightGray);
+        vertical-align: middle;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .task-table_row {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        @include hover {
+            background-color: var(--ColorVeryLightGray);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: -2px;
+        }
+    }
+
+    .task-card_state-badge {
+        white-space: nowrap;
+    }
+
+    .task-table_title {
+        min-width: 200px;
+        font-weight: 700;
+        color: var(--ColorBlack);
+    }
+
+    .task-table_deadline {
+        display: block;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--ColorGray);
+
+        &--overdue {
+            color: var(--ColorStatusBad);
+            font-weight: 600;
+        }
+    }
+
+    .task-table_people,
+    .task-table_owner,
+    .task-table_supporters {
+        display: flex;
+        align-items: center;
+    }
+
+    .task-table_people {
+        gap: 10px;
+    }
+
+    .task-table_owner {
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .task-table_avatar {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--ColorWhite);
+
+        &--placeholder,
+        &--overflow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        &--placeholder {
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+        }
+
+        &--overflow {
+            background-color: var(--ColorLightGray);
+            color: var(--ColorGray);
+        }
+    }
+
+    // Unterstützer überlappend wie auf den Karten
+    .task-table_supporters .task-table_avatar + .task-table_avatar {
+        margin-left: -6px;
+    }
+
+    .task-table_col-count {
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .task-table_empty {
+        color: var(--ColorGray);
+    }
+}

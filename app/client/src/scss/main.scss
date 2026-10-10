@@ -123,6 +123,9 @@
 @use "components/layout/PwaInstallBanner.scss";
 @use "components/tasks/TaskCard.scss";
 @use "components/tasks/TaskProgressBar.scss";
+@use "components/tasks/TaskBoard.scss";
+@use "components/tasks/TaskTable.scss";
+@use "components/tasks/TaskPersonFilter.scss";
 @use "components/tasks/TaskCreateModal.scss";
 @use "components/tasks/TaskSupportersModal.scss";
 @use "components/tasks/TaskOwnerModal.scss";

@@ -270,7 +270,28 @@
     }
 
     .inventory-entry_info {
+        position: relative;
         padding: 10px 12px 12px;
+    }
+
+    // Inventarnummer unten links aufs Bild (direkt über dem Info-Block),
+    // damit der Titel die ganze Kartenbreite bekommt
+    .inventory-entry_number {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 8px;
+        max-width: calc(100% - 16px);
+        padding: 3px 8px;
+        border-radius: 50px;
+        background-color: var(--ColorWhite);
+        box-shadow: var(--BoxShadowLight);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &:empty {
+            display: none;
+        }
     }
 
     .inventory-entry_states {
