@@ -2,6 +2,12 @@
 
 // Termine eines Events (OrgEventAppointmentList.vue), Karten: EventCard compact
 .org-event-appointment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.org-event-appointment-list_items {
     list-style: none;
     margin: 0;
     padding: 0;

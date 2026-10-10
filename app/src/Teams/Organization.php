@@ -255,6 +255,9 @@ class Organization extends DataObject implements PermissionProvider
             OrgPermissions::INVENTORY_MANAGE_TYPES,
             OrgPermissions::INVENTORY_REQUEST_RENTAL,
             OrgPermissions::INVENTORY_APPROVE_RENTALS,
+            OrgPermissions::STORAGE_CREATE,
+            OrgPermissions::STORAGE_EDIT,
+            OrgPermissions::STORAGE_DELETE,
         ]);
         $moderator->write();
 

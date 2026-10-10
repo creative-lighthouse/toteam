@@ -74,6 +74,8 @@
           <textarea v-model="form.Description" rows="3" placeholder="Optionale Beschreibung…" />
         </label>
 
+        <InventoryStorageSelect v-model="form.StorageLocationID" :label="isVehicle ? 'Steht in/an (Lager)' : 'Lagert in'" />
+
         <label class="field field--3">
           Zustand
           <select v-model="form.Status">
@@ -178,6 +180,7 @@ import AppFileUpload from '@components/ui/AppFileUpload.vue'
 import OrganizationPicker from '@components/ui/OrganizationPicker.vue'
 import InventoryTypeModal from '@components/inventory/InventoryTypeModal.vue'
 import InventoryFieldInputs from '@components/inventory/InventoryFieldInputs.vue'
+import InventoryStorageSelect from '@components/inventory/InventoryStorageSelect.vue'
 
 const emit = defineEmits(['saved'])
 const store = useInventoryStore()
@@ -215,6 +218,7 @@ const defaultForm = () => ({
   InventoryNumber: '',
   Description: '',
   Status: 'available',
+  StorageLocationID: null,
   values: {},
 })
 
@@ -363,6 +367,7 @@ function openForEdit(item, { applyToGroup = false } = {}) {
     InventoryNumber: item.InventoryNumber || '',
     Description: item.Description || '',
     Status: item.Status || 'available',
+    StorageLocationID: item.StorageLocationID ?? null,
     values,
   })
   existingImages.value = [...(item.Images || [])]
@@ -404,6 +409,7 @@ async function submit() {
       InventoryNumber: form.InventoryNumber.trim(),
       Description: form.Description,
       Status: form.Status,
+      StorageLocationID: form.StorageLocationID ?? 0,
     }
     payload.Values = Object.fromEntries(visibleFields.value.map(field => [field.ID, form.values[field.ID] ?? '']))
     payload.SharedWithIDs = sharedOrgIDs.value

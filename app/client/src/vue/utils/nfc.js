@@ -8,8 +8,8 @@ export function isNfcSupported() {
 }
 
 /**
- * Erkennt ToTeam-Teilen-Links (Objekt oder Raum) dieser Installation.
- * @returns {{ kind: 'item'|'room', token: string } | null}
+ * Erkennt ToTeam-Teilen-Links (Objekt, Raum oder Lagerpunkt) dieser Installation.
+ * @returns {{ kind: 'item'|'room'|'storage', token: string } | null}
  */
 export function parseShareLink(value) {
   let url
@@ -23,6 +23,8 @@ export function parseShareLink(value) {
   if (item) return { kind: 'item', token: item[1] }
   const room = url.pathname.match(/^\/app\/rooms\/share\/([a-f0-9]+)\/?$/i)
   if (room) return { kind: 'room', token: room[1] }
+  const storage = url.pathname.match(/^\/app\/storage\/share\/([a-f0-9]+)\/?$/i)
+  if (storage) return { kind: 'storage', token: storage[1] }
   return null
 }
 

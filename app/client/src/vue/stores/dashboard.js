@@ -6,6 +6,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const newFeedback             = ref([])
   const myUpcomingContributions = ref([])
   const myTasks                 = ref([])
+  // heutige Rollenzuteilungen [{ EventID, RoleTitle, ScriptTitle, ScriptHash, TimeStart, TimeEnd }]
+  const myRolesToday            = ref([])
   const loading = ref(false)
   const error   = ref(null)
 
@@ -27,6 +29,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       newFeedback.value             = response.newFeedback             || []
       myUpcomingContributions.value = response.myUpcomingContributions || []
       myTasks.value                 = response.myTasks                 || []
+      myRolesToday.value            = response.myRolesToday            || []
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err)
       error.value = err.message
@@ -43,6 +46,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     newFeedback,
     myUpcomingContributions,
     myTasks,
+    myRolesToday,
     loading,
     error,
     hasNewFeedback,

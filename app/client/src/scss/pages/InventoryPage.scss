@@ -111,8 +111,8 @@
     }
 
     .inventory-entry_thumb {
-        width: 56px;
-        height: 56px;
+        width: 40px;
+        height: 40px;
         flex-shrink: 0;
         border-radius: var(--BorderRadiusSmall);
         object-fit: cover;
@@ -124,7 +124,7 @@
             background-color: var(--ColorPrimaryLight);
             color: var(--ColorPrimary);
             font-weight: 700;
-            font-size: 18px;
+            font-size: 16px;
         }
     }
 
@@ -222,4 +222,134 @@
 .section--InventoryPage .inventory-page_tab:focus-visible {
     outline: 2px solid var(--ColorPrimary);
     outline-offset: 2px;
+}
+
+// ── Kartenansicht (AppViewToggle "Karten") ─────────────────────────────────
+// Gleiches Markup wie die Liste: Bild in voller Kartenbreite, darunter Titel und
+// Meta-Zeile; Status-Icons und Anzahl liegen oben auf dem Bild.
+.section.section--InventoryPage .inventory-list--cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+
+    @include media(max-desktop) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @include media(max-medium) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    @include media(max-smartphone) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    > li {
+        display: flex;
+    }
+
+    .inventory-entry {
+        position: relative;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .inventory-entry_thumb {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        border-radius: 0;
+
+        &--placeholder {
+            font-size: 32px;
+        }
+    }
+
+    .inventory-entry_info {
+        position: relative;
+        padding: 10px 12px 12px;
+    }
+
+    // Inventarnummer unten links aufs Bild (direkt über dem Info-Block),
+    // damit der Titel die ganze Kartenbreite bekommt
+    .inventory-entry_number {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 8px;
+        max-width: calc(100% - 16px);
+        padding: 3px 8px;
+        border-radius: 50px;
+        background-color: var(--ColorWhite);
+        box-shadow: var(--BoxShadowLight);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    .inventory-entry_states {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        flex-wrap: wrap;
+    }
+
+    .inventory-entry_quantity {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: auto;
+        padding: 3px 8px;
+        border-radius: 50px;
+        background-color: var(--ColorWhite);
+        box-shadow: var(--BoxShadowLight);
+        font-size: 13px;
+
+        &:empty {
+            display: none;
+        }
+    }
+}
+
+// Vier Tabs passen auf schmalen Handys nicht nebeneinander — inaktive Tabs nur als Icon
+.section.section--InventoryPage .inventory-page_tab:not(.inventory-page_tab--active) {
+    @include media(max-smartphone) {
+        > span:not(.icon-mask) {
+            display: none;
+        }
+    }
+}
+
+// "Lager" ist kein Inventar-Objekt, sondern enthält sie — mit Trennlinie und Abstand
+// von Objekten/Fahrzeugen/Räumen abgesetzt
+.section.section--InventoryPage .inventory-page_tab--separated {
+    position: relative;
+    margin-left: 13px;
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: -9px;
+        top: 20%;
+        bottom: 20%;
+        width: 2px;
+        border-radius: 1px;
+        background-color: var(--ColorLightGray);
+        pointer-events: none;
+    }
+
+    @include media(max-smartphone) {
+        margin-left: 9px;
+
+        &::before {
+            left: -7px;
+        }
+    }
 }

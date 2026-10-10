@@ -1,0 +1,36 @@
+@use "../../base/variables" as *;
+
+// Neue Ebene eines Lageplans (MapLayerCreateModal.vue)
+.map-layer-create-modal {
+    text-align: left;
+    max-width: 420px;
+
+    .map-layer-create-modal_hint {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+
+    // Farbfeld + Hex-Wert nebeneinander (wie in der Bearbeiten-Seitenleiste des Lageplans)
+    .color-picker-wrapper {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+
+        input[type="color"] {
+            flex-shrink: 0;
+            width: 48px;
+            height: 38px;
+            padding: 2px;
+            border: 1px solid var(--ColorLightGray);
+            border-radius: var(--BorderRadiusSmall);
+            background-color: var(--ColorWhite);
+            cursor: pointer;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+}

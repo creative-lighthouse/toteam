@@ -18,26 +18,26 @@
 
           <div class="map-controls_header" :style="headerStyle">
             <h3>{{ layerForm.title }}</h3>
-            <button class="header_save button" @click="saveLayer" :disabled="saving" title="Speichern">
-              <div class="headerSave_button icon--small" style="mask-image: url('/_resources/app/client/icons/actions/action_save.svg');"></div>
-            </button>
+            <AppIconButton variant="neutral" aria-label="Speichern" title="Speichern" :disabled="saving" @click="saveLayer">
+              <span class="icon-mask" :style="saveIconStyle" />
+            </AppIconButton>
           </div>
 
           <div class="map-controls_wrap">
-            <div class="map-controls_edit-fields">
-              <div class="edit-field">
-                <label for="layerTitle">Titel</label>
-                <input id="layerTitle" v-model="layerForm.title" type="text" class="form-control" />
-              </div>
-              <div class="edit-field">
-                <label for="layerDescription">Beschreibung</label>
-                <textarea id="layerDescription" v-model="layerForm.description" class="form-control" rows="3"></textarea>
-              </div>
-              <div class="edit-field">
+            <div class="modalform map-controls_edit-fields">
+              <label class="field">
+                Titel
+                <input v-model="layerForm.title" type="text" />
+              </label>
+              <label class="field">
+                Beschreibung
+                <textarea v-model="layerForm.description" rows="3"></textarea>
+              </label>
+              <div class="field">
                 <label for="layerColor">Farbe</label>
                 <div class="color-picker-wrapper">
                   <input id="layerColor" type="color" v-model="layerForm.color" @input="onColorChange" />
-                  <input type="text" v-model="layerForm.color" class="form-control" @change="onColorChange" />
+                  <input type="text" v-model="layerForm.color" aria-label="Farbe als Hex-Wert" @change="onColorChange" />
                 </div>
               </div>
             </div>
@@ -48,16 +48,14 @@
                 <img v-if="layerPreviewUrl" :src="layerPreviewUrl" alt="Ebenen-Bild" />
                 <div v-else class="layer-image-placeholder">Kein Bild hochgeladen</div>
               </div>
-              <div class="layer-upload-controls">
-                <input
-                  type="file"
-                  id="layerImageUpload"
-                  class="layer-image-input"
-                  accept="image/jpeg,image/png,image/webp"
-                  @change="onImageSelected"
-                />
-                <label for="layerImageUpload" class="button">Bild auswählen</label>
-              </div>
+              <input
+                ref="imageInput"
+                type="file"
+                class="layer-image-input"
+                accept="image/jpeg,image/png,image/webp"
+                @change="onImageSelected"
+              />
+              <AppButton size="small" variant="secondary" @click="imageInput?.click()">Bild auswählen</AppButton>
             </div>
 
             <div class="map-controls_pois">
@@ -69,12 +67,9 @@
 
           <div class="map-controls_actions">
             <AppButton :to="`/map/${mapId}`" variant="primary">← Zurück</AppButton>
-            <button class="button action_recenter" @click="resetView">
-              <div
-                class="resetMapView_button icon--small"
-                style="mask-image: url('/_resources/app/client/icons/actions/action_recenter.svg');"
-              ></div>
-            </button>
+            <AppIconButton variant="primary" aria-label="Ansicht zurücksetzen" title="Ansicht zurücksetzen" @click="resetView">
+              <span class="icon-mask" :style="recenterIconStyle" />
+            </AppIconButton>
           </div>
         </div>
 
@@ -85,6 +80,8 @@
         </div>
       </div>
     </div>
+
+    <MapPOIModal ref="poiModal" @create="onPOICreate" @save="onPOISave" @delete="onPOIDelete" />
   </div>
 </template>
 
@@ -95,6 +92,13 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost, apiPostForm } from '@utils/api'
 import MapRenderer from '../../js/maprenderer.js'
 import AppButton from '@components/ui/AppButton.vue'
+import AppIconButton from '@components/ui/AppIconButton.vue'
+import MapPOIModal from '@components/maps/MapPOIModal.vue'
+import actionRecenter from '../../../icons/actions/action_recenter.svg'
+import actionSave from '../../../icons/actions/action_save.svg'
+
+const recenterIconStyle = { maskImage: `url("${actionRecenter}")`, WebkitMaskImage: `url("${actionRecenter}")` }
+const saveIconStyle = { maskImage: `url("${actionSave}")`, WebkitMaskImage: `url("${actionSave}")` }
 
 const route = useRoute()
 const router = useRouter()
@@ -112,6 +116,8 @@ const sidebarHidden = ref(false)
 const canvasEl = ref(null)
 const rendererEl = ref(null)
 let renderer = null
+const poiModal = ref(null)
+const imageInput = ref(null)
 
 const layerForm = ref({ title: '', description: '', color: '#999999' })
 const layerPreviewUrl = ref('')
@@ -166,6 +172,7 @@ function initRenderer() {
     coordinatesLowerRight: map.value.coordinatesLowerRight,
     layers: [layer.value],
     editMode: true,
+    onPOIClick: (poiData, editable) => poiModal.value?.open(poiData, { editable }),
   })
   window.mapRenderer = renderer
 }
@@ -197,9 +204,23 @@ function onImageSelected(e) {
 }
 
 function addPOI() {
-  const title = prompt('Titel des neuen Markers:')
-  if (!title) return
-  renderer?.addNewPOI(title, layerForm.value.color)
+  poiModal.value?.openCreate()
+}
+
+function onPOICreate(values) {
+  const poi = renderer?.addNewPOI(values.title, layerForm.value.color)
+  if (!poi) return
+  Object.assign(poi, { markerText: values.markerText, description: values.description })
+  renderer.render()
+}
+
+function onPOISave(poiData, values) {
+  Object.assign(poiData.poi, values)
+  renderer?.render()
+}
+
+function onPOIDelete(poiData) {
+  renderer?.deletePOI(poiData)
 }
 
 function resetView() {

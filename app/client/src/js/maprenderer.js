@@ -36,6 +36,13 @@ class MapRenderer {
         // UI Elements
         this.scaleIndicator = null;
         this.compassRose = null;
+        // Umgebungskarte (MapDetail.vue): Canvas-Hintergrund durchsichtig lassen
+        this.transparentBackground = !!mapConfig.transparentBackground;
+        // Eigene Position aus der Geolocation ({ lat, lng, accuracy } oder null)
+        this.userPosition = null;
+        // Hat der Nutzer die Ansicht schon verschoben/gezoomt? (dann nicht mehr automatisch zentrieren)
+        this.userMovedView = false;
+        this.hasGeoCoordinates = false;
 
         // Layers and POIs
         this.layers = mapConfig.layers || [];
@@ -126,22 +133,15 @@ class MapRenderer {
             dy_meters: dy.toFixed(2)
         });
 
-        // Calculate the angle of the upper edge
-        // atan2(dy, dx) gives us the bearing of the upper edge
-        // - 0° = edge points east
-        // - 90° = edge points north
-        // - 180° = edge points west
-        // - -90° = edge points south
+        // Winkel der Oberkante (UL → UR) mathematisch, gegen den Uhrzeigersinn ab Osten:
+        // 0° = zeigt nach Osten, -40° = 40° unter Osten (Richtung Ost-Südost) usw.
         const upperEdgeAngle = Math.atan2(dy, dx);
 
-        // North is 90° counterclockwise from the upper edge direction
-        // If upper edge points east (0°), north is at 90° (up on screen)
-        // If upper edge points northeast (45°), north is at 135°
-        const northAngleRadians = upperEdgeAngle + Math.PI / 2;
-
-        // Convert to degrees for the compass rose
-        // Normalize to 0-360 range
-        this.northRotation = (northAngleRadians * 180 / Math.PI) % 360;
+        // Die Oberkante liegt im Bild waagerecht. Zeigt sie z.B. nach Ost-Südost (-40°),
+        // ist das Bild um 40° im Uhrzeigersinn gegenüber "Norden oben" gedreht — der
+        // Nordpfeil muss also um 40° gegen den Uhrzeigersinn zeigen. SVG rotate() dreht im
+        // Uhrzeigersinn, daher ist die Drehung des Pfeils genau dieser Winkel (-40°).
+        this.northRotation = (upperEdgeAngle * 180 / Math.PI) % 360;
         if (this.northRotation < 0) this.northRotation += 360;
 
         console.log('Rotation calculation:', {
@@ -198,6 +198,8 @@ class MapRenderer {
             && this.config.coordinatesLowerLeft
             && this.config.coordinatesLowerRight;
 
+        // Nur echte Koordinaten erlauben Umgebungskarte und eigene Position
+        this.hasGeoCoordinates = !!hasCoordinates;
         if (!hasCoordinates && this.mapImage) {
             this.generateSyntheticCoordinates();
         }
@@ -210,6 +212,11 @@ class MapRenderer {
         this.createUIElements();
         this.setupEventListeners();
         this.render();
+
+        // Host benachrichtigen, dass Bild, Maße und Koordinaten bereit sind
+        if (typeof this.config.onReady === 'function') {
+            this.config.onReady(this);
+        }
     }
 
     /**
@@ -368,6 +375,8 @@ class MapRenderer {
 
         if (!this.layers[layerIndex].pois) this.layers[layerIndex].pois = []
         this.layers[layerIndex].pois.push(poi)
+        // Sonst wäre der neue Marker auf einer ausgeblendeten Ebene unsichtbar
+        this.activeLayers.add(this.layers[layerIndex].id)
         this.render()
         return poi
     }
@@ -404,6 +413,7 @@ class MapRenderer {
 
         if (!this.layers[layerIndex].pois) this.layers[layerIndex].pois = []
         this.layers[layerIndex].pois.push(poi)
+        this.activeLayers.add(this.layers[layerIndex].id)
         this.render()
         return poi
     }
@@ -537,6 +547,7 @@ class MapRenderer {
                 const dy = e.clientY - this.lastY;
                 this.offsetX += dx;
                 this.offsetY += dy;
+                this.userMovedView = true;
                 this.lastX = e.clientX;
                 this.lastY = e.clientY;
                 this.render();
@@ -591,7 +602,7 @@ class MapRenderer {
             const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
             const newScale = this.scale * zoomFactor;
 
-            if (newScale >= 0.5 && newScale <= 5) {
+            if (newScale >= this.getMinScale() && newScale <= 5) {
                 const rect = this.canvas.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
@@ -599,6 +610,7 @@ class MapRenderer {
                 this.offsetX = mouseX - (mouseX - this.offsetX) * zoomFactor;
                 this.offsetY = mouseY - (mouseY - this.offsetY) * zoomFactor;
                 this.scale = newScale;
+                this.userMovedView = true;
 
                 this.render();
             }
@@ -651,6 +663,7 @@ class MapRenderer {
                 const dy = this.touches[0].clientY - this.lastY;
                 this.offsetX += dx;
                 this.offsetY += dy;
+                this.userMovedView = true;
                 this.lastX = this.touches[0].clientX;
                 this.lastY = this.touches[0].clientY;
                 this.render();
@@ -660,7 +673,7 @@ class MapRenderer {
                     const zoomFactor = currentDistance / this.lastTouchDistance;
                     const newScale = this.scale * zoomFactor;
 
-                    if (newScale >= 0.5 && newScale <= 5) {
+                    if (newScale >= this.getMinScale() && newScale <= 5) {
                         const centerX = (this.touches[0].clientX + this.touches[1].clientX) / 2;
                         const centerY = (this.touches[0].clientY + this.touches[1].clientY) / 2;
                         const rect = this.canvas.getBoundingClientRect();
@@ -670,6 +683,7 @@ class MapRenderer {
                         this.offsetX = touchX - (touchX - this.offsetX) * zoomFactor;
                         this.offsetY = touchY - (touchY - this.offsetY) * zoomFactor;
                         this.scale = newScale;
+                        this.userMovedView = true;
 
                         this.render();
                     }
@@ -842,9 +856,12 @@ class MapRenderer {
         // Clear canvas
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Background
-        ctx.fillStyle = '#f0f0f0';
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // Background — mit Umgebungskarte (config.transparentBackground) bleibt der
+        // Canvas um den Plan herum durchsichtig, die Karte liegt darunter
+        if (!this.transparentBackground) {
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
 
         if (!this.mapImage) {
             ctx.fillStyle = '#999';
@@ -878,11 +895,120 @@ class MapRenderer {
         // Draw POIs from active layers
         this.drawPOIs(ctx);
 
+        // Eigene Position (Geolocation) über allem
+        this.drawUserPosition(ctx);
+
         // Restore context
         ctx.restore();
 
         // Update scale indicator
         this.updateScaleIndicator();
+
+        // Host (MapDetail.vue) gleicht z.B. die Umgebungskarte an die neue Ansicht an
+        if (typeof this.config.onViewChange === 'function') {
+            this.config.onViewChange(this.getViewState());
+        }
+    }
+
+    /**
+     * Aktuelle Ansicht für die Umgebungskarte: wo die drei Eckpunkte UL/UR/LL des
+     * Plans auf dem Canvas liegen (in CSS-Pixeln), ihre Koordinaten, der Mittelpunkt
+     * der Ansicht und Meter pro Bildschirmpixel. Null ohne echte Koordinaten.
+     */
+    getViewState() {
+        if (!this.hasGeoCoordinates || !this.mapImage || !this.renderWidth) return null;
+        const halfW = this.renderWidth / 2;
+        const halfH = this.renderHeight / 2;
+        const screen = (x, y) => ({ x: this.offsetX + this.scale * x, y: this.offsetY + this.scale * y });
+        const center = this.canvasToGeo(
+            (this.canvas.width / 2 - this.offsetX) / this.scale,
+            (this.canvas.height / 2 - this.offsetY) / this.scale
+        );
+        return {
+            width: this.canvas.width,
+            height: this.canvas.height,
+            corners: [
+                { geo: this.parseCoordinates(this.config.coordinatesUpperLeft), screen: screen(-halfW, -halfH) },
+                { geo: this.parseCoordinates(this.config.coordinatesUpperRight), screen: screen(halfW, -halfH) },
+                { geo: this.parseCoordinates(this.config.coordinatesLowerLeft), screen: screen(-halfW, halfH) },
+            ],
+            center,
+            metersPerPixel: this.pixelsPerMeter ? 1 / (this.pixelsPerMeter * this.scale) : null,
+        };
+    }
+
+    /**
+     * Wie weit sich herauszoomen lässt (1 = ganzer Plan): mit Umgebungskarte sehr weit,
+     * um die Umgebung zu sehen — ohne nur bis zur halben Plangröße (sonst nur grauer Rand)
+     */
+    getMinScale() {
+        return this.transparentBackground ? 0.01 : 0.5;
+    }
+
+    /** Umgebungskarte an/aus: dann bleibt der Canvas-Hintergrund durchsichtig */
+    setTransparentBackground(transparent) {
+        this.transparentBackground = !!transparent;
+        // Ohne Karte nicht weiter herausgezoomt bleiben als erlaubt — um denselben Mittelpunkt
+        const minScale = this.getMinScale();
+        if (this.scale < minScale) {
+            const cx = this.canvas.width / 2;
+            const cy = this.canvas.height / 2;
+            this.offsetX = cx - (cx - this.offsetX) * (minScale / this.scale);
+            this.offsetY = cy - (cy - this.offsetY) * (minScale / this.scale);
+            this.scale = minScale;
+        }
+        this.render();
+    }
+
+    /**
+     * Eigene Position (aus der Geolocation) setzen bzw. mit null entfernen.
+     * @param {{ lat: number, lng: number, accuracy?: number } | null} position
+     */
+    setUserPosition(position) {
+        this.userPosition = position;
+        this.render();
+    }
+
+    /** Ob ein Punkt innerhalb des Plans (Bildfläche) liegt — nur mit echten Koordinaten */
+    isInsidePlan(lat, lng) {
+        if (!this.hasGeoCoordinates || !this.renderWidth) return false;
+        const { x, y } = this.geoToCanvas(lat, lng);
+        return Math.abs(x) <= this.renderWidth / 2 && Math.abs(y) <= this.renderHeight / 2;
+    }
+
+    /** Ansicht auf einen Punkt zentrieren, optional mit neuer Zoomstufe (1 = ganzer Plan) */
+    centerOn(lat, lng, scale = this.scale) {
+        const { x, y } = this.geoToCanvas(lat, lng);
+        this.scale = scale;
+        this.offsetX = this.canvas.width / 2 - x * scale;
+        this.offsetY = this.canvas.height / 2 - y * scale;
+        this.render();
+    }
+
+    /** Blauer Punkt mit Genauigkeitskreis, unabhängig von der Zoomstufe gleich groß */
+    drawUserPosition(ctx) {
+        const pos = this.userPosition;
+        if (!pos || !this.hasGeoCoordinates) return;
+        const { x, y } = this.geoToCanvas(pos.lat, pos.lng);
+
+        // Genauigkeit (Meter) als halbtransparenter Kreis
+        if (pos.accuracy && this.pixelsPerMeter) {
+            ctx.beginPath();
+            ctx.arc(x, y, pos.accuracy * this.pixelsPerMeter, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(37, 99, 235, 0.15)';
+            ctx.fill();
+            ctx.lineWidth = 1 / this.scale;
+            ctx.strokeStyle = 'rgba(37, 99, 235, 0.4)';
+            ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(x, y, 8 / this.scale, 0, Math.PI * 2);
+        ctx.fillStyle = '#2563eb';
+        ctx.fill();
+        ctx.lineWidth = 3 / this.scale;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
     }
 
     /**
@@ -1094,7 +1220,8 @@ class MapRenderer {
     }
 
     /**
-     * Show popup for POI
+     * Klick auf einen Marker an die Vue-Seite weitergeben (onRoomPOIClick,
+     * onItemPOIClick bzw. onPOIClick in der Renderer-Konfiguration)
      */
     showPOIPopup(poiData) {
         const poi = poiData.poi;
@@ -1118,163 +1245,11 @@ class MapRenderer {
             return;
         }
 
-        // Remove existing popup
-        const existingPopup = document.querySelector('.map-poi-popup');
-        if (existingPopup) {
-            existingPopup.remove();
+        // Normale Marker: ansehen bzw. im Bearbeiten-Modus bearbeiten übernimmt die
+        // Vue-Seite (components/maps/MapPOIModal.vue) — der Renderer zeigt kein eigenes Popup
+        if (typeof this.config.onPOIClick === 'function') {
+            this.config.onPOIClick(poiData, this.isEditMode);
         }
-
-        // Create popup
-        const popup = document.createElement('div');
-        popup.className = 'map-poi-popup';
-
-        // Different content for edit mode vs view mode
-        let popupContent;
-
-        if (this.isEditMode) {
-            // Edit mode - show editable fields
-            popupContent = `
-                <div class="map-poi-popup__content">
-                    <button class="map-poi-popup__close" aria-label="Schließen">&times;</button>
-                    <h3 class="map-poi-popup__title">Marker bearbeiten</h3>
-
-                    <div class="poi-edit-form">
-                        <div class="poi-edit-field">
-                            <label for="poiTitle">Titel</label>
-                            <input type="text" id="poiTitle" class="form-control" value="${poi.title || ''}" placeholder="Marker-Titel">
-                        </div>
-
-                        <div class="poi-edit-field">
-                            <label for="poiMarkerText">Marker-Text (max. 4 Zeichen)</label>
-                            <input type="text" id="poiMarkerText" class="form-control" value="${poi.markerText || ''}" maxlength="4" placeholder="z.B. A, 1, AB">
-                        </div>
-
-                        <div class="poi-edit-field">
-                            <label for="poiDescription">Beschreibung</label>
-                            <textarea id="poiDescription" class="form-control" rows="3" placeholder="Beschreibung des Markers">${poi.description || ''}</textarea>
-                        </div>
-
-                        <div class="poi-edit-field">
-                            <label for="poiCoordinates">Koordinaten (Lat, Lng)</label>
-                            <input type="text" id="poiCoordinates" class="form-control" value="${poi.position || ''}" placeholder="47.1234, 8.5678">
-                            <small class="form-text">Format: Latitude, Longitude</small>
-                        </div>
-                    </div>
-
-                    <div class="poi-edit-actions">
-                        <button class="btn btn--danger btn--small map-poi-popup__delete" data-poi-id="${poi.id}">Löschen</button>
-                        <button class="btn btn--secondary btn--small map-poi-popup__cancel">Abbrechen</button>
-                    </div>
-                </div>
-            `;
-        } else {
-            // View mode - show read-only
-            popupContent = `
-                <div class="map-poi-popup__content">
-                    <button class="map-poi-popup__close" aria-label="Schließen">&times;</button>
-                    <h3 class="map-poi-popup__title">${poi.title || 'POI'}</h3>
-                    <div class="map-poi-popup__description">
-                        ${poi.description || 'Keine Beschreibung verfügbar.'}
-                    </div>
-                </div>
-            `;
-        }
-
-        popup.innerHTML = popupContent;
-
-        // Add to container
-        const container = this.canvas.parentElement.parentElement;
-        container.appendChild(popup);
-
-        // Close button handler
-        const closeBtn = popup.querySelector('.map-poi-popup__close');
-        closeBtn.addEventListener('click', () => {
-            popup.remove();
-        });
-
-        // Edit mode specific handlers
-        if (this.isEditMode) {
-            // Title input
-            const titleInput = popup.querySelector('#poiTitle');
-            if (titleInput) {
-                titleInput.addEventListener('input', (e) => {
-                    poi.title = e.target.value;
-                    this.updatePOIInState(poiData.layerId, poi);
-                    this.render();
-                });
-            }
-
-            // Marker text input
-            const markerTextInput = popup.querySelector('#poiMarkerText');
-            if (markerTextInput) {
-                markerTextInput.addEventListener('input', (e) => {
-                    poi.markerText = e.target.value.substring(0, 4); // Enforce 4 char limit
-                    this.updatePOIInState(poiData.layerId, poi);
-                    this.render();
-                });
-            }
-
-            // Description textarea
-            const descriptionInput = popup.querySelector('#poiDescription');
-            if (descriptionInput) {
-                descriptionInput.addEventListener('input', (e) => {
-                    poi.description = e.target.value;
-                    this.updatePOIInState(poiData.layerId, poi);
-                });
-            }
-
-            // Coordinates input
-            const coordinatesInput = popup.querySelector('#poiCoordinates');
-            if (coordinatesInput) {
-                coordinatesInput.addEventListener('change', (e) => {
-                    const coords = e.target.value.trim();
-                    // Validate format (should be "lat, lng")
-                    if (/^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/.test(coords)) {
-                        poi.position = coords;
-                        this.updatePOIInState(poiData.layerId, poi);
-                        this.render();
-                    } else {
-                        alert('Ungültiges Koordinatenformat. Bitte verwenden Sie: Latitude, Longitude (z.B. 47.1234, 8.5678)');
-                        coordinatesInput.value = poi.position || '';
-                    }
-                });
-            }
-
-            // Delete button
-            const deleteBtn = popup.querySelector('.map-poi-popup__delete');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => {
-                    if (confirm(`Möchten Sie den Marker "${poi.title}" wirklich löschen?`)) {
-                        this.deletePOI(poiData);
-                        popup.remove();
-                    }
-                });
-            }
-
-            // Cancel button
-            const cancelBtn = popup.querySelector('.map-poi-popup__cancel');
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', () => {
-                    popup.remove();
-                });
-            }
-        }
-
-        // Close on escape
-        const escapeHandler = (e) => {
-            if (e.key === 'Escape') {
-                popup.remove();
-                document.removeEventListener('keydown', escapeHandler);
-            }
-        };
-        document.addEventListener('keydown', escapeHandler);
-
-        // Close on click outside
-        popup.addEventListener('click', (e) => {
-            if (e.target === popup) {
-                popup.remove();
-            }
-        });
     }
 
     /**

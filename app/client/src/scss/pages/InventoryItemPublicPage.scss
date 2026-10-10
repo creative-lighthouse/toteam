@@ -120,3 +120,76 @@
         color: var(--ColorGray);
     }
 }
+
+// Seite hinter dem Teilen-Link/NFC-Tag eines Lagerpunkts (views/StorageLocationPublic.vue),
+// sonst gleiches Layout wie die geteilte Objektseite
+.section.section--InventoryItemPublicPage {
+    .storage-public_path {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+
+        strong {
+            color: var(--ColorBlack);
+        }
+    }
+
+    .storage-public_children {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .storage-public_child {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background: transparent;
+        font: inherit;
+        font-size: 14px;
+        text-align: left;
+        color: inherit;
+        cursor: pointer;
+
+        @include hover {
+            background-color: var(--ColorVeryLightGray);
+        }
+
+        // Ohne Anmeldung und ohne eigenen Teilen-Link nicht anklickbar
+        &--static {
+            cursor: default;
+
+            @include hover {
+                background: transparent;
+            }
+        }
+    }
+
+    .storage-public_child-title {
+        flex: 1;
+        min-width: 0;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .storage-public_child-type {
+        flex-shrink: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .storage-public_empty {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+}

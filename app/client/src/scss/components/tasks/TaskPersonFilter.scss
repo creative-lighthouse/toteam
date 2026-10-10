@@ -1,0 +1,55 @@
+@use "../../base/variables" as *;
+
+// Person filter (icon button + custom dropdown), siehe TaskPersonFilter.vue
+.person-filter {
+    position: relative;
+    display: inline-flex; // hug the button's own size instead of stretching to a wide, mostly-unclickable pill
+    flex-shrink: 0;
+    border: 1px solid var(--ColorPrimary);
+    border-radius: 500px;
+
+    // The mobile filter row stacks with align-items: stretch, which would
+    // otherwise stretch this to full width (and left-align the button inside);
+    // pin it to the right edge of the row instead.
+    @include media(max-medium) {
+        align-self: flex-end;
+    }
+}
+
+.person-filter_backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+}
+
+.person-filter_dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 200;
+    width: 260px;
+    max-width: calc(100vw - 40px);
+    background-color: var(--ColorWhite);
+    border: 1px solid var(--ColorLightGray);
+    border-radius: var(--BorderRadiusSmall);
+    box-shadow: var(--BoxShadowMenu);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.person-filter_clear {
+    border: none;
+    background: transparent;
+    color: var(--ColorPrimary);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    padding: 4px 8px;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}

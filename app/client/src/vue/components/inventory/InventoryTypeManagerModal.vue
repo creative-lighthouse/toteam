@@ -5,7 +5,7 @@
       <AppSegmentedToggle
         v-model="appliesTo"
         label="Arten für"
-        :options="[{ value: 'item', label: 'Objekte' }, { value: 'vehicle', label: 'Fahrzeuge' }, { value: 'room', label: 'Räume' }]"
+        :options="[{ value: 'item', label: 'Objekte' }, { value: 'vehicle', label: 'Fahrzeuge' }, { value: 'room', label: 'Räume' }, { value: 'storage', label: 'Lager' }]"
       />
       <div v-if="manageableOrgs.length > 1" class="field">
         <label>Organisation</label>
@@ -14,7 +14,7 @@
     </div>
 
     <p v-if="!orgTypes.length" class="inventory-type-manager-modal_empty">
-      Für diese Organisation wurden noch keine {{ { item: 'Objekt-Arten', vehicle: 'Fahrzeug-Arten', room: 'Raum-Arten' }[appliesTo] }} angelegt.
+      Für diese Organisation wurden noch keine {{ { item: 'Objekt-Arten', vehicle: 'Fahrzeug-Arten', room: 'Raum-Arten', storage: 'Lager-Arten' }[appliesTo] }} angelegt.
     </p>
 
     <ul v-else class="inventory-type-manager-modal_list">
@@ -65,6 +65,9 @@ const manageableOrgs = computed(() => store.organizations.filter(o => o.CanManag
 const orgTypes = computed(() => (selectedOrgId.value ? store.typesForOrg(selectedOrgId.value, appliesTo.value) : []))
 
 function usageLabel(type) {
+  if (type.AppliesTo === 'storage') {
+    return `${type.ItemCount} Lagerpunkt${type.ItemCount === 1 ? '' : 'e'}`
+  }
   if (type.AppliesTo === 'room') {
     return `${type.ItemCount} Raum${type.ItemCount === 1 ? '' : 'e'}`
   }
@@ -77,7 +80,7 @@ function fieldLabels(type) {
   return (type.Fields || []).map(field => field.Label).join(', ')
 }
 
-/** @param {'item'|'vehicle'|'room'} kind welche Arten zuerst gezeigt werden (z.B. im Räume-Tab 'room') */
+/** @param {'item'|'vehicle'|'room'|'storage'} kind welche Arten zuerst gezeigt werden (z.B. im Räume-Tab 'room') */
 function open(kind = 'item') {
   appliesTo.value = kind
   const orgs = manageableOrgs.value

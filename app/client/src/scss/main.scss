@@ -71,6 +71,7 @@
 @use "pages/MapViewPage.scss";
 @use "components/calendar/EventCard.scss";
 @use "components/calendar/EventMealsList.scss";
+@use "components/calendar/EventMyRolesList.scss";
 @use "components/organizations/OrganizationCard.scss";
 @use "components/calendar/ParticipantCard.scss";
 @use "components/ui/ContextMenu.scss";
@@ -91,6 +92,7 @@
 @use "components/ui/AppCollapse.scss";
 @use "components/ui/AppCountButton.scss";
 @use "components/ui/AppSegmentedToggle.scss";
+@use "components/ui/AppViewToggle.scss";
 @use "components/ui/AppTabNav.scss";
 @use "components/ui/AppChipSelect.scss";
 @use "components/ui/AppSearchBar.scss";
@@ -98,6 +100,9 @@
 @use "components/maps/MapCreateModal.scss";
 @use "components/maps/MapEventItems.scss";
 @use "components/maps/MapEventPlanLink.scss";
+@use "components/maps/MapPOIModal.scss";
+@use "components/maps/MapLayerCreateModal.scss";
+@use "components/maps/MapBasemap.scss";
 @use "components/calendar/CalendarEntryCreateModal.scss";
 @use "components/calendar/CalendarIcsLinkModal.scss";
 @use "components/calendar/PollDialog.scss";
@@ -122,6 +127,9 @@
 @use "components/layout/PwaInstallBanner.scss";
 @use "components/tasks/TaskCard.scss";
 @use "components/tasks/TaskProgressBar.scss";
+@use "components/tasks/TaskBoard.scss";
+@use "components/tasks/TaskTable.scss";
+@use "components/tasks/TaskPersonFilter.scss";
 @use "components/tasks/TaskCreateModal.scss";
 @use "components/tasks/TaskSupportersModal.scss";
 @use "components/tasks/TaskOwnerModal.scss";
@@ -162,6 +170,12 @@
 @use "components/inventory/InventoryTypeManagerModal.scss";
 @use "components/inventory/InventoryGroupModal.scss";
 @use "components/inventory/InventoryDamageList.scss";
+@use "components/inventory/InventoryStorageTab.scss";
+@use "components/inventory/InventoryStorageNode.scss";
+@use "components/inventory/InventoryStorageContents.scss";
+@use "components/inventory/InventoryStorageUnassigned.scss";
+@use "components/inventory/InventoryStorageDetailModal.scss";
+@use "components/inventory/InventoryStorageFormModal.scss";
 
 html{
     overflow-y: scroll;

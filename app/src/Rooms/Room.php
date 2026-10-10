@@ -7,6 +7,7 @@ use App\Inventory\HasShareToken;
 use App\Inventory\InventoryDamageReport;
 use App\Inventory\InventoryItemType;
 use App\Inventory\InventoryRental;
+use App\Inventory\StorageLocation;
 use App\Tasks\Task;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Image;
@@ -27,7 +28,9 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $MetaValues
  * @property ?string $ShareToken
  * @property int $TypeID
+ * @property int $StorageLocationID
  * @method \App\Inventory\InventoryItemType Type()
+ * @method \App\Inventory\StorageLocation StorageLocation()
  * @property int $OrganizationID
  * @method \App\Teams\Organization Organization()
  * @method \SilverStripe\ORM\ManyManyList|\App\Tasks\Task[] Tasks()
@@ -65,6 +68,8 @@ class Room extends DataObject implements PermissionProvider
         "Organization" => Organization::class,
         // Art mit AppliesTo = "room" (siehe InventoryItemType)
         "Type"         => InventoryItemType::class,
+        // Wo der Raum liegt (Tab "Lager"), z.B. im Gebäude
+        "StorageLocation" => StorageLocation::class,
     ];
 
     private static $many_many = [
@@ -101,6 +106,7 @@ class Room extends DataObject implements PermissionProvider
         "Rentals"      => "Reservierungen",
         "Images"       => "Bilder",
         "Documents"    => "Dokumente",
+        "StorageLocation" => "Lagerort",
     ];
 
     private static $summary_fields = [

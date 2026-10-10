@@ -1,0 +1,45 @@
+@use "../../base/variables" as *;
+
+// Icon-Umschalter zwischen Ansichten (siehe AppViewToggle.vue)
+.app-view-toggle {
+    display: flex;
+    flex-shrink: 0;
+    margin-left: auto; // rechtsbündig in der Filterzeile der Suchleiste
+    border: 1px solid var(--ColorPrimary);
+    border-radius: var(--BorderRadiusSmall);
+    overflow: hidden;
+    background-color: var(--ColorLightGray);
+
+    .app-view-toggle_btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 12px;
+        border: none;
+        background-color: var(--ColorLightGray);
+        color: var(--ColorPrimary);
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+        line-height: 1;
+
+        &:hover:not(.app-view-toggle_btn--active) {
+            background-color: var(--ColorGray);
+            color: var(--ColorWhite);
+        }
+
+        &--active {
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: -2px;
+        }
+
+        svg {
+            display: block;
+        }
+    }
+}

@@ -72,12 +72,16 @@ const router = useRouter()
 const expandedNoteIds = ref(new Set())
 const participantMenu = ref(null)
 
+// Innerhalb jeder Gruppe alphabetisch nach Namen
+const byName = (a, b) => (a.MemberName ?? '').localeCompare(b.MemberName ?? '', 'de', { sensitivity: 'base' })
+
 const groupedParticipations = computed(() => {
   if (!props.event.Participations) return null
+  const ofType = type => props.event.Participations.filter(p => p.Type === type).sort(byName)
   return {
-    Accept: props.event.Participations.filter(p => p.Type === 'Accept'),
-    Maybe: props.event.Participations.filter(p => p.Type === 'Maybe'),
-    Decline: props.event.Participations.filter(p => p.Type === 'Decline'),
+    Accept: ofType('Accept'),
+    Maybe: ofType('Maybe'),
+    Decline: ofType('Decline'),
   }
 })
 
@@ -89,7 +93,7 @@ const membersWithoutResponse = computed(() =>
     Username: m.Username,
     ProfileImageURL: m.ProfileImageURL,
     Type: 'Pending',
-  }))
+  })).sort(byName)
 )
 
 // Menü: "Profil ansehen" für alle, darunter Antworten eintragen (nur mit CALENDAR_RECORD_RSVP)

@@ -18,60 +18,16 @@
         </template>
 
         <template #filters>
-          <!-- Organisation filter -->
-          <select
-            aria-label="Aufgaben nach Organisation filtern"
-            :value="store.filterOrganization?.ID ?? ''"
-            @change="onOrgChange($event.target.value)"
-          >
-            <option value="">Alle Organisationen</option>
-            <option
-              v-for="org in store.organizations"
-              :key="org.ID"
-              :value="org.ID"
-            >{{ org.Title }}</option>
-          </select>
-
-          <!-- State filter -->
-          <select
-            aria-label="Aufgaben nach Status filtern"
-            :value="store.filterState ?? ''"
-            @change="store.setStateFilter($event.target.value || null)"
-          >
-            <option value="">Alle Status</option>
-            <option v-for="s in store.STATES" :key="s.value" :value="s.value">
-              {{ s.label }}
-            </option>
-          </select>
-
-          <!-- Filter by person (owner or supporter) -->
-          <TaskPersonFilter />
-
-          <!-- View mode toggle (desktop/tablet only) -->
-          <div v-if="!isMobile" class="tasks-view-toggle" role="group" aria-label="Ansicht">
-            <button
-              class="tasks-view-toggle_btn"
-              type="button"
-              :class="{ 'tasks-view-toggle_btn--active': viewMode === 'list' }"
-              :aria-pressed="viewMode === 'list'"
-              @click="viewMode = 'list'"
-              title="Listenansicht"
-              aria-label="Listenansicht"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            </button>
-            <button
-              class="tasks-view-toggle_btn"
-              type="button"
-              :class="{ 'tasks-view-toggle_btn--active': viewMode === 'kanban' }"
-              :aria-pressed="viewMode === 'kanban'"
-              @click="viewMode = 'kanban'"
-              title="Kanban-Ansicht"
-              aria-label="Kanban-Ansicht"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="7" rx="1"/></svg>
-            </button>
-          </div>
+          <TaskFilterControls
+            :organizations="store.organizations"
+            :organization-id="store.filterOrganization?.ID ?? null"
+            :state="store.filterState"
+            :person-id="store.filterPersonId"
+            v-model:view-mode="viewMode"
+            @update:organization-id="onOrgChange"
+            @update:state="store.setStateFilter"
+            @update:person-id="store.setPersonFilter"
+          />
         </template>
       </AppSearchBar>
 
@@ -92,55 +48,16 @@
           <p>Keine Aufgaben gefunden.</p>
         </div>
 
-        <!-- LIST VIEW — grouped by status, each group collapsible -->
-        <div v-else-if="effectiveViewMode === 'list'" class="tasks-list">
-          <div v-for="col in store.STATES" :key="col.value" class="tasks-list-group">
-            <button
-              type="button"
-              class="tasks-list-group_header"
-              :aria-expanded="!store.collapsedGroups.has(col.value)"
-              @click="store.toggleGroupCollapsed(col.value)"
-            >
-              <svg class="tasks-list-group_chevron" :class="{ 'tasks-list-group_chevron--collapsed': store.collapsedGroups.has(col.value) }" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              <span class="tasks-list-group_title">{{ col.label }}</span>
-              <span class="tasks-list-group_count">{{ store.tasksByState[col.value].length }}</span>
-            </button>
-            <div v-show="!store.collapsedGroups.has(col.value)" class="tasks-list-group_body">
-              <TaskCard
-                v-for="task in store.tasksByState[col.value]"
-                :key="task.ID"
-                :task="task"
-                @click="openTask"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- KANBAN VIEW -->
-        <div v-else class="tasks-kanban">
-          <div
-            v-for="col in store.STATES"
-            :key="col.value"
-            class="tasks-kanban_column"
-            @dragover.prevent
-            @drop="onDrop($event, col.value)"
-          >
-            <div class="tasks-kanban_column-header">
-              <span class="tasks-kanban_column-title">{{ col.label }}</span>
-              <span class="tasks-kanban_column-count">{{ store.tasksByState[col.value].length }}</span>
-            </div>
-            <div class="tasks-kanban_cards">
-              <TaskCard
-                v-for="task in store.tasksByState[col.value]"
-                :key="task.ID"
-                :task="task"
-                draggable="true"
-                @dragstart="onDragStart($event, task)"
-                @click="openTask"
-              />
-            </div>
-          </div>
-        </div>
+        <TaskBoard
+          v-else
+          fill
+          :tasks="store.filteredTasks"
+          :view-mode="effectiveViewMode"
+          :collapsed-groups="store.collapsedGroups"
+          @toggle-group="store.toggleGroupCollapsed"
+          @open="openTask"
+          @move="onMove"
+        />
       </template>
 
     </div>
@@ -155,14 +72,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTasksStore } from '@stores/tasks'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { getCookie, setCookie } from '@utils/cookies'
-import TaskCard from '@components/tasks/TaskCard.vue'
+import { useMediaQuery } from '@utils/useMediaQuery'
+import TaskBoard from '@components/tasks/TaskBoard.vue'
 import TaskCreateModal from '@components/tasks/TaskCreateModal.vue'
-import TaskPersonFilter from '@components/tasks/TaskPersonFilter.vue'
+import TaskFilterControls from '@components/tasks/TaskFilterControls.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
 import AddTaskIcon from '../../../icons/actions/action_addtask.svg'
@@ -174,19 +92,13 @@ const router = useRouter()
 const store = useTasksStore()
 usePageHeaderStore().setHeader('Aufgaben', 'Alle Aufgaben deiner Organisationen.')
 
-const viewMode = ref(getCookie(VIEW_MODE_COOKIE) === 'kanban' ? 'kanban' : 'list')
+const viewMode = ref(['kanban', 'table'].includes(getCookie(VIEW_MODE_COOKIE)) ? getCookie(VIEW_MODE_COOKIE) : 'list')
 watch(viewMode, (mode) => setCookie(VIEW_MODE_COOKIE, mode))
 const createModal = ref(null)
-let draggedTaskId = null
 
 // Mobile only ever shows the list view — mirrors the `max-medium` (700px) CSS breakpoint
-const mobileQuery = window.matchMedia('(max-width: 700px)')
-const isMobile = ref(mobileQuery.matches)
+const isMobile = useMediaQuery('(max-width: 700px)')
 const effectiveViewMode = computed(() => isMobile.value ? 'list' : viewMode.value)
-
-function onMobileQueryChange(e) {
-  isMobile.value = e.matches
-}
 
 function openTask(task) {
   router.push({ name: 'TaskDetail', params: { hash: task.Hash } })
@@ -196,35 +108,15 @@ function onTaskCreated(task) {
   router.push({ name: 'TaskDetail', params: { hash: task.Hash } })
 }
 
-function onOrgChange(value) {
-  if (!value) {
-    store.setOrganizationFilter(null)
-    return
-  }
-  const org = store.organizations.find(o => o.ID === parseInt(value))
-  store.setOrganizationFilter(org ?? null)
+function onOrgChange(id) {
+  store.setOrganizationFilter(id ? store.organizations.find(o => o.ID === id) ?? null : null)
 }
 
-function onDragStart(event, task) {
-  draggedTaskId = task.ID
-  event.dataTransfer.effectAllowed = 'move'
-}
-
-async function onDrop(event, targetState) {
-  if (!draggedTaskId) return
-  const task = store.getTaskById(draggedTaskId)
-  if (task && task.State !== targetState) {
-    await store.updateTaskState(draggedTaskId, targetState)
-  }
-  draggedTaskId = null
+async function onMove(task, targetState) {
+  await store.updateTaskState(task.ID, targetState)
 }
 
 onMounted(async () => {
-  mobileQuery.addEventListener('change', onMobileQueryChange)
   await store.fetchTasks()
-})
-
-onUnmounted(() => {
-  mobileQuery.removeEventListener('change', onMobileQueryChange)
 })
 </script>

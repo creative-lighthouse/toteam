@@ -1,7 +1,7 @@
 <template>
   <div class="person-filter">
     <AppIconButton
-      :variant="store.filterPersonId ? 'primary' : 'neutral'"
+      :variant="modelValue ? 'primary' : 'neutral'"
       aria-label="Aufgaben nach Person filtern"
       @click.stop="toggleOpen"
     >
@@ -13,7 +13,7 @@
     <div v-if="open" class="person-filter_dropdown" @click.stop>
       <MemberPicker
         :members="store.assignableMembers"
-        :model-value="store.filterPersonId"
+        :model-value="modelValue"
         @update:model-value="select"
         searchable
         autofocus
@@ -22,7 +22,7 @@
       />
 
       <button
-        v-if="store.filterPersonId"
+        v-if="modelValue"
         type="button"
         class="person-filter_clear"
         @click="clearFilter"
@@ -41,6 +41,12 @@ import AppIconButton from '@components/ui/AppIconButton.vue'
 import MemberPicker from '@components/ui/MemberPicker.vue'
 import PersonSearchIcon from '../../../../icons/person_search.svg'
 
+// Gefilterte Person (Member-ID) — Übersicht: Filter im tasks-Store, Detailseite: lokaler Filter
+defineProps({
+  modelValue: { type: Number, default: null },
+})
+const emit = defineEmits(['update:modelValue'])
+
 const store = useTasksStore()
 const authStore = useAuthStore()
 
@@ -57,12 +63,12 @@ function close() {
 }
 
 function select(memberId) {
-  store.setPersonFilter(memberId)
+  emit('update:modelValue', memberId)
   close()
 }
 
 function clearFilter() {
-  store.setPersonFilter(null)
+  emit('update:modelValue', null)
   close()
 }
 

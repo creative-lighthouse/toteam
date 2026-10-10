@@ -1,0 +1,30 @@
+@use "../../base/variables" as *;
+
+// Umgebungskarte hinter einem Lageplan (MapBasemap.vue) — liegt unter dem Canvas
+.map-basemap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+
+    // Größe und Matrix setzt MapBasemap.vue; Ursprung oben links, wie beim Canvas
+    .map-basemap_map {
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: 0 0;
+    }
+
+    .map-basemap_attribution {
+        position: absolute;
+        right: 6px;
+        bottom: 4px;
+        z-index: 1;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.8);
+        color: #333;
+        font-size: 11px;
+    }
+}

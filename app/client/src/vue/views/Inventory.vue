@@ -12,7 +12,7 @@
             type="button"
             role="tab"
             class="inventory-page_tab"
-            :class="{ 'inventory-page_tab--active': tab === t.id }"
+            :class="{ 'inventory-page_tab--active': tab === t.id, 'inventory-page_tab--separated': t.separated }"
             :aria-selected="tab === t.id"
             aria-controls="inventory-tabpanel"
             :tabindex="tab === t.id ? 0 : -1"
@@ -33,6 +33,15 @@
 
       <div id="inventory-tabpanel" role="tabpanel" :aria-labelledby="`inventory-tab-${tab}`">
       <InventoryRoomsTab v-if="tab === 'rooms'" ref="roomsTab" @reserve="onReserveRoom" @manage-types="typeManagerModal?.open('room')" @scan-nfc="scanModal?.open()" />
+
+      <InventoryStorageTab
+        v-else-if="tab === 'storage'"
+        ref="storageTab"
+        @manage-types="typeManagerModal?.open('storage')"
+        @open-item="item => detailModal?.open(item.ID)"
+        @open-room="openRoomFromStorage"
+        @scan-nfc="scanModal?.open()"
+      />
 
       <template v-else>
         <AppSearchBar
@@ -84,6 +93,7 @@
               <option value="rented_out">Ausgeliehen</option>
               <option v-for="s in store.statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
             </select>
+            <AppViewToggle v-model="viewMode" :options="VIEW_MODES" />
           </template>
         </AppSearchBar>
 
@@ -105,10 +115,17 @@
           <p v-else>{{ store.items.length ? 'Keine passenden Objekte gefunden.' : 'Noch keine Objekte im Inventar.' }}</p>
         </div>
 
-        <ul v-else class="inventory-list">
+        <!-- Liste oder Karten: gleiches Markup, die Kartenansicht ordnet per CSS um -->
+        <ul v-else class="inventory-list" :class="{ 'inventory-list--cards': viewMode === 'cards' }">
           <li v-for="group in store.groupedItems" :key="group.key">
             <button type="button" class="inventory-entry" @click="openGroup(group)">
-              <img v-if="group.first.Thumbnail" :src="group.first.Thumbnail" :alt="group.first.Title" class="inventory-entry_thumb" loading="lazy">
+              <img
+                v-if="group.first.Thumbnail"
+                :src="viewMode === 'cards' ? (group.first.CardImage || group.first.Thumbnail) : group.first.Thumbnail"
+                :alt="group.first.Title"
+                class="inventory-entry_thumb"
+                loading="lazy"
+              >
               <span v-else class="inventory-entry_thumb inventory-entry_thumb--placeholder" aria-hidden="true">{{ initials(group.first.Title) }}</span>
 
               <div class="inventory-entry_info">
@@ -177,6 +194,7 @@ import { useInventoryStore } from '@stores/inventory'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
+import AppViewToggle from '@components/ui/AppViewToggle.vue'
 import InventoryItemFormModal from '@components/inventory/InventoryItemFormModal.vue'
 import InventoryItemDetailModal from '@components/inventory/InventoryItemDetailModal.vue'
 import InventoryRentalRequestModal from '@components/inventory/InventoryRentalRequestModal.vue'
@@ -188,10 +206,14 @@ import actionPages from '../../../icons/actions/action_pages.svg'
 import actionInventory from '../../../icons/actions/action_inventory.svg'
 import actionCar from '../../../icons/actions/action_car.svg'
 import actionRoom from '../../../icons/actions/action_room.svg'
+import actionStorage from '../../../icons/actions/action_storage.svg'
+import InventoryStorageTab from '@components/inventory/InventoryStorageTab.vue'
+import { useStorageStore } from '@stores/storage'
 import actionNfc from '../../../icons/actions/action_nfc.svg'
 import { isNfcSupported, parseShareLink } from '@utils/nfc'
 import ScanNFCModal from '@components/ui/ScanNFCModal.vue'
 import { useRoomsStore } from '@stores/rooms'
+import { getCookie, setCookie } from '@utils/cookies'
 import stateBroken from '../../../icons/states/state_broken.svg'
 import stateRepair from '../../../icons/states/state_repair.svg'
 // Noch kein eigenes Status-Icon für "ausgeliehen" — bei Bedarf hier austauschen
@@ -205,7 +227,18 @@ const TABS = [
   { id: 'items', label: 'Objekte', iconStyle: maskStyle(actionInventory) },
   { id: 'vehicles', label: 'Fahrzeuge', iconStyle: maskStyle(actionCar) },
   { id: 'rooms', label: 'Räume', iconStyle: maskStyle(actionRoom) },
+  // Abgesetzt: keine Inventar-Objekte, sondern Lagerorte, die sie enthalten
+  { id: 'storage', label: 'Lager', iconStyle: maskStyle(actionStorage), separated: true },
 ]
+
+// Ansicht der Objekt-/Fahrzeugliste, wie bei den Aufgaben im Cookie gemerkt
+const VIEW_MODE_COOKIE = 'toteam_inventory_view_mode'
+const VIEW_MODES = [
+  { value: 'list', label: 'Listenansicht', icon: 'list' },
+  { value: 'cards', label: 'Kartenansicht', icon: 'grid' },
+]
+const viewMode = ref(getCookie(VIEW_MODE_COOKIE) === 'cards' ? 'cards' : 'list')
+watch(viewMode, mode => setCookie(VIEW_MODE_COOKIE, mode))
 
 const typesIconStyle = { maskImage: `url("${actionPages}")`, WebkitMaskImage: `url("${actionPages}")` }
 
@@ -218,6 +251,7 @@ const rentalModal = ref(null)
 const typeManagerModal = ref(null)
 const groupModal = ref(null)
 const roomsTab = ref(null)
+const storageTab = ref(null)
 const roomsStore = useRoomsStore()
 
 // NFC: gescannte ToTeam-Links (Objekt oder Raum) öffnen direkt das passende Modal
@@ -243,6 +277,16 @@ async function onNfcScanned(url) {
       const itemTab = response.item.Kind === 'vehicle' ? 'vehicles' : 'items'
       if (tab.value !== itemTab) setTab(itemTab)
       detailModal.value?.open(response.item.ID)
+    } else if (link.kind === 'storage') {
+      const response = await storageStore.fetchPublicLocation(link.token)
+      if (!response?.isMember) {
+        scanModal.value?.showError(response?.location ? 'Auf diesen Lagerpunkt hast du keinen Zugriff.' : 'Dieser Link ist ungültig oder wurde deaktiviert.')
+        return
+      }
+      scanModal.value?.close()
+      if (tab.value !== 'storage') setTab('storage')
+      await nextTick()
+      storageTab.value?.openLocation(response.location.ID)
     } else {
       const response = await roomsStore.fetchPublicRoom(link.token)
       if (!response?.isMember) {
@@ -260,7 +304,7 @@ async function onNfcScanned(url) {
 }
 
 // Aktiver Tab steht in der URL (?tab=rooms), damit z.B. der Link aus dem Lageplan direkt die Räume zeigt
-const tab = computed(() => (['rooms', 'vehicles'].includes(route.query.tab) ? route.query.tab : 'items'))
+const tab = computed(() => (['rooms', 'vehicles', 'storage'].includes(route.query.tab) ? route.query.tab : 'items'))
 
 // Objekte und Fahrzeuge teilen sich Liste und Modals — der Tab bestimmt die Art
 const kind = computed(() => (tab.value === 'vehicles' ? 'vehicle' : 'item'))
@@ -335,7 +379,33 @@ function openGroup(group) {
   else detailModal.value?.open(group.first.ID)
 }
 
+const storageStore = useStorageStore()
+
+/**
+ * Detail direkt öffnen über ?location= (Lagerpunkt), ?item= (Objekt/Fahrzeug) oder
+ * ?room= (Raum) — z.B. von der Seite hinter dem NFC-Tag eines Lagerpunkts. Der
+ * Parameter wird danach entfernt, damit Zurück/Neuladen das Detail nicht erneut öffnet.
+ */
+async function openFromQuery() {
+  const { location, item, room, ...rest } = route.query
+  if (!location && !item && !room) return
+  await nextTick()
+  if (location) storageTab.value?.openLocation(parseInt(location))
+  else if (item) detailModal.value?.open(parseInt(item))
+  else if (room) roomsTab.value?.openRoom(parseInt(room))
+  router.replace({ query: rest })
+}
+
+/** Raum aus dem Lager-Baum öffnen: in den Räume-Tab wechseln und dort das Detail zeigen */
+async function openRoomFromStorage(room) {
+  setTab('rooms')
+  await nextTick()
+  roomsTab.value?.openRoom(room.ID)
+}
+
 function onItemSaved(item, { createdCount = 1 } = {}) {
+  // Der Lagerort kann sich geändert haben — Lager-Baum beim nächsten Öffnen frisch laden
+  if (storageStore.locations.length) storageStore.fetchLocations(true)
   // Mehrere gleiche Objekte angelegt → die Gruppe zeigen, sonst das Objekt
   if (createdCount > 1 || store.itemsOfGroup(item.GroupKey).length > 1) groupModal.value?.open(item.GroupKey)
   else detailModal.value?.open(item.ID)
@@ -379,5 +449,6 @@ function onRentalSaved(rental) {
 
 onMounted(() => {
   store.fetchItems()
+  openFromQuery()
 })
 </script>

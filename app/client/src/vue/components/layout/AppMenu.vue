@@ -101,7 +101,7 @@
                         <div class="nav_icon">
                             <img :src="essenTotem" alt="" class="nav_image">
                         </div>
-                        <p class="nav_title">Essen <span class="nav_alpha">Alpha</span></p>
+                        <p class="nav_title">Essen <span class="nav_alpha">Beta</span></p>
                     </router-link>
                 </li>
 
@@ -128,7 +128,7 @@
                         <div class="nav_icon">
                             <img :src="todosTotem" alt="" class="nav_image">
                         </div>
-                        <p class="nav_title">Aufgaben <span class="nav_alpha">Beta</span></p>
+                        <p class="nav_title">Aufgaben</p>
                     </router-link>
                 </li>
 
@@ -146,7 +146,7 @@
                         <div class="nav_icon">
                             <img :src="marketingTotem" alt="" class="nav_image">
                         </div>
-                        <p class="nav_title">Marketing <span class="nav_alpha">Alpha</span></p>
+                        <p class="nav_title">Marketing <span class="nav_alpha">Beta</span></p>
                     </router-link>
                 </li>
 
