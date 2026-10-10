@@ -111,8 +111,8 @@
     }
 
     .inventory-entry_thumb {
-        width: 56px;
-        height: 56px;
+        width: 40px;
+        height: 40px;
         flex-shrink: 0;
         border-radius: var(--BorderRadiusSmall);
         object-fit: cover;
@@ -124,7 +124,7 @@
             background-color: var(--ColorPrimaryLight);
             color: var(--ColorPrimary);
             font-weight: 700;
-            font-size: 18px;
+            font-size: 16px;
         }
     }
 
@@ -222,4 +222,77 @@
 .section--InventoryPage .inventory-page_tab:focus-visible {
     outline: 2px solid var(--ColorPrimary);
     outline-offset: 2px;
+}
+
+// ── Kartenansicht (AppViewToggle "Karten") ─────────────────────────────────
+// Gleiches Markup wie die Liste: Bild in voller Kartenbreite, darunter Titel und
+// Meta-Zeile; Status-Icons und Anzahl liegen oben auf dem Bild.
+.section.section--InventoryPage .inventory-list--cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+
+    @include media(max-desktop) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @include media(max-medium) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    @include media(max-smartphone) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    > li {
+        display: flex;
+    }
+
+    .inventory-entry {
+        position: relative;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .inventory-entry_thumb {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        border-radius: 0;
+
+        &--placeholder {
+            font-size: 32px;
+        }
+    }
+
+    .inventory-entry_info {
+        padding: 10px 12px 12px;
+    }
+
+    .inventory-entry_states {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        flex-wrap: wrap;
+    }
+
+    .inventory-entry_quantity {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: auto;
+        padding: 3px 8px;
+        border-radius: 50px;
+        background-color: var(--ColorWhite);
+        box-shadow: var(--BoxShadowLight);
+        font-size: 13px;
+
+        &:empty {
+            display: none;
+        }
+    }
 }

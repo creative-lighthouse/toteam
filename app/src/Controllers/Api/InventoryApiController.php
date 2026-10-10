@@ -188,6 +188,8 @@ class InventoryApiController extends ApiController
             // Werte der Zusatzfelder: { "<Feld-ID>": "<Wert>" }
             'Values'          => (object) $item->getMetaValueMap(),
             'Thumbnail'       => $firstImage && $firstImage->exists() ? $firstImage->Fill(160, 160)->getURL() : null,
+            // Größeres Bild für die Kartenansicht (volle Kartenbreite, 4:3)
+            'CardImage'       => $firstImage && $firstImage->exists() ? $firstImage->Fill(480, 360)->getURL() : null,
             'GroupKey'        => $item->GroupKey,
             'IsRentedOut'     => $rentedOut !== null ? isset($rentedOut[$item->ID]) : $item->getCurrentRental() !== null,
             'CanEdit'         => $item->isEditableBy($member),

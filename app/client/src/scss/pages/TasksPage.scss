@@ -68,45 +68,6 @@
         flex-shrink: 0;
     }
 
-    // Segmented view toggle
-    .tasks-view-toggle {
-        display: flex;
-        flex-shrink: 0;
-        margin-left: auto; // rechtsbündig in der Filterzeile der Suchleiste
-        border: 1px solid var(--ColorPrimary);
-        border-radius: var(--BorderRadiusSmall);
-        overflow: hidden;
-        background-color: var(--ColorLightGray);
-    }
-
-    .tasks-view-toggle_btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 7px 12px;
-        border: none;
-        background-color: var(--ColorLightGray);
-        color: var(--ColorPrimary);
-        cursor: pointer;
-        transition: background-color 0.15s ease, color 0.15s ease;
-        line-height: 1;
-
-        &:hover:not(.tasks-view-toggle_btn--active) {
-            background-color: var(--ColorGray);
-            color: var(--ColorWhite);
-        }
-
-        &--active {
-            background-color: var(--ColorPrimary);
-            color: var(--ColorWhite);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-        }
-
-        svg {
-            display: block;
-        }
-    }
-
     // ── LIST VIEW ────────────────────────────────────────────
     // Fills the remaining height below the toolbar and scrolls on its own.
     .tasks-list {

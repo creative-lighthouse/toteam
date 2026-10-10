@@ -84,6 +84,7 @@
               <option value="rented_out">Ausgeliehen</option>
               <option v-for="s in store.statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
             </select>
+            <AppViewToggle v-model="viewMode" :options="VIEW_MODES" />
           </template>
         </AppSearchBar>
 
@@ -105,10 +106,17 @@
           <p v-else>{{ store.items.length ? 'Keine passenden Objekte gefunden.' : 'Noch keine Objekte im Inventar.' }}</p>
         </div>
 
-        <ul v-else class="inventory-list">
+        <!-- Liste oder Karten: gleiches Markup, die Kartenansicht ordnet per CSS um -->
+        <ul v-else class="inventory-list" :class="{ 'inventory-list--cards': viewMode === 'cards' }">
           <li v-for="group in store.groupedItems" :key="group.key">
             <button type="button" class="inventory-entry" @click="openGroup(group)">
-              <img v-if="group.first.Thumbnail" :src="group.first.Thumbnail" :alt="group.first.Title" class="inventory-entry_thumb" loading="lazy">
+              <img
+                v-if="group.first.Thumbnail"
+                :src="viewMode === 'cards' ? (group.first.CardImage || group.first.Thumbnail) : group.first.Thumbnail"
+                :alt="group.first.Title"
+                class="inventory-entry_thumb"
+                loading="lazy"
+              >
               <span v-else class="inventory-entry_thumb inventory-entry_thumb--placeholder" aria-hidden="true">{{ initials(group.first.Title) }}</span>
 
               <div class="inventory-entry_info">
@@ -177,6 +185,7 @@ import { useInventoryStore } from '@stores/inventory'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
+import AppViewToggle from '@components/ui/AppViewToggle.vue'
 import InventoryItemFormModal from '@components/inventory/InventoryItemFormModal.vue'
 import InventoryItemDetailModal from '@components/inventory/InventoryItemDetailModal.vue'
 import InventoryRentalRequestModal from '@components/inventory/InventoryRentalRequestModal.vue'
@@ -192,6 +201,7 @@ import actionNfc from '../../../icons/actions/action_nfc.svg'
 import { isNfcSupported, parseShareLink } from '@utils/nfc'
 import ScanNFCModal from '@components/ui/ScanNFCModal.vue'
 import { useRoomsStore } from '@stores/rooms'
+import { getCookie, setCookie } from '@utils/cookies'
 import stateBroken from '../../../icons/states/state_broken.svg'
 import stateRepair from '../../../icons/states/state_repair.svg'
 // Noch kein eigenes Status-Icon für "ausgeliehen" — bei Bedarf hier austauschen
@@ -206,6 +216,15 @@ const TABS = [
   { id: 'vehicles', label: 'Fahrzeuge', iconStyle: maskStyle(actionCar) },
   { id: 'rooms', label: 'Räume', iconStyle: maskStyle(actionRoom) },
 ]
+
+// Ansicht der Objekt-/Fahrzeugliste, wie bei den Aufgaben im Cookie gemerkt
+const VIEW_MODE_COOKIE = 'toteam_inventory_view_mode'
+const VIEW_MODES = [
+  { value: 'list', label: 'Listenansicht', icon: 'list' },
+  { value: 'cards', label: 'Kartenansicht', icon: 'grid' },
+]
+const viewMode = ref(getCookie(VIEW_MODE_COOKIE) === 'cards' ? 'cards' : 'list')
+watch(viewMode, mode => setCookie(VIEW_MODE_COOKIE, mode))
 
 const typesIconStyle = { maskImage: `url("${actionPages}")`, WebkitMaskImage: `url("${actionPages}")` }
 

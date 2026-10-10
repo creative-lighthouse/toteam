@@ -48,30 +48,7 @@
           <TaskPersonFilter />
 
           <!-- View mode toggle (desktop/tablet only) -->
-          <div v-if="!isMobile" class="tasks-view-toggle" role="group" aria-label="Ansicht">
-            <button
-              class="tasks-view-toggle_btn"
-              type="button"
-              :class="{ 'tasks-view-toggle_btn--active': viewMode === 'list' }"
-              :aria-pressed="viewMode === 'list'"
-              @click="viewMode = 'list'"
-              title="Listenansicht"
-              aria-label="Listenansicht"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            </button>
-            <button
-              class="tasks-view-toggle_btn"
-              type="button"
-              :class="{ 'tasks-view-toggle_btn--active': viewMode === 'kanban' }"
-              :aria-pressed="viewMode === 'kanban'"
-              @click="viewMode = 'kanban'"
-              title="Kanban-Ansicht"
-              aria-label="Kanban-Ansicht"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="7" rx="1"/></svg>
-            </button>
-          </div>
+          <AppViewToggle v-if="!isMobile" v-model="viewMode" :options="VIEW_MODES" />
         </template>
       </AppSearchBar>
 
@@ -165,10 +142,15 @@ import TaskCreateModal from '@components/tasks/TaskCreateModal.vue'
 import TaskPersonFilter from '@components/tasks/TaskPersonFilter.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
+import AppViewToggle from '@components/ui/AppViewToggle.vue'
 import AddTaskIcon from '../../../icons/actions/action_addtask.svg'
 
 const addTaskIconStyle = { maskImage: `url("${AddTaskIcon}")`, WebkitMaskImage: `url("${AddTaskIcon}")` }
 const VIEW_MODE_COOKIE = 'toteam_tasks_view_mode'
+const VIEW_MODES = [
+  { value: 'list', label: 'Listenansicht', icon: 'list' },
+  { value: 'kanban', label: 'Kanban-Ansicht', icon: 'kanban' },
+]
 
 const router = useRouter()
 const store = useTasksStore()
