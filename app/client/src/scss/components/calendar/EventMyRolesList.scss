@@ -1,0 +1,61 @@
+@use "../../base/variables" as *;
+
+// Eigene Rollen unter Termin-Karten (EventMyRolesList.vue) — Optik wie EventMealsList,
+// aber mit Akzentfarbe, damit die Rolle auffällt
+.event-my-roles-list {
+    list-style: none;
+    padding: 0 0 0 10px;
+    margin: 2px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .event-my-role {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 5px 8px;
+        border-radius: var(--BorderRadiusSmall);
+        text-decoration: none;
+        background: var(--ColorPrimaryLight);
+        border-left: 3px solid var(--ColorPrimary);
+    }
+
+    a.event-my-role:hover .event-my-role_name {
+        text-decoration: underline;
+    }
+
+    .event-my-role_time {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--ColorGray);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .event-my-role_name {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--ColorBlack);
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .event-my-role_label {
+        font-weight: 600;
+        color: var(--ColorPrimary);
+    }
+
+    .event-my-role_script {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--ColorGray);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 40%;
+    }
+}

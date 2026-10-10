@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
 use App\Food\Food;
+use App\Skript\ScriptRoleAssignment;
 use App\SuggestionBox\Suggestion;
 use App\Tasks\Task;
 use SilverStripe\Control\HTTPRequest;
@@ -143,8 +144,33 @@ class DashboardApiController extends ApiController
             }
         }
 
+        // Rollen, die der Nutzer heute spielt (Rollenplan der Events) — das Dashboard
+        // zeigt sie unter den heutigen Terminen desselben Events
+        $myRolesToday = [];
+        $assignments = ScriptRoleAssignment::get()->filter([
+            'MemberID' => $member->ID,
+            'Date'     => date('Y-m-d'),
+        ]);
+        foreach ($assignments as $assignment) {
+            $role   = $assignment->Role();
+            $script = $role->Script();
+            if (!$role->exists() || !$script->exists()) {
+                continue;
+            }
+            $myRolesToday[] = [
+                'ID'          => $assignment->ID,
+                'EventID'     => (int) $assignment->EventID,
+                'RoleTitle'   => $role->Title,
+                'ScriptTitle' => $script->Title,
+                'ScriptHash'  => $script->Hash,
+                'TimeStart'   => $assignment->TimeStart ? substr($assignment->TimeStart, 0, 5) : null,
+                'TimeEnd'     => $assignment->TimeEnd ? substr($assignment->TimeEnd, 0, 5) : null,
+            ];
+        }
+
         return $this->jsonResponse([
             'myTasks'                   => $myTasks,
+            'myRolesToday'              => $myRolesToday,
             'newFeedback'               => $newFeedback,
             'myUpcomingContributions'   => $myUpcomingContributions,
         ]);

@@ -27,6 +27,7 @@
         <ul class="infobox_list infobox_list--events">
           <li v-for="event in todaysEvents" :key="event.ID">
             <EventCard :event="event" :date-display="formatDate(event.DateStart)" compact :hide-org-logo="!authStore.hasMultipleOrganizations" @click="openEvent" />
+            <EventMyRolesList :roles="rolesFor(event)" :link-scripts="authStore.hasTotem('skript')" />
             <EventMealsList :meals="event.Meals ?? []" />
           </li>
         </ul>
@@ -177,6 +178,7 @@ import { useEventsStore } from '@stores/events'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import EventCard from '@components/calendar/EventCard.vue'
 import EventMealsList from '@components/calendar/EventMealsList.vue'
+import EventMyRolesList from '@components/calendar/EventMyRolesList.vue'
 import OrgEventCard from '@components/events/OrgEventCard.vue'
 import { useOrgEventsStore } from '@stores/orgEvents'
 import TaskCard from '@components/tasks/TaskCard.vue'
@@ -215,6 +217,12 @@ const todaysEvents = computed(() =>
   eventsStore.upcomingEvents.filter(e => e.isToday() && (e.hasUserAccepted() || e.hasUserMaybe()))
 )
 
+// Heutige Rollen des Nutzers für einen Termin — nur mit Rollenplan und über dessen Event
+function rolesFor(event) {
+  if (!event.EnableRoleCasting || !event.EventID) return []
+  return dashboardStore.myRolesToday.filter(r => r.EventID === event.EventID)
+}
+
 const upcomingAccepted = computed(() =>
   eventsStore.upcomingEvents
     .filter(e => e.isFuture() && (e.hasUserAccepted() || e.hasUserMaybe()))
@@ -223,7 +231,7 @@ const upcomingAccepted = computed(() =>
 
 const pendingFeedback = computed(() =>
   eventsStore.upcomingEvents
-    .filter(e => e.IsInvited && !e.getUserParticipationType())
+    .filter(e => e.IsInvited && !e.getUserParticipationType() && e.Status !== 'Cancelled')
     .slice(0, 5)
 )
 

@@ -136,7 +136,7 @@
         <div class="task-detail_subtasks">
           <div class="task-detail_subtasks-header">
             <h3 class="hl3">Unteraufgaben</h3>
-            <AppIconButton variant="neutral" aria-label="Unteraufgabe hinzufügen" title="Unteraufgabe hinzufügen" @click="subtaskModal?.open()">
+            <AppIconButton variant="primary" aria-label="Unteraufgabe hinzufügen" title="Unteraufgabe hinzufügen" @click="subtaskModal?.open()">
               <span class="icon-mask" :style="addTaskIconStyle" />
             </AppIconButton>
           </div>
