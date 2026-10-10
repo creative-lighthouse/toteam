@@ -51,7 +51,9 @@ use SilverStripe\Security\Member;
  * @property int $OrganizationID
  * @property int $TypeID
  * @property int $OwnerMemberID
+ * @property int $StorageLocationID
  * @method \App\Teams\Organization Organization()
+ * @method \App\Inventory\StorageLocation StorageLocation()
  * @method \App\Inventory\InventoryItemType Type()
  * @method \SilverStripe\Security\Member OwnerMember()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Assets\Image[] Images()
@@ -104,6 +106,8 @@ class InventoryItem extends DataObject
         "Organization" => Organization::class,
         "Type"         => InventoryItemType::class,
         "OwnerMember"  => Member::class,
+        // Wo das Objekt lagert (Tab "Lager")
+        "StorageLocation" => StorageLocation::class,
     ];
 
     private static $has_many = [
@@ -155,6 +159,7 @@ class InventoryItem extends DataObject
         "Images"          => "Bilder",
         "Documents"       => "Dokumente",
         "Rentals"         => "Ausleihen",
+        "StorageLocation" => "Lagerort",
     ];
 
     private static $summary_fields = [
@@ -183,6 +188,7 @@ class InventoryItem extends DataObject
         'PrivateRentable',
         'Mileage',
         'Type',
+        'StorageLocation',
     ];
 
     private static $history_value_labels = [
@@ -392,6 +398,7 @@ class InventoryItem extends DataObject
         $copy->OrganizationID = $this->OrganizationID;
         $copy->TypeID = $this->TypeID;
         $copy->OwnerMemberID = $this->OwnerMemberID;
+        $copy->StorageLocationID = $this->StorageLocationID;
         $copy->InventoryNumber = $inventoryNumber;
         // Jedes Objekt bekommt ggf. einen eigenen Teilen-Link
         $copy->ShareToken = null;

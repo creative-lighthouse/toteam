@@ -1,0 +1,32 @@
+@use "../../base/variables" as *;
+
+// Tab "Lager" (InventoryStorageTab.vue); Baum und Knoten siehe InventoryStorageNode.scss
+.inventory-storage-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.inventory-storage-tab_hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ColorGray);
+}
+
+// Ablagefläche "oberste Ebene" beim Ziehen eines verschachtelten Lagerpunkts
+.inventory-storage-tab_root-drop {
+    padding: 16px;
+    border: 2px dashed var(--ColorLightGray);
+    border-radius: var(--BorderRadiusMedium);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ColorGray);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &--over {
+        border-color: var(--ColorPrimary);
+        background-color: var(--ColorPrimaryLight);
+        color: var(--ColorPrimary);
+    }
+}

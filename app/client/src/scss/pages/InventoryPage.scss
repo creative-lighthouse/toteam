@@ -317,3 +317,39 @@
         }
     }
 }
+
+// Vier Tabs passen auf schmalen Handys nicht nebeneinander — inaktive Tabs nur als Icon
+.section.section--InventoryPage .inventory-page_tab:not(.inventory-page_tab--active) {
+    @include media(max-smartphone) {
+        > span:not(.icon-mask) {
+            display: none;
+        }
+    }
+}
+
+// "Lager" ist kein Inventar-Objekt, sondern enthält sie — mit Trennlinie und Abstand
+// von Objekten/Fahrzeugen/Räumen abgesetzt
+.section.section--InventoryPage .inventory-page_tab--separated {
+    position: relative;
+    margin-left: 13px;
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: -9px;
+        top: 20%;
+        bottom: 20%;
+        width: 2px;
+        border-radius: 1px;
+        background-color: var(--ColorLightGray);
+        pointer-events: none;
+    }
+
+    @include media(max-smartphone) {
+        margin-left: 9px;
+
+        &::before {
+            left: -7px;
+        }
+    }
+}

@@ -35,6 +35,7 @@ import Inventory from '@views/Inventory.vue'
 import InventoryRentals from '@views/InventoryRentals.vue'
 import InventoryItemPublic from '@views/InventoryItemPublic.vue'
 import RoomPublic from '@views/RoomPublic.vue'
+import StorageLocationPublic from '@views/StorageLocationPublic.vue'
 import Test from '@views/Test.vue'
 
 const routes = [
@@ -247,6 +248,13 @@ const routes = [
     path: '/rooms/share/:token',
     name: 'RoomShare',
     component: RoomPublic,
+    meta: { requiresAuth: false }
+  },
+  {
+    // Öffentlicher Teilen-Link/NFC-Tag eines Lagerpunkts — auch ohne Anmeldung
+    path: '/storage/share/:token',
+    name: 'StorageShare',
+    component: StorageLocationPublic,
     meta: { requiresAuth: false }
   },
   {

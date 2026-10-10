@@ -9,7 +9,7 @@
 
       <label class="field">
         Titel *
-        <input v-model="form.Title" type="text" :placeholder="{ item: 'z.B. Scheinwerfer, Kabel, Kostüm', vehicle: 'z.B. Transporter, PKW, Anhänger', room: 'z.B. Proberaum, Lager, Büro' }[appliesTo]" required>
+        <input v-model="form.Title" type="text" :placeholder="{ item: 'z.B. Scheinwerfer, Kabel, Kostüm', vehicle: 'z.B. Transporter, PKW, Anhänger', room: 'z.B. Proberaum, Lager, Büro', storage: 'z.B. Gebäude, Kiste, Stellplatz' }[appliesTo]" required>
       </label>
 
       <label class="field">
@@ -20,7 +20,8 @@
       <div class="field">
         <label>Zusatzfelder</label>
         <p class="inventory-type-modal_hint">
-          <template v-if="isRoomType">Welche Angaben sollen Räume dieser Art haben? „Öffentlich“: auf der geteilten Seite ohne Anmeldung sichtbar – nicht für personenbezogene Daten. „In Liste“: in der Raumliste angezeigt (z.B. Fläche oder Plätze).</template>
+          <template v-if="isStorageType">Welche Angaben sollen Lagerpunkte dieser Art haben (z.B. Adresse, Maße)? „Öffentlich“: auch ohne Anmeldung auf der Seite hinter dem Teilen-Link/NFC-Tag sichtbar – nicht für personenbezogene Daten. „In Liste“: direkt in der Zeile des Lagerpunkts angezeigt, die übrigen erst aufgeklappt.</template>
+          <template v-else-if="isRoomType">Welche Angaben sollen Räume dieser Art haben? „Öffentlich“: auf der geteilten Seite ohne Anmeldung sichtbar – nicht für personenbezogene Daten. „In Liste“: in der Raumliste angezeigt (z.B. Fläche oder Plätze).</template>
           <template v-else>Welche Angaben sollen {{ appliesTo === 'vehicle' ? 'Fahrzeuge' : 'Objekte' }} dieser Art haben? „Pro Objekt“: bei gleichen Objekten verschieden (z.B. Seriennummer). „Öffentlich“: auf der geteilten Seite ohne Anmeldung sichtbar – nicht für personenbezogene Daten. „In Liste“: in der Inventarliste angezeigt (z.B. Kabellänge).</template>
         </p>
 
@@ -38,11 +39,11 @@
               <option v-for="f in store.fieldFormats" :key="f.value" :value="f.value">{{ f.label }}</option>
             </select>
             <div class="inventory-type-modal_field-flags">
-              <label v-if="!isRoomType" title="Wert ist bei gleichen Objekten verschieden (z.B. Seriennummer)">
+              <label v-if="!isRoomType && !isStorageType" title="Wert ist bei gleichen Objekten verschieden (z.B. Seriennummer)">
                 <input v-model="field.Individual" type="checkbox">
                 pro Objekt
               </label>
-              <label :title="`Auch ohne Anmeldung auf der geteilten Seite ${isRoomType ? 'des Raums' : 'des Objekts'} sichtbar`">
+              <label :title="`Auch ohne Anmeldung auf der geteilten Seite ${isStorageType ? 'des Lagerpunkts' : isRoomType ? 'des Raums' : 'des Objekts'} sichtbar`">
                 <input v-model="field.IsPublic" type="checkbox">
                 öffentlich
               </label>
@@ -75,7 +76,7 @@
         variant="danger"
         class="inventory-type-modal_delete"
         aria-label="Art löschen"
-        :title="inUse ? `Wird noch von ${{ item: 'Objekten', vehicle: 'Fahrzeugen', room: 'Räumen' }[appliesTo]} verwendet` : 'Löschen'"
+        :title="inUse ? `Wird noch von ${{ item: 'Objekten', vehicle: 'Fahrzeugen', room: 'Räumen', storage: 'Lagerpunkten' }[appliesTo]} verwendet` : 'Löschen'"
         :disabled="saving || inUse"
         @click="remove"
       >
@@ -116,19 +117,22 @@ const organizationId = ref(null)
 const editingType = ref(null)
 // Ohne vorgegebene Organisation (z.B. neue Art für privates Equipment) wird sie im Modal gewählt
 const choosingOrg = ref(false)
-// 'item' oder 'room'
+// 'item', 'vehicle', 'room' oder 'storage'
 const appliesTo = ref('item')
 const isRoomType = computed(() => appliesTo.value === 'room')
+const isStorageType = computed(() => appliesTo.value === 'storage')
 const modalTitle = computed(() => {
-  const noun = { item: 'Art', vehicle: 'Fahrzeug-Art', room: 'Raum-Art' }[appliesTo.value] || 'Art'
+  const noun = { item: 'Art', vehicle: 'Fahrzeug-Art', room: 'Raum-Art', storage: 'Lager-Art' }[appliesTo.value] || 'Art'
   return isEdit.value ? `${noun} bearbeiten` : `Neue ${noun}`
 })
 
 const isEdit = computed(() => editingType.value !== null)
-// Raum-Arten: Anzahl kommt vom Server; Objekt-Arten: aus den geladenen Objekten (immer aktuell)
+// Raum-/Lager-Arten: Anzahl kommt vom Server; Objekt-Arten: aus den geladenen Objekten (immer aktuell)
 const inUse = computed(() => {
   if (!editingType.value) return false
-  return isRoomType.value ? editingType.value.ItemCount > 0 : store.itemCountForType(editingType.value.ID) > 0
+  return isRoomType.value || isStorageType.value
+    ? editingType.value.ItemCount > 0
+    : store.itemCountForType(editingType.value.ID) > 0
 })
 
 const form = reactive({ Title: '', Description: '', Fields: [] })

@@ -1,0 +1,79 @@
+@use "../../base/variables" as *;
+
+// "Nicht einsortiert" unter dem Lager-Baum (InventoryStorageUnassigned.vue)
+.inventory-storage-unassigned {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.inventory-storage-unassigned_title {
+    margin: 0;
+}
+
+.inventory-storage-unassigned_box {
+    border: 2px dashed var(--ColorLightGray);
+    border-radius: var(--BorderRadiusMedium);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &--empty {
+        padding: 16px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ColorGray);
+    }
+
+    &--over {
+        border-color: var(--ColorPrimary);
+        background-color: var(--ColorPrimaryLight);
+    }
+}
+
+.inventory-storage-unassigned_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+    border-radius: var(--BorderRadiusMedium);
+
+    &:focus-visible {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: -2px;
+    }
+
+    .inventory-storage-node_chevron.inventory-storage-unassigned_chevron--open {
+        transform: translateY(-2px) rotate(45deg);
+    }
+}
+
+.inventory-storage-unassigned_image {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.inventory-storage-unassigned_name {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ColorBlack);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inventory-storage-unassigned_body {
+    padding: 0 12px 12px;
+}

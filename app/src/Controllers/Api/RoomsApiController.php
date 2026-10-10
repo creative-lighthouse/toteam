@@ -6,6 +6,7 @@ use App\Controllers\ApiController;
 use App\Inventory\InventoryDamageReport;
 use App\Inventory\InventoryItemType;
 use App\Inventory\InventoryRental;
+use App\Inventory\StorageLocation;
 use App\Rooms\Room;
 use App\Tasks\Task;
 use App\Teams\Organization;
@@ -58,6 +59,9 @@ class RoomsApiController extends ApiController
             'Fields'       => $room->Type()->exists() ? $room->Type()->getFieldsForApi() : [],
             // Werte der Zusatzfelder: { "<Feld-ID>": "<Wert>" }
             'Values'       => (object) $room->getMetaValueMap(),
+            // Wo der Raum liegt: { ID, Title, Path }
+            'StorageLocationID' => (int) $room->StorageLocationID ?: null,
+            'StorageLocation' => StorageLocation::apiSummary((int) $room->StorageLocationID),
             'Thumbnail'    => $firstImage && $firstImage->exists() ? $firstImage->Fill(160, 160)->getURL() : null,
             // Heute durch eine genehmigte/laufende Reservierung belegt
             'IsOccupied'   => $room->IsRentable && $room->Rentals()->filter([
@@ -340,7 +344,7 @@ class RoomsApiController extends ApiController
             $room->Description   = $body['Description'] ?? '';
             $room->IsRentable    = !empty($body['IsRentable']);
             $room->OrganizationID = $orgID;
-            if ($error = $this->applyTypeAndValues($room, $body)) {
+            if ($error = $this->applyTypeAndValues($room, $body, $member)) {
                 return $this->errorResponse($error, 400);
             }
             $room->write();
@@ -392,7 +396,7 @@ class RoomsApiController extends ApiController
             if (array_key_exists('IsRentable', $body)) {
                 $room->IsRentable = (bool) $body['IsRentable'];
             }
-            if ($error = $this->applyTypeAndValues($room, $body)) {
+            if ($error = $this->applyTypeAndValues($room, $body, $member)) {
                 return $this->errorResponse($error, 400);
             }
             $room->write();
@@ -448,11 +452,17 @@ class RoomsApiController extends ApiController
     }
 
     /**
-     * Art (nur Raum-Arten der Organisation des Raums, 0 = keine) und Werte ihrer
+     * Lagerort, Art (nur Raum-Arten der Organisation des Raums, 0 = keine) und Werte ihrer
      * Zusatzfelder ({ Values: { "<Feld-ID>": "<Wert>" } }). Gibt einen Fehlertext zurück oder null.
      */
-    private function applyTypeAndValues(Room $room, array $body): ?string
+    private function applyTypeAndValues(Room $room, array $body, Member $member): ?string
     {
+        if (array_key_exists('StorageLocationID', $body)) {
+            if ($error = StorageLocation::assignTo($room, $body['StorageLocationID'], $member)) {
+                return $error;
+            }
+        }
+
         if (array_key_exists('TypeID', $body)) {
             $typeID = (int) $body['TypeID'];
             if ($typeID) {

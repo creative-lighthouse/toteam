@@ -33,7 +33,11 @@
 
       <p v-if="room.Description" class="room-detail-modal_description"><AppLinkifiedText :text="room.Description" /></p>
 
-      <dl v-if="facts.length" class="room-detail-modal_facts">
+      <dl v-if="facts.length || room.StorageLocation" class="room-detail-modal_facts">
+        <div v-if="room.StorageLocation">
+          <dt>Liegt in</dt>
+          <dd>{{ room.StorageLocation.Path.join(' › ') }}</dd>
+        </div>
         <div v-for="fact in facts" :key="fact.label">
           <dt>{{ fact.label }}</dt>
           <dd>{{ fact.value }}</dd>

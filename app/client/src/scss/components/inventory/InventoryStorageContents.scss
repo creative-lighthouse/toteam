@@ -1,0 +1,120 @@
+@use "../../base/variables" as *;
+
+// Objekte, Fahrzeuge und Räume in einem Lagerpunkt bzw. "Nicht einsortiert" (InventoryStorageContents.vue)
+.inventory-storage-contents {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.inventory-storage-contents_entry {
+    display: flex;
+    align-items: center;
+    border-radius: var(--BorderRadiusSmall);
+    background-color: var(--ColorVeryLightGray);
+
+    &--dragging {
+        opacity: 0.4;
+    }
+
+    // Kopie, die beim Ziehen dem Zeiger folgt
+    &.pointer-drag-ghost {
+        background-color: var(--ColorWhite);
+        box-shadow: var(--BoxShadowMenu);
+    }
+}
+
+// Griff: 2×3 Punkte wie an den Lagerpunkten, etwas kleiner
+.inventory-storage-contents_handle {
+    flex-shrink: 0;
+    box-sizing: content-box;
+    width: 10px;
+    height: 15px;
+    padding: 8px 2px 8px 8px;
+    cursor: grab;
+    touch-action: none;
+    background: radial-gradient(circle, var(--ColorGray) 1.3px, transparent 1.4px) 0 0 / 5px 5px;
+    background-origin: content-box;
+    background-clip: content-box;
+    opacity: 0.7;
+
+    @include hover {
+        opacity: 1;
+    }
+}
+
+.inventory-storage-contents_button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    border: none;
+    border-radius: var(--BorderRadiusSmall);
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+
+    @include hover {
+        background-color: var(--ColorPrimaryLight);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: -2px;
+    }
+
+    // Nicht anklickbar (öffentliche Seite ohne Link auf das Objekt)
+    &--static {
+        cursor: default;
+
+        @include hover {
+            background: none;
+        }
+    }
+}
+
+.inventory-storage-contents_thumb {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: var(--BorderRadiusSmall);
+    object-fit: cover;
+
+    &--icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--ColorPrimaryLight);
+        color: var(--ColorPrimary);
+
+        .icon-mask {
+            width: 18px;
+            height: 18px;
+        }
+    }
+}
+
+.inventory-storage-contents_number {
+    flex-shrink: 0;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ColorPrimary);
+}
+
+.inventory-storage-contents_title {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

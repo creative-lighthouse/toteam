@@ -9,6 +9,7 @@ use App\Inventory\InventoryItem;
 use App\Inventory\InventoryItemType;
 use App\Inventory\InventoryTypeField;
 use App\Inventory\InventoryRental;
+use App\Inventory\StorageLocation;
 use App\Notifications\PushNotificationService;
 use App\Rooms\Room;
 use App\Teams\OrgEvent;
@@ -191,6 +192,9 @@ class InventoryApiController extends ApiController
             // Größeres Bild für die Kartenansicht (volle Kartenbreite, 4:3)
             'CardImage'       => $firstImage && $firstImage->exists() ? $firstImage->Fill(480, 360)->getURL() : null,
             'GroupKey'        => $item->GroupKey,
+            // Wo das Objekt lagert: { ID, Title, Path: ["Gelände", "Halle", "Kiste 3"] }
+            'StorageLocationID' => (int) $item->StorageLocationID ?: null,
+            'StorageLocation' => StorageLocation::apiSummary((int) $item->StorageLocationID),
             'IsRentedOut'     => $rentedOut !== null ? isset($rentedOut[$item->ID]) : $item->getCurrentRental() !== null,
             'CanEdit'         => $item->isEditableBy($member),
             'CanDelete'       => $item->isDeletableBy($member),
@@ -414,6 +418,12 @@ class InventoryApiController extends ApiController
                 return 'Bitte eine Art auswählen';
             }
             $item->TypeID = $type->ID;
+        }
+
+        if (array_key_exists('StorageLocationID', $body)) {
+            if ($error = StorageLocation::assignTo($item, $body['StorageLocationID'], $member)) {
+                return $error;
+            }
         }
 
         // Zusatzfelder: { Values: { "<Feld-ID>": "<Wert>" } } — nur Felder der Art des Objekts.
@@ -1152,7 +1162,7 @@ class InventoryApiController extends ApiController
         foreach ($removed as $field) {
             $field->delete();
         }
-        foreach ([...$type->Items()->toArray(), ...$type->Rooms()->toArray()] as $record) {
+        foreach ([...$type->Items()->toArray(), ...$type->Rooms()->toArray(), ...$type->StorageLocations()->toArray()] as $record) {
             $values = array_diff_key($record->getMetaValueMap(), $removed);
             if ($values !== $record->getMetaValueMap()) {
                 $record->setMetaValueMap($values);
@@ -1188,7 +1198,7 @@ class InventoryApiController extends ApiController
         $type = InventoryItemType::create();
         $type->OrganizationID = $org->ID;
         $appliesTo = $body['AppliesTo'] ?? 'item';
-        $type->AppliesTo = in_array($appliesTo, ['item', 'vehicle', 'room'], true) ? $appliesTo : 'item';
+        $type->AppliesTo = in_array($appliesTo, ['item', 'vehicle', 'room', 'storage'], true) ? $appliesTo : 'item';
         $this->applyTypeBody($type, $body);
         $type->write();
         $this->syncTypeFields($type, $body);
@@ -1248,9 +1258,8 @@ class InventoryApiController extends ApiController
             return $this->errorResponse('Keine Berechtigung', 403);
         }
         if ($type->getUsageCount() > 0) {
-            return $this->errorResponse($type->isForRooms()
-                ? 'Diese Art wird noch von Räumen verwendet und kann nicht gelöscht werden'
-                : 'Diese Art wird noch von Objekten verwendet und kann nicht gelöscht werden', 400);
+            $usedBy = $type->isForStorage() ? 'Lagerpunkten' : ($type->isForRooms() ? 'Räumen' : 'Objekten');
+            return $this->errorResponse('Diese Art wird noch von ' . $usedBy . ' verwendet und kann nicht gelöscht werden', 400);
         }
 
         $type->delete();

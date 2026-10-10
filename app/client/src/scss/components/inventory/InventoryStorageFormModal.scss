@@ -1,0 +1,29 @@
+@use "../../base/variables" as *;
+
+// Lagerpunkt anlegen/bearbeiten (InventoryStorageFormModal.vue) — wie das Objekt-Formular
+.inventory-storage-form-modal {
+    text-align: left;
+    max-width: 560px;
+
+    .inventory-storage-form-modal_owner {
+        margin: 0;
+    }
+
+    .inventory-storage-form-modal_hint {
+        margin: 4px 0 0;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+
+    .inventory-storage-form-modal_type-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        select {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+}

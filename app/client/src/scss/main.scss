@@ -167,6 +167,12 @@
 @use "components/inventory/InventoryTypeManagerModal.scss";
 @use "components/inventory/InventoryGroupModal.scss";
 @use "components/inventory/InventoryDamageList.scss";
+@use "components/inventory/InventoryStorageTab.scss";
+@use "components/inventory/InventoryStorageNode.scss";
+@use "components/inventory/InventoryStorageContents.scss";
+@use "components/inventory/InventoryStorageUnassigned.scss";
+@use "components/inventory/InventoryStorageDetailModal.scss";
+@use "components/inventory/InventoryStorageFormModal.scss";
 
 html{
     overflow-y: scroll;

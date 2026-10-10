@@ -1,0 +1,135 @@
+@use "../../base/variables" as *;
+
+// Detailansicht eines Lagerpunkts (InventoryStorageDetailModal.vue), aufgebaut wie RoomDetailModal
+.inventory-storage-detail-modal {
+    text-align: left;
+    max-width: 480px;
+    max-height: 90dvh;
+
+    .inventory-storage-detail-modal_head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .inventory-storage-detail-modal_toolbar {
+        display: flex;
+        gap: 6px;
+        margin-left: auto;
+    }
+
+    .inventory-storage-detail-modal_kicker {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ColorPrimary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .inventory-storage-detail-modal_path {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 6px;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-storage-detail-modal_path-label {
+        font-weight: 600;
+    }
+
+    .inventory-storage-detail-modal_path-link {
+        padding: 0;
+        border: none;
+        background: none;
+        font: inherit;
+        font-weight: 600;
+        color: var(--ColorPrimary);
+        cursor: pointer;
+
+        @include hover {
+            text-decoration: underline;
+        }
+    }
+
+    .inventory-storage-detail-modal_description {
+        margin: 0;
+        color: var(--ColorBlack);
+    }
+
+    .inventory-storage-detail-modal_facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 16px;
+        margin: 0;
+
+        dt {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ColorGray);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        dd {
+            margin: 2px 0 0;
+        }
+    }
+
+    .inventory-storage-detail-modal_subtitle {
+        margin: 8px 0 0;
+    }
+
+    .inventory-storage-detail-modal_children {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .inventory-storage-detail-modal_child {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        background: transparent;
+        font: inherit;
+        font-size: 14px;
+        text-align: left;
+        color: inherit;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        @include hover {
+            background-color: var(--ColorVeryLightGray);
+        }
+    }
+
+    .inventory-storage-detail-modal_child-title {
+        flex: 1;
+        min-width: 0;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .inventory-storage-detail-modal_child-type {
+        flex-shrink: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .inventory-storage-detail-modal_empty {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+}

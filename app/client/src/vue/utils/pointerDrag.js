@@ -6,8 +6,10 @@ import { ref, onBeforeUnmount } from 'vue'
 // - Ziehbare Elemente rufen `start(event, payload)` in @pointerdown auf. Mit der
 //   Maus reicht die ganze Karte; bei Touch sollte das nur ein Griff mit
 //   `touch-action: none` tun, damit man die Seite weiterhin scrollen kann.
-// - Ablageziele tragen `data-drop-zone="<id>"`; `onDrop(payload, zoneId)` wird
-//   beim Loslassen über einem Ziel aufgerufen.
+// - Ablageziele tragen `data-drop-zone="<id>"`; `onDrop(payload, zoneId, ratio)` wird
+//   beim Loslassen über einem Ziel aufgerufen. `ratio` (auch live als `overRatio`)
+//   ist die senkrechte Position des Zeigers im Ziel von 0 (oben) bis 1 (unten) —
+//   z.B. für "davor / hinein / dahinter" beim Sortieren.
 // - Während des Ziehens folgt eine Kopie des Elements dem Zeiger; nahe am oberen
 //   bzw. unteren Rand scrollt die Seite mit.
 
@@ -16,12 +18,13 @@ const SCROLL_EDGE = 80 // px Abstand zum Rand, ab dem mitgescrollt wird
 const SCROLL_SPEED = 14 // px pro Frame am äußersten Rand
 
 /**
- * @param {{ onDrop: (payload: any, zoneId: string) => void, bottomInset?: () => number }} options
+ * @param {{ onDrop: (payload: any, zoneId: string, ratio: number) => void, bottomInset?: () => number }} options
  *   bottomInset: Höhe fester Leisten am unteren Rand (Menü, Tab-Leiste) fürs Mitscrollen
  */
 export function usePointerDrag({ onDrop, bottomInset = () => 0 }) {
   const dragging = ref(null) // payload des gezogenen Elements
   const overZone = ref(null) // ID des Ziels unter dem Zeiger
+  const overRatio = ref(0) // senkrechte Zeigerposition im Ziel (0 = oben, 1 = unten)
 
   let sourceEl = null
   let ghost = null
@@ -79,15 +82,20 @@ export function usePointerDrag({ onDrop, bottomInset = () => 0 }) {
     }
     event.preventDefault()
     ghost.style.transform = `translate(${event.clientX - offsetX}px, ${event.clientY - offsetY}px) rotate(1.5deg)`
-    const target = document.elementFromPoint(event.clientX, event.clientY)
-    overZone.value = target?.closest('[data-drop-zone]')?.dataset.dropZone ?? null
+    const zoneEl = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-drop-zone]')
+    overZone.value = zoneEl?.dataset.dropZone ?? null
+    if (zoneEl) {
+      const rect = zoneEl.getBoundingClientRect()
+      overRatio.value = rect.height ? Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)) : 0.5
+    }
   }
 
   function onUp() {
     const payload = dragging.value
     const zone = overZone.value
+    const ratio = overRatio.value
     cleanup()
-    if (payload && zone) onDrop(payload, zone)
+    if (payload && zone) onDrop(payload, zone, ratio)
   }
 
   function cancel() {
@@ -118,11 +126,12 @@ export function usePointerDrag({ onDrop, bottomInset = () => 0 }) {
     document.body.classList.remove('is-pointer-dragging')
     dragging.value = null
     overZone.value = null
+    overRatio.value = 0
     sourceEl = null
     pendingPayload = null
   }
 
   onBeforeUnmount(cleanup)
 
-  return { start, dragging, overZone }
+  return { start, dragging, overZone, overRatio }
 }

@@ -63,6 +63,10 @@
           <dt>Sichtbar/Ausleihbar für</dt>
           <dd>{{ shareLabel }}</dd>
         </div>
+        <div v-if="item.StorageLocation">
+          <dt>{{ item.Kind === 'vehicle' ? 'Steht in/an' : 'Lagert in' }}</dt>
+          <dd>{{ item.StorageLocation.Path.join(' › ') }}</dd>
+        </div>
         <div v-for="fact in facts" :key="fact.label">
           <dt>{{ fact.label }}</dt>
           <dd>{{ fact.value }}</dd>

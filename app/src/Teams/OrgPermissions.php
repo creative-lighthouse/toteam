@@ -62,6 +62,10 @@ class OrgPermissions
     public const INVENTORY_REQUEST_RENTAL = 'INVENTORY_REQUEST_RENTAL';
     public const INVENTORY_APPROVE_RENTALS = 'INVENTORY_APPROVE_RENTALS';
 
+    public const STORAGE_CREATE = 'STORAGE_CREATE';
+    public const STORAGE_EDIT = 'STORAGE_EDIT';
+    public const STORAGE_DELETE = 'STORAGE_DELETE';
+
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
      * @return array<string, array<string, string>> Kategorie => [Code => Label]
@@ -130,6 +134,11 @@ class OrgPermissions
                 self::INVENTORY_MANAGE_TYPES => 'Inventar-Arten verwalten',
                 self::INVENTORY_REQUEST_RENTAL => 'Ausleihe beantragen',
                 self::INVENTORY_APPROVE_RENTALS => 'Ausleih-Anträge genehmigen & verwalten',
+            ],
+            'Lager' => [
+                self::STORAGE_CREATE => 'Lagerpunkte anlegen',
+                self::STORAGE_EDIT => 'Lagerpunkte bearbeiten',
+                self::STORAGE_DELETE => 'Lagerpunkte löschen',
             ],
         ];
     }

@@ -1,0 +1,225 @@
+@use "../../base/variables" as *;
+
+// Lagerpunkt im Lager-Baum (InventoryStorageNode.vue) samt Baum-Listen (.inventory-storage-tree,
+// auch die oberste Ebene im InventoryStorageTab)
+.inventory-storage-tree {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    // Verschachtelte Ebenen: eingerückt mit Linie, damit die Hierarchie lesbar bleibt
+    &:not(.inventory-storage-tree--root) {
+        padding-left: 12px;
+        border-left: 2px solid var(--ColorLightGray);
+    }
+}
+
+.inventory-storage-node {
+    border-radius: var(--BorderRadiusMedium);
+    background-color: var(--ColorWhite);
+    box-shadow: var(--BoxShadowLight);
+
+    // Verschachtelte Knoten ohne eigenen Schatten, sonst wird es unruhig
+    .inventory-storage-tree .inventory-storage-tree > & {
+        box-shadow: none;
+        border: 1px solid var(--ColorLightGray);
+    }
+}
+
+.inventory-storage-node_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 8px;
+}
+
+.inventory-storage-node_toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    padding: 10px 6px 10px 12px;
+    border: none;
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+    border-radius: var(--BorderRadiusMedium);
+
+    &:focus-visible {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: -2px;
+    }
+}
+
+// Chevron aus zwei Rahmenkanten (wie AppCollapse), dreht beim Öffnen nach unten
+.inventory-storage-node_chevron {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-right: 2px solid var(--ColorGray);
+    border-bottom: 2px solid var(--ColorGray);
+    transform: rotate(-45deg);
+    transition: transform 0.2s ease;
+
+    &--empty {
+        opacity: 0.35;
+    }
+
+    .inventory-storage-node--open > .inventory-storage-node_header & {
+        transform: translateY(-2px) rotate(45deg);
+    }
+}
+
+.inventory-storage-node_info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.inventory-storage-node_title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ColorBlack);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inventory-storage-node_meta {
+    font-size: 13px;
+    color: var(--ColorGray);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    // Vue entfernt Leerzeichen zwischen den <span>s, daher der Abstand vor dem "·" per CSS
+    > span + span {
+        margin-left: 0.3em;
+    }
+}
+
+.inventory-storage-node_count {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 1px 8px;
+    border-radius: 50px;
+    background-color: var(--ColorPrimaryLight);
+    color: var(--ColorPrimary);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.inventory-storage-node_actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.inventory-storage-node_body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px 12px 30px;
+
+    @include media(max-smartphone) {
+        padding-left: 12px;
+    }
+}
+
+.inventory-storage-node_description,
+.inventory-storage-node_facts,
+.inventory-storage-node_empty {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ColorGray);
+}
+
+.inventory-storage-node_facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+
+    strong {
+        font-weight: 600;
+        color: var(--ColorBlack);
+    }
+}
+
+// ── Drag & Drop (siehe InventoryStorageTab.vue) ─────────────────────────────
+
+.inventory-storage-node_header {
+    position: relative;
+    border-radius: var(--BorderRadiusMedium);
+}
+
+// Griff: 2×3 Punkte (12×18 px), mit Padding als größere Touch-Fläche;
+// touch-action: none, damit das Ziehen auf Touch-Geräten nicht die Seite scrollt
+.inventory-storage-node_handle {
+    flex-shrink: 0;
+    box-sizing: content-box;
+    width: 12px;
+    height: 18px;
+    padding: 10px 6px 10px 10px;
+    margin-right: -12px;
+    cursor: grab;
+    touch-action: none;
+    background: radial-gradient(circle, var(--ColorGray) 1.5px, transparent 1.6px) 0 0 / 6px 6px;
+    background-origin: content-box;
+    background-clip: content-box;
+    opacity: 0.7;
+
+    @include hover {
+        opacity: 1;
+    }
+}
+
+// Gezogener Lagerpunkt bleibt blass an seinem Platz stehen
+.inventory-storage-node--dragging > .inventory-storage-node_header {
+    opacity: 0.4;
+}
+
+// Ziel-Anzeige: Linie davor/dahinter, hervorgehoben = hinein
+.inventory-storage-node_header--drop-before,
+.inventory-storage-node_header--drop-after {
+    &::after {
+        content: '';
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        height: 3px;
+        border-radius: 2px;
+        background-color: var(--ColorPrimary);
+        pointer-events: none;
+    }
+}
+
+.inventory-storage-node_header--drop-before::after {
+    top: -6px;
+}
+
+.inventory-storage-node_header--drop-after::after {
+    bottom: -6px;
+}
+
+.inventory-storage-node_header--drop-inside {
+    background-color: var(--ColorPrimaryLight);
+    box-shadow: inset 0 0 0 2px var(--ColorPrimary);
+}
+
+// Kopie, die beim Ziehen dem Zeiger folgt
+.inventory-storage-node_header.pointer-drag-ghost {
+    background-color: var(--ColorWhite);
+    box-shadow: var(--BoxShadowMenu);
+    opacity: 0.95;
+
+    .inventory-storage-node_actions {
+        display: none;
+    }
+}

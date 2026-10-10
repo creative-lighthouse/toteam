@@ -42,6 +42,8 @@
 
       <InventoryFieldInputs v-if="selectedType" v-model="form.values" :fields="selectedType.Fields" />
 
+      <InventoryStorageSelect v-model="form.StorageLocationID" label="Liegt in (Lager)" />
+
       <AppToggle v-model="form.IsRentable" label="Kann reserviert werden" />
 
       <div class="field">
@@ -124,6 +126,7 @@ import AppToggle from '@components/ui/AppToggle.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import AppFileUpload from '@components/ui/AppFileUpload.vue'
 import InventoryFieldInputs from '@components/inventory/InventoryFieldInputs.vue'
+import InventoryStorageSelect from '@components/inventory/InventoryStorageSelect.vue'
 import InventoryTypeModal from '@components/inventory/InventoryTypeModal.vue'
 import { useInventoryStore } from '@stores/inventory'
 
@@ -168,6 +171,7 @@ const defaultForm = () => ({
   IsRentable: false,
   TaskIDs: [],
   TypeID: null,
+  StorageLocationID: null,
   values: {},
 })
 
@@ -237,6 +241,7 @@ function openForEdit(room) {
     IsRentable: !!room.IsRentable,
     TaskIDs: (room.Tasks || []).map(t => t.ID),
     TypeID: room.TypeID ?? null,
+    StorageLocationID: room.StorageLocationID ?? null,
     values: { ...(room.Values || {}) },
   })
   error.value = null
@@ -261,6 +266,7 @@ async function submit() {
       IsRentable: form.IsRentable,
       TaskIDs: form.TaskIDs,
       TypeID: form.TypeID || 0,
+      StorageLocationID: form.StorageLocationID ?? 0,
       Values: selectedType.value
         ? Object.fromEntries(selectedType.value.Fields.map(field => [field.ID, form.values[field.ID] ?? '']))
         : {},

@@ -5,7 +5,7 @@ namespace App\Inventory;
 /**
  * Öffentlicher Teilen-Link (auch ohne Anmeldung aufrufbar) über einen
  * zufälligen, nicht erratbaren Schlüssel in der Spalte `ShareToken`.
- * Genutzt von Inventar-Objekten und Räumen.
+ * Genutzt von Inventar-Objekten, Räumen und Lagerpunkten.
  *
  * @property ?string $ShareToken
  */
