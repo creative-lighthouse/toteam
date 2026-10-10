@@ -40,9 +40,11 @@ export async function loadMapLibre() {
 
 /**
  * Karte mit unserem Grundstil erzeugen. `config` ist die Kartenkonfiguration
- * aus der API ({ TilesURL, AssetsURL, MaxZoom }), `options` geht an maplibregl.Map.
+ * aus der API ({ TilesURL, AssetsURL, MaxZoom }), `options` geht an maplibregl.Map —
+ * bis auf `navigation: false`, das die Zoom-Buttons weglässt (z.B. für eine reine
+ * Hintergrundkarte wie hinter einem Lageplan).
  */
-export function createMap(maplibregl, container, config, options = {}) {
+export function createMap(maplibregl, container, config, { navigation = true, ...options } = {}) {
   const { layers, namedFlavor } = basemaps
   // MapLibre braucht absolute URLs für Schriften und Symbole
   const base = window.location.origin + config.AssetsURL
@@ -69,7 +71,7 @@ export function createMap(maplibregl, container, config, options = {}) {
     locale: LOCALE,
     ...options,
   })
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
+  if (navigation) map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
   map.on('error', e => console.error('Karte:', e.error ?? e))
   return map
 }

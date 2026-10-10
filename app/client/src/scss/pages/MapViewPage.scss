@@ -48,6 +48,9 @@
             justify-content: center;
 
             canvas {
+                // über der Umgebungskarte (MapBasemap, z-index 0)
+                position: relative;
+                z-index: 1;
                 display: block;
                 cursor: grab;
                 touch-action: none;
@@ -227,67 +230,63 @@
                 }
             }
 
+            // Titel/Beschreibung bzw. Ebenen-Felder: gemeinsames Formularsystem (.modalform/.field)
             .map-controls_edit-fields {
                 margin-bottom: 1.5rem;
+            }
 
-                .edit-field {
-                    margin-bottom: 1rem;
+            // Standort + Ansicht zurücksetzen nebeneinander
+            .map-controls_view-buttons {
+                display: flex;
+                gap: 8px;
+            }
 
-                    label {
-                        display: block;
-                        margin-bottom: 0.5rem;
-                        font-weight: 600;
-                        font-size: 0.875rem;
-                        color: var(--ColorDarkGray);
+            .map-controls_hint {
+                margin: 0;
+                font-size: 13px;
+                font-weight: 500;
+                color: var(--ColorGray);
+            }
+
+            // Farbe: Farbfeld + Hex-Wert nebeneinander (in .modalform .field)
+            .color-picker-wrapper {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+
+                input[type="color"] {
+                    flex-shrink: 0;
+                    width: 48px;
+                    height: 38px;
+                    padding: 2px;
+                    border: 1px solid var(--ColorLightGray);
+                    border-radius: var(--BorderRadiusSmall);
+                    background-color: var(--ColorWhite);
+                    cursor: pointer;
+
+                    &::-webkit-color-swatch-wrapper {
+                        padding: 0;
                     }
 
-                    .form-control {
-                        width: 100%;
-                        padding: 0.5rem;
-                        border: 1px solid var(--ColorLightGray);
-                        border-radius: 4px;
-                        font-size: 0.875rem;
-                        font-family: inherit;
-
-                        &:focus {
-                            outline: none;
-                            border-color: var(--ColorPrimary);
-                            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
-                        }
-                    }
-
-                    textarea.form-control {
-                        resize: vertical;
-                        min-height: 60px;
-                    }
-
-                    .color-picker-wrapper {
-                        display: flex;
-                        gap: 0.5rem;
-                        align-items: center;
-
-                        input[type="color"] {
-                            width: 50px;
-                            height: 38px;
-                            border: 1px solid var(--ColorLightGray);
-                            border-radius: 4px;
-                            cursor: pointer;
-
-                            &::-webkit-color-swatch-wrapper {
-                                padding: 2px;
-                            }
-
-                            &::-webkit-color-swatch {
-                                border: none;
-                                border-radius: 2px;
-                            }
-                        }
-
-                        input[type="text"] {
-                            flex: 1;
-                        }
+                    &::-webkit-color-swatch {
+                        border: none;
+                        border-radius: 2px;
                     }
                 }
+
+                input[type="text"] {
+                    flex: 1;
+                    min-width: 0;
+                }
+            }
+
+            // Datei-Auswahl läuft über einen AppButton, das native Feld bleibt versteckt
+            .layer-image-input {
+                display: none;
+            }
+
+            .edit-layer-card_image-button {
+                align-self: flex-start;
             }
 
             .map-controls_header {
@@ -330,22 +329,6 @@
                     }
                 }
 
-                .header_save {
-                    margin: 0;
-                    background-color: var(--ColorWhite);
-                    width: 32px;
-                    height: 32px;
-                    padding: 5px;
-
-                    .headerSave_button, .headerSave_saving, .headerSave_saved {
-                        background-color: var(--ColorPrimary);
-                        mask-size: 100%;
-                        mask-repeat: no-repeat;
-                        mask-position: center;
-                        width: 100%;
-                        height: 100%;
-                    }
-                }
             }
 
             .map-controls_actions {
@@ -360,21 +343,6 @@
                     margin: 0;
                 }
 
-                .action_recenter {
-                    height: 40px;
-                    aspect-ratio: 1;
-                    display: flex;
-                    padding: 10px;
-
-                    .resetMapView_button {
-                        background-color: var(--ColorWhite);
-                        mask-size: 100%;
-                        width: 100%;
-                        height: 100%;
-                        mask-repeat: no-repeat;
-                        mask-position: center;
-                    }
-                }
             }
 
             .map-controls_layers {
@@ -586,11 +554,10 @@
                     }
                 }
 
+                // .modalform-Grid (siehe base/forms.scss), hier etwas enger
                 &_body {
                     padding: 12px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
+                    gap: 12px 10px;
                     background: var(--ColorVeryLightGray);
                 }
             }
@@ -600,8 +567,9 @@
                 gap: 8px;
                 align-items: center;
 
-                select.form-control {
+                select {
                     flex: 1;
+                    min-width: 0;
                 }
             }
 
@@ -641,17 +609,6 @@
                     }
                 }
 
-                .layer-upload-controls {
-                    .layer-image-input {
-                        display: none;
-                    }
-
-                    label {
-                        display: block;
-                        cursor: pointer;
-                        margin: 0;
-                    }
-                }
             }
 
             .map-controls_pois {
@@ -779,106 +736,6 @@
                 .map-controls__toggle-icon {
                     transform: translate(-50%, -50%) rotate(0deg);
                 }
-            }
-        }
-
-        // POI Popup
-        .map-poi-popup {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: fadeIn 0.2s ease;
-
-            &__content {
-                background: var(--ColorWhite);
-                border-radius: 8px;
-                padding: 2rem;
-                max-width: 500px;
-                width: 90%;
-                max-height: 80dvh;
-                overflow-y: auto;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                position: relative;
-                animation: slideUp 0.3s ease;
-            }
-
-            &__close {
-                position: absolute;
-                top: 1rem;
-                right: 1rem;
-                background: transparent;
-                border: none;
-                font-size: 2rem;
-                line-height: 1;
-                cursor: pointer;
-                color: var(--ColorGray);
-                padding: 0;
-                width: 32px;
-                height: 32px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 4px;
-                transition: all 0.2s ease;
-
-                &:hover {
-                    background: var(--ColorLightGray);
-                    color: var(--ColorDarkGray);
-                }
-            }
-
-            &__title {
-                margin: 0 2rem 1rem 0;
-                font-size: 1.5rem;
-                font-weight: 600;
-                color: var(--ColorDarkGray);
-            }
-
-            &__description {
-                color: var(--ColorGray);
-                line-height: 1.6;
-                font-size: 1rem;
-                margin-bottom: 1rem;
-
-                p:first-child {
-                    margin-top: 0;
-                }
-
-                p:last-child {
-                    margin-bottom: 0;
-                }
-            }
-
-            &__delete {
-                width: 100%;
-                margin-top: 1rem;
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
             }
         }
 

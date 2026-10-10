@@ -38,6 +38,18 @@
 
             <!-- VIEW MODE -->
             <template v-if="!isEditMode">
+              <!-- Umgebungskarte hinter dem Plan (nur mit Koordinaten und vorhandenen Kartendaten) -->
+              <div v-if="map.basemap" class="map-controls_layers">
+                <h4>Ansicht</h4>
+                <div class="map-layers-list">
+                  <div class="map-layer-item-wrapper">
+                    <label class="map-layer-item">
+                      <input v-model="showBasemap" type="checkbox" class="map-layer-toggle" />
+                      <span class="map-layer-title">Umgebungskarte</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
               <div v-if="map.layers.length" class="map-controls_layers">
                 <h4>Ebenen</h4>
                 <div class="map-layers-list">
@@ -72,21 +84,30 @@
               <div class="map-controls_edit">
 
                 <!-- Titel und Beschreibung (die Beschreibung steht im Ansichtsmodus über den Ebenen) -->
-                <div class="map-controls_edit-fields">
-                  <div class="edit-field">
-                    <label for="mapEditTitle">Titel</label>
-                    <input id="mapEditTitle" v-model="editTitle" type="text" class="form-control" maxlength="255" required />
-                  </div>
-                  <div class="edit-field">
-                    <label for="mapEditShortText">Beschreibung</label>
-                    <textarea
-                      id="mapEditShortText"
-                      v-model="editShortText"
-                      class="form-control"
-                      rows="3"
-                      placeholder="Optional, z.B. Hinweise zum Gelände"
-                    ></textarea>
-                  </div>
+                <div class="modalform map-controls_edit-fields">
+                  <label class="field">
+                    Titel *
+                    <input v-model="editTitle" type="text" maxlength="255" required />
+                  </label>
+                  <label class="field">
+                    Beschreibung
+                    <textarea v-model="editShortText" rows="3" placeholder="Optional, z.B. Hinweise zum Gelände"></textarea>
+                  </label>
+
+                  <!-- Eckkoordinaten des Hintergrundbilds: Maßstab, Nordpfeil und Marker-Koordinaten.
+                       Vorhandene Marker bleiben beim Ändern an ihrer Stelle im Bild (Server rechnet um). -->
+                  <AppCollapse title="Koordinaten" subtitle="(optional)">
+                    <div class="modalform">
+                      <label v-for="corner in CORNERS" :key="corner.key" class="field">
+                        {{ corner.label }} (Lat, Lng)
+                        <input v-model="editCoordinates[corner.key]" type="text" :placeholder="corner.placeholder" autocomplete="off" />
+                      </label>
+                      <p class="field map-controls_hint">
+                        Alle vier Ecken des Hintergrundbilds als „Breitengrad, Längengrad“ – oder alle leer lassen.
+                        Vorhandene Marker behalten ihre Position im Bild.
+                      </p>
+                    </div>
+                  </AppCollapse>
                 </div>
 
                 <!-- Background image -->
@@ -97,15 +118,15 @@
                     <div v-else class="layer-image-placeholder">Kein Bild</div>
                   </div>
                   <input
-                    id="bgImageUpload"
+                    ref="bgImageInput"
                     type="file"
                     class="layer-image-input"
                     accept="image/jpeg,image/png,image/webp"
                     @change="onBgImageSelected"
                   />
-                  <label for="bgImageUpload" class="button button--small">
+                  <AppButton size="small" variant="secondary" @click="bgImageInput?.click()">
                     {{ pendingBgImage ? '✓ Bild gewählt' : 'Bild ändern' }}
-                  </label>
+                  </AppButton>
                 </div>
 
                 <!-- Lageplan eines Events: ausgeliehene Objekte platzieren -->
@@ -180,17 +201,12 @@
                       </AppIconButton>
                     </div>
                   </div>
-                  <div class="edit-layer-card_body">
-                    <div class="edit-field">
-                      <label :for="`lt-${editLayer.id}`">Titel</label>
-                      <input
-                        :id="`lt-${editLayer.id}`"
-                        v-model="editLayer.title"
-                        type="text"
-                        class="form-control"
-                      />
-                    </div>
-                    <div class="edit-field">
+                  <div class="modalform edit-layer-card_body">
+                    <label class="field">
+                      Titel
+                      <input v-model="editLayer.title" type="text" />
+                    </label>
+                    <div class="field">
                       <label :for="`lc-${editLayer.id}`">Farbe</label>
                       <div class="color-picker-wrapper">
                         <input
@@ -202,12 +218,12 @@
                         <input
                           type="text"
                           v-model="editLayer.color"
-                          class="form-control"
+                          aria-label="Farbe als Hex-Wert"
                           @change="onLayerColorChange(i)"
                         />
                       </div>
                     </div>
-                    <div class="edit-field">
+                    <div class="field">
                       <label>Ebenen-Bild</label>
                       <input
                         :id="`li-${editLayer.id}`"
@@ -216,18 +232,20 @@
                         accept="image/jpeg,image/png,image/webp"
                         @change="onLayerImageSelected($event, editLayer.id, i)"
                       />
-                      <label :for="`li-${editLayer.id}`" class="button button--small">
+                      <AppButton size="small" variant="secondary" class="edit-layer-card_image-button" @click="pickLayerImage(editLayer.id)">
                         {{ pendingImages[editLayer.id] ? '✓ Bild gewählt' : 'Bild wählen' }}
-                      </label>
+                      </AppButton>
                     </div>
-                    <AppButton size="small" variant="secondary" @click="addPOIToLayer(i)">
-                      + Marker hinzufügen
-                    </AppButton>
+                    <div class="field">
+                      <AppButton size="small" variant="secondary" @click="addPOIToLayer(i)">
+                        + Marker hinzufügen
+                      </AppButton>
+                    </div>
 
-                    <div v-if="rooms.length" class="edit-field edit-field--room-marker">
+                    <div v-if="rooms.length" class="field">
                       <label :for="`rm-${editLayer.id}`">Raummarker</label>
                       <div class="room-marker-picker">
-                        <select :id="`rm-${editLayer.id}`" v-model="selectedRoomId[editLayer.id]" class="form-control">
+                        <select :id="`rm-${editLayer.id}`" v-model="selectedRoomId[editLayer.id]">
                           <option value="">Raum wählen…</option>
                           <option v-for="room in rooms" :key="room.ID" :value="room.ID">{{ room.Title }}</option>
                         </select>
@@ -260,12 +278,20 @@
                 variant="primary"
               >← Zum Event</AppButton>
               <AppButton v-else to="/map" variant="primary">← Alle Lagepläne</AppButton>
-              <button class="button action_recenter" @click="resetView">
-                <div
-                  class="resetMapView_button icon--small"
-                  style="mask-image: url('/_resources/app/client/icons/actions/action_recenter.svg');"
-                ></div>
-              </button>
+              <span class="map-controls_view-buttons">
+                <AppIconButton
+                  v-if="userPosition"
+                  variant="primary"
+                  aria-label="Zu meinem Standort"
+                  title="Zu meinem Standort"
+                  @click="centerOnMe"
+                >
+                  <span class="icon-mask" :style="locationIconStyle" />
+                </AppIconButton>
+                <AppIconButton variant="primary" aria-label="Ansicht zurücksetzen" title="Ansicht zurücksetzen" @click="resetView">
+                  <span class="icon-mask" :style="recenterIconStyle" />
+                </AppIconButton>
+              </span>
             </template>
             <template v-else>
               <AppButton variant="danger" :disabled="saving" title="Lageplan löschen" @click="deleteMap">
@@ -283,6 +309,7 @@
 
         <div class="map-renderer-wrapper" :class="{ 'sidebar-hidden': sidebarHidden }">
           <div ref="rendererEl" class="map-renderer">
+            <MapBasemap v-if="map.basemap && showBasemap" ref="basemapRef" :config="map.basemap" />
             <canvas ref="canvasEl" id="mapCanvas"></canvas>
           </div>
         </div>
@@ -290,6 +317,8 @@
     </div>
 
     <RoomDetailModal ref="roomDetailModal" />
+    <MapPOIModal ref="poiModal" @create="onPOICreate" @save="onPOISave" @delete="onPOIDelete" />
+    <MapLayerCreateModal ref="layerCreateModal" />
     <!-- Notiz eines ausgeliehenen Objekts: nur im Bearbeiten-Modus änderbar -->
     <OrgEventItemEditModal
       v-if="map?.event"
@@ -303,7 +332,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useRoomsStore } from '@stores/rooms'
@@ -314,6 +343,12 @@ import MapRenderer from '../../js/maprenderer.js'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
 import MapEventItems from '@components/maps/MapEventItems.vue'
+import MapPOIModal from '@components/maps/MapPOIModal.vue'
+import MapLayerCreateModal from '@components/maps/MapLayerCreateModal.vue'
+import AppCollapse from '@components/ui/AppCollapse.vue'
+import MapBasemap from '@components/maps/MapBasemap.vue'
+import actionLocation from '../../../icons/actions/action_location.svg'
+import actionRecenter from '../../../icons/actions/action_recenter.svg'
 import OrgEventItemEditModal from '@components/events/OrgEventItemEditModal.vue'
 import { useOrgEventsStore } from '@stores/orgEvents'
 import { itemColor, itemMarkerText } from '@utils/eventItems'
@@ -331,6 +366,11 @@ const sidebarHidden = ref(false)
 const canvasEl = ref(null)
 const rendererEl = ref(null)
 const roomDetailModal = ref(null)
+const poiModal = ref(null)
+const layerCreateModal = ref(null)
+const bgImageInput = ref(null)
+const locationIconStyle = { maskImage: `url("${actionLocation}")`, WebkitMaskImage: `url("${actionLocation}")` }
+const recenterIconStyle = { maskImage: `url("${actionRecenter}")`, WebkitMaskImage: `url("${actionRecenter}")` }
 let renderer = null
 
 // Rooms available for "Raummarker" in this map's organization
@@ -342,6 +382,15 @@ const isEditMode = ref(false)
 const editLayers = ref([])
 const editTitle = ref('')
 const editShortText = ref('')
+// Eckkoordinaten des Lageplans (UL/UR/LL/LR als "lat, lng")
+const CORNERS = [
+  { key: 'UL', label: 'Oben links', field: 'coordinatesUpperLeft', placeholder: '53.6371, 10.3829' },
+  { key: 'UR', label: 'Oben rechts', field: 'coordinatesUpperRight', placeholder: '53.6369, 10.3834' },
+  { key: 'LL', label: 'Unten links', field: 'coordinatesLowerLeft', placeholder: '53.6369, 10.3824' },
+  { key: 'LR', label: 'Unten rechts', field: 'coordinatesLowerRight', placeholder: '53.6365, 10.3829' },
+]
+const COORDINATE_PATTERN = /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/
+const editCoordinates = reactive({ UL: '', UR: '', LL: '', LR: '' })
 const pendingImages = ref({})
 const pendingBgImage = ref(null)
 const bgPreviewUrl = ref('')
@@ -441,6 +490,7 @@ async function loadMap() {
   try {
     const data = await apiGet(`/maps/view/${route.params.id}`, false)
     pendingItemPositions.value = {}
+
     eventItems.value = data.map.items || []
     if (data.map.event) {
       data.map.layers.push({
@@ -495,11 +545,85 @@ function initRenderer() {
     coordinatesLowerRight: map.value.coordinatesLowerRight,
     layers: map.value.layers,
     editMode: false,
+    transparentBackground: basemapActive(),
     onRoomPOIClick,
     onItemPOIClick,
+    onPOIClick,
     onPOIMoved,
+    onViewChange: view => basemapRef.value?.sync(view),
+    onReady: onRendererReady,
   })
   window.mapRenderer = renderer
+}
+
+// ── Umgebungskarte (MapBasemap) ───────────────────────────────────────────────
+// Liegt hinter dem Plan und wird nach jedem Zeichnen des Renderers angeglichen.
+// Ein/aus wird pro Gerät gemerkt.
+const BASEMAP_STORAGE_KEY = 'toteam_map_basemap'
+const basemapRef = ref(null)
+const showBasemap = ref(readBasemapPreference())
+
+function readBasemapPreference() {
+  try {
+    return localStorage.getItem(BASEMAP_STORAGE_KEY) !== '0'
+  } catch {
+    return true
+  }
+}
+
+function basemapActive() {
+  return !!(map.value?.basemap && showBasemap.value)
+}
+
+watch(showBasemap, async (show) => {
+  try {
+    localStorage.setItem(BASEMAP_STORAGE_KEY, show ? '1' : '0')
+  } catch {
+    // ohne Speicher gilt die Einstellung nur bis zum Neuladen
+  }
+  // Erst nach dem Einblenden der Komponente neu zeichnen, damit sie die Ansicht bekommt
+  await nextTick()
+  renderer?.setTransparentBackground(basemapActive())
+})
+
+// ── Eigene Position ───────────────────────────────────────────────────────────
+// Nur bei Plänen mit echten Koordinaten. Beim ersten Standort: liegt er im Plan und
+// hat noch niemand die Ansicht bewegt, wird darauf zentriert (sonst bleibt der ganze Plan).
+const userPosition = ref(null)
+let geoWatchId = null
+let centeredOnUser = false
+// Zoomstufe beim Zentrieren auf den eigenen Standort (1 = ganzer Plan)
+const USER_ZOOM = 3
+
+function onRendererReady(readyRenderer) {
+  if (!readyRenderer.hasGeoCoordinates) return
+  // Nach dem Speichern wird der Renderer neu aufgebaut — Standort direkt wieder anzeigen
+  if (userPosition.value) readyRenderer.setUserPosition(userPosition.value)
+  startGeolocation()
+}
+
+function startGeolocation() {
+  if (geoWatchId !== null || !navigator.geolocation) return
+  geoWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      userPosition.value = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }
+      renderer?.setUserPosition(userPosition.value)
+      if (!centeredOnUser && renderer) {
+        centeredOnUser = true
+        if (!renderer.userMovedView && renderer.isInsidePlan(userPosition.value.lat, userPosition.value.lng)) {
+          renderer.centerOn(userPosition.value.lat, userPosition.value.lng, USER_ZOOM)
+        }
+      }
+    },
+    // Abgelehnt oder nicht verfügbar: einfach ohne eigenen Standort
+    () => {},
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+  )
+}
+
+function centerOnMe() {
+  if (!userPosition.value || !renderer) return
+  renderer.centerOn(userPosition.value.lat, userPosition.value.lng, Math.max(renderer.scale, USER_ZOOM))
 }
 
 function toggleLayer(layerId) {
@@ -531,6 +655,7 @@ function toggleEditMode() {
 function enterEditMode() {
   editTitle.value = map.value.title || ''
   editShortText.value = map.value.shortText || ''
+  for (const corner of CORNERS) editCoordinates[corner.key] = map.value[corner.field] || ''
   // Die Objekt-Ebene eines Event-Lageplans ist keine Ebene des Plans (siehe ITEM_LAYER_ID)
   editLayers.value = map.value.layers.filter(l => l.id !== ITEM_LAYER_ID).map(l => ({
     id: l.id,
@@ -640,9 +765,34 @@ function onLayerImageSelected(event, layerId, layerIndex) {
 }
 
 function addPOIToLayer(layerIndex) {
-  const title = prompt('Titel des neuen Markers:')
-  if (!title) return
-  renderer?.addNewPOIToLayer(title, editLayers.value[layerIndex]?.color, layerIndex)
+  poiModal.value?.openCreate(layerIndex)
+}
+
+// ── Marker (MapPOIModal) ──────────────────────────────────────────────────────
+// Ansehen bzw. im Bearbeiten-Modus bearbeiten; Änderungen landen direkt im Marker-Objekt
+// des Renderers und werden mit "Speichern" des Lageplans übernommen
+function onPOIClick(poiData, editable) {
+  poiModal.value?.open(poiData, { editable })
+}
+
+function onPOICreate(values, layerIndex) {
+  const poi = renderer?.addNewPOIToLayer(values.title, editLayers.value[layerIndex]?.color, layerIndex)
+  if (!poi) return
+  Object.assign(poi, { markerText: values.markerText, description: values.description })
+  renderer.render()
+}
+
+function onPOISave(poiData, values) {
+  Object.assign(poiData.poi, values)
+  renderer?.render()
+}
+
+function onPOIDelete(poiData) {
+  renderer?.deletePOI(poiData)
+}
+
+function pickLayerImage(layerId) {
+  document.getElementById(`li-${layerId}`)?.click()
 }
 
 function addRoomPOIToLayer(layerIndex, editLayerId) {
@@ -653,28 +803,30 @@ function addRoomPOIToLayer(layerIndex, editLayerId) {
   selectedRoomId[editLayerId] = ''
 }
 
-async function addLayer() {
-  const title = prompt('Titel der neuen Ebene:')
-  if (!title) return
-  try {
-    const result = await apiPost(`/maps/createlayer/${map.value.id}`, { title })
-    const newLayer = result.data.layer
-    // map.value.layers ist dasselbe Array wie renderer.layers — einmal einfügen,
-    // vor der Objekt-Ebene eines Event-Lageplans (die bleibt immer die letzte)
-    const layers = map.value.layers
-    const at = layers.findIndex(l => l.id === ITEM_LAYER_ID)
-    layers.splice(at === -1 ? layers.length : at, 0, newLayer)
-    editLayers.value.push({
-      id: newLayer.id,
-      title: newLayer.title,
-      description: '',
-      color: newLayer.layerColor || '#999999',
-      active: newLayer.active !== false,
-    })
-    renderer?.render()
-  } catch (e) {
-    alert('Fehler beim Erstellen der Ebene: ' + e.message)
-  }
+function addLayer() {
+  layerCreateModal.value?.open(createLayer)
+}
+
+/** Aus dem MapLayerCreateModal — Fehler wirft es weiter, das Modal zeigt sie an */
+async function createLayer({ title, layerColor }) {
+  const result = await apiPost(`/maps/createlayer/${map.value.id}`, { title, layerColor })
+  if (!result?.success) throw new Error(result?.error || 'Ebene konnte nicht angelegt werden.')
+  const newLayer = result.data.layer
+  // map.value.layers ist dasselbe Array wie renderer.layers — einmal einfügen,
+  // vor der Objekt-Ebene eines Event-Lageplans (die bleibt immer die letzte)
+  const layers = map.value.layers
+  const at = layers.findIndex(l => l.id === ITEM_LAYER_ID)
+  layers.splice(at === -1 ? layers.length : at, 0, newLayer)
+  // Der Renderer zeichnet nur Ebenen aus activeLayers (beim Laden gefüllt) — neue Ebene direkt einblenden
+  renderer?.activeLayers.add(newLayer.id)
+  editLayers.value.push({
+    id: newLayer.id,
+    title: newLayer.title,
+    description: '',
+    color: newLayer.layerColor || '#999999',
+    active: newLayer.active !== false,
+  })
+  renderer?.render()
 }
 
 async function saveAll() {
@@ -682,6 +834,17 @@ async function saveAll() {
     alert('Bitte gib einen Titel für den Lageplan an.')
     return
   }
+  const coordinates = Object.fromEntries(CORNERS.map(c => [c.key, editCoordinates[c.key].trim()]))
+  const filledCorners = Object.values(coordinates).filter(Boolean)
+  if (filledCorners.some(v => !COORDINATE_PATTERN.test(v))) {
+    alert('Ungültige Koordinaten. Bitte jede Ecke als „Breitengrad, Längengrad“ angeben, z.B. 53.6371, 10.3829.')
+    return
+  }
+  if (filledCorners.length !== 0 && filledCorners.length !== 4) {
+    alert('Bitte alle vier Eckkoordinaten angeben oder alle leer lassen.')
+    return
+  }
+  const coordinatesChanged = CORNERS.some(c => coordinates[c.key] !== (map.value[c.field] || '').trim())
   saving.value = true
   try {
     const updated = await apiPost(`/maps/updatemap/${map.value.id}`, {
@@ -691,11 +854,6 @@ async function saveAll() {
     // apiPost wirft bei Fehlern nicht, sondern liefert { success: false, error }
     if (!updated?.success) throw new Error(updated?.error || 'Titel und Beschreibung konnten nicht gespeichert werden')
 
-    if (pendingBgImage.value) {
-      const formData = new FormData()
-      formData.append('image', pendingBgImage.value)
-      await apiPostForm(`/maps/uploadbackgroundimage/${map.value.id}`, formData)
-    }
 
     for (let i = 0; i < editLayers.value.length; i++) {
       const editLayer = editLayers.value[i]
@@ -739,6 +897,19 @@ async function saveAll() {
     }
     pendingItemPositions.value = {}
 
+    // Koordinaten erst jetzt: der Server rechnet dabei alle eben gespeicherten Positionen
+    // (noch im alten System) um — und zwar mit dem bisherigen Hintergrundbild, daher davor
+    if (coordinatesChanged) {
+      const result = await apiPost(`/maps/updatemap/${map.value.id}`, { coordinates })
+      if (!result?.success) throw new Error(result?.error || 'Koordinaten konnten nicht gespeichert werden')
+    }
+
+    if (pendingBgImage.value) {
+      const formData = new FormData()
+      formData.append('image', pendingBgImage.value)
+      await apiPostForm(`/maps/uploadbackgroundimage/${map.value.id}`, formData)
+    }
+
     isEditMode.value = false
     editLayers.value = []
     pendingImages.value = {}
@@ -762,5 +933,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.mapRenderer = null
+  if (geoWatchId !== null) navigator.geolocation?.clearWatch(geoWatchId)
 })
 </script>

@@ -1,0 +1,21 @@
+@use "../../base/variables" as *;
+
+// Marker eines Lageplans ansehen/bearbeiten/anlegen (MapPOIModal.vue)
+.map-poi-modal {
+    text-align: left;
+    max-width: 480px;
+
+    .map-poi-modal_description {
+        margin: 0;
+        color: var(--ColorBlack);
+        white-space: pre-line;
+    }
+
+    .map-poi-modal_empty,
+    .map-poi-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+}

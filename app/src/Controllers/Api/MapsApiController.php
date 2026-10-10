@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Maps\Map;
+use App\Maps\MapTilesSettings;
 use App\Maps\MapLayer;
 use App\Maps\MapPOI;
 use App\Inventory\InventoryItem;
@@ -129,6 +130,19 @@ class MapsApiController extends ApiController
             }
 
             $data = $this->formatMap($map) + ['canEdit' => $this->canManageMap($map, $member)];
+
+            // Umgebungskarte hinter dem Plan (MapDetail.vue) — nur mit echten Eckkoordinaten,
+            // vorhandenen Kartendaten und wenn der Plan im heruntergeladenen Bereich liegt
+            $data['basemap'] = null;
+            $corners = array_map([Map::class, 'parseCoordinates'], [
+                $map->CoordinatesUpperLeft, $map->CoordinatesUpperRight,
+                $map->CoordinatesLowerLeft, $map->CoordinatesLowerRight,
+            ]);
+            if (!in_array(null, $corners, true)) {
+                $lat = array_sum(array_column($corners, 0)) / 4;
+                $lng = array_sum(array_column($corners, 1)) / 4;
+                $data['basemap'] = MapTilesSettings::current()->clientConfig($lat, $lng);
+            }
 
             // Lageplan eines Events: dazu das Event und die dafür ausgeliehenen Objekte
             $event = $map->EventID ? $map->Event() : null;
@@ -416,7 +430,28 @@ class MapsApiController extends ApiController
         if (array_key_exists('shortText', $data)) {
             $map->ShortText = trim((string) $data['shortText']);
         }
+
+        // Eckkoordinaten: alle vier oder keine; vorhandene Marker werden mit umgerechnet
+        $corners = null;
+        if (isset($data['coordinates']) && is_array($data['coordinates'])) {
+            $corners = [];
+            foreach (['UL', 'UR', 'LL', 'LR'] as $key) {
+                $value = trim((string) ($data['coordinates'][$key] ?? ''));
+                if ($value !== '' && !Map::parseCoordinates($value)) {
+                    return $this->errorResponse('Ungültige Koordinaten: "' . $value . '" (Format: Breitengrad, Längengrad)', 400);
+                }
+                $corners[$key] = $value;
+            }
+            $filled = count(array_filter($corners, fn ($v) => $v !== ''));
+            if ($filled !== 0 && $filled !== 4) {
+                return $this->errorResponse('Bitte alle vier Eckkoordinaten angeben oder alle leer lassen', 400);
+            }
+        }
+
         $map->write();
+        if ($corners !== null) {
+            $map->changeCorners($corners);
+        }
 
         return $this->successResponse([], 'Lageplan gespeichert');
     }

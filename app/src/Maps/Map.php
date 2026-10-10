@@ -126,6 +126,109 @@ class Map extends DataObject implements PermissionProvider
     }
 
     /**
+     * Eckpunkte als [lat, lng]-Paare (UL, UR, LL) des Koordinatensystems, in dem die
+     * Marker gespeichert sind — wie im Frontend (js/maprenderer.js): die vier
+     * Eckkoordinaten, sonst ein künstliches System um (0,0) aus dem Seitenverhältnis
+     * des Hintergrundbilds (generateSyntheticCoordinates()). Null, wenn weder noch.
+     *
+     * @param array<string, ?string>|null $corners UL/UR/LL/LR als "lat,lng" (null = die gespeicherten)
+     * @return array{0: float[], 1: float[], 2: float[]}|null
+     */
+    public function coordinateFrame(?array $corners = null): ?array
+    {
+        $corners ??= [
+            'UL' => $this->CoordinatesUpperLeft,
+            'UR' => $this->CoordinatesUpperRight,
+            'LL' => $this->CoordinatesLowerLeft,
+            'LR' => $this->CoordinatesLowerRight,
+        ];
+        $parsed = array_map([self::class, 'parseCoordinates'], $corners);
+        if (!in_array(null, $parsed, true)) {
+            return [$parsed['UL'], $parsed['UR'], $parsed['LL']];
+        }
+
+        $image = $this->BackgroundImage();
+        if (!$image || !$image->exists() || !$image->getWidth() || !$image->getHeight()) {
+            return null;
+        }
+        $halfW = 0.5;
+        $halfH = $halfW / ($image->getWidth() / $image->getHeight());
+        return [[$halfH, -$halfW], [$halfH, $halfW], [-$halfH, -$halfW]];
+    }
+
+    /** "lat,lng" → [lat, lng] oder null */
+    public static function parseCoordinates(?string $value): ?array
+    {
+        if (!$value || !preg_match('/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/', $value, $m)) {
+            return null;
+        }
+        return [(float) $m[1], (float) $m[2]];
+    }
+
+    /**
+     * Neue Eckkoordinaten setzen und alle Positionen auf dem Plan (Marker der Ebenen,
+     * platzierte Objekte eines Events) so umrechnen, dass sie an derselben Stelle im
+     * Bild bleiben. Leere Ecken = zurück zum künstlichen System aus dem Bild.
+     *
+     * @param array<string, ?string> $corners UL/UR/LL/LR als "lat,lng" oder leer
+     */
+    public function changeCorners(array $corners): void
+    {
+        $old = $this->coordinateFrame();
+        $new = $this->coordinateFrame($corners);
+
+        $this->CoordinatesUpperLeft = $corners['UL'] ?: null;
+        $this->CoordinatesUpperRight = $corners['UR'] ?: null;
+        $this->CoordinatesLowerLeft = $corners['LL'] ?: null;
+        $this->CoordinatesLowerRight = $corners['LR'] ?: null;
+        $this->write();
+
+        if (!$old || !$new || $old === $new) {
+            return;
+        }
+        $records = [
+            ...MapPOI::get()->filter('ParentID', $this->MapLayers()->column('ID') ?: [0])->toArray(),
+            ...OrgEventItemPlacement::get()->filter('MapID', $this->ID)->toArray(),
+        ];
+        foreach ($records as $record) {
+            $point = self::parseCoordinates($record->Coordinates);
+            if (!$point) {
+                continue;
+            }
+            $moved = self::transformPoint($point, $old, $new);
+            if ($moved) {
+                $record->Coordinates = $moved[0] . ',' . $moved[1];
+                $record->write();
+            }
+        }
+    }
+
+    /**
+     * Punkt von einem Eck-System ins andere: Lage im Bild (u, v) aus P = UL + u·(UR−UL) + v·(LL−UL)
+     * bestimmen (wie geoToCanvas() im Frontend) und mit den neuen Ecken zurückrechnen.
+     */
+    private static function transformPoint(array $point, array $from, array $to): ?array
+    {
+        [$ul, $ur, $ll] = $from;
+        // Achsen in [lat, lng]: Oberkante (UL→UR) und linke Kante (UL→LL)
+        $top = [$ur[0] - $ul[0], $ur[1] - $ul[1]];
+        $left = [$ll[0] - $ul[0], $ll[1] - $ul[1]];
+        $vec = [$point[0] - $ul[0], $point[1] - $ul[1]];
+        $det = $top[1] * $left[0] - $top[0] * $left[1];
+        if (abs($det) < 1e-12) {
+            return null;
+        }
+        $u = ($vec[1] * $left[0] - $vec[0] * $left[1]) / $det;
+        $v = ($top[1] * $vec[0] - $top[0] * $vec[1]) / $det;
+
+        [$nul, $nur, $nll] = $to;
+        return [
+            $nul[0] + $u * ($nur[0] - $nul[0]) + $v * ($nll[0] - $nul[0]),
+            $nul[1] + $u * ($nur[1] - $nul[1]) + $v * ($nll[1] - $nul[1]),
+        ];
+    }
+
+    /**
      * Objekte eines Events, die auf diesem Plan standen, gelten danach als nicht
      * platziert — ihre Notizen (z.B. DMX-Adressen) bleiben erhalten
      */
