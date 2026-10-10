@@ -1,6 +1,6 @@
 <template>
   <div class="history-entry">
-    <AppAvatar :src="entry.Member?.Avatar" :alt="memberName" img-class="history-entry_avatar" />
+    <AppAvatar :src="entry.Member?.Avatar" :alt="memberName" :name="entry.Actor ? 'Automatisch' : ''" img-class="history-entry_avatar" />
 
     <div class="history-entry_body">
       <div class="history-entry_head">
@@ -61,7 +61,8 @@ const props = defineProps({
   createdLabel: { type: String, default: 'hat den Eintrag erstellt' },
 })
 
-const memberName = computed(() => props.entry.Member?.Name || 'Unbekannt')
+// Automatische Änderungen (z.B. Absage wegen Abwesenheit) haben statt einer Person einen Actor-Text
+const memberName = computed(() => props.entry.Actor || props.entry.Member?.Name || 'Unbekannt')
 
 function formatDateTime(iso) {
   return new Date(iso).toLocaleString('de-DE', {

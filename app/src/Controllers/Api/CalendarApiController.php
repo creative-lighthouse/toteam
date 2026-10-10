@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Calendar\Absence;
+use App\History\HistoryEntry;
 use App\Calendar\Appointment;
 use App\Calendar\AppointmentAgendaPoint;
 use App\Calendar\AppointmentParticipation;
@@ -1085,23 +1086,25 @@ class CalendarApiController extends ApiController
         $appt->Organisations()->addMany($orgIDs);
         $appt->InvitedMembers()->addMany($invitedIDs);
 
-        // Auto-decline members who are absent on the appointment's start date
-        $absentEntries = $this->getRelevantAbsences($orgIDs);
-        foreach ($absentEntries as $absence) {
-            if (!$absence->appliesToDate($appt->DateStart)) {
-                continue;
+        // Auto-decline members who are absent on the appointment's start date —
+        // im Verlauf als "Automatisch (Abwesenheit)" statt als Aktion der anlegenden Person
+        HistoryEntry::asSystem('Automatisch (Abwesenheit)', function () use ($appt, $orgIDs) {
+            foreach ($this->getRelevantAbsences($orgIDs) as $absence) {
+                if (!$absence->appliesToDate($appt->DateStart)) {
+                    continue;
+                }
+                $alreadyExists = $appt->Participations()
+                    ->filter(['MemberID' => $absence->MemberID])
+                    ->exists();
+                if (!$alreadyExists) {
+                    $p = AppointmentParticipation::create();
+                    $p->ParentID = $appt->ID;
+                    $p->MemberID = $absence->MemberID;
+                    $p->Type     = 'Decline';
+                    $p->write();
+                }
             }
-            $alreadyExists = $appt->Participations()
-                ->filter(['MemberID' => $absence->MemberID])
-                ->exists();
-            if (!$alreadyExists) {
-                $p = AppointmentParticipation::create();
-                $p->ParentID = $appt->ID;
-                $p->MemberID = $absence->MemberID;
-                $p->Type     = 'Decline';
-                $p->write();
-            }
-        }
+        });
 
         return $this->successResponse(['ID' => $appt->ID], 'Termin erstellt');
     }

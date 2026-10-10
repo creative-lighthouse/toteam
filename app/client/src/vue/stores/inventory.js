@@ -252,6 +252,17 @@ export const useInventoryStore = defineStore('inventory', () => {
   }
 
   // Weitere gleiche Objekte mit fortlaufenden Nummern anlegen
+  /**
+   * Ob eine Inventarnummer im Nummernkreis schon vergeben ist → { taken, suggestion }.
+   * owner: 'organization' (mit organizationId) oder 'member'; excludeId beim Bearbeiten.
+   */
+  async function checkNumber({ number, owner, organizationId = null, excludeId = null }) {
+    const params = new URLSearchParams({ number, owner })
+    if (organizationId) params.set('organization', organizationId)
+    if (excludeId) params.set('exclude', excludeId)
+    return apiGet(`/inventory/numberCheck?${params}`, false)
+  }
+
   async function duplicateItem(itemId, count) {
     const response = await apiPost(`/inventory/duplicate/${itemId}`, { Count: count })
     if (response.success) {
@@ -452,6 +463,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     removeFile,
     duplicateItem,
     shareItem,
+    checkNumber,
     fetchPublicItem,
     swapRentalItem,
     groupedItems,
