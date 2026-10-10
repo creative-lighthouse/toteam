@@ -34,7 +34,13 @@ class HistoryEntry extends DataObject
     private static $db = [
         'Type'    => "Enum('created,changed', 'changed')",
         'Changes' => 'Text',
+        // Statt einer Person: wer/was die Änderung automatisch vorgenommen hat,
+        // z.B. "Automatisch (Abwesenheit)" — siehe asSystem()
+        'Actor'   => 'Varchar(100)',
     ];
+
+    /** Laufender System-Kontext (asSystem()), sonst null */
+    protected static ?string $systemActor = null;
 
     private static $has_one = [
         'Record' => DataObject::class,
@@ -75,13 +81,34 @@ class HistoryEntry extends DataObject
      * Legt einen "erstellt"-Eintrag für das Datenobjekt an, optional mit den
      * Anfangswerten ausgewählter Felder (siehe HistoryExtension::$history_created_fields).
      */
+    /**
+     * Änderungen, die im Callback geschehen, als automatische protokollieren — ohne
+     * Person, mit $actor als Urheber (z.B. "Automatisch (Abwesenheit)"), auch wenn
+     * gerade jemand angemeldet ist, dessen Aktion sie ausgelöst hat.
+     *
+     * @template T
+     * @param callable(): T $callback
+     * @return T
+     */
+    public static function asSystem(string $actor, callable $callback)
+    {
+        $previous = static::$systemActor;
+        static::$systemActor = $actor;
+        try {
+            return $callback();
+        } finally {
+            static::$systemActor = $previous;
+        }
+    }
+
     public static function recordCreated(DataObject $record, ?Member $member, array $changes = []): void
     {
         $entry = static::create();
         $entry->Type = 'created';
         $entry->RecordClass = $record->ClassName;
         $entry->RecordID = $record->ID;
-        $entry->MemberID = $member ? $member->ID : 0;
+        $entry->MemberID = $member && !static::$systemActor ? $member->ID : 0;
+        $entry->Actor = static::$systemActor;
         $entry->setChangeList(array_values(array_filter($changes, [static::class, 'isEffective'])));
         $entry->write();
     }
@@ -100,12 +127,15 @@ class HistoryEntry extends DataObject
             return;
         }
 
-        $memberID = $member ? $member->ID : 0;
+        $actor = static::$systemActor;
+        $memberID = $member && !$actor ? $member->ID : 0;
         $latest = static::getForRecord($record)->sort('ID', 'DESC')->first();
 
+        // Nur mit Einträgen desselben Urhebers zusammenführen (Person bzw. System-Text)
         $mergeable = $latest
             && $latest->Type === 'changed'
             && (int) $latest->MemberID === $memberID
+            && (string) $latest->Actor === (string) $actor
             && (DBDatetime::now()->getTimestamp() - strtotime((string) $latest->LastEdited)) <= static::config()->get('merge_window');
 
         if ($mergeable) {
@@ -127,6 +157,7 @@ class HistoryEntry extends DataObject
         $entry->RecordClass = $record->ClassName;
         $entry->RecordID = $record->ID;
         $entry->MemberID = $memberID;
+        $entry->Actor = $actor;
         $entry->setChangeList($changes);
         $entry->write();
     }
@@ -210,6 +241,8 @@ class HistoryEntry extends DataObject
                 'Name'   => $member->getDisplayName(),
                 'Avatar' => $member->RenderProfileImage(),
             ] : null,
+            // Automatische Änderung (siehe asSystem()) — dann ohne Member
+            'Actor'   => $this->Actor ?: null,
             'Changes' => $this->getChangeList(),
         ];
     }

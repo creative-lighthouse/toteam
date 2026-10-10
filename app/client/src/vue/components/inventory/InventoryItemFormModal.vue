@@ -69,6 +69,16 @@
           >
         </label>
 
+        <!-- Inventarnummern sind je Organisation bzw. je Person eindeutig -->
+        <div v-if="numberCheck.taken" class="field inventory-item-form-modal_number-warning" role="alert">
+          <span>
+            „{{ numberCheck.number }}“ ist {{ isPrivate ? 'bei deinem privaten Equipment' : 'in dieser Organisation' }} bereits vergeben.
+          </span>
+          <AppButton v-if="numberCheck.suggestion" size="small" variant="secondary" @click="form.InventoryNumber = numberCheck.suggestion">
+            „{{ numberCheck.suggestion }}“ verwenden
+          </AppButton>
+        </div>
+
         <label class="field">
           Beschreibung
           <textarea v-model="form.Description" rows="3" placeholder="Optionale Beschreibung…" />
@@ -312,8 +322,43 @@ const numberPreview = computed(() => {
   return `${base}-${pad(1)} … ${base}-${pad(form.Count)}`
 })
 
+// ── Inventarnummer schon vergeben? (Prüfung beim Tippen, Vorschlag der nächsten freien) ──
+// Beim Anlegen mehrerer Objekte vergibt der Server "<Nummer>-01 …" selbst frei — dann nicht prüfen
+const numberCheck = reactive({ number: '', taken: false, suggestion: null })
+let numberCheckTimer = null
+let numberCheckRun = 0
+
+watch(
+  () => [form.InventoryNumber.trim(), form.OwnerType, form.OrganizationID, form.Count, editingItemId.value],
+  ([number]) => {
+    clearTimeout(numberCheckTimer)
+    const relevant = number && ownerChosen.value && (isEdit.value || (parseInt(form.Count) || 1) <= 1)
+    if (!relevant) {
+      Object.assign(numberCheck, { number: '', taken: false, suggestion: null })
+      return
+    }
+    numberCheckTimer = setTimeout(async () => {
+      const run = ++numberCheckRun
+      try {
+        const result = await store.checkNumber({
+          number,
+          owner: isPrivate.value ? 'member' : 'organization',
+          organizationId: isPrivate.value ? null : form.OrganizationID,
+          excludeId: editingItemId.value,
+        })
+        // Nur die Antwort auf die zuletzt gestellte Frage zählt
+        if (run !== numberCheckRun) return
+        Object.assign(numberCheck, { number, taken: !!result?.taken, suggestion: result?.suggestion ?? null })
+      } catch {
+        // Prüfung nicht möglich — der Server lehnt doppelte Nummern beim Speichern trotzdem ab
+      }
+    }, 300)
+  }
+)
+
 const canSubmit = computed(() =>
   ownerChosen.value && !!selectedType.value && !!form.Title.trim() && !!form.InventoryNumber.trim()
+  && !(numberCheck.taken && numberCheck.number === form.InventoryNumber.trim())
 )
 
 // Die gewählte Art gehört ggf. nicht mehr zur Auswahl, wenn Besitzer oder Organisation wechseln

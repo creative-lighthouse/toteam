@@ -386,6 +386,39 @@ class InventoryItem extends DataObject
     }
 
     /**
+     * Ob die Inventarnummer im Nummernkreis des Besitzers (Organisation bzw. privates
+     * Equipment einer Person) schon vergeben ist — optional ohne ein Objekt (beim Bearbeiten).
+     */
+    public static function isNumberTaken(string $number, string $ownerType, int $ownerID, int $excludeID = 0): bool
+    {
+        $scope = $ownerType === 'member'
+            ? ['OwnerType' => 'member', 'OwnerMemberID' => $ownerID]
+            : ['OwnerType' => 'organization', 'OrganizationID' => $ownerID];
+        return self::get()->filter($scope + ['InventoryNumber' => trim($number)])->exclude('ID', $excludeID ?: 0)->exists();
+    }
+
+    /**
+     * Nächste freie Nummer, wenn $number auf eine Zahl endet: "LI-0042" → "LI-0043"
+     * (gleiche Stellenzahl, sonst so lang wie nötig). Null ohne Zahl am Ende.
+     */
+    public static function suggestFreeNumber(string $number, string $ownerType, int $ownerID, int $excludeID = 0): ?string
+    {
+        if (!preg_match('/^(.*?)(\d+)$/', trim($number), $m)) {
+            return null;
+        }
+        [, $prefix, $digits] = $m;
+        $next = (int) $digits;
+        for ($i = 0; $i < 10000; $i++) {
+            $next++;
+            $candidate = $prefix . str_pad((string) $next, strlen($digits), '0', STR_PAD_LEFT);
+            if (!self::isNumberTaken($candidate, $ownerType, $ownerID, $excludeID)) {
+                return $candidate;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Legt eine Kopie mit neuer Inventarnummer an: gleiche Eigenschaften,
      * Freigaben, Bilder und Dokumente (die Dateien werden geteilt, nicht kopiert).
      */

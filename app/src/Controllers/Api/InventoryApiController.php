@@ -42,6 +42,7 @@ class InventoryApiController extends ApiController
         'uploadFiles',
         'removeFile',
         'duplicate',
+        'numberCheck',
         'itemHistory',
         'share',
         'public',
@@ -871,6 +872,48 @@ class InventoryApiController extends ApiController
             ['item' => $this->formatItemDetail($item, $member), 'created' => $created],
             $count . ' weitere' . ($count === 1 ? 's Objekt' : ' Objekte') . ' angelegt'
         );
+    }
+
+    /**
+     * GET /api/v1/inventory/numberCheck?number=&owner=organization|member&organization=&exclude=
+     * Ob die Inventarnummer im Nummernkreis schon vergeben ist (je Organisation bzw. je
+     * Person für privates Equipment), samt Vorschlag der nächsten freien Nummer.
+     */
+    public function numberCheck(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $number = trim((string) $request->getVar('number'));
+        $ownerType = $request->getVar('owner') === 'member' ? 'member' : 'organization';
+        $excludeID = (int) $request->getVar('exclude');
+
+        if ($ownerType === 'member') {
+            $ownerID = (int) $member->ID;
+        } else {
+            $org = $this->findOrg((int) $request->getVar('organization'));
+            if (!$org || !in_array((int) $org->ID, array_map('intval', $this->inventoryOrgIDs($member)), true)) {
+                return $this->errorResponse('Organisation nicht gefunden', 404);
+            }
+            $ownerID = (int) $org->ID;
+        }
+        // Beim Bearbeiten zählt der Nummernkreis des Objekts, nicht der eigene
+        if ($excludeID) {
+            $item = InventoryItem::get()->byID($excludeID);
+            if (!$item || !$item->isEditableBy($member)) {
+                return $this->errorResponse('Objekt nicht gefunden', 404);
+            }
+            $ownerType = $item->OwnerType;
+            $ownerID = $item->isPrivate() ? (int) $item->OwnerMemberID : (int) $item->OrganizationID;
+        }
+
+        $taken = $number !== '' && InventoryItem::isNumberTaken($number, $ownerType, $ownerID, $excludeID);
+        return $this->jsonResponse([
+            'taken'      => $taken,
+            'suggestion' => $taken ? InventoryItem::suggestFreeNumber($number, $ownerType, $ownerID, $excludeID) : null,
+        ]);
     }
 
     /** DELETE /api/v1/inventory/remove/$ID */
