@@ -4,7 +4,11 @@
   <li
     v-if="visible"
     class="inventory-storage-node"
-    :class="{ 'inventory-storage-node--open': isOpen, 'inventory-storage-node--dragging': drag.dragging.value?.kind === 'location' && drag.dragging.value.entity.ID === location.ID }"
+    :class="{
+      'inventory-storage-node--open': isOpen,
+      'inventory-storage-node--dragging': drag.dragging.value?.kind === 'location' && drag.dragging.value.entity.ID === location.ID,
+      'inventory-storage-node--drop-inside': isDropInside,
+    }"
   >
     <div
       class="inventory-storage-node_header"
@@ -48,7 +52,9 @@
       </span>
     </div>
 
-    <div v-if="isOpen" class="inventory-storage-node_body">
+    <!-- Der ganze aufgeklappte Bereich nimmt Abgelegtes auf ("hinein"); verschachtelte
+         Lagerpunkte darin haben ihre eigenen Ablageflächen und gehen vor -->
+    <div v-if="isOpen" class="inventory-storage-node_body" :data-drop-zone="`in:${location.ID}`">
       <p v-if="location.Description" class="inventory-storage-node_description">{{ location.Description }}</p>
       <p v-if="facts.length" class="inventory-storage-node_facts">
         <span v-for="fact in facts" :key="fact.label"><strong>{{ fact.label }}:</strong> {{ fact.value }}</span>
@@ -103,9 +109,16 @@ const store = useStorageStore()
 
 // Drag & Drop aus dem InventoryStorageTab: start, dragging, dropTarget
 const drag = inject('storageDrag')
+// Davor/dahinter als Linie an der Kopfzeile, "hinein" als Rahmen um den ganzen Lagerpunkt
 const dropClass = computed(() => {
   const target = drag.dropTarget.value
-  return target?.targetId === props.location.ID ? `inventory-storage-node_header--drop-${target.position}` : null
+  return target?.targetId === props.location.ID && target.position !== 'inside'
+    ? `inventory-storage-node_header--drop-${target.position}`
+    : null
+})
+const isDropInside = computed(() => {
+  const target = drag.dropTarget.value
+  return target?.targetId === props.location.ID && target.position === 'inside'
 })
 
 const maskStyle = icon => ({ maskImage: `url("${icon}")`, WebkitMaskImage: `url("${icon}")` })

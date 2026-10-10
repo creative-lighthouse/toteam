@@ -173,16 +173,24 @@ const { start, dragging, overZone, overRatio } = usePointerDrag({
  */
 function resolvePlaceTarget(payload, zone) {
   if (zone === 'unassigned') return { unassigned: true }
-  if (!zone?.startsWith('loc:')) return null
-  return { targetId: parseInt(zone.slice(4)), position: 'inside' }
+  const targetId = zoneLocationId(zone)
+  return targetId ? { targetId, position: 'inside' } : null
+}
+
+// Ablageflächen: "loc:<ID>" = Kopfzeile eines Lagerpunkts, "in:<ID>" = sein aufgeklappter Bereich
+function zoneLocationId(zone) {
+  const match = zone?.match(/^(loc|in):(\d+)$/)
+  return match ? parseInt(match[2]) : null
 }
 
 /** { targetId, position: 'before' | 'inside' | 'after' } oder null, wenn das Ziel ungültig ist */
 function resolveTarget(location, zone, ratio) {
-  if (!location || !zone?.startsWith('loc:')) return null
-  const targetId = parseInt(zone.slice(4))
+  const targetId = zoneLocationId(zone)
+  if (!location || !targetId) return null
   // Nicht in sich selbst oder in einen eigenen Unter-Lagerpunkt
   if (targetId === location.ID || store.descendantIds(location.ID).has(targetId)) return null
+  // Im aufgeklappten Bereich immer hinein, an der Kopfzeile je nach Höhe davor/hinein/dahinter
+  if (zone.startsWith('in:')) return { targetId, position: 'inside' }
   const position = ratio < EDGE ? 'before' : ratio > 1 - EDGE ? 'after' : 'inside'
   return { targetId, position }
 }

@@ -208,7 +208,8 @@
     bottom: -6px;
 }
 
-.inventory-storage-node_header--drop-inside {
+// "Hinein": der ganze Lagerpunkt (Kopf + aufgeklappter Bereich) wird umrahmt
+.inventory-storage-node.inventory-storage-node--drop-inside {
     background-color: var(--ColorPrimaryLight);
     box-shadow: inset 0 0 0 2px var(--ColorPrimary);
 }
