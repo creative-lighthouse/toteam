@@ -28,7 +28,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $MetaValues
  * @property ?string $ShareToken
  * @property int $TypeID
- * @property int $StorageLocationID
+ * @property int $StorageLocationID veraltet — nur noch für die Migration in den Lagerpunkt des Raums
  * @method \App\Inventory\InventoryItemType Type()
  * @method \App\Inventory\StorageLocation StorageLocation()
  * @property int $OrganizationID
@@ -68,7 +68,8 @@ class Room extends DataObject implements PermissionProvider
         "Organization" => Organization::class,
         // Art mit AppliesTo = "room" (siehe InventoryItemType)
         "Type"         => InventoryItemType::class,
-        // Wo der Raum liegt (Tab "Lager"), z.B. im Gebäude
+        // Veraltet: wo der Raum liegt, steht jetzt am Lagerpunkt des Raums (getStorageNode()->Parent).
+        // Bleibt nur für die Migration in StorageLocation::requireDefaultRecords()
         "StorageLocation" => StorageLocation::class,
     ];
 
@@ -132,6 +133,18 @@ class Room extends DataObject implements PermissionProvider
         return $fields;
     }
 
+    /** Eigener Lagerpunkt des Raums (Tab "Lager") — darin kann etwas lagern, er selbst in einem Lagerpunkt */
+    public function getStorageNode(): ?StorageLocation
+    {
+        return $this->ID ? StorageLocation::get()->filter('RoomID', $this->ID)->first() : null;
+    }
+
+    protected function onAfterWrite()
+    {
+        parent::onAfterWrite();
+        StorageLocation::syncForRoom($this);
+    }
+
     /**
      * Bilder/Dokumente mitlöschen. Dateien sind versioniert: doArchive() entfernt
      * sie aus Entwurf und Live (delete() träfe nur die gerade aktive Stufe).
@@ -139,6 +152,9 @@ class Room extends DataObject implements PermissionProvider
     protected function onBeforeDelete()
     {
         parent::onBeforeDelete();
+
+        // Lagerpunkt des Raums mitlöschen — was darin lag, rückt eine Ebene nach oben
+        $this->getStorageNode()?->delete();
 
         foreach (['Images', 'Documents'] as $relation) {
             foreach ($this->$relation() as $file) {

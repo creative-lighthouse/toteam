@@ -1,6 +1,7 @@
 <template>
   <!-- Ein Lagerpunkt im Lager-Baum: Kopfzeile zum Auf-/Zuklappen, darunter die
-       enthaltenen Lagerpunkte (rekursiv) sowie Objekte, Fahrzeuge und Räume -->
+       enthaltenen Lagerpunkte (rekursiv, auch Räume) sowie Objekte und Fahrzeuge.
+       Räume (IsRoom) haben ein Raum-Symbol und werden im Räume-Tab bearbeitet. -->
   <li
     v-if="visible"
     class="inventory-storage-node"
@@ -30,6 +31,9 @@
         @click="emit('toggle', location.ID)"
       >
         <span class="inventory-storage-node_chevron" :class="{ 'inventory-storage-node_chevron--empty': isEmpty }" aria-hidden="true" />
+        <span v-if="location.IsRoom" class="inventory-storage-node_room-icon" title="Raum" aria-hidden="true">
+          <span class="icon-mask" :style="roomIconStyle" />
+        </span>
         <span class="inventory-storage-node_info">
           <span class="inventory-storage-node_title">{{ location.Title }}</span>
           <span class="inventory-storage-node_meta">
@@ -43,7 +47,7 @@
         <AppIconButton variant="neutral" :aria-label="`„${location.Title}“ ansehen`" title="Ansehen" @click="emit('view', location)">
           <span class="icon-mask" :style="viewIconStyle" />
         </AppIconButton>
-        <AppIconButton v-if="location.CanEdit" variant="primary" :aria-label="`„${location.Title}“ bearbeiten`" title="Bearbeiten" @click="emit('edit', location)">
+        <AppIconButton v-if="location.CanEditDetails" variant="primary" :aria-label="`„${location.Title}“ bearbeiten`" title="Bearbeiten" @click="emit('edit', location)">
           <span class="icon-mask" :style="editIconStyle" />
         </AppIconButton>
         <AppIconButton v-if="location.CanDelete" variant="danger" :aria-label="`„${location.Title}“ löschen`" title="Löschen" @click="emit('delete', location)">
@@ -96,6 +100,7 @@ import InventoryStorageContents from '@components/inventory/InventoryStorageCont
 import actionEye from '../../../../icons/actions/action_eye.svg'
 import actionEdit from '../../../../icons/actions/action_edit.svg'
 import actionTrash from '../../../../icons/actions/action_trash.svg'
+import actionRoom from '../../../../icons/actions/action_room.svg'
 
 const props = defineProps({
   location: { type: Object, required: true },
@@ -125,6 +130,7 @@ const maskStyle = icon => ({ maskImage: `url("${icon}")`, WebkitMaskImage: `url(
 const viewIconStyle = maskStyle(actionEye)
 const editIconStyle = maskStyle(actionEdit)
 const trashIconStyle = maskStyle(actionTrash)
+const roomIconStyle = maskStyle(actionRoom)
 
 // Bei aktiver Suche nur Treffer (und ihre übergeordneten Lagerpunkte) zeigen
 const visible = computed(() => !store.matchingIds || store.matchingIds.has(props.location.ID))

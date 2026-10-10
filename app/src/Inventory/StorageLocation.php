@@ -16,9 +16,13 @@ use SilverStripe\Security\Member;
  * Lagerpunkt im Inventar-Totem (Tab "Lager"): ein Ort, Gebäude, eine Kiste oder
  * ein Stellplatz — was genau, legt die Art fest ({@see InventoryItemType} mit
  * `AppliesTo` "storage", inkl. Zusatzfeldern). Lagerpunkte sind verschachtelbar
- * (`Parent`: die Kiste lagert im Haus, das Haus an einem Ort). Objekte, Fahrzeuge
- * ({@see InventoryItem::StorageLocation}) und Räume ({@see Room::StorageLocation})
- * zeigen damit an, wo sie lagern.
+ * (`Parent`: die Kiste lagert im Haus, das Haus an einem Ort). Objekte und Fahrzeuge
+ * ({@see InventoryItem::StorageLocation}) zeigen damit an, wo sie lagern.
+ *
+ * Jeder Raum hat automatisch einen eigenen Lagerpunkt (`Room` gesetzt, siehe
+ * syncForRoom()): so kann man Dinge in einen Raum legen und den Raum selbst in einen
+ * Lagerpunkt. Name und Organisation kommen vom Raum; bearbeitet/gelöscht wird er
+ * über den Raum, im Lager lässt er sich nur verschieben (mit dem Recht, den Raum zu bearbeiten).
  *
  * Besitz wie bei Objekten: eine Organisation (`OwnerType` "organization") oder
  * privat ein Mitglied ("member"). Sichtbar für Mitglieder der Besitzer-Organisation
@@ -35,13 +39,14 @@ use SilverStripe\Security\Member;
  * @property int $OwnerMemberID
  * @property int $TypeID
  * @property int $ParentID
+ * @property int $RoomID
+ * @method \App\Rooms\Room Room()
  * @method \App\Teams\Organization Organization()
  * @method \SilverStripe\Security\Member OwnerMember()
  * @method \App\Inventory\InventoryItemType Type()
  * @method \App\Inventory\StorageLocation Parent()
  * @method \SilverStripe\ORM\DataList|\App\Inventory\StorageLocation[] Children()
  * @method \SilverStripe\ORM\DataList|\App\Inventory\InventoryItem[] Items()
- * @method \SilverStripe\ORM\DataList|\App\Rooms\Room[] Rooms()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\Organization[] SharedWith()
  */
 class StorageLocation extends DataObject
@@ -76,12 +81,13 @@ class StorageLocation extends DataObject
         "Type"         => InventoryItemType::class,
         // Übergeordneter Lagerpunkt (0 = oberste Ebene)
         "Parent"       => StorageLocation::class,
+        // Gesetzt: Lagerpunkt eines Raums (siehe syncForRoom())
+        "Room"         => Room::class,
     ];
 
     private static $has_many = [
         "Children" => StorageLocation::class . '.Parent',
         "Items"    => InventoryItem::class . '.StorageLocation',
-        "Rooms"    => Room::class . '.StorageLocation',
     ];
 
     private static $many_many = [
@@ -101,7 +107,7 @@ class StorageLocation extends DataObject
         "Parent"       => "Lagert in",
         "Children"     => "Enthaltene Lagerpunkte",
         "Items"        => "Objekte",
-        "Rooms"        => "Räume",
+        "Room"         => "Raum",
         "SharedWith"   => "Freigegeben für",
         "MetaValues"   => "Zusatzfelder",
     ];
@@ -126,6 +132,49 @@ class StorageLocation extends DataObject
     public function isPrivate(): bool
     {
         return $this->OwnerType === 'member';
+    }
+
+    /** Lagerpunkt eines Raums (Name/Organisation vom Raum, nur verschiebbar) */
+    public function isRoom(): bool
+    {
+        return (bool) $this->RoomID;
+    }
+
+    /**
+     * Lagerpunkt eines Raums anlegen bzw. Name und Organisation übernehmen
+     * (aufgerufen nach jedem Speichern eines Raums).
+     */
+    public static function syncForRoom(Room $room): self
+    {
+        $node = self::get()->filter('RoomID', $room->ID)->first() ?? self::create(['RoomID' => $room->ID]);
+        if (!$node->isInDB() || $node->Title !== $room->Title || (int) $node->OrganizationID !== (int) $room->OrganizationID) {
+            // Schon hier setzen (nicht erst in onBeforeWrite) — validate() läuft vorher
+            $node->Title = $room->Title;
+            $node->OwnerType = 'organization';
+            $node->OrganizationID = $room->OrganizationID;
+            $node->write();
+        }
+        return $node;
+    }
+
+    /**
+     * Migration: Räume ohne eigenen Lagerpunkt bekommen einen. Lag ein Raum vorher in
+     * einem Lagerpunkt (altes Feld Room.StorageLocation), liegt sein Lagerpunkt jetzt dort.
+     */
+    public function requireDefaultRecords()
+    {
+        parent::requireDefaultRecords();
+        foreach (Room::get()->exclude('ID', self::get()->filter('RoomID:GreaterThan', 0)->column('RoomID') ?: [0]) as $room) {
+            $node = self::syncForRoom($room);
+            if ($room->StorageLocationID && self::get()->byID($room->StorageLocationID)) {
+                $node->ParentID = $room->StorageLocationID;
+                $node->write();
+            }
+            if ($room->StorageLocationID) {
+                $room->StorageLocationID = 0;
+                $room->write();
+            }
+        }
     }
 
     public function isOwnedBy(Member $member): bool
@@ -156,6 +205,16 @@ class StorageLocation extends DataObject
     protected function onBeforeWrite()
     {
         parent::onBeforeWrite();
+        // Lagerpunkt eines Raums: Name und Besitzer immer vom Raum, keine eigene Art/Freigabe
+        if ($this->isRoom()) {
+            $room = $this->Room();
+            if ($room && $room->exists()) {
+                $this->Title = $room->Title;
+                $this->OwnerType = 'organization';
+                $this->OrganizationID = $room->OrganizationID;
+                $this->TypeID = 0;
+            }
+        }
         if ($this->isPrivate()) {
             $this->OrganizationID = 0;
         } else {
@@ -179,7 +238,7 @@ class StorageLocation extends DataObject
     {
         parent::onBeforeDelete();
         $parentID = (int) $this->ParentID;
-        foreach ([...$this->Children()->toArray(), ...$this->Items()->toArray(), ...$this->Rooms()->toArray()] as $record) {
+        foreach ([...$this->Children()->toArray(), ...$this->Items()->toArray()] as $record) {
             if ($record instanceof self) {
                 $record->ParentID = $parentID;
             } else {
@@ -306,9 +365,16 @@ class StorageLocation extends DataObject
         return false;
     }
 
-    /** Private Lagerpunkte bearbeitet nur der Besitzer, Org-Lagerpunkte wer STORAGE_EDIT hat */
+    /**
+     * Private Lagerpunkte bearbeitet nur der Besitzer, Org-Lagerpunkte wer STORAGE_EDIT hat.
+     * Den Lagerpunkt eines Raums (nur verschieben) darf, wer den Raum bearbeiten darf.
+     */
     public function isEditableBy(Member $member): bool
     {
+        if ($this->isRoom()) {
+            $room = $this->Room();
+            return $room && $room->exists() && $room->isEditableBy($member);
+        }
         if ($this->isPrivate()) {
             return $this->isOwnedBy($member);
         }
@@ -318,6 +384,10 @@ class StorageLocation extends DataObject
 
     public function isDeletableBy(Member $member): bool
     {
+        // Gelöscht wird er mit dem Raum
+        if ($this->isRoom()) {
+            return false;
+        }
         if ($this->isPrivate()) {
             return $this->isOwnedBy($member);
         }

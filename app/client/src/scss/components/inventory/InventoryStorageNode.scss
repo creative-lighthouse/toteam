@@ -76,6 +76,24 @@
     }
 }
 
+// Raum-Symbol vor dem Namen (Lagerpunkt eines Raums)
+.inventory-storage-node_room-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--BorderRadiusSmall);
+    background-color: var(--ColorPrimaryLight);
+    color: var(--ColorPrimary);
+
+    .icon-mask {
+        width: 18px;
+        height: 18px;
+    }
+}
+
 .inventory-storage-node_info {
     display: flex;
     flex-direction: column;

@@ -14,6 +14,7 @@ use App\Teams\OrgPermissions;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Core\Validation\ValidationException;
 use SilverStripe\Security\Member;
 
 /**
@@ -47,6 +48,7 @@ class RoomsApiController extends ApiController
     private function formatRoom(Room $room, Member $member): array
     {
         $org = $room->Organization();
+        $node = $room->getStorageNode();
         $firstImage = $room->Images()->first();
 
         return [
@@ -59,9 +61,10 @@ class RoomsApiController extends ApiController
             'Fields'       => $room->Type()->exists() ? $room->Type()->getFieldsForApi() : [],
             // Werte der Zusatzfelder: { "<Feld-ID>": "<Wert>" }
             'Values'       => (object) $room->getMetaValueMap(),
-            // Wo der Raum liegt: { ID, Title, Path }
-            'StorageLocationID' => (int) $room->StorageLocationID ?: null,
-            'StorageLocation' => StorageLocation::apiSummary((int) $room->StorageLocationID),
+            // Eigener Lagerpunkt des Raums und wo er liegt: { ID, Title, Path }
+            'StorageNodeID'     => $node ? $node->ID : null,
+            'StorageLocationID' => $node && $node->ParentID ? (int) $node->ParentID : null,
+            'StorageLocation'   => StorageLocation::apiSummary($node ? (int) $node->ParentID : 0),
             'Thumbnail'    => $firstImage && $firstImage->exists() ? $firstImage->Fill(160, 160)->getURL() : null,
             // Heute durch eine genehmigte/laufende Reservierung belegt
             'IsOccupied'   => $room->IsRentable && $room->Rentals()->filter([
@@ -348,6 +351,9 @@ class RoomsApiController extends ApiController
                 return $this->errorResponse($error, 400);
             }
             $room->write();
+            if ($error = $this->applyStoragePlacement($room, $body, $member)) {
+                return $this->errorResponse($error, 400);
+            }
 
             if (!empty($body['TaskIDs']) && is_array($body['TaskIDs'])) {
                 foreach ($body['TaskIDs'] as $tid) {
@@ -400,6 +406,9 @@ class RoomsApiController extends ApiController
                 return $this->errorResponse($error, 400);
             }
             $room->write();
+            if ($error = $this->applyStoragePlacement($room, $body, $member)) {
+                return $this->errorResponse($error, 400);
+            }
 
             if (isset($body['TaskIDs']) && is_array($body['TaskIDs'])) {
                 $room->Tasks()->removeAll();
@@ -452,16 +461,11 @@ class RoomsApiController extends ApiController
     }
 
     /**
-     * Lagerort, Art (nur Raum-Arten der Organisation des Raums, 0 = keine) und Werte ihrer
+     * Art (nur Raum-Arten der Organisation des Raums, 0 = keine) und Werte ihrer
      * Zusatzfelder ({ Values: { "<Feld-ID>": "<Wert>" } }). Gibt einen Fehlertext zurück oder null.
      */
     private function applyTypeAndValues(Room $room, array $body, Member $member): ?string
     {
-        if (array_key_exists('StorageLocationID', $body)) {
-            if ($error = StorageLocation::assignTo($room, $body['StorageLocationID'], $member)) {
-                return $error;
-            }
-        }
 
         if (array_key_exists('TypeID', $body)) {
             $typeID = (int) $body['TypeID'];
@@ -481,6 +485,36 @@ class RoomsApiController extends ApiController
         $type = $room->Type();
         if (isset($body['Values']) && is_array($body['Values']) && $type->exists()) {
             $room->applyMetaValues($type, $body['Values']);
+        }
+        return null;
+    }
+
+    /**
+     * Wo der Raum liegt ({ StorageLocationID }, 0 = nirgends): setzt den übergeordneten
+     * Lagerpunkt des Raum-Lagerpunkts. Gewählt werden kann jeder sichtbare Lagerpunkt,
+     * außer der Raum selbst und was in ihm liegt. Gibt einen Fehlertext zurück oder null.
+     */
+    private function applyStoragePlacement(Room $room, array $body, Member $member): ?string
+    {
+        if (!array_key_exists('StorageLocationID', $body)) {
+            return null;
+        }
+        $node = $room->getStorageNode() ?? StorageLocation::syncForRoom($room);
+        $parentID = (int) $body['StorageLocationID'];
+        if ($parentID === (int) $node->ParentID) {
+            return null;
+        }
+        if ($parentID) {
+            $parent = StorageLocation::get()->byID($parentID);
+            if (!$parent || !$parent->isViewableBy($member)) {
+                return 'Lagerort nicht gefunden';
+            }
+        }
+        $node->ParentID = $parentID;
+        try {
+            $node->write();
+        } catch (ValidationException $e) {
+            return 'Ein Raum kann nicht in sich selbst oder in etwas, das in ihm liegt, lagern';
         }
         return null;
     }
