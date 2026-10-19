@@ -11,6 +11,7 @@ use SilverStripe\Assets\Image;
 use SilverStripe\Assets\Upload;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Security\Member;
 
 /**
  * Class \App\Controllers\Api\OrganizationsApiController
@@ -30,6 +31,13 @@ class OrganizationsApiController extends ApiController
         'reject',
         'uploadLogo',
         'pendingCount',
+        'invite',
+        'cancelInvitation',
+        'invitations',
+        'respondInvitation',
+        'inviteSearch',
+        'removeMember',
+        'leave',
     ];
 
     protected function getDefaultAction()
@@ -154,9 +162,32 @@ class OrganizationsApiController extends ApiController
                 'Avatar'       => $m->RenderProfileImage(),
                 'Username'     => $m->Username ?: null,
                 'Roles'        => $roles,
+                // Administratoren kann nur ein Administrator entfernen (removeMember)
+                'IsAdmin'      => $m->isAdminOfOrg($org),
             ];
         }
         usort($members, fn($a, $b) => strcasecmp($a['Name'], $b['Name']));
+
+        // Offene Einladungen (nur für alle, die Mitglieder verwalten dürfen)
+        $invitations = [];
+        if ($canManageMembers) {
+            foreach (OrganizationMembership::get()->filter(['OrganizationID' => $org->ID, 'Role' => 'invited']) as $inv) {
+                $m = $inv->Member();
+                if (!$m || !$m->exists()) {
+                    continue;
+                }
+                $by = $inv->InvitedBy();
+                $invitations[] = [
+                    'MembershipID' => $inv->ID,
+                    'MemberID'     => $m->ID,
+                    'Name'         => $m->getDisplayName(),
+                    'Avatar'       => $m->RenderProfileImage(),
+                    'Username'     => $m->Username ?: null,
+                    'InvitedBy'    => $by && $by->exists() ? $by->getDisplayName() : null,
+                    'Created'      => $inv->Created,
+                ];
+            }
+        }
 
         return $this->jsonResponse([
             'organization' => [
@@ -171,6 +202,7 @@ class OrganizationsApiController extends ApiController
                 'MembershipStatus' => $myRole,
                 'ApplicantCount'   => $applicantCount,
                 'Members'          => $members,
+                'Invitations'      => $invitations,
                 'CanManageMembers' => $canManageMembers,
                 'CanManageRoles'   => $canManageRoles,
                 'Permissions'      => $member->getOrgPermissionCodes($org),
@@ -268,14 +300,20 @@ class OrganizationsApiController extends ApiController
             return $this->errorResponse('Organisation nicht gefunden', 404);
         }
 
-        if ($org->JoinMode === 'invite_only') {
-            return $this->errorResponse('Diese Organisation nimmt keine Bewerbungen an', 403);
-        }
-
         $existing = OrganizationMembership::get()->filter([
             'OrganizationID' => $org->ID,
             'MemberID'       => $member->ID,
         ])->first();
+
+        // Eingeladen: "Beitreten" nimmt die Einladung an (auch bei Organisationen nur auf Einladung)
+        if ($existing && $existing->isInvited()) {
+            $this->acceptInvitation($existing);
+            return $this->successResponse(['MembershipStatus' => 'member'], 'Einladung angenommen');
+        }
+
+        if ($org->JoinMode === 'invite_only') {
+            return $this->errorResponse('Diese Organisation nimmt keine Bewerbungen an', 403);
+        }
 
         if ($existing) {
             return $this->errorResponse('Du bist bereits Mitglied oder hast dich bereits beworben', 409);
@@ -300,6 +338,320 @@ class OrganizationsApiController extends ApiController
         return $this->successResponse([
             'MembershipStatus' => $role,
         ], $role === 'member' ? 'Erfolgreich beigetreten' : 'Bewerbung erfolgreich eingereicht');
+    }
+
+    // ── Einladungen ──────────────────────────────────────────────────────────
+
+    /** Einladung annehmen: Mitglied mit der Standardrolle der Organisation */
+    private function acceptInvitation(OrganizationMembership $membership): void
+    {
+        $membership->approve('member');
+        $org = $membership->Organization();
+        if ($org && $org->exists() && !$membership->Roles()->exists() && ($defaultRole = $org->getDefaultRole())) {
+            $membership->Roles()->add($defaultRole);
+        }
+    }
+
+    /**
+     * POST /api/v1/organizations/invite/$OrgID { Username } — Person über ihren Benutzernamen
+     * einladen (ORG_MANAGE_MEMBERS). Sie sieht die Einladung auf dem Dashboard und nimmt sie
+     * dort an oder lehnt ab. Hat sie sich bereits beworben, wird sie direkt aufgenommen.
+     */
+    public function invite(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $org = Organization::get()->byID((int) $request->param('ID'));
+        if (!$org || !$org->exists()) {
+            return $this->errorResponse('Organisation nicht gefunden', 404);
+        }
+        if (!$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $username = ltrim(trim((string) ($this->getJsonBody()['Username'] ?? '')), '@');
+        if ($username === '') {
+            return $this->errorResponse('Bitte einen Benutzernamen angeben', 400);
+        }
+        $invitee = Member::get()->filter('Username', $username)->first();
+        if (!$invitee || !$invitee->exists()) {
+            return $this->errorResponse('Es gibt niemanden mit dem Benutzernamen „' . $username . '“', 404);
+        }
+
+        $existing = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'MemberID'       => $invitee->ID,
+        ])->first();
+        if ($existing) {
+            if ($existing->isInvited()) {
+                return $this->errorResponse($invitee->getDisplayName() . ' ist bereits eingeladen', 409);
+            }
+            if ($existing->isApplicant()) {
+                // Hat sich schon beworben — Einladen heißt dann: aufnehmen
+                $existing->InvitedByID = $member->ID;
+                $this->acceptInvitation($existing);
+                return $this->successResponse(['accepted' => true], $invitee->getDisplayName() . ' hatte sich beworben und ist jetzt Mitglied');
+            }
+            return $this->errorResponse($invitee->getDisplayName() . ' ist bereits Mitglied', 409);
+        }
+
+        $membership = OrganizationMembership::create();
+        $membership->OrganizationID = $org->ID;
+        $membership->MemberID = $invitee->ID;
+        $membership->Role = 'invited';
+        $membership->InvitedByID = $member->ID;
+        $membership->write();
+
+        PushNotificationService::notifyInvitation($membership);
+
+        return $this->successResponse(['accepted' => false], $invitee->getDisplayName() . ' wurde eingeladen');
+    }
+
+    /**
+     * GET /api/v1/organizations/inviteSearch/$OrgID?q= — Vorschläge beim Einladen: Personen
+     * mit Benutzernamen, deren Benutzer-, Vor- oder Nachname mit q beginnt, ohne Mitglieder
+     * und bereits Eingeladene (Bewerber bleiben drin — Einladen nimmt sie direkt auf).
+     */
+    public function inviteSearch(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $org = Organization::get()->byID((int) $request->param('ID'));
+        if (!$org || !$org->exists()) {
+            return $this->errorResponse('Organisation nicht gefunden', 404);
+        }
+        if (!$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $q = ltrim(trim((string) $request->getVar('q')), '@');
+        if ($q === '') {
+            return $this->jsonResponse(['members' => []]);
+        }
+
+        $memberships = OrganizationMembership::get()->filter('OrganizationID', $org->ID);
+        $excluded = $memberships->filter('Role', ['member', 'invited'])->column('MemberID');
+        $applicantIDs = array_flip(array_map('intval', $memberships->filter('Role', 'applicant')->column('MemberID')));
+
+        $matches = Member::get()
+            ->exclude('Username', [null, ''])
+            ->exclude('ID', $excluded ?: [0])
+            ->filterAny([
+                'Username:StartsWith'  => $q,
+                'FirstName:StartsWith' => $q,
+                'Surname:StartsWith'   => $q,
+            ])
+            ->sort('Username', 'ASC')
+            ->limit(8);
+
+        $data = [];
+        foreach ($matches as $m) {
+            $data[] = [
+                'ID'          => $m->ID,
+                'Name'        => $m->getDisplayName(),
+                'Username'    => $m->Username,
+                'Avatar'      => $m->RenderProfileImage(),
+                'IsApplicant' => isset($applicantIDs[(int) $m->ID]),
+            ];
+        }
+        return $this->jsonResponse(['members' => $data]);
+    }
+
+    /**
+     * POST /api/v1/organizations/removeMember/$MembershipID — Mitglied aus der Organisation
+     * entfernen (ORG_MANAGE_MEMBERS). Nicht sich selbst; Administratoren nur durch einen
+     * Administrator — so bleibt immer mindestens ein Administrator übrig.
+     */
+    public function removeMember(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $membership = OrganizationMembership::get()->byID((int) $request->param('ID'));
+        if (!$membership || $membership->Role !== 'member') {
+            return $this->errorResponse('Mitglied nicht gefunden', 404);
+        }
+        $org = $membership->Organization();
+        if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+        if ((int) $membership->MemberID === (int) $member->ID) {
+            return $this->errorResponse('Du kannst dich nicht selbst entfernen', 400);
+        }
+
+        $removed = $membership->Member();
+        if ($removed && $removed->exists() && $removed->isAdminOfOrg($org) && !$member->isAdminOfOrg($org)) {
+            return $this->errorResponse('Administratoren können nur von Administratoren entfernt werden', 403);
+        }
+
+        $name = $removed && $removed->exists() ? $removed->getDisplayName() : 'Das Mitglied';
+        $membership->Roles()->removeAll();
+        $membership->delete();
+
+        if ($removed && $removed->exists()) {
+            PushNotificationService::notifyMembershipEnded($removed, $org);
+        }
+
+        return $this->successResponse([], $name . ' wurde aus „' . $org->Title . '“ entfernt');
+    }
+
+    /**
+     * POST /api/v1/organizations/leave/$OrgID — Organisation selbst verlassen bzw. eine
+     * Bewerbung zurückziehen. Der letzte Administrator kann nicht gehen (sonst könnte
+     * niemand mehr die Organisation verwalten) — erst jemand anderem die Rolle geben.
+     */
+    public function leave(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $org = Organization::get()->byID((int) $request->param('ID'));
+        if (!$org || !$org->exists()) {
+            return $this->errorResponse('Organisation nicht gefunden', 404);
+        }
+        $membership = OrganizationMembership::get()->filter([
+            'OrganizationID' => $org->ID,
+            'MemberID'       => $member->ID,
+        ])->first();
+        if (!$membership || $membership->isInvited()) {
+            return $this->errorResponse('Du bist kein Mitglied dieser Organisation', 404);
+        }
+
+        $wasApplicant = $membership->isApplicant();
+        if (!$wasApplicant && $member->isAdminOfOrg($org)) {
+            $otherAdmin = false;
+            $others = OrganizationMembership::get()
+                ->filter(['OrganizationID' => $org->ID, 'Role' => 'member'])
+                ->exclude('MemberID', $member->ID);
+            foreach ($others as $other) {
+                $m = $other->Member();
+                if ($m && $m->exists() && $m->isAdminOfOrg($org)) {
+                    $otherAdmin = true;
+                    break;
+                }
+            }
+            if (!$otherAdmin) {
+                return $this->errorResponse(
+                    'Du bist der letzte Administrator. Gib zuerst einem anderen Mitglied die Administrator-Rolle, bevor du die Organisation verlässt.',
+                    400
+                );
+            }
+        }
+
+        $membership->Roles()->removeAll();
+        $membership->delete();
+
+        return $this->successResponse(
+            ['MembershipStatus' => null],
+            $wasApplicant ? 'Bewerbung zurückgezogen' : 'Du hast „' . $org->Title . '“ verlassen'
+        );
+    }
+
+    /** POST /api/v1/organizations/cancelInvitation/$MembershipID — offene Einladung zurückziehen */
+    public function cancelInvitation(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $membership = OrganizationMembership::get()->byID((int) $request->param('ID'));
+        if (!$membership || !$membership->isInvited()) {
+            return $this->errorResponse('Einladung nicht gefunden', 404);
+        }
+        $org = $membership->Organization();
+        if (!$org || !$org->exists() || !$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $membership->delete();
+        return $this->successResponse([], 'Einladung zurückgezogen');
+    }
+
+    /** GET /api/v1/organizations/invitations — offene Einladungen an mich (Dashboard) */
+    public function invitations(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $data = [];
+        foreach (OrganizationMembership::get()->filter(['MemberID' => $member->ID, 'Role' => 'invited'])->sort('Created DESC') as $inv) {
+            $org = $inv->Organization();
+            if (!$org || !$org->exists()) {
+                continue;
+            }
+            $by = $inv->InvitedBy();
+            $data[] = [
+                'MembershipID' => $inv->ID,
+                'Organization' => [
+                    'ID'          => $org->ID,
+                    'Title'       => $org->Title,
+                    'Username'    => $org->Username ?: null,
+                    'Description' => $org->Description,
+                    'LogoURL'     => $org->RenderLogo(80),
+                ],
+                'InvitedBy'    => $by && $by->exists() ? [
+                    'Name'   => $by->getDisplayName(),
+                    'Avatar' => $by->RenderProfileImage(),
+                ] : null,
+                'Created'      => $inv->Created,
+            ];
+        }
+
+        return $this->jsonResponse(['invitations' => $data]);
+    }
+
+    /** POST /api/v1/organizations/respondInvitation/$MembershipID { Accept: bool } */
+    public function respondInvitation(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $membership = OrganizationMembership::get()->byID((int) $request->param('ID'));
+        if (!$membership || !$membership->isInvited() || (int) $membership->MemberID !== (int) $member->ID) {
+            return $this->errorResponse('Einladung nicht gefunden', 404);
+        }
+
+        if (!empty($this->getJsonBody()['Accept'])) {
+            $this->acceptInvitation($membership);
+            $org = $membership->Organization();
+            return $this->successResponse(
+                ['MembershipStatus' => 'member'],
+                $org && $org->exists() ? 'Willkommen in „' . $org->Title . '“' : 'Einladung angenommen'
+            );
+        }
+
+        $membership->delete();
+        return $this->successResponse(['MembershipStatus' => null], 'Einladung abgelehnt');
     }
 
     /**

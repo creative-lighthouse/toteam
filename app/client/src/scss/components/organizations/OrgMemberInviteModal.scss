@@ -1,0 +1,106 @@
+@use "../../base/variables" as *;
+
+// Person in eine Organisation einladen (OrgMemberInviteModal.vue)
+.org-member-invite-modal {
+    text-align: left;
+    max-width: 440px;
+
+    // "@" vor dem Eingabefeld
+    .org-member-invite-modal_input {
+        position: relative;
+    }
+
+    // Platz für das "@" — Selektor wie in base/forms.scss aufgebaut (.modalform .field
+    // input:not(…)), sonst gewinnt dessen padding wegen höherer Spezifität
+    .modalform .field .org-member-invite-modal_input input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+        padding-left: 30px;
+    }
+
+    .org-member-invite-modal_at {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--ColorGray);
+        font-weight: 700;
+        pointer-events: none;
+    }
+
+    .org-member-invite-modal_hint {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+
+    .org-member-invite-modal_suggestions {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 2px;
+    }
+
+    .org-member-invite-modal_suggestion {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 6px 8px;
+        border: none;
+        border-radius: var(--BorderRadiusSmall);
+        background: var(--ColorVeryLightGray);
+        font: inherit;
+        text-align: left;
+        color: inherit;
+        cursor: pointer;
+
+        @include hover {
+            background-color: var(--ColorPrimaryLight);
+        }
+    }
+
+    .org-member-invite-modal_avatar {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        object-fit: cover;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-size: 11px;
+            font-weight: 700;
+        }
+    }
+
+    .org-member-invite-modal_name {
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        font-weight: 600;
+        // .field färbt seinen Inhalt grau — der Name soll normal lesbar sein
+        color: var(--ColorBlack);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .org-member-invite-modal_badge {
+        flex-shrink: 0;
+        padding: 1px 8px;
+        border-radius: 50px;
+        background-color: var(--ColorPrimaryLight);
+        color: var(--ColorPrimary);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .org-member-invite-modal_username {
+        flex-shrink: 0;
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+}

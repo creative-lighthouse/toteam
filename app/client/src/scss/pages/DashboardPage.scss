@@ -186,6 +186,11 @@
                 }
             }
 
+            // Einladungen in Organisationen — volle Breite, direkt unter der Begrüßung
+            &.infobox--invitations {
+                grid-column: span 2;
+            }
+
             &.infobox--welcome{
                 overflow: hidden;
                 position: relative;
@@ -409,5 +414,52 @@
 
     @include media(max-medium) {
         margin-top: 20px;
+    }
+}
+
+// Einladungen in Organisationen (Dashboard.vue)
+.section.section--DashboardPage .dashboard-invitations {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.section.section--DashboardPage .dashboard-invitation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--BorderRadiusMedium);
+    background-color: var(--ColorWhite);
+    box-shadow: var(--BoxShadowLight);
+    text-align: left;
+
+    .dashboard-invitation_info {
+        flex: 1;
+        min-width: 160px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .dashboard-invitation_org {
+        font-size: 16px;
+        color: var(--ColorBlack);
+    }
+
+    .dashboard-invitation_by {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .dashboard-invitation_actions {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
     }
 }

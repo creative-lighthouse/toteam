@@ -121,6 +121,44 @@
         gap: 10px;
     }
 
+    // Hinweis nach dem Einladen ("… wurde eingeladen")
+    .org-manage_notice {
+        margin: 0 0 12px;
+        padding: 8px 12px;
+        border-radius: var(--BorderRadiusSmall);
+        background-color: var(--ColorPrimaryLight);
+        color: var(--ColorPrimary);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .org-manage_subheading {
+        margin: 20px 0 10px;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ColorGray);
+    }
+
+    .org-manage_member-meta {
+        font-size: 13px;
+        color: var(--ColorGray);
+    }
+
+    .org-manage_member-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+
+    // Eingeladen, aber noch nicht angenommen
+    .org-manage_member--invited {
+        box-shadow: none;
+        border: 1px dashed var(--ColorLightGray);
+    }
+
     .org-manage_member {
         display: flex;
         align-items: center;

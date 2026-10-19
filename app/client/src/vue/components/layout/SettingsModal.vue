@@ -30,7 +30,7 @@
         <AppToggle v-model="prefs.NotifyAnnouncements" label="Beiträge von Organisationen" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyMeals" label="Essensvorschläge" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyMaps" label="Lagepläne" field-class="settings-toggle" @update:model-value="savePrefs" />
-        <AppToggle v-model="prefs.NotifyApplications" label="Organisationsbewerbungen" field-class="settings-toggle" @update:model-value="savePrefs" />
+        <AppToggle v-model="prefs.NotifyApplications" label="Organisationen: Bewerbungen &amp; Einladungen" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyInventory" label="Inventar-Ausleihen" field-class="settings-toggle" @update:model-value="savePrefs" />
       </template>
     </section>

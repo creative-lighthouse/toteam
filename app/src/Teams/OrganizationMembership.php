@@ -15,7 +15,9 @@ use SilverStripe\Security\PermissionProvider;
  * @property ?string $JoinedDate
  * @property int $MemberID
  * @property int $OrganizationID
+ * @property int $InvitedByID
  * @method \SilverStripe\Security\Member Member()
+ * @method \SilverStripe\Security\Member InvitedBy()
  * @method \App\Teams\Organization Organization()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\OrgRole[] Roles()
  * @mixin \SilverStripe\Assets\AssetControlExtension
@@ -31,13 +33,16 @@ class OrganizationMembership extends DataObject implements PermissionProvider
     private static $plural_name = 'Organisationsmitgliedschaften';
 
     private static $db = [
-        'Role'       => "Enum('applicant,member','applicant')",
+        // applicant = hat sich beworben, invited = wurde eingeladen (wartet auf Annahme), member = Mitglied
+        'Role'       => "Enum('applicant,invited,member','applicant')",
         'JoinedDate' => 'Date',
     ];
 
     private static $has_one = [
         'Member'       => Member::class,
         'Organization' => Organization::class,
+        // Wer eingeladen hat (nur bei Role = invited bzw. danach zur Nachvollziehbarkeit)
+        'InvitedBy'    => Member::class,
     ];
 
     private static $many_many = [
@@ -48,6 +53,7 @@ class OrganizationMembership extends DataObject implements PermissionProvider
         'Role'               => 'Status',
         'Roles'              => 'Rollen',
         'JoinedDate'         => 'Beitrittsdatum',
+        'InvitedBy'          => 'Eingeladen von',
         'Member.Name'        => 'Mitglied',
         'Organization.Title' => 'Organisation',
     ];
@@ -107,6 +113,11 @@ class OrganizationMembership extends DataObject implements PermissionProvider
     public function isApplicant(): bool
     {
         return $this->Role === 'applicant';
+    }
+
+    public function isInvited(): bool
+    {
+        return $this->Role === 'invited';
     }
 
     public function approve(string $role = 'member'): void
