@@ -34,8 +34,11 @@ use App\Teams\OrgPermissions;
  * @property bool $NotifyMaps
  * @property bool $NotifyApplications
  * @property bool $NotifyInventory
+ * @property bool $IsGuest
  * @property int $ProfileImageID
+ * @property int $GuestOrganizationID
  * @method \SilverStripe\Assets\Image ProfileImage()
+ * @method \App\Teams\Organization GuestOrganization()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrganizationMembership[] OrganizationMemberships()
  * @method \SilverStripe\ORM\ManyManyList|\App\HumanResources\Allergy[] Allergies()
  */
@@ -59,6 +62,10 @@ class MemberExtension extends Extension
         "NotifyMaps"         => "Boolean(1)",
         "NotifyApplications" => "Boolean(1)",
         "NotifyInventory"    => "Boolean(1)",
+        // Gast-Mitglied: kein echter Account (keine E-Mail, kein Login), existiert nur in
+        // GuestOrganization. Taucht dort wie ein Mitglied auf; andere tragen seine
+        // Zu-/Absagen ein. Beim Beitritt kann eine echte Person ihn übernehmen (GuestMerger).
+        "IsGuest"            => "Boolean(0)",
     ];
 
     private static $defaults = [
@@ -72,6 +79,8 @@ class MemberExtension extends Extension
 
     private static $has_one = [
         "ProfileImage" => Image::class,
+        // Nur bei Gästen: die einzige Organisation, in der sie existieren
+        "GuestOrganization" => Organization::class,
     ];
 
     private static $many_many = [

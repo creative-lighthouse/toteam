@@ -91,6 +91,8 @@
                 </section>
             </div>
         </template>
+
+        <OrgGuestClaimModal ref="guestClaimModal" />
     </section>
 </template>
 
@@ -106,6 +108,7 @@ import AppButton from '@components/ui/AppButton.vue'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import OrgGuestClaimModal from '@components/organizations/OrgGuestClaimModal.vue'
 
 const route    = useRoute()
 const loading  = ref(true)
@@ -172,11 +175,16 @@ async function handleLeave() {
   }
 }
 
+const guestClaimModal = ref(null)
+
 async function handleJoin() {
   if (joining.value || !org.value) return
   joining.value = true
   try {
-    const response = await apiPost(`/organizations/join/${org.value.ID}`, {})
+    // "Bist du einer dieser Gäste?" — abgebrochen (undefined): nicht beitreten
+    const claimGuestId = await guestClaimModal.value?.ask(org.value)
+    if (claimGuestId === undefined) return
+    const response = await apiPost(`/organizations/join/${org.value.ID}`, claimGuestId ? { ClaimGuestID: claimGuestId } : {})
     if (response.success) {
       org.value.MembershipStatus = response.data.MembershipStatus
       if (response.data.MembershipStatus === 'member') {

@@ -77,8 +77,9 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     return response
   }
 
-  async function joinOrganization(orgID) {
-    const response = await apiPost(`/organizations/join/${orgID}`, {})
+  /** Beitreten/bewerben; claimGuestId = "Ich bin dieser Gast" (ein Admin bestätigt die Übernahme) */
+  async function joinOrganization(orgID, claimGuestId = null) {
+    const response = await apiPost(`/organizations/join/${orgID}`, claimGuestId ? { ClaimGuestID: claimGuestId } : {})
 
     if (response.success) {
       const org = organizations.value.find(o => o.ID === orgID)
@@ -106,9 +107,12 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     }
   }
 
-  /** Einladung annehmen (accept = true) oder ablehnen */
-  async function respondInvitation(membershipId, accept) {
-    const response = await apiPost(`/organizations/respondInvitation/${membershipId}`, { Accept: accept })
+  /** Einladung annehmen (accept = true) oder ablehnen; claimGuestId wie bei joinOrganization */
+  async function respondInvitation(membershipId, accept, claimGuestId = null) {
+    const response = await apiPost(`/organizations/respondInvitation/${membershipId}`, {
+      Accept: accept,
+      ...(claimGuestId ? { ClaimGuestID: claimGuestId } : {}),
+    })
     if (response.success) {
       invitations.value = invitations.value.filter(i => i.MembershipID !== membershipId)
       // Neue Organisation: Liste und Berechtigungen neu laden

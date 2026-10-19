@@ -3,7 +3,9 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\ApiController;
+use App\HumanResources\Allergy;
 use App\Notifications\PushNotificationService;
+use App\Teams\GuestMerger;
 use App\Teams\Organization;
 use App\Teams\OrganizationMembership;
 use App\Teams\OrgPermissions;
@@ -38,6 +40,11 @@ class OrganizationsApiController extends ApiController
         'inviteSearch',
         'removeMember',
         'leave',
+        'guestStore',
+        'guestUpdate',
+        'guests',
+        'confirmGuestClaim',
+        'rejectGuestClaim',
     ];
 
     protected function getDefaultAction()
@@ -164,9 +171,38 @@ class OrganizationsApiController extends ApiController
                 'Roles'        => $roles,
                 // Administratoren kann nur ein Administrator entfernen (removeMember)
                 'IsAdmin'      => $m->isAdminOfOrg($org),
+                // Gast ohne Account (siehe MemberExtension::IsGuest) — Daten zum Bearbeiten
+                'IsGuest'      => (bool) $m->IsGuest,
+                'FirstName'    => $m->IsGuest ? $m->FirstName : null,
+                'Surname'      => $m->IsGuest ? $m->Surname : null,
+                'FoodPreference' => $m->IsGuest ? ($m->FoodPreference ?: 'None') : null,
+                'AllergyIDs'   => $m->IsGuest ? array_map('intval', $m->Allergies()->column('ID')) : [],
             ];
         }
         usort($members, fn($a, $b) => strcasecmp($a['Name'], $b['Name']));
+
+        // Vorgemerkte Gast-Übernahmen ("Ich bin Gast X") — warten auf Bestätigung
+        $guestClaims = [];
+        if ($canManageMembers) {
+            $claims = OrganizationMembership::get()
+                ->filter(['OrganizationID' => $org->ID, 'Role' => ['member', 'applicant']])
+                ->exclude('ClaimGuestID', 0);
+            foreach ($claims as $claim) {
+                $m = $claim->Member();
+                $guest = $claim->ClaimGuest();
+                if (!$m || !$m->exists() || !$guest || !$guest->exists()) {
+                    continue;
+                }
+                $guestClaims[] = [
+                    'MembershipID' => $claim->ID,
+                    'Name'         => $m->getDisplayName(),
+                    'Username'     => $m->Username ?: null,
+                    'Avatar'       => $m->RenderProfileImage(),
+                    'IsApplicant'  => $claim->isApplicant(),
+                    'Guest'        => ['ID' => $guest->ID, 'Name' => $guest->getDisplayName()],
+                ];
+            }
+        }
 
         // Offene Einladungen (nur für alle, die Mitglieder verwalten dürfen)
         $invitations = [];
@@ -203,6 +239,12 @@ class OrganizationsApiController extends ApiController
                 'ApplicantCount'   => $applicantCount,
                 'Members'          => $members,
                 'Invitations'      => $invitations,
+                'GuestClaims'      => $guestClaims,
+                // Auswahl für die Allergien von Gästen (wie im eigenen Profil)
+                'AllergyOptions'   => $canManageMembers ? array_map(
+                    fn (Allergy $a) => ['ID' => $a->ID, 'Title' => $a->Title, 'Category' => $a->Category],
+                    Allergy::get()->sort('Title ASC')->toArray()
+                ) : [],
                 'CanManageMembers' => $canManageMembers,
                 'CanManageRoles'   => $canManageRoles,
                 'Permissions'      => $member->getOrgPermissionCodes($org),
@@ -305,8 +347,13 @@ class OrganizationsApiController extends ApiController
             'MemberID'       => $member->ID,
         ])->first();
 
+        $claimGuest = $this->findClaimableGuest($org, $this->getJsonBody()['ClaimGuestID'] ?? 0);
+
         // Eingeladen: "Beitreten" nimmt die Einladung an (auch bei Organisationen nur auf Einladung)
         if ($existing && $existing->isInvited()) {
+            if ($claimGuest) {
+                $existing->ClaimGuestID = $claimGuest->ID;
+            }
             $this->acceptInvitation($existing);
             return $this->successResponse(['MembershipStatus' => 'member'], 'Einladung angenommen');
         }
@@ -325,6 +372,8 @@ class OrganizationsApiController extends ApiController
         $membership->OrganizationID = $org->ID;
         $membership->MemberID       = $member->ID;
         $membership->Role           = $role;
+        // "Ich bin Gast X" — ein Admin bestätigt die Übernahme (confirmGuestClaim)
+        $membership->ClaimGuestID   = $claimGuest ? $claimGuest->ID : 0;
         $membership->write();
 
         if ($role === 'member') {
@@ -502,6 +551,16 @@ class OrganizationsApiController extends ApiController
         $membership->Roles()->removeAll();
         $membership->delete();
 
+        // Ein Gast existiert nur in dieser Organisation — mit dem Entfernen ist er ganz weg
+        if ($removed && $removed->exists() && $removed->IsGuest) {
+            OrganizationMembership::get()->filter('ClaimGuestID', $removed->ID)->each(function ($claim) {
+                $claim->ClaimGuestID = 0;
+                $claim->write();
+            });
+            $removed->delete();
+            return $this->successResponse([], 'Gast ' . $name . ' wurde gelöscht');
+        }
+
         if ($removed && $removed->exists()) {
             PushNotificationService::notifyMembershipEnded($removed, $org);
         }
@@ -564,6 +623,225 @@ class OrganizationsApiController extends ApiController
             ['MembershipStatus' => null],
             $wasApplicant ? 'Bewerbung zurückgezogen' : 'Du hast „' . $org->Title . '“ verlassen'
         );
+    }
+
+    // ── Gäste ────────────────────────────────────────────────────────────────
+
+    /** Gast dieser Organisation mit der ID — oder null (für "Ich bin Gast X") */
+    private function findClaimableGuest(Organization $org, $guestID): ?Member
+    {
+        $guestID = (int) $guestID;
+        if (!$guestID) {
+            return null;
+        }
+        $guest = Member::get()->filter(['ID' => $guestID, 'IsGuest' => true, 'GuestOrganizationID' => $org->ID])->first();
+        return $guest && $guest->exists() ? $guest : null;
+    }
+
+    /** Organisation per ID laden und ORG_MANAGE_MEMBERS prüfen — sonst Fehler-Response */
+    private function managedOrg(Member $member, int $orgID)
+    {
+        $org = Organization::get()->byID($orgID);
+        if (!$org || !$org->exists()) {
+            return $this->errorResponse('Organisation nicht gefunden', 404);
+        }
+        if (!$member->hasOrgPermission($org, OrgPermissions::ORG_MANAGE_MEMBERS)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+        return $org;
+    }
+
+    /** Vorname, Nachname und Essensvorliebe eines Gastes aus dem Request übernehmen */
+    private function applyGuestBody(Member $guest, array $body): ?string
+    {
+        $first = trim((string) ($body['FirstName'] ?? $guest->FirstName));
+        $last = trim((string) ($body['Surname'] ?? $guest->Surname));
+        if ($first === '') {
+            return 'Bitte einen Vornamen angeben';
+        }
+        $guest->FirstName = mb_substr($first, 0, 50);
+        $guest->Surname = mb_substr($last, 0, 50);
+        if (array_key_exists('FoodPreference', $body)) {
+            $guest->FoodPreference = in_array($body['FoodPreference'], ['None', 'Vegetarian', 'Vegan'], true) ? $body['FoodPreference'] : 'None';
+        }
+        return null;
+    }
+
+    /** Allergien eines Gastes aus { AllergyIDs } übernehmen (nach dem Schreiben — many_many braucht eine ID) */
+    private function applyGuestAllergies(Member $guest, array $body): void
+    {
+        if (!array_key_exists('AllergyIDs', $body) || !is_array($body['AllergyIDs'])) {
+            return;
+        }
+        $ids = Allergy::get()->filter('ID', array_map('intval', $body['AllergyIDs']) ?: [0])->column('ID');
+        $guest->Allergies()->setByIDList($ids);
+    }
+
+    /**
+     * POST /api/v1/organizations/guestStore/$OrgID { FirstName, Surname, FoodPreference } —
+     * Gast-Mitglied ohne Account anlegen (ORG_MANAGE_MEMBERS). Er ist sofort Mitglied mit der
+     * Standardrolle, taucht in Listen auf und kann zu Terminen eingeladen werden.
+     */
+    public function guestStore(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $org = $this->managedOrg($member, (int) $request->param('ID'));
+        if ($org instanceof HTTPResponse) {
+            return $org;
+        }
+
+        $guest = Member::create();
+        if ($error = $this->applyGuestBody($guest, $this->getJsonBody())) {
+            return $this->errorResponse($error, 400);
+        }
+        $guest->IsGuest = true;
+        $guest->GuestOrganizationID = $org->ID;
+        $guest->NameVisibility = 'full';
+        // Gäste bekommen keine Benachrichtigungen
+        foreach (PushNotificationService::TYPE_SETTINGS as $setting) {
+            $guest->$setting = false;
+        }
+        $guest->write();
+        $this->applyGuestAllergies($guest, $this->getJsonBody());
+
+        $membership = OrganizationMembership::create();
+        $membership->OrganizationID = $org->ID;
+        $membership->MemberID = $guest->ID;
+        $membership->Role = 'member';
+        $membership->write();
+        if ($defaultRole = $org->getDefaultRole()) {
+            $membership->Roles()->add($defaultRole);
+        }
+
+        return $this->successResponse(['ID' => $guest->ID], 'Gast ' . $guest->getDisplayName() . ' angelegt');
+    }
+
+    /** PUT /api/v1/organizations/guestUpdate/$MemberID { FirstName, Surname, FoodPreference } */
+    public function guestUpdate(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'PUT') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $guest = Member::get()->filter(['ID' => (int) $request->param('ID'), 'IsGuest' => true])->first();
+        if (!$guest) {
+            return $this->errorResponse('Gast nicht gefunden', 404);
+        }
+        $org = $this->managedOrg($member, (int) $guest->GuestOrganizationID);
+        if ($org instanceof HTTPResponse) {
+            return $org;
+        }
+        if ($error = $this->applyGuestBody($guest, $this->getJsonBody())) {
+            return $this->errorResponse($error, 400);
+        }
+        $guest->write();
+        $this->applyGuestAllergies($guest, $this->getJsonBody());
+
+        return $this->successResponse([], 'Gast gespeichert');
+    }
+
+    /**
+     * GET /api/v1/organizations/guests/$OrgID — Gäste zur Auswahl beim Beitritt ("Bist du
+     * einer dieser Gäste?"). Nur Vorname und Initiale des Nachnamens, weil auch Fremde
+     * (offene Organisationen, Bewerbungen) die Liste sehen; übernommen wird erst nach
+     * Bestätigung durch einen Admin.
+     */
+    public function guests(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        $org = Organization::get()->byID((int) $request->param('ID'));
+        if (!$org || !$org->exists()) {
+            return $this->errorResponse('Organisation nicht gefunden', 404);
+        }
+        $membership = OrganizationMembership::get()->filter(['OrganizationID' => $org->ID, 'MemberID' => $member->ID])->first();
+        if ($org->JoinMode === 'hidden' && !$membership) {
+            return $this->errorResponse('Organisation nicht gefunden', 404);
+        }
+
+        $data = [];
+        foreach (Member::get()->filter(['IsGuest' => true, 'GuestOrganizationID' => $org->ID])->sort(['FirstName' => 'ASC', 'Surname' => 'ASC']) as $guest) {
+            $initial = $guest->Surname ? ' ' . mb_strtoupper(mb_substr($guest->Surname, 0, 1)) . '.' : '';
+            $data[] = ['ID' => $guest->ID, 'Label' => $guest->FirstName . $initial];
+        }
+        return $this->jsonResponse(['guests' => $data]);
+    }
+
+    /**
+     * POST /api/v1/organizations/confirmGuestClaim/$MembershipID — vorgemerkte Übernahme
+     * bestätigen: der Gast geht im Konto der Person auf (GuestMerger). Eine offene
+     * Bewerbung wird dabei angenommen.
+     */
+    public function confirmGuestClaim(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $membership = OrganizationMembership::get()->byID((int) $request->param('ID'));
+        if (!$membership || !$membership->ClaimGuestID) {
+            return $this->errorResponse('Keine offene Übernahme', 404);
+        }
+        $org = $this->managedOrg($member, (int) $membership->OrganizationID);
+        if ($org instanceof HTTPResponse) {
+            return $org;
+        }
+        $guest = $this->findClaimableGuest($org, $membership->ClaimGuestID);
+        $real = $membership->Member();
+        if (!$guest || !$real || !$real->exists()) {
+            $membership->ClaimGuestID = 0;
+            $membership->write();
+            return $this->errorResponse('Der Gast existiert nicht mehr', 404);
+        }
+
+        $wasApplicant = $membership->isApplicant();
+        GuestMerger::merge($guest, $real, $org);
+        if ($wasApplicant && ($defaultRole = $org->getDefaultRole())) {
+            $merged = OrganizationMembership::get()->filter(['OrganizationID' => $org->ID, 'MemberID' => $real->ID])->first();
+            if ($merged && !$merged->Roles()->exists()) {
+                $merged->Roles()->add($defaultRole);
+            }
+        }
+
+        return $this->successResponse([], $real->getDisplayName() . ' hat den Gast ' . $guest->getDisplayName() . ' übernommen');
+    }
+
+    /** POST /api/v1/organizations/rejectGuestClaim/$MembershipID — Vormerkung verwerfen (Mitgliedschaft bleibt) */
+    public function rejectGuestClaim(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $membership = OrganizationMembership::get()->byID((int) $request->param('ID'));
+        if (!$membership || !$membership->ClaimGuestID) {
+            return $this->errorResponse('Keine offene Übernahme', 404);
+        }
+        $org = $this->managedOrg($member, (int) $membership->OrganizationID);
+        if ($org instanceof HTTPResponse) {
+            return $org;
+        }
+        $membership->ClaimGuestID = 0;
+        $membership->write();
+
+        return $this->successResponse([], 'Übernahme abgelehnt');
     }
 
     /** POST /api/v1/organizations/cancelInvitation/$MembershipID — offene Einladung zurückziehen */
@@ -642,6 +920,11 @@ class OrganizationsApiController extends ApiController
         }
 
         if (!empty($this->getJsonBody()['Accept'])) {
+            $org = $membership->Organization();
+            $claimGuest = $org && $org->exists() ? $this->findClaimableGuest($org, $this->getJsonBody()['ClaimGuestID'] ?? 0) : null;
+            if ($claimGuest) {
+                $membership->ClaimGuestID = $claimGuest->ID;
+            }
             $this->acceptInvitation($membership);
             $org = $membership->Organization();
             return $this->successResponse(
@@ -713,6 +996,10 @@ class OrganizationsApiController extends ApiController
                 'Surname'      => $m->Surname,
                 'Email'        => $m->Email,
                 'Avatar'       => $m->RenderProfileImage(),
+                // Möchte als Gast übernommen werden (Bestätigung in "Organisation verwalten")
+                'ClaimGuest'   => $applicantMembership->ClaimGuestID && $applicantMembership->ClaimGuest()->exists()
+                    ? $applicantMembership->ClaimGuest()->getDisplayName()
+                    : null,
             ];
         }
 

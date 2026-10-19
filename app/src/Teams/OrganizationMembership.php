@@ -16,8 +16,10 @@ use SilverStripe\Security\PermissionProvider;
  * @property int $MemberID
  * @property int $OrganizationID
  * @property int $InvitedByID
+ * @property int $ClaimGuestID
  * @method \SilverStripe\Security\Member Member()
  * @method \SilverStripe\Security\Member InvitedBy()
+ * @method \SilverStripe\Security\Member ClaimGuest()
  * @method \App\Teams\Organization Organization()
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\OrgRole[] Roles()
  * @mixin \SilverStripe\Assets\AssetControlExtension
@@ -43,6 +45,9 @@ class OrganizationMembership extends DataObject implements PermissionProvider
         'Organization' => Organization::class,
         // Wer eingeladen hat (nur bei Role = invited bzw. danach zur Nachvollziehbarkeit)
         'InvitedBy'    => Member::class,
+        // Beim Beitritt angegeben: "Ich bin dieser Gast" — wartet auf Bestätigung durch
+        // einen Admin, der den Gast dann übernehmen lässt (GuestMerger)
+        'ClaimGuest'   => Member::class,
     ];
 
     private static $many_many = [

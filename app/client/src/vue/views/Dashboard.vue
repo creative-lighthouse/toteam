@@ -186,6 +186,7 @@
         </button>
       </div>
     </div>
+    <OrgGuestClaimModal ref="guestClaimModal" />
   </div>
 </template>
 
@@ -206,6 +207,7 @@ import AppButton from '@components/ui/AppButton.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
 import { useOrganizationsStore } from '@stores/organizations'
+import OrgGuestClaimModal from '@components/organizations/OrgGuestClaimModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -259,12 +261,19 @@ const pendingFeedback = computed(() =>
 // ── Einladungen in Organisationen ──────────────────────────────────────────────
 const orgsStore = useOrganizationsStore()
 const respondingId = ref(null)
+const guestClaimModal = ref(null)
 
 async function respond(invitation, accept) {
   if (!accept && !confirm(`Einladung zu „${invitation.Organization.Title}“ ablehnen?`)) return
   respondingId.value = invitation.MembershipID
   try {
-    const response = await orgsStore.respondInvitation(invitation.MembershipID, accept)
+    // Beim Annehmen: "Bist du einer dieser Gäste?" — abgebrochen (undefined): nichts tun
+    let claimGuestId = null
+    if (accept) {
+      claimGuestId = await guestClaimModal.value?.ask(invitation.Organization)
+      if (claimGuestId === undefined) return
+    }
+    const response = await orgsStore.respondInvitation(invitation.MembershipID, accept, claimGuestId)
     if (!response.success) {
       alert(response.error || 'Das hat nicht geklappt.')
       return

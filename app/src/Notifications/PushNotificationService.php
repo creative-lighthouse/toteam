@@ -73,6 +73,11 @@ class PushNotificationService
             $ids = array_intersect($ids, array_map('intval', $orgMemberIDs));
         }
 
+        // Gäste haben keinen Account — weder Inbox noch Geräte
+        if ($ids) {
+            $ids = array_diff($ids, array_map('intval', Member::get()->filter(['ID' => $ids, 'IsGuest' => true])->column('ID')));
+        }
+
         if (empty($ids)) {
             return;
         }

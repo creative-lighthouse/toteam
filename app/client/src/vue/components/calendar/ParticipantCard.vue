@@ -10,6 +10,7 @@
     </div>
     <span class="participant-name" :data-me="participation.IsCurrentUser ? 'true' : null">
         {{ participation.MemberName }}
+        <span v-if="participation.IsGuest" class="participant-guest" title="Gast ohne eigenen Account">Gast</span>
     </span>
     <div class="participant-timeandride">
         <!-- Icon + Zahl allein wären für Screenreader nur "2" — daher als Text beschrieben -->

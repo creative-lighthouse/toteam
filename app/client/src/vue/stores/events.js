@@ -118,12 +118,19 @@ export const useEventsStore = defineStore('events', () => {
    * @param {number} targetMemberId
    * @param {string|null} type - 'Accept', 'Maybe', 'Decline' oder null (Antwort entfernen)
    */
-  async function changeParticipationFor(eventId, targetMemberId, type) {
+  /**
+   * Zu-/Absage für jemand anderen eintragen (CALENDAR_RECORD_RSVP). Bei Gästen können mit
+   * `details` auch Notiz, eigene Zeit und Mitfahrt gesetzt werden ("RSVP anpassen"):
+   * { Notes, TimeStart, TimeEnd, RideType, RideSeats }
+   */
+  async function changeParticipationFor(eventId, targetMemberId, type, details = null) {
     try {
       const response = await apiPost(`/calendar/participation/${eventId}`, {
         response: type,
         targetMemberId,
+        ...(details ? { details } : {}),
       })
+      if (!response.success) throw new Error(response.error || 'Antwort konnte nicht gespeichert werden')
 
       const event = getEventById(eventId)
       if (event) {
@@ -140,6 +147,7 @@ export const useEventsStore = defineStore('events', () => {
               ID: targetMemberId,
               MemberName: existing?.MemberName ?? '',
               ProfileImageURL: existing?.ProfileImageURL ?? null,
+              IsGuest: existing?.IsGuest ?? false,
             })
           }
         } else {
@@ -167,6 +175,7 @@ export const useEventsStore = defineStore('events', () => {
               CustomTimeframe: response.data.CustomTimeframe ?? false,
               ...details,
               IsCurrentUser: false,
+              IsGuest: pending?.IsGuest ?? false,
             })
           }
           if (event.MembersWithoutResponse) {

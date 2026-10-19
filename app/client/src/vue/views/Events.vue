@@ -4,7 +4,7 @@
 
       <AppSearchBar v-model="search" placeholder="Events durchsuchen…">
         <template v-if="managedOrgs.length > 0" #actions>
-          <AppButton variant="primary" @click="formModal?.open()">+ Event anlegen</AppButton>
+          <AppButton variant="primary" title="Event anlegen" aria-label="Event anlegen" @click="formModal?.open()">+ Neu</AppButton>
         </template>
       </AppSearchBar>
 

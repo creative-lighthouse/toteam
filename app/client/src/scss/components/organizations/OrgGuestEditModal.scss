@@ -1,0 +1,30 @@
+@use "../../base/variables" as *;
+
+// Gast anlegen/bearbeiten (OrgGuestEditModal.vue)
+.org-guest-edit-modal {
+    text-align: left;
+    max-width: 480px;
+
+    .org-guest-edit-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.5;
+        color: var(--ColorGray);
+    }
+
+    .org-guest-edit-modal_allergy-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 4px;
+    }
+
+    .org-guest-edit-modal_allergy-category {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ColorGray);
+    }
+}

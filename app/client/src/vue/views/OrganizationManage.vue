@@ -62,7 +62,10 @@
         <section v-if="org.CanManageMembers || org.CanManageRoles" class="org-manage_section">
           <div class="org-manage_section-heading">
             <h3 class="hl3">Mitglieder</h3>
-            <AppButton v-if="org.CanManageMembers" variant="primary" @click="inviteModal?.open()">+ Person einladen</AppButton>
+            <div v-if="org.CanManageMembers" class="org-manage_heading-actions">
+              <AppButton variant="secondary" @click="guestModal?.open()">+ Gast anlegen</AppButton>
+              <AppButton variant="primary" @click="inviteModal?.open()">+ Person einladen</AppButton>
+            </div>
           </div>
           <p v-if="inviteNotice" class="org-manage_notice" role="status">{{ inviteNotice }}</p>
 
@@ -70,13 +73,25 @@
             <div v-for="m in org.Members" :key="m.MembershipID" class="org-manage_member">
               <AppAvatar :src="m.Avatar" alt="" img-class="org-manage_member-avatar" />
               <div class="org-manage_member-info">
-                <span class="org-manage_member-name">{{ m.Name }}</span>
+                <span class="org-manage_member-name">
+                  {{ m.Name }}
+                  <span v-if="m.IsGuest" class="org-manage_guest-chip" title="Gast ohne eigenen Account">Gast</span>
+                </span>
                 <span class="org-manage_member-roles">
                   <span v-for="r in m.Roles" :key="r.ID" class="org-manage_role-chip">{{ r.Title }}</span>
                   <span v-if="!m.Roles.length" class="org-manage_role-chip org-manage_role-chip--empty">Keine Rolle</span>
                 </span>
               </div>
               <div class="org-manage_member-actions">
+                <AppIconButton
+                  v-if="m.IsGuest && org.CanManageMembers"
+                  variant="neutral"
+                  :aria-label="`Gast ${m.Name} bearbeiten`"
+                  title="Name, Essensvorliebe und Allergien bearbeiten"
+                  @click="guestModal?.open(m)"
+                >
+                  <span class="icon-mask" :style="personIconStyle" />
+                </AppIconButton>
                 <AppIconButton variant="primary" :aria-label="`Rollen von ${m.Name} zuweisen`" @click="openMemberRoles(m)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </AppIconButton>
@@ -93,6 +108,26 @@
               </div>
             </div>
           </div>
+
+          <!-- Gast-Übernahmen: beim Beitritt "Ich bin Gast X" angegeben — Admin bestätigt -->
+          <template v-if="org.CanManageMembers && org.GuestClaims?.length">
+            <h4 class="org-manage_subheading">Gast-Übernahmen</h4>
+            <div class="org-manage_members">
+              <div v-for="claim in org.GuestClaims" :key="claim.MembershipID" class="org-manage_member org-manage_member--claim">
+                <AppAvatar :src="claim.Avatar" alt="" img-class="org-manage_member-avatar" />
+                <div class="org-manage_member-info">
+                  <span class="org-manage_member-name">{{ claim.Name }}</span>
+                  <span class="org-manage_member-meta">
+                    <template v-if="claim.Username">@{{ claim.Username }} · </template>möchte den Gast <strong>{{ claim.Guest.Name }}</strong> übernehmen<template v-if="claim.IsApplicant"> (Bewerbung wird dabei angenommen)</template>
+                  </span>
+                </div>
+                <div class="org-manage_member-actions">
+                  <AppButton size="small" variant="secondary" :disabled="claimBusyId === claim.MembershipID" @click="resolveClaim(claim, false)">Ablehnen</AppButton>
+                  <AppButton size="small" variant="primary" :disabled="claimBusyId === claim.MembershipID" @click="resolveClaim(claim, true)">Übernehmen</AppButton>
+                </div>
+              </div>
+            </div>
+          </template>
 
           <!-- Offene Einladungen: warten auf Annahme durch die Person (Dashboard) -->
           <template v-if="org.CanManageMembers && org.Invitations?.length">
@@ -117,6 +152,7 @@
     </div>
 
     <OrgMemberInviteModal v-if="org" ref="inviteModal" :organization-id="org.ID" @invited="onInvited" />
+    <OrgGuestEditModal v-if="org" ref="guestModal" :organization-id="org.ID" :allergy-options="org.AllergyOptions ?? []" @saved="onInvited" />
 
     <OrgRoleEditModal
       v-if="org"
@@ -155,6 +191,8 @@ import { apiGet, apiPost } from '@utils/api'
 import OrgRoleEditModal from '@components/organizations/OrgRoleEditModal.vue'
 import OrgMemberRolesModal from '@components/organizations/OrgMemberRolesModal.vue'
 import OrgMemberInviteModal from '@components/organizations/OrgMemberInviteModal.vue'
+import OrgGuestEditModal from '@components/organizations/OrgGuestEditModal.vue'
+import actionEditProfile from '../../../icons/actions/action_editprofile.svg'
 import { useOrganizationsStore } from '@stores/organizations'
 import { useAuthStore } from '@stores/auth'
 import actionTrash from '../../../icons/actions/action_trash.svg'
@@ -286,13 +324,41 @@ const authStore = useAuthStore()
 const removingId = ref(null)
 const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `url("${actionTrash}")` }
 
+// ── Gäste ─────────────────────────────────────────
+const guestModal = ref(null)
+const claimBusyId = ref(null)
+const personIconStyle = { maskImage: `url("${actionEditProfile}")`, WebkitMaskImage: `url("${actionEditProfile}")` }
+
+async function resolveClaim(claim, confirmClaim) {
+  const question = confirmClaim
+    ? `${claim.Name} übernimmt den Gast „${claim.Guest.Name}“: alle Zusagen, Aufgaben und Daten des Gastes gehen auf ${claim.Name} über, der Gast wird gelöscht. Fortfahren?`
+    : `Übernahme von „${claim.Guest.Name}“ durch ${claim.Name} ablehnen? Die Mitgliedschaft bleibt bestehen.`
+  if (!confirm(question)) return
+  claimBusyId.value = claim.MembershipID
+  try {
+    const response = await apiPost(`/organizations/${confirmClaim ? 'confirmGuestClaim' : 'rejectGuestClaim'}/${claim.MembershipID}`, {})
+    if (!response.success) {
+      alert(response.error || 'Das hat nicht geklappt.')
+      return
+    }
+    inviteNotice.value = response.message
+    await loadOrg()
+    organizationsStore.fetchPendingCount()
+  } finally {
+    claimBusyId.value = null
+  }
+}
+
 function canRemove(m) {
   if (!org.value?.CanManageMembers || m.MemberID === authStore.user?.ID) return false
   return !m.IsAdmin || !!org.value.Permissions?.includes('ORG_ADMIN')
 }
 
 async function removeMember(m) {
-  if (!confirm(`${m.Name} wirklich aus „${org.value.Title}“ entfernen?\n\nDie Person verliert sofort den Zugriff auf alle Inhalte der Organisation. Sie kann später erneut eingeladen werden.`)) return
+  const question = m.IsGuest
+    ? `Gast ${m.Name} wirklich löschen?\n\nSeine Zu-/Absagen und Daten gehen dabei verloren.`
+    : `${m.Name} wirklich aus „${org.value.Title}“ entfernen?\n\nDie Person verliert sofort den Zugriff auf alle Inhalte der Organisation. Sie kann später erneut eingeladen werden.`
+  if (!confirm(question)) return
   removingId.value = m.MembershipID
   try {
     const response = await apiPost(`/organizations/removeMember/${m.MembershipID}`, {})

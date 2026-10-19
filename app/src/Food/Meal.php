@@ -140,15 +140,33 @@ class Meal extends DataObject implements PermissionProvider
      * Zum übergeordneten Termin eingeladene Mitglieder, die noch keine Rückmeldung
      * (Accept/Decline) fürs Essen hinterlegt haben.
      */
-    public function getMembersWithoutResponse()
+    /**
+     * Wer bei der Mahlzeit überhaupt in Frage kommt: alle mit Zusage oder "Vielleicht" zum
+     * Termin, zu dem sie gehört. Wer zum Termin abgesagt (oder noch nicht geantwortet) hat,
+     * taucht bei den Mahlzeiten nicht auf.
+     *
+     * @return int[]
+     */
+    public function getAttendingMemberIDs(): array
     {
         $appointment = $this->Parent();
         if (!$appointment || !$appointment->exists()) {
-            return ArrayList::create();
+            return [];
         }
-        $invitedIDs = $appointment->InvitedMembers()->column('ID');
-        $respondedIDs = $this->Eaters()->column('MemberID');
-        $missingIDs = array_diff($invitedIDs, $respondedIDs);
+        return array_map('intval', $appointment->Participations()->filter('Type', ['Accept', 'Maybe'])->column('MemberID'));
+    }
+
+    /** Antworten zur Mahlzeit, nur von Personen, die zum Termin kommen (siehe getAttendingMemberIDs()) */
+    public function getRelevantEaters(?string $type = null)
+    {
+        $eaters = $this->Eaters()->filter('MemberID', $this->getAttendingMemberIDs() ?: [0]);
+        return $type ? $eaters->filter('Type', $type) : $eaters;
+    }
+
+    /** Zum Termin zugesagt/vielleicht, aber noch keine Antwort zur Mahlzeit */
+    public function getMembersWithoutResponse()
+    {
+        $missingIDs = array_diff($this->getAttendingMemberIDs(), array_map('intval', $this->Eaters()->column('MemberID')));
         if (empty($missingIDs)) {
             return ArrayList::create();
         }

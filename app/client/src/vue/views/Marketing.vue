@@ -46,8 +46,8 @@
           >
             <span class="icon-mask" :style="sizesIconStyle" />
           </AppIconButton>
-          <AppButton variant="primary" @click="entryModal?.open()">
-            + Neuer Eintrag
+          <AppButton variant="primary" title="Neuer Eintrag" aria-label="Neuer Eintrag" @click="entryModal?.open()">
+            + Neu
           </AppButton>
         </div>
       </div>
