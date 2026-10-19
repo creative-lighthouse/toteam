@@ -11,8 +11,8 @@
 
       <template v-else>
         <div class="money-toolbar">
-          <AppButton v-if="adminOrgs.length" variant="primary" @click="accountModal?.open()">
-            + Neue Kasse
+          <AppButton v-if="adminOrgs.length" variant="primary" title="Neue Kasse" aria-label="Neue Kasse" @click="accountModal?.open()">
+            + Neu
           </AppButton>
         </div>
 

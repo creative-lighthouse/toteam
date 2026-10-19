@@ -3,8 +3,8 @@
     <div class="section_content">
 
       <div class="skript-toolbar">
-        <AppButton variant="primary" @click="createModal?.open()">
-          + Neues Skript
+        <AppButton variant="primary" title="Neues Skript" aria-label="Neues Skript" @click="createModal?.open()">
+          + Neu
         </AppButton>
       </div>
 

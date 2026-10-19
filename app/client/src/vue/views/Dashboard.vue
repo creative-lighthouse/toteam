@@ -15,6 +15,26 @@
         </div>
       </div>
 
+      <!-- Einladungen in Organisationen: annehmen oder ablehnen -->
+      <div v-if="orgsStore.invitations.length" class="section_infobox infobox--invitations">
+        <h2 class="hl2">Einladung{{ orgsStore.invitations.length === 1 ? '' : 'en' }}</h2>
+        <ul class="dashboard-invitations">
+          <li v-for="inv in orgsStore.invitations" :key="inv.MembershipID" class="dashboard-invitation">
+            <AppOrgLogo :src="inv.Organization.LogoURL" :alt="inv.Organization.Title" :size="44" />
+            <div class="dashboard-invitation_info">
+              <strong class="dashboard-invitation_org">{{ inv.Organization.Title }}</strong>
+              <span class="dashboard-invitation_by">
+                {{ inv.InvitedBy ? `${inv.InvitedBy.Name} hat dich eingeladen` : 'Du wurdest eingeladen' }}
+              </span>
+            </div>
+            <div class="dashboard-invitation_actions">
+              <AppButton size="small" variant="secondary" :disabled="respondingId === inv.MembershipID" @click="respond(inv, false)">Ablehnen</AppButton>
+              <AppButton size="small" variant="primary" :disabled="respondingId === inv.MembershipID" @click="respond(inv, true)">Annehmen</AppButton>
+            </div>
+          </li>
+        </ul>
+      </div>
+
       <!-- Error -->
       <div v-if="hasError && !isLoading" class="section_infobox">
         <p>Fehler beim Laden der Daten.</p>
@@ -166,6 +186,7 @@
         </button>
       </div>
     </div>
+    <OrgGuestClaimModal ref="guestClaimModal" />
   </div>
 </template>
 
@@ -185,6 +206,8 @@ import TaskCard from '@components/tasks/TaskCard.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import { useOrganizationsStore } from '@stores/organizations'
+import OrgGuestClaimModal from '@components/organizations/OrgGuestClaimModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -235,6 +258,36 @@ const pendingFeedback = computed(() =>
     .slice(0, 5)
 )
 
+// ── Einladungen in Organisationen ──────────────────────────────────────────────
+const orgsStore = useOrganizationsStore()
+const respondingId = ref(null)
+const guestClaimModal = ref(null)
+
+async function respond(invitation, accept) {
+  if (!accept && !confirm(`Einladung zu „${invitation.Organization.Title}“ ablehnen?`)) return
+  respondingId.value = invitation.MembershipID
+  try {
+    // Beim Annehmen: "Bist du einer dieser Gäste?" — abgebrochen (undefined): nichts tun
+    let claimGuestId = null
+    if (accept) {
+      claimGuestId = await guestClaimModal.value?.ask(invitation.Organization)
+      if (claimGuestId === undefined) return
+    }
+    const response = await orgsStore.respondInvitation(invitation.MembershipID, accept, claimGuestId)
+    if (!response.success) {
+      alert(response.error || 'Das hat nicht geklappt.')
+      return
+    }
+    // Neue Organisation: Totems, Berechtigungen und Inhalte neu laden
+    if (accept) {
+      await authStore.checkAuth()
+      refresh()
+    }
+  } finally {
+    respondingId.value = null
+  }
+}
+
 const spinning = ref(false)
 const isLoading = computed(() => dashboardStore.loading || eventsStore.loading)
 const hasError = computed(() => !!(dashboardStore.error || eventsStore.error))
@@ -261,6 +314,7 @@ async function refresh() {
   const nextY = m === 12 ? y + 1 : y
   await Promise.all([
     dashboardStore.refresh(),
+    orgsStore.fetchInvitations(),
     orgEventsStore.fetchMyEvents().catch(() => {}),
     eventsStore.fetchEvents(y, m, true),
     eventsStore.fetchEvents(nextY, nextM, true),
@@ -276,6 +330,7 @@ onMounted(() => {
   const nextM = m === 12 ? 1 : m + 1
   const nextY = m === 12 ? y + 1 : y
   dashboardStore.fetchDashboardData()
+  orgsStore.fetchInvitations()
   orgEventsStore.fetchMyEvents().catch(() => {})
   eventsStore.fetchEvents(y, m)
   eventsStore.fetchEvents(nextY, nextM)

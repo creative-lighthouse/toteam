@@ -105,6 +105,7 @@
         </div>
 
         <ContextMenu ref="attendeeMenu" />
+        <GuestRsvpModal ref="guestRsvpModal" />
 
         <!-- Geplante Gerichte (orderable + regular combined) -->
         <div class="section_infobox meal-foods-section" :class="{ 'meal-foods-section--full': !hasAnyParticipants }">
@@ -255,6 +256,7 @@ import ContextMenu from '@components/ui/ContextMenu.vue'
 import { vContextMenu, profileMenuItem } from '@utils/contextMenu'
 import { vRovingFocus } from '@utils/rovingFocus'
 import ParticipantCard from '@components/calendar/ParticipantCard.vue'
+import GuestRsvpModal from '@components/calendar/GuestRsvpModal.vue'
 import MealFormModal from '@components/food/MealFormModal.vue'
 import FoodSuggestModal from '@components/food/FoodSuggestModal.vue'
 import FoodFormModal from '@components/food/FoodFormModal.vue'
@@ -278,6 +280,7 @@ const loading   = ref(true)
 const error     = ref(null)
 const responding = ref(false)
 const attendeeMenu = ref(null)
+const guestRsvpModal = ref(null)
 const suggestModal = ref(null)
 
 // Products
@@ -354,6 +357,7 @@ function toParticipation(a, type) {
     ProfileImageURL: a.avatarUrl,
     Type: type,
     Allergies: a.allergies,
+    IsGuest: !!a.isGuest,
     FoodPreference: a.preference,
   }
 }
@@ -398,6 +402,19 @@ function onAttendeeContextMenu(event, participation) {
     return
   }
 
+  // Gäste (ohne Account): Antwort im Modal einstellen
+  if (participation.IsGuest) {
+    menuItems.push({
+      label: 'RSVP anpassen',
+      onClick: () => guestRsvpModal.value?.open({
+        name: participation.MemberName,
+        mode: 'meal',
+        current: participation,
+        submit: type => respondFor(participation.MemberID, type, { throwOnError: true }),
+      }),
+    })
+  }
+
   const options = [
     { value: 'Accept', label: 'Zusagen' },
     { value: 'Decline', label: 'Absagen' },
@@ -419,12 +436,15 @@ function onAttendeeContextMenu(event, participation) {
   attendeeMenu.value?.open(event, menuItems)
 }
 
-async function respondFor(targetMemberId, type) {
+/** Antwort für jemand anderen eintragen; throwOnError für das Gast-Modal (zeigt den Fehler selbst) */
+async function respondFor(targetMemberId, type, { throwOnError = false } = {}) {
   try {
-    await apiPost(`/calendar/participationFood/${meal.value.id}`, { response: type, targetMemberId })
+    const response = await apiPost(`/calendar/participationFood/${meal.value.id}`, { response: type, targetMemberId })
+    if (response?.success === false) throw new Error(response.error || 'Antwort konnte nicht gespeichert werden')
     const data = await apiGet(`/food/mealdetail/${route.params.id}`, false)
     meal.value = data.meal
   } catch (e) {
+    if (throwOnError) throw e
     alert('Fehler: ' + e.message)
   }
 }

@@ -41,7 +41,30 @@ export const useEventsStore = defineStore('events', () => {
    * @param {number} month - Monat (1-12)
    * @param {boolean} forceRefresh - Cache ignorieren
    */
+  // Pro Monat: Nummer der zuletzt gestarteten Anfrage und die gerade laufende. Antworten
+  // älterer Anfragen werden verworfen — sonst überschreibt z.B. ein langsamer Abruf aus dem
+  // Cache (Dashboard, Vorladen der Nachbarmonate) einen frisch geladenen neuen Termin.
+  const monthRequestSeq = {}
+  const monthInflight = {}
+
   async function fetchEvents(year, month, forceRefresh = false) {
+    const monthParam = `${year}-${String(month).padStart(2, '0')}`
+    // Läuft für den Monat schon eine Anfrage, reicht die für einen normalen Abruf
+    if (!forceRefresh && monthInflight[monthParam]) {
+      return monthInflight[monthParam]
+    }
+    const seq = (monthRequestSeq[monthParam] ?? 0) + 1
+    monthRequestSeq[monthParam] = seq
+    const request = loadMonthEvents(monthParam, seq, forceRefresh)
+    monthInflight[monthParam] = request
+    try {
+      return await request
+    } finally {
+      if (monthInflight[monthParam] === request) delete monthInflight[monthParam]
+    }
+  }
+
+  async function loadMonthEvents(monthParam, seq, forceRefresh) {
     try {
       loading.value = true
       error.value = null
@@ -50,15 +73,19 @@ export const useEventsStore = defineStore('events', () => {
         await clearCacheForEndpoint('/calendar')
       }
 
-      const monthParam = `${year}-${String(month).padStart(2, '0')}`
       const response = await apiGet(`/calendar?month=${monthParam}`, !forceRefresh, 60 * 1000)
 
       // Konvertiere API-Daten zu Event-Instanzen
       const newEvents = (response.events || []).map(data => Event.fromAPI(data))
 
+      // Inzwischen wurde der Monat neu angefragt — diese (ältere) Antwort nicht übernehmen
+      if (seq !== monthRequestSeq[monthParam]) {
+        return newEvents
+      }
+
       // Ersetze alle Events des geladenen Monats, behalte andere Monate. Mehrtägige Events
       // aus dem Vormonat kommen in mehreren Monatsantworten vor und werden per ID ersetzt.
-      const monthPrefix = `${year}-${String(month).padStart(2, '0')}`
+      const monthPrefix = monthParam
       const newIds = new Set(newEvents.map(e => e.ID))
       const otherMonthEvents = events.value.filter(e => !e.DateStart.startsWith(monthPrefix) && !newIds.has(e.ID))
 
@@ -118,12 +145,19 @@ export const useEventsStore = defineStore('events', () => {
    * @param {number} targetMemberId
    * @param {string|null} type - 'Accept', 'Maybe', 'Decline' oder null (Antwort entfernen)
    */
-  async function changeParticipationFor(eventId, targetMemberId, type) {
+  /**
+   * Zu-/Absage für jemand anderen eintragen (CALENDAR_RECORD_RSVP). Bei Gästen können mit
+   * `details` auch Notiz, eigene Zeit und Mitfahrt gesetzt werden ("RSVP anpassen"):
+   * { Notes, TimeStart, TimeEnd, RideType, RideSeats }
+   */
+  async function changeParticipationFor(eventId, targetMemberId, type, details = null) {
     try {
       const response = await apiPost(`/calendar/participation/${eventId}`, {
         response: type,
         targetMemberId,
+        ...(details ? { details } : {}),
       })
+      if (!response.success) throw new Error(response.error || 'Antwort konnte nicht gespeichert werden')
 
       const event = getEventById(eventId)
       if (event) {
@@ -140,6 +174,7 @@ export const useEventsStore = defineStore('events', () => {
               ID: targetMemberId,
               MemberName: existing?.MemberName ?? '',
               ProfileImageURL: existing?.ProfileImageURL ?? null,
+              IsGuest: existing?.IsGuest ?? false,
             })
           }
         } else {
@@ -167,6 +202,7 @@ export const useEventsStore = defineStore('events', () => {
               CustomTimeframe: response.data.CustomTimeframe ?? false,
               ...details,
               IsCurrentUser: false,
+              IsGuest: pending?.IsGuest ?? false,
             })
           }
           if (event.MembersWithoutResponse) {
@@ -582,6 +618,11 @@ export const useEventsStore = defineStore('events', () => {
 
   async function createAppointment(data) {
     const response = await apiPost('/calendar/appointment', data)
+    if (!response?.success) {
+      throw new Error(response?.error || 'Termin konnte nicht angelegt werden')
+    }
+    // Gecachte Monate verwerfen, damit der Termin überall (auch in anderen Monaten) sofort auftaucht
+    await clearCacheForEndpoint('/calendar')
     return response
   }
 
@@ -594,11 +635,21 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   async function updateAppointment(id, data) {
-    return apiPut('/calendar/appointment', { id, ...data })
+    const response = await apiPut('/calendar/appointment', { id, ...data })
+    if (!response?.success) {
+      throw new Error(response?.error || 'Termin konnte nicht gespeichert werden')
+    }
+    await clearCacheForEndpoint('/calendar')
+    return response
   }
 
   async function deleteAppointment(id) {
-    return apiDelete('/calendar/appointment?id=' + id)
+    const response = await apiDelete('/calendar/appointment?id=' + id)
+    if (!response?.success) {
+      throw new Error(response?.error || 'Termin konnte nicht gelöscht werden')
+    }
+    await clearCacheForEndpoint('/calendar')
+    return response
   }
 
   async function fetchAbsencesForDate(date) {

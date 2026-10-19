@@ -155,8 +155,8 @@ class FoodApiController extends ApiController
             'eventTitle'          => $event && $event->exists() ? $event->Title : null,
             'organizationTitle'   => $org?->Title,
             'organizationLogoUrl' => $org?->RenderLogo(80),
-            'acceptCount'         => $meal->Eaters()->filter('Type', 'Accept')->count(),
-            'declineCount'        => $meal->Eaters()->filter('Type', 'Decline')->count(),
+            'acceptCount'         => $meal->getRelevantEaters('Accept')->count(),
+            'declineCount'        => $meal->getRelevantEaters('Decline')->count(),
             'userResponse'        => $memberResponses[$meal->ID] ?? null,
             'foods'               => $foods,
         ];
@@ -728,7 +728,7 @@ class FoodApiController extends ApiController
                 'canEdit'          => $canEdit,
                 'appointmentId'    => $appointment->ID,
                 'appointmentTitle' => $appointment->Title,
-                'acceptCount'      => $meal->Eaters()->filter('Type', 'Accept')->count(),
+                'acceptCount'      => $meal->getRelevantEaters('Accept')->count(),
                 'foods'            => $foods,
             ];
         }
@@ -931,7 +931,7 @@ class FoodApiController extends ApiController
         Member $member
     ): array {
         $attendees = [];
-        foreach ($meal->Eaters()->filter('Type', 'Accept') as $eater) {
+        foreach ($meal->getRelevantEaters('Accept') as $eater) {
             $m = $eater->Member();
             if (!$m || !$m->exists()) {
                 continue;
@@ -943,11 +943,12 @@ class FoodApiController extends ApiController
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
                 'allergies' => $m->Allergies()->filter('Category', Allergy::CATEGORY_FOOD)->column('Title'),
                 'preference' => $m->FoodPreference ?: 'None',
+                'isGuest'   => (bool) $m->IsGuest,
             ];
         }
 
         $declinedAttendees = [];
-        foreach ($meal->Eaters()->filter('Type', 'Decline') as $eater) {
+        foreach ($meal->getRelevantEaters('Decline') as $eater) {
             $m = $eater->Member();
             if (!$m || !$m->exists()) {
                 continue;
@@ -959,6 +960,7 @@ class FoodApiController extends ApiController
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
                 'allergies' => $m->Allergies()->filter('Category', Allergy::CATEGORY_FOOD)->column('Title'),
                 'preference' => $m->FoodPreference ?: 'None',
+                'isGuest'   => (bool) $m->IsGuest,
             ];
         }
 
@@ -971,6 +973,7 @@ class FoodApiController extends ApiController
                 'avatarUrl' => $m->hasMethod('RenderProfileImage') ? $m->RenderProfileImage() : null,
                 'allergies' => $m->Allergies()->filter('Category', Allergy::CATEGORY_FOOD)->column('Title'),
                 'preference' => $m->FoodPreference ?: 'None',
+                'isGuest'   => (bool) $m->IsGuest,
             ];
         }
 

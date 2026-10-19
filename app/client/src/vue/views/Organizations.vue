@@ -3,7 +3,7 @@
     <div class="section_content">
       <AppSearchBar v-model="search" placeholder="Organisationen durchsuchen…">
         <template #actions>
-          <AppButton variant="primary" @click="createModal?.open()">+ Organisation erstellen</AppButton>
+          <AppButton variant="primary" title="Organisation erstellen" aria-label="Organisation erstellen" @click="createModal?.open()">+ Neu</AppButton>
         </template>
       </AppSearchBar>
 
@@ -34,6 +34,7 @@
     </div>
 
     <ApplicantsModal ref="applicantsModal" @accepted="handleApplicantAccepted" />
+    <OrgGuestClaimModal ref="guestClaimModal" />
     <OrganizationCreateModal ref="createModal" @created="handleCreated" />
   </div>
 </template>
@@ -46,6 +47,7 @@ import { usePageHeaderStore } from '@stores/pageHeader'
 import OrganizationCard from '@components/organizations/OrganizationCard.vue'
 import ApplicantsModal from '@components/organizations/ApplicantsModal.vue'
 import OrganizationCreateModal from '@components/organizations/OrganizationCreateModal.vue'
+import OrgGuestClaimModal from '@components/organizations/OrgGuestClaimModal.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
 
@@ -74,12 +76,18 @@ onMounted(async () => {
   }
 })
 
+const guestClaimModal = ref(null)
+
 async function handleJoin(orgID) {
   if (joiningID.value) return
   joiningID.value = orgID
 
   try {
-    const response = await store.joinOrganization(orgID)
+    // "Bist du einer dieser Gäste?" — abgebrochen (undefined): nicht beitreten
+    const org = store.organizations.find(o => o.ID === orgID)
+    const claimGuestId = org ? await guestClaimModal.value?.ask(org) : null
+    if (claimGuestId === undefined) return
+    const response = await store.joinOrganization(orgID, claimGuestId)
     if (!response.success) {
       alert(response.error ?? 'Fehler beim Beitreten.')
     }

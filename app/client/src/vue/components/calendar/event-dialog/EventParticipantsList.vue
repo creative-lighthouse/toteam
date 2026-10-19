@@ -51,6 +51,7 @@
     </div>
 
     <ContextMenu ref="participantMenu" />
+    <GuestRsvpModal ref="guestRsvpModal" />
   </div>
 </template>
 
@@ -58,6 +59,7 @@
 import { ref, computed } from 'vue'
 import ParticipantCard from '@components/calendar/ParticipantCard.vue'
 import ContextMenu from '@components/ui/ContextMenu.vue'
+import GuestRsvpModal from '@components/calendar/GuestRsvpModal.vue'
 import { useRouter } from 'vue-router'
 import { useEventsStore } from '@stores/events'
 import { vContextMenu, profileMenuItem } from '@utils/contextMenu'
@@ -93,6 +95,7 @@ const membersWithoutResponse = computed(() =>
     Username: m.Username,
     ProfileImageURL: m.ProfileImageURL,
     Type: 'Pending',
+    IsGuest: !!m.IsGuest,
   })).sort(byName)
 )
 
@@ -106,6 +109,11 @@ function onContextMenu(event, participation) {
   if (!props.event.CanRecordRsvp) {
     if (menuItems.length) participantMenu.value?.open(event, menuItems)
     return
+  }
+
+  // Gäste (ohne Account): alle Angaben im Modal einstellen
+  if (participation.IsGuest) {
+    menuItems.push({ label: 'RSVP anpassen', onClick: () => openGuestRsvp(participation) })
   }
 
   const options = [
@@ -128,6 +136,17 @@ function onContextMenu(event, participation) {
   }
 
   participantMenu.value?.open(event, menuItems)
+}
+
+const guestRsvpModal = ref(null)
+
+function openGuestRsvp(participation) {
+  guestRsvpModal.value?.open({
+    name: participation.MemberName,
+    mode: 'appointment',
+    current: participation,
+    submit: (type, details) => eventsStore.changeParticipationFor(props.event.ID, participation.MemberID, type, details),
+  })
 }
 
 async function recordParticipation(targetMemberId, type) {

@@ -1,0 +1,43 @@
+@use "../../base/variables" as *;
+
+// "Bist du schon als Gast dabei?" beim Beitritt (OrgGuestClaimModal.vue)
+.org-guest-claim-modal {
+    text-align: left;
+    max-width: 440px;
+
+    .org-guest-claim-modal_hint {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.5;
+        color: var(--ColorBlack);
+    }
+
+    .org-guest-claim-modal_options {
+        gap: 6px;
+    }
+
+    // Selektor mit ".modalform .field > label", sonst färbt base/forms.scss die Namen grau
+    .modalform .field > label.org-guest-claim-modal_option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ColorBlack);
+        cursor: pointer;
+
+        &:has(input:checked) {
+            border-color: var(--ColorPrimary);
+            background-color: var(--ColorPrimaryLight);
+        }
+
+        &--none {
+            font-weight: 500;
+            color: var(--ColorGray);
+        }
+    }
+}

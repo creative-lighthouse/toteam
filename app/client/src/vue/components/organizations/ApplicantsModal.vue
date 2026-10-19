@@ -17,6 +17,8 @@
         <div class="applicant-info">
           <strong class="applicant-name">{{ a.FirstName }} {{ a.Surname }}</strong>
           <span class="applicant-email">{{ a.Email }}</span>
+          <!-- Möchte einen Gast übernehmen — bestätigt wird das in "Organisation verwalten" -->
+          <span v-if="a.ClaimGuest" class="applicant-email">möchte Gast „{{ a.ClaimGuest }}“ übernehmen</span>
         </div>
 
         <div class="applicant-actions">

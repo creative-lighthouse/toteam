@@ -207,6 +207,8 @@ class CalendarApiController extends ApiController
                     'TimeEnd'         => $p->TimeEnd,
                     'CustomTimeframe' => (bool) $p->CustomTimeframe,
                     'IsCurrentUser'   => $p->MemberID == $member->ID,
+                    // Gast ohne Account: "RSVP anpassen" per Rechtsklick (CALENDAR_RECORD_RSVP)
+                    'IsGuest'         => $pMember && $pMember->exists() && $pMember->IsGuest,
                     'Notes'           => $p->Notes ?: null,
                     'RideType'        => $p->RideType ?: 'None',
                     'RideSeats'       => (int) $p->RideSeats,
@@ -224,6 +226,7 @@ class CalendarApiController extends ApiController
                     'ProfileImageURL' => $pendingMember->hasMethod('RenderProfileImage')
                         ? $pendingMember->RenderProfileImage()
                         : null,
+                    'IsGuest'         => (bool) $pendingMember->IsGuest,
                 ];
             }
 
@@ -486,6 +489,13 @@ class CalendarApiController extends ApiController
         }
 
         $participation->Type = $type;
+
+        // Gäste: alle Angaben werden von anderen eingetragen ("RSVP anpassen")
+        if ($targetMember->IsGuest && isset($body['details']) && is_array($body['details'])) {
+            if ($error = $this->applyGuestParticipationDetails($participation, $body['details'])) {
+                return $this->errorResponse($error, 400);
+            }
+        }
         $participation->write();
 
         return $this->successResponse([
@@ -647,6 +657,38 @@ class CalendarApiController extends ApiController
      * arbitrary other member of one of those orgs (to record verbal RSVPs on
      * their behalf). Returns an HTTPResponse (error) on failure.
      */
+    /**
+     * Notiz, eigene Zeit und Mitfahrt eines Gastes übernehmen ({ Notes, TimeStart, TimeEnd,
+     * RideType, RideSeats } — leere Zeiten = Zeit des Termins). Fehlertext oder null.
+     */
+    private function applyGuestParticipationDetails(AppointmentParticipation $participation, array $details): ?string
+    {
+        if (array_key_exists('Notes', $details)) {
+            $participation->Notes = mb_substr(trim((string) $details['Notes']), 0, 512) ?: null;
+        }
+        if (array_key_exists('TimeStart', $details) || array_key_exists('TimeEnd', $details)) {
+            $start = trim((string) ($details['TimeStart'] ?? ''));
+            $end = trim((string) ($details['TimeEnd'] ?? ''));
+            if ($start === '' && $end === '') {
+                $participation->TimeStart = null;
+                $participation->TimeEnd = null;
+                $participation->CustomTimeframe = false;
+            } elseif ($start === '' || $end === '') {
+                return 'Bitte Beginn und Ende der eigenen Zeit angeben';
+            } else {
+                $participation->TimeStart = $start;
+                $participation->TimeEnd = $end;
+                $participation->CustomTimeframe = true;
+            }
+        }
+        if (array_key_exists('RideType', $details)) {
+            $ride = in_array($details['RideType'], ['None', 'Need', 'Offer'], true) ? $details['RideType'] : 'None';
+            $participation->RideType = $ride;
+            $participation->RideSeats = $ride === 'Offer' ? max(0, min(20, (int) ($details['RideSeats'] ?? 0))) : 0;
+        }
+        return null;
+    }
+
     private function resolveRsvpTargetMember(
         $targetMemberId,
         Member $member,

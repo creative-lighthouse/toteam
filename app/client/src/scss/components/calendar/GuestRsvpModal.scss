@@ -1,0 +1,14 @@
+@use "../../base/variables" as *;
+
+// "RSVP anpassen" für Gäste (GuestRsvpModal.vue) — Termine und Mahlzeiten
+.guest-rsvp-modal {
+    text-align: left;
+    max-width: 480px;
+
+    .guest-rsvp-modal_hint {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ColorGray);
+    }
+}

@@ -73,6 +73,11 @@ class PushNotificationService
             $ids = array_intersect($ids, array_map('intval', $orgMemberIDs));
         }
 
+        // Gäste haben keinen Account — weder Inbox noch Geräte
+        if ($ids) {
+            $ids = array_diff($ids, array_map('intval', Member::get()->filter(['ID' => $ids, 'IsGuest' => true])->column('ID')));
+        }
+
         if (empty($ids)) {
             return;
         }
@@ -274,6 +279,45 @@ class PushNotificationService
             '📋 Neue Bewerbung',
             $applicant->FirstName . ' ' . $applicant->Surname . ' möchte "' . $org->Title . '" beitreten.',
             '/app/organizations?applicants=' . $org->ID
+        );
+    }
+
+    /**
+     * Einladung in eine Organisation — an die eingeladene Person. Sie ist noch kein
+     * Mitglied, daher persönlich ($orgIDs = null); gleiche Einstellung wie Bewerbungen.
+     */
+    public static function notifyInvitation(OrganizationMembership $membership): void
+    {
+        $org = $membership->Organization();
+        $inviter = $membership->InvitedBy();
+        if (!$org || !$org->exists() || !$membership->MemberID) {
+            return;
+        }
+
+        $from = $inviter && $inviter->exists() ? $inviter->getDisplayName() . ' lädt dich' : 'Du wirst';
+        self::deliver(
+            [$membership->MemberID],
+            null,
+            'applications',
+            '✉️ Einladung',
+            $from . ' zu "' . $org->Title . '" ein. Auf dem Dashboard kannst du annehmen oder ablehnen.',
+            '/app/dashboard'
+        );
+    }
+
+    /**
+     * Mitgliedschaft beendet (aus der Organisation entfernt) — an die Person selbst,
+     * persönlich, da sie kein Mitglied mehr ist.
+     */
+    public static function notifyMembershipEnded(Member $member, Organization $org): void
+    {
+        self::deliver(
+            [$member->ID],
+            null,
+            'applications',
+            'Mitgliedschaft beendet',
+            'Du bist nicht mehr Mitglied von "' . $org->Title . '".',
+            '/app/organizations'
         );
     }
 

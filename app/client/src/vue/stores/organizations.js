@@ -77,8 +77,9 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     return response
   }
 
-  async function joinOrganization(orgID) {
-    const response = await apiPost(`/organizations/join/${orgID}`, {})
+  /** Beitreten/bewerben; claimGuestId = "Ich bin dieser Gast" (ein Admin bestätigt die Übernahme) */
+  async function joinOrganization(orgID, claimGuestId = null) {
+    const response = await apiPost(`/organizations/join/${orgID}`, claimGuestId ? { ClaimGuestID: claimGuestId } : {})
 
     if (response.success) {
       const org = organizations.value.find(o => o.ID === orgID)
@@ -93,7 +94,49 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     return response
   }
 
+  // ── Einladungen ─────────────────────────────────────────────────────────
+  // Offene Einladungen an mich (Dashboard): [{ MembershipID, Organization, InvitedBy, Created }]
+  const invitations = ref([])
+
+  async function fetchInvitations() {
+    try {
+      const response = await apiGet('/organizations/invitations', false)
+      invitations.value = response.invitations || []
+    } catch (err) {
+      console.error('Failed to fetch invitations:', err)
+    }
+  }
+
+  /** Einladung annehmen (accept = true) oder ablehnen; claimGuestId wie bei joinOrganization */
+  async function respondInvitation(membershipId, accept, claimGuestId = null) {
+    const response = await apiPost(`/organizations/respondInvitation/${membershipId}`, {
+      Accept: accept,
+      ...(claimGuestId ? { ClaimGuestID: claimGuestId } : {}),
+    })
+    if (response.success) {
+      invitations.value = invitations.value.filter(i => i.MembershipID !== membershipId)
+      // Neue Organisation: Liste und Berechtigungen neu laden
+      await clearCacheForEndpoint('/organizations')
+      if (accept) await fetchOrganizations(true)
+    }
+    return response
+  }
+
+  /** Person über ihren Benutzernamen in eine Organisation einladen (Organisation verwalten) */
+  async function inviteMember(orgId, username) {
+    return apiPost(`/organizations/invite/${orgId}`, { Username: username })
+  }
+
+  async function cancelInvitation(membershipId) {
+    return apiPost(`/organizations/cancelInvitation/${membershipId}`, {})
+  }
+
   return {
+    invitations,
+    fetchInvitations,
+    respondInvitation,
+    inviteMember,
+    cancelInvitation,
     organizations,
     loading,
     error,

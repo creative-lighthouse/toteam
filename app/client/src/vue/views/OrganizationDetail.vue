@@ -44,17 +44,27 @@
                         </AppButton>
 
                         <AppButton
-                        v-if="!org.MembershipStatus && org.JoinMode !== 'invite_only'"
+                        v-if="org.MembershipStatus === 'invited' || (!org.MembershipStatus && org.JoinMode !== 'invite_only')"
                         variant="primary"
                         :disabled="joining"
                         @click="handleJoin"
                         >
-                        {{ joining ? '…' : (org.JoinMode === 'open' ? 'Beitreten' : 'Bewerben') }}
+                        {{ joining ? '…' : (org.MembershipStatus === 'invited' ? 'Einladung annehmen' : (org.JoinMode === 'open' ? 'Beitreten' : 'Bewerben')) }}
                         </AppButton>
 
                         <span v-else-if="org.MembershipStatus" class="org-detail-membership-badge" :class="`org-detail-membership-badge--${org.MembershipStatus}`">
                         {{ membershipLabel }}
                         </span>
+
+                        <!-- Selbst verlassen bzw. Bewerbung zurückziehen -->
+                        <AppButton
+                        v-if="org.MembershipStatus === 'member' || org.MembershipStatus === 'applicant'"
+                        variant="secondary"
+                        :disabled="leaving"
+                        @click="handleLeave"
+                        >
+                        {{ leaving ? '…' : (org.MembershipStatus === 'applicant' ? 'Bewerbung zurückziehen' : 'Organisation verlassen') }}
+                        </AppButton>
                     </div>
                 </div>
 
@@ -81,6 +91,8 @@
                 </section>
             </div>
         </template>
+
+        <OrgGuestClaimModal ref="guestClaimModal" />
     </section>
 </template>
 
@@ -90,10 +102,13 @@ import { useRoute } from 'vue-router'
 import { RouterLink } from 'vue-router'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { apiGet, apiPost } from '@utils/api'
+import { useAuthStore } from '@stores/auth'
+import { useOrganizationsStore } from '@stores/organizations'
 import AppButton from '@components/ui/AppButton.vue'
 import AppLinkifiedText from '@components/ui/AppLinkifiedText.vue'
 import AppAvatar from '@components/ui/AppAvatar.vue'
 import AppOrgLogo from '@components/ui/AppOrgLogo.vue'
+import OrgGuestClaimModal from '@components/organizations/OrgGuestClaimModal.vue'
 
 const route    = useRoute()
 const loading  = ref(true)
@@ -123,11 +138,53 @@ onMounted(async () => {
   }
 })
 
+// ── Verlassen / Bewerbung zurückziehen ─────────────────────────────
+const authStore = useAuthStore()
+const orgsStore = useOrganizationsStore()
+const leaving = ref(false)
+
+async function handleLeave() {
+  if (leaving.value || !org.value) return
+  const isApplicant = org.value.MembershipStatus === 'applicant'
+  const question = isApplicant
+    ? `Bewerbung bei „${org.value.Title}“ zurückziehen?`
+    : `„${org.value.Title}“ wirklich verlassen?\n\nDu verlierst sofort den Zugriff auf alle Inhalte der Organisation. Um wieder beizutreten, musst du dich erneut bewerben oder eingeladen werden.`
+  if (!confirm(question)) return
+
+  leaving.value = true
+  try {
+    const response = await apiPost(`/organizations/leave/${org.value.ID}`, {})
+    if (!response.success) {
+      alert(response.error ?? 'Das hat nicht geklappt.')
+      return
+    }
+    if (!isApplicant) {
+      org.value.MemberCount = Math.max(0, org.value.MemberCount - 1)
+      // Totems, Berechtigungen und Organisationsliste passen nicht mehr
+      await authStore.checkAuth()
+      orgsStore.fetchOrganizations(true)
+    }
+    org.value.MembershipStatus = null
+    org.value.Members = (org.value.Members ?? []).filter(m => m.MemberID !== authStore.user?.ID)
+    org.value.CanManageMembers = false
+    org.value.CanManageRoles = false
+  } catch {
+    alert('Das hat nicht geklappt.')
+  } finally {
+    leaving.value = false
+  }
+}
+
+const guestClaimModal = ref(null)
+
 async function handleJoin() {
   if (joining.value || !org.value) return
   joining.value = true
   try {
-    const response = await apiPost(`/organizations/join/${org.value.ID}`, {})
+    // "Bist du einer dieser Gäste?" — abgebrochen (undefined): nicht beitreten
+    const claimGuestId = await guestClaimModal.value?.ask(org.value)
+    if (claimGuestId === undefined) return
+    const response = await apiPost(`/organizations/join/${org.value.ID}`, claimGuestId ? { ClaimGuestID: claimGuestId } : {})
     if (response.success) {
       org.value.MembershipStatus = response.data.MembershipStatus
       if (response.data.MembershipStatus === 'member') {

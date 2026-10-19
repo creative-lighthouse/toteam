@@ -44,7 +44,7 @@
           v-if="actionLabel"
           class="organization-card_action"
           :variant="org.MembershipStatus === 'applicant' ? 'secondary' : 'primary'"
-          :disabled="!!org.MembershipStatus || joining"
+          :disabled="(!!org.MembershipStatus && org.MembershipStatus !== 'invited') || joining"
           @click.stop="handleJoin"
         >
           {{ joining ? '…' : actionLabel }}
@@ -102,13 +102,15 @@ const actionLabel = computed(() => {
     return props.org.MyRoleNames?.length ? props.org.MyRoleNames.join(', ') : 'Mitglied'
   }
   if (props.org.MembershipStatus === 'applicant') return 'Bewerbung ausstehend'
+  // Eingeladen: "Beitreten" nimmt die Einladung an
+  if (props.org.MembershipStatus === 'invited')   return 'Einladung annehmen'
   if (props.org.JoinMode === 'open')              return 'Beitreten'
   if (props.org.JoinMode === 'application')       return 'Bewerben'
   return null
 })
 
 async function handleJoin() {
-  if (props.org.MembershipStatus || joining.value) return
+  if ((props.org.MembershipStatus && props.org.MembershipStatus !== 'invited') || joining.value) return
   joining.value = true
   try {
     emit('joined', props.org.ID)

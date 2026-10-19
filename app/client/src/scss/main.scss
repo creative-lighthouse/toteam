@@ -70,6 +70,7 @@
 
 @use "pages/MapViewPage.scss";
 @use "components/calendar/EventCard.scss";
+@use "components/calendar/GuestRsvpModal.scss";
 @use "components/calendar/EventMealsList.scss";
 @use "components/calendar/EventMyRolesList.scss";
 @use "components/organizations/OrganizationCard.scss";
@@ -143,6 +144,9 @@
 @use "components/money/MoneySettleModal.scss";
 @use "components/organizations/OrgRoleEditModal.scss";
 @use "components/organizations/OrgMemberRolesModal.scss";
+@use "components/organizations/OrgMemberInviteModal.scss";
+@use "components/organizations/OrgGuestEditModal.scss";
+@use "components/organizations/OrgGuestClaimModal.scss";
 @use "components/ui/ImageCropModal.scss";
 @use "components/skript/ScriptEditor.scss";
 @use "components/skript/ScriptBlockView.scss";
