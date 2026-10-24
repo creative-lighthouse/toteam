@@ -1,0 +1,19 @@
+.org-event-feedback {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.org-event-feedback_add {
+    align-self: flex-start;
+}
+
+.org-event-feedback_empty {
+    margin: 0;
+    color: var(--ColorDarkGray);
+}
+
+.org-event-feedback_error {
+    margin: 0;
+    color: var(--ColorStatusBad);
+}

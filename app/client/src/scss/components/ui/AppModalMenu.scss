@@ -1,0 +1,15 @@
+// Drei-Punkte-Menü (AppModalMenu): drei übereinanderliegende Punkte in currentColor,
+// damit es im Modal-Kopf weiß und sonst in Textfarbe erscheint
+.app-modal-menu_dots {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+
+    > span {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+}

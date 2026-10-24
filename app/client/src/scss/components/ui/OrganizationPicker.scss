@@ -1,3 +1,5 @@
+@use "../../base/variables" as *;
+
 // Einheitlicher Organisations-Auswähler (Einzel- oder Mehrfachauswahl, mit
 // Logo + Suchfeld). Ersetzt die früheren, pro Modal duplizierten
 // .multiselect-group/.checkbox-label-Pillen und nativen <select>-Listen für
@@ -68,6 +70,47 @@
 
 
 
+    // Gewählte Organisation (Einzelauswahl) an der Stelle von Suche und Liste
+    &_selected {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 5px 5px 5px;
+        border: 1px solid var(--ColorPrimary);
+        border-radius: var(--BorderRadiusMedium);
+        background-color: var(--ColorPrimaryLight);
+        font-size: 14px;
+        font-weight: 500;
+        text-align: left;
+    }
+
+    &_clear {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        color: var(--ColorBlack);
+        font-size: 0.85rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        @include hover {
+            background-color: var(--ColorWhite);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
+        }
+    }
+
     &_name {
         flex: 1;
         min-width: 0;
@@ -81,4 +124,17 @@
         color: var(--ColorGray);
         margin: 4px 0 0;
     }
+}
+
+// Nur für Screenreader: Name der Auswahl vor der gewählten Organisation
+.org-picker_sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }

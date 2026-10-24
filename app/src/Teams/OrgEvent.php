@@ -10,6 +10,7 @@ use App\Maps\Geocoder;
 use App\Maps\Map;
 use App\Maps\MapTilesSettings;
 use App\Money\MoneyAccount;
+use App\OrgFeedback\OrgFeedback;
 use App\Skript\Script;
 use App\Skript\ScriptRoleAssignment;
 use Psr\Log\LoggerInterface;
@@ -70,6 +71,7 @@ use SilverStripe\View\Parsers\URLSegmentFilter;
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrgEventInterest[] Interests()
  * @method \SilverStripe\ORM\DataList|\App\Inventory\InventoryRental[] Rentals()
  * @method \SilverStripe\ORM\DataList|\App\Teams\OrgEventItemPlacement[] ItemPlacements()
+ * @method \SilverStripe\ORM\HasManyList|\App\OrgFeedback\OrgFeedback[] Feedbacks()
  * @method \SilverStripe\ORM\DataList|\App\Maps\Map[] SitePlans()
  */
 class OrgEvent extends DataObject
@@ -133,6 +135,8 @@ class OrgEvent extends DataObject
         // Eigene Lagepläne des Events (neu angelegt oder als Kopie eines vorhandenen) —
         // "Map" ist in toApi() schon die Umgebungskarte
         "SitePlans" => Map::class . '.Event',
+        // Feedback aus dem Feedback-Totem zu diesem Event
+        "Feedbacks" => OrgFeedback::class . '.Event',
     ];
 
     private static $many_many = [
@@ -604,6 +608,8 @@ class OrgEvent extends DataObject
             'InterestedCount' => $this->Interests()->filter('Type', OrgEventInterest::TYPE_INTERESTED)->count(),
             'GoingCount'      => $this->Interests()->filter('Type', OrgEventInterest::TYPE_GOING)->count(),
             'UserInterest'    => $own ? $own->Type : null,
+            // Wer was markiert hat, sehen nur Mitglieder der Organisation (orgEventInterests)
+            'CanSeeInterests' => $this->isInternalFor($member),
         ];
     }
 
@@ -646,6 +652,11 @@ class OrgEvent extends DataObject
                 $post->EventID = 0;
                 $post->write();
             }
+        }
+        // Feedback bleibt als allgemeines Feedback der Organisation erhalten
+        foreach ($this->Feedbacks() as $feedback) {
+            $feedback->EventID = 0;
+            $feedback->write();
         }
         // Ebenso die Kassen samt Buchungen
         foreach ($this->MoneyAccounts() as $account) {

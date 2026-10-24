@@ -128,6 +128,13 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
    * "Interessiert" / "Ich bin dabei" setzen — type: 'Interested' | 'Going' | null (entfernen).
    * Liefert { InterestedCount, GoingCount, UserInterest }.
    */
+  /** Wer ein Event markiert hat (nur für Mitglieder der Organisation): { Interested: [], Going: [] } */
+  async function fetchInterests(id) {
+    const res = await apiGet(`/calendar/orgEventInterests/${id}`, false)
+    if (!res?.success) throw new Error(res?.error || 'Markierungen konnten nicht geladen werden')
+    return res.data
+  }
+
   async function setInterest(id, type) {
     const res = await apiPost(`/calendar/orgEventInterest/${id}`, { type })
     if (!res?.success) throw new Error(res?.error || 'Markierung konnte nicht gespeichert werden')
@@ -218,6 +225,7 @@ export const useOrgEventsStore = defineStore('orgEvents', () => {
     deleteEvent,
     fetchMyEvents,
     setInterest,
+    fetchInterests,
     fetchEventPlans,
     createEventPlan,
     deleteEventPlan,

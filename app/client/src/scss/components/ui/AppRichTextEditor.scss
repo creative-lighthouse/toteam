@@ -1,0 +1,41 @@
+.app-rich-text-editor {
+    // Dialoge zentrieren Text — der Editor ist standardmäßig linksbündig
+    text-align: left;
+    border: 1px solid var(--ColorLightGray);
+    border-radius: 0.5rem;
+    background: var(--ColorWhite);
+
+    .app-rich-text-toolbar {
+        padding: 0.35rem 0.5rem;
+        border-bottom: 1px solid var(--ColorLightGray);
+    }
+
+    &:focus-within {
+        border-color: var(--ColorPrimary);
+    }
+
+    &--empty .ProseMirror > p:first-child::before {
+        content: var(--placeholder);
+        float: left;
+        height: 0;
+        color: var(--ColorGray);
+        pointer-events: none;
+    }
+}
+
+.app-rich-text-editor_text {
+    padding: 0.5rem 0.75rem;
+
+    .ProseMirror {
+        min-height: 6rem;
+        outline: none;
+
+        > :first-child {
+            margin-top: 0;
+        }
+
+        > :last-child {
+            margin-bottom: 0;
+        }
+    }
+}

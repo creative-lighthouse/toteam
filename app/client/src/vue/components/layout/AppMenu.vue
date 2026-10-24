@@ -160,6 +160,15 @@
                     </router-link>
                 </li>
 
+                <li v-if="authStore.hasTotem('feedback')">
+                    <router-link data-secondary-item to="/feedback" class="nav_link" :class="{ 'nav_link--active': $route.name === 'OrgFeedback' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <img :src="kummerkastenTotem" alt="" class="nav_image">
+                        </div>
+                        <p class="nav_title">Feedback <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
                 <li>
                     <router-link data-secondary-item to="/money" :aria-label="pendingEntries ? `Geld, ${pendingEntries === 1 ? '1 Buchung zu genehmigen' : `${pendingEntries} Buchungen zu genehmigen`}` : undefined" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
                         <div class="nav_icon">
@@ -247,6 +256,7 @@ import todosTotem from '../../../../icons/totems/todos_totem.png'
 import skriptTotem from '../../../../icons/totems/skript_totem.png'
 import marketingTotem from '../../../../icons/totems/marketing_totem.png'
 import inventarTotem from '../../../../icons/totems/inventar_totem.png'
+import kummerkastenTotem from '../../../../icons/totems/kummerkasten_totem.png'
 import geldTotem from '../../../../icons/totems/geld_totem.png'
 import kartenTotem from '../../../../icons/totems/karten_totem.png'
 import organizationsTotem from '../../../../icons/totems/organizations_totem.png'

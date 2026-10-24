@@ -28,6 +28,7 @@ import MoneyBudgetDetail from '@views/MoneyBudgetDetail.vue'
 import MoneyEntryDetail from '@views/MoneyEntryDetail.vue'
 import Skript from '@views/Skript.vue'
 import SkriptDetail from '@views/SkriptDetail.vue'
+import OrgFeedback from '@views/OrgFeedback.vue'
 import Marketing from '@views/Marketing.vue'
 import MarketingStatistics from '@views/MarketingStatistics.vue'
 import MarketingMap from '@views/MarketingMap.vue'
@@ -210,6 +211,12 @@ const routes = [
     name: 'SkriptDetail',
     component: SkriptDetail,
     meta: { requiresAuth: true, totem: 'skript' }
+  },
+  {
+    path: '/feedback',
+    name: 'OrgFeedback',
+    component: OrgFeedback,
+    meta: { requiresAuth: true, totem: 'feedback' }
   },
   {
     path: '/marketing',

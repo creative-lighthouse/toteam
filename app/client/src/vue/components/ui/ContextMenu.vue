@@ -10,7 +10,8 @@
 
     Tastatur: Beim Öffnen liegt der Fokus auf dem ersten Eintrag, Pfeiltasten
     (sowie Pos1/Ende) wechseln, Enter/Leertaste wählt, Esc schließt und bringt
-    den Fokus zurück, Tab schließt. Geöffnet wird es meist über v-context-menu.
+    den Fokus zurück, Tab schließt. Geöffnet wird es meist über v-context-menu,
+    oder mit `anchor` unter einem Button (z.B. AppModalMenu, Drei-Punkte-Menü).
   -->
   <div
     v-if="open"
@@ -46,9 +47,15 @@ const menuEl = ref(null)
 const menuStyle = reactive({ top: '0px', left: '0px', visibility: 'hidden' })
 
 let returnFocusEl = null
+// Button, an dem das Menü hängt — ein Klick darauf schließt es nicht von außen,
+// damit der Button selbst auf- und zuklappen kann
+let anchorEl = null
 
 /**
- * @param {{ clientX: number, clientY: number, preventDefault?: Function, fromKeyboard?: boolean }} event
+ * Mit `anchor` (Element) erscheint das Menü rechtsbündig darunter, und der Fokus
+ * geht danach immer an den Anker zurück; clientX/clientY sind dann unnötig.
+ *
+ * @param {{ clientX?: number, clientY?: number, preventDefault?: Function, fromKeyboard?: boolean, anchor?: HTMLElement }} event
  * @param {{ label: string, onClick?: Function, danger?: boolean }[]} menuItems
  */
 async function openMenu(event, menuItems) {
@@ -56,7 +63,8 @@ async function openMenu(event, menuItems) {
   if (!menuItems?.length) return
 
   // Fokus nach dem Schließen zurückgeben — bei Tastatur an das auslösende Element
-  returnFocusEl = event.fromKeyboard ? document.activeElement : null
+  anchorEl = event.anchor ?? null
+  returnFocusEl = anchorEl ?? (event.fromKeyboard ? document.activeElement : null)
 
   items.value = menuItems
   menuStyle.visibility = 'hidden'
@@ -69,8 +77,15 @@ async function openMenu(event, menuItems) {
   const rect = el.getBoundingClientRect()
   const maxLeft = window.innerWidth - rect.width - VIEWPORT_MARGIN
   const maxTop = window.innerHeight - rect.height - VIEWPORT_MARGIN
-  menuStyle.left = `${Math.max(VIEWPORT_MARGIN, Math.min(event.clientX, maxLeft))}px`
-  menuStyle.top = `${Math.max(VIEWPORT_MARGIN, Math.min(event.clientY, maxTop))}px`
+  let x = event.clientX
+  let y = event.clientY
+  if (anchorEl) {
+    const anchorRect = anchorEl.getBoundingClientRect()
+    x = anchorRect.right - rect.width
+    y = anchorRect.bottom + 4
+  }
+  menuStyle.left = `${Math.max(VIEWPORT_MARGIN, Math.min(x, maxLeft))}px`
+  menuStyle.top = `${Math.max(VIEWPORT_MARGIN, Math.min(y, maxTop))}px`
   menuStyle.visibility = 'visible'
   focusItem(0)
 }
@@ -81,6 +96,7 @@ function closeMenu({ restoreFocus = false } = {}) {
   removeListeners()
   if (restoreFocus && returnFocusEl?.isConnected) returnFocusEl.focus()
   returnFocusEl = null
+  anchorEl = null
 }
 
 function itemButtons() {
@@ -116,7 +132,7 @@ function onMenuKeydown(event) {
 // pointerdown statt mousedown: Safari auf iOS meldet beim Tippen auf nicht
 // klickbare Flächen oft kein mousedown, das Menü bliebe sonst offen
 function onPointerDownOutside(event) {
-  if (menuEl.value?.contains(event.target)) return
+  if (menuEl.value?.contains(event.target) || anchorEl?.contains(event.target)) return
   closeMenu()
 }
 
@@ -161,5 +177,5 @@ function select(item) {
 
 onBeforeUnmount(removeListeners)
 
-defineExpose({ open: openMenu, close: closeMenu })
+defineExpose({ open: openMenu, close: closeMenu, isOpen: open })
 </script>

@@ -56,6 +56,7 @@ class CalendarApiController extends ApiController
         'orgEventImage',
         'orgEventGallery',
         'orgEventInterest',
+        'orgEventInterests',
         'myOrgEvents',
         'meal',
         'agendaPoint',
@@ -1698,6 +1699,46 @@ class CalendarApiController extends ApiController
         }
 
         return $this->successResponse($event->interestToApi($member), $type ? 'Markierung gespeichert' : 'Markierung entfernt');
+    }
+
+    /**
+     * Wer ein Event als "Interessiert" bzw. "Ich bin dabei" markiert hat, und wann (zuletzt
+     * geändert) — GET /api/v1/calendar/orgEventInterests/{id}. Nur für Mitglieder der
+     * Organisation; bei öffentlichen Events markieren auch Externe, deren Namen sollen
+     * nicht für jeden sichtbar sein.
+     */
+    public function orgEventInterests(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        $event = OrgEvent::get()->byID((int) $request->param('ID'));
+        if (!$event || !$event->isViewableBy($member)) {
+            return $this->errorResponse('Event nicht gefunden', 404);
+        }
+        if (!$event->isInternalFor($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $lists = [OrgEventInterest::TYPE_INTERESTED => [], OrgEventInterest::TYPE_GOING => []];
+        foreach ($event->Interests()->sort('LastEdited ASC') as $interest) {
+            $person = $interest->Member();
+            if (!$person || !$person->exists() || !isset($lists[$interest->Type])) {
+                continue;
+            }
+            $lists[$interest->Type][] = [
+                'ID'     => $person->ID,
+                'Name'   => $person->getDisplayName(),
+                'Avatar' => $person->RenderProfileImage(),
+                'Date'   => $interest->LastEdited,
+            ];
+        }
+
+        return $this->successResponse([
+            'Interested' => $lists[OrgEventInterest::TYPE_INTERESTED],
+            'Going'      => $lists[OrgEventInterest::TYPE_GOING],
+        ]);
     }
 
     /**

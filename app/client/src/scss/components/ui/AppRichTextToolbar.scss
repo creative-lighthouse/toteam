@@ -1,0 +1,67 @@
+.app-rich-text-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.app-rich-text-toolbar_btn {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding: 0 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 0.35rem;
+    background: none;
+    color: var(--ColorBlack);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+
+    &--align {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &:hover {
+        border-color: var(--ColorLightGray);
+    }
+
+    &--active {
+        background: var(--ColorPrimary);
+        color: var(--ColorWhite);
+    }
+}
+
+.app-rich-text-toolbar_sep {
+    width: 1px;
+    height: 1.25rem;
+    background: var(--ColorLightGray);
+    margin: 0 0.25rem;
+}
+
+// Ausrichtungs-Symbol: drei Linien, die mittlere kürzer und je nach Ausrichtung versetzt
+.app-rich-text-toolbar_align-icon {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 0.9rem;
+
+    > span {
+        height: 2px;
+        border-radius: 1px;
+        background: currentColor;
+    }
+
+    > span:nth-child(2) {
+        width: 60%;
+    }
+
+    &--center > span:nth-child(2) {
+        align-self: center;
+    }
+
+    &--right > span:nth-child(2) {
+        align-self: flex-end;
+    }
+}

@@ -7,7 +7,10 @@
           <slot name="header">
             <h2 class="hl2">{{ title }}</h2>
           </slot>
-          <AppIconButton variant="ghost" aria-label="Schließen" @click="$emit('close')">✕</AppIconButton>
+          <div class="app-modal_header-actions">
+            <AppModalMenu :items="menu" />
+            <AppIconButton variant="ghost" aria-label="Schließen" @click="$emit('close')">✕</AppIconButton>
+          </div>
         </div>
 
         <!-- Tabs: ein Tab-Stopp, links/rechts (bzw. Pos1/Ende) wechselt direkt den Tab -->
@@ -48,6 +51,7 @@
 <script setup>
 import { ref, nextTick, onBeforeUnmount, inject } from 'vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
+import AppModalMenu from '@components/ui/AppModalMenu.vue'
 import { MORPHED_MODAL_CLASS, isMorphing } from '@utils/viewTransition'
 import { MODAL_FOCUS_FALLBACK } from '@utils/modalFocus'
 
@@ -64,6 +68,9 @@ const props = defineProps({
   // ausgeblendet (z.B. wenn beim Bearbeiten nur noch ein Tab relevant ist).
   tabs: { type: Array, default: () => [] },
   tab: { type: [String, Number], default: null },
+  // Seltene Aktionen als Drei-Punkte-Menü neben dem Schließen-X
+  // ({ label, onClick, danger? }[], null/false werden übersprungen — siehe AppModalMenu)
+  menu: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['close', 'update:tab'])

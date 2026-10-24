@@ -17,38 +17,7 @@
     top: 0;
     z-index: 2;
     background: var(--ColorWhite);
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
     padding: 0.5rem 0;
     margin-bottom: 0.25rem;
     border-bottom: 1px solid var(--ColorLightGray);
-}
-
-.script-editor_toolbar-btn {
-    min-width: 1.75rem;
-    height: 1.75rem;
-    padding: 0 0.4rem;
-    border: 1px solid transparent;
-    border-radius: 0.35rem;
-    background: none;
-    cursor: pointer;
-    font-size: 0.85rem;
-    line-height: 1;
-
-    &:hover {
-        border-color: var(--ColorLightGray);
-    }
-
-    &--active {
-        background: var(--ColorPrimary);
-        color: var(--ColorWhite);
-    }
-}
-
-.script-editor_toolbar-sep {
-    width: 1px;
-    height: 1.25rem;
-    background: var(--ColorLightGray);
-    margin: 0 0.25rem;
 }

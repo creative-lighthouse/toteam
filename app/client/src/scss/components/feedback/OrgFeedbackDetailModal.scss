@@ -1,0 +1,240 @@
+.org-feedback-detail-modal {
+    // Dialoge zentrieren Text (dialog.scss) — hier ist alles linksbündig
+    .app-modal_body {
+        text-align: left;
+    }
+
+    .org-feedback-detail-modal_meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .org-feedback-detail-modal_edit {
+        margin-left: auto;
+    }
+
+    .org-feedback-detail-modal_sentiment {
+        padding: 0.15rem 0.6rem;
+        border-radius: 1rem;
+        font-weight: bold;
+        background: var(--ColorVeryLightGray);
+        color: var(--ColorDarkGray);
+
+        &--positive {
+            background: var(--ColorStatusGoodAccent);
+            color: var(--ColorStatusGood);
+        }
+
+        &--negative {
+            background: var(--ColorStatusBadAccent);
+            color: var(--ColorStatusBad);
+        }
+    }
+
+    .org-feedback-detail-modal_context {
+        color: var(--ColorDarkGray);
+
+        a {
+            color: var(--ColorPrimary);
+        }
+    }
+
+    .org-feedback-detail-modal_author {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    .org-feedback-detail-modal_avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .org-feedback-detail-modal_author-name {
+        font-weight: bold;
+    }
+
+    .org-feedback-detail-modal_date {
+        font-size: 0.85rem;
+        color: var(--ColorDarkGray);
+    }
+
+    .org-feedback-detail-modal_content {
+        margin-bottom: 1rem;
+        text-align: left;
+        overflow-wrap: anywhere;
+
+        > :first-child {
+            margin-top: 0;
+        }
+
+        > :last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .org-feedback-detail-modal_empty {
+        color: var(--ColorDarkGray);
+    }
+
+    // +1 rechts in der Autorenzeile
+    .org-feedback-detail-modal_votes {
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .org-feedback-detail-modal_task {
+        margin-bottom: 1rem;
+
+        a {
+            color: var(--ColorPrimary);
+        }
+    }
+
+    .org-feedback-detail-modal_comments {
+        padding-top: 1rem;
+        border-top: 1px solid var(--ColorLightGray);
+
+        h3 {
+            margin: 0 0 0.75rem;
+        }
+    }
+
+    .org-feedback-detail-modal_comment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin: 0 0 1rem;
+        padding: 0;
+        list-style: none;
+    }
+
+    .org-feedback-detail-modal_comment {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+
+    .org-feedback-detail-modal_comment-avatar {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .org-feedback-detail-modal_comment-body {
+        flex: 1;
+        min-width: 0;
+        // Kommentare (Name und Text) etwas kleiner als der Feedback-Text
+        font-size: 0.9rem;
+    }
+
+    .org-feedback-detail-modal_comment-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: baseline;
+        margin: 0 0 0.15rem;
+
+        time {
+            font-size: 0.8rem;
+            color: var(--ColorDarkGray);
+        }
+    }
+
+    .org-feedback-detail-modal_comment-text {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+
+    // Daumen hoch und Löschen-X rechts neben dem Kommentar
+    .org-feedback-detail-modal_comment-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-shrink: 0;
+    }
+
+    // Daumen hoch: klein und dezent, aktiv in Primärfarbe
+    .org-feedback-detail-modal_comment-like {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.5rem;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: 1rem;
+        background: none;
+        color: var(--ColorDarkGray);
+        font-size: 0.8rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, scale 0.1s ease-out;
+
+        .icon-mask {
+            width: 15px;
+            height: 15px;
+        }
+
+        &:hover:not(:disabled) {
+            border-color: var(--ColorPrimary);
+            color: var(--ColorPrimary);
+        }
+
+        &:active:not(:disabled) {
+            scale: 0.9;
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        &--active {
+            border-color: var(--ColorPrimary);
+            background: var(--ColorPrimary);
+            color: var(--ColorWhite);
+
+            &:hover:not(:disabled) {
+                color: var(--ColorWhite);
+                opacity: 0.85;
+            }
+        }
+    }
+
+    .org-feedback-detail-modal_comment-like-count {
+        font-weight: 600;
+    }
+
+    // Wie im Chat: Eingabefeld und Senden-Button nebeneinander
+    .org-feedback-detail-modal_comment-form {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+
+        textarea {
+            flex: 1 1 auto;
+            min-width: 0;
+            // Höhe setzt fitCommentInput() passend zum Text
+            resize: none;
+            min-height: 0;
+            max-height: 10rem;
+            overflow-y: auto;
+        }
+    }
+
+    .org-feedback-detail-modal_comment-send {
+        margin-bottom: 2px;
+    }
+}
