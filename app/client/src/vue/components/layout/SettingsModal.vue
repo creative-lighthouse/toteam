@@ -32,6 +32,7 @@
         <AppToggle v-model="prefs.NotifyMaps" label="Lagepläne" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyApplications" label="Organisationen: Bewerbungen &amp; Einladungen" field-class="settings-toggle" @update:model-value="savePrefs" />
         <AppToggle v-model="prefs.NotifyInventory" label="Inventar-Ausleihen" field-class="settings-toggle" @update:model-value="savePrefs" />
+        <AppToggle v-model="prefs.NotifyFeedback" label="Kommentare zu Feedback" field-class="settings-toggle" @update:model-value="savePrefs" />
       </template>
     </section>
 
@@ -66,6 +67,7 @@ const prefs = reactive({
   NotifyMaps: true,
   NotifyApplications: true,
   NotifyInventory: true,
+  NotifyFeedback: true,
 })
 
 // Das Theme setzt app.js schon vor dem Mounten, daher hier direkt lesbar
@@ -150,6 +152,7 @@ async function loadPrefs() {
     prefs.NotifyMaps = data.NotifyMaps
     prefs.NotifyApplications = data.NotifyApplications
     prefs.NotifyInventory = data.NotifyInventory
+    prefs.NotifyFeedback = data.NotifyFeedback
   } catch (err) {
     console.error('Could not load settings:', err)
   } finally {

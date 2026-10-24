@@ -34,6 +34,7 @@ use App\Teams\OrgPermissions;
  * @property bool $NotifyMaps
  * @property bool $NotifyApplications
  * @property bool $NotifyInventory
+ * @property bool $NotifyFeedback
  * @property bool $IsGuest
  * @property int $ProfileImageID
  * @property int $GuestOrganizationID
@@ -62,6 +63,7 @@ class MemberExtension extends Extension
         "NotifyMaps"         => "Boolean(1)",
         "NotifyApplications" => "Boolean(1)",
         "NotifyInventory"    => "Boolean(1)",
+        "NotifyFeedback"     => "Boolean(1)",
         // Gast-Mitglied: kein echter Account (keine E-Mail, kein Login), existiert nur in
         // GuestOrganization. Taucht dort wie ein Mitglied auf; andere tragen seine
         // Zu-/Absagen ein. Beim Beitritt kann eine echte Person ihn übernehmen (GuestMerger).
@@ -75,6 +77,7 @@ class MemberExtension extends Extension
         "NotifyMaps"         => true,
         "NotifyApplications" => true,
         "NotifyInventory"    => true,
+        "NotifyFeedback"     => true,
     ];
 
     private static $has_one = [

@@ -44,6 +44,24 @@
         background-color: var(--ColorWhite);
         color: var(--ColorPrimary);
         font-variant-numeric: tabular-nums;
+
+        &--clickable {
+            border-top: none;
+            border-right: none;
+            border-bottom: none;
+            font: inherit;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+
+            @include hover {
+                background-color: var(--ColorPrimaryLight);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--ColorPrimary);
+                outline-offset: -4px;
+            }
+        }
     }
 
     &--active .app-count-button_action {

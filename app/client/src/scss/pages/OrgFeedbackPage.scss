@@ -1,0 +1,71 @@
+@use "../base/variables" as *;
+
+.section.section--OrgFeedbackPage {
+    .org-feedback-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        // Unterkanten bündig: Auswahlfelder, Sortierung und "+ Neu" stehen auf einer Linie
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .org-feedback-toolbar_filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.5rem 0.75rem;
+
+        > .field {
+            margin: 0;
+        }
+    }
+
+    // Beschriftung wie die von AppSegmentedToggle ("Sortierung")
+    .org-feedback-toolbar_label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ColorGray);
+    }
+
+    .org-feedback-toolbar_selects {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+
+        select.input {
+            width: auto;
+            max-width: 100%;
+        }
+    }
+
+    .org-feedback-toolbar_new {
+        margin-left: auto;
+    }
+
+    // Handy: Filter untereinander über die volle Breite, darunter
+    // Sortierung links und "+ Neu" rechts in einer Zeile
+    @include media(max-medium) {
+        .org-feedback-toolbar_filters {
+            display: contents;
+        }
+
+        .org-feedback-toolbar_filter {
+            flex: 1 1 100%;
+        }
+
+        .org-feedback-toolbar_selects {
+            flex-direction: column;
+
+            select.input {
+                width: 100%;
+            }
+        }
+    }
+
+    .org-feedback-toolbar_error {
+        margin-top: 0.75rem;
+        color: var(--ColorStatusBad);
+    }
+}

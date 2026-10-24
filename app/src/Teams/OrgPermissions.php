@@ -66,6 +66,8 @@ class OrgPermissions
     public const STORAGE_EDIT = 'STORAGE_EDIT';
     public const STORAGE_DELETE = 'STORAGE_DELETE';
 
+    public const FEEDBACK_MODERATE = 'FEEDBACK_MODERATE';
+
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
      * @return array<string, array<string, string>> Kategorie => [Code => Label]
@@ -139,6 +141,9 @@ class OrgPermissions
                 self::STORAGE_CREATE => 'Lagerpunkte anlegen',
                 self::STORAGE_EDIT => 'Lagerpunkte bearbeiten',
                 self::STORAGE_DELETE => 'Lagerpunkte löschen',
+            ],
+            'Feedback' => [
+                self::FEEDBACK_MODERATE => 'Fremdes Feedback und Kommentare löschen',
             ],
         ];
     }

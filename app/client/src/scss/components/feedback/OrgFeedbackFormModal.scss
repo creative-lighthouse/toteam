@@ -1,0 +1,67 @@
+.org-feedback-form-modal {
+    .org-feedback-form-modal_hint {
+        margin: 0;
+    }
+
+    .org-feedback-form-modal_similar {
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        background: var(--ColorStatusWarningAccent);
+    }
+
+    .org-feedback-form-modal_similar-title {
+        margin: 0 0 0.5rem;
+        font-weight: bold;
+    }
+
+    .org-feedback-form-modal_similar-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .org-feedback-form-modal_similar-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .org-feedback-form-modal_similar-link {
+        flex: 1;
+        min-width: 0;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--ColorPrimary);
+        font: inherit;
+        text-align: left;
+        text-decoration: underline;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+    }
+
+    .org-feedback-form-modal_similar-event {
+        color: var(--ColorDarkGray);
+        text-decoration: none;
+    }
+}
+
+// Nächster Schritt des Formulars blendet sanft ein
+.org-feedback-form-modal .org-feedback-form-modal_step {
+    animation: org-feedback-form-step-in 0.2s ease-out;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+}
+
+@keyframes org-feedback-form-step-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+}

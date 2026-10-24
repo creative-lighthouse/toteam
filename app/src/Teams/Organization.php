@@ -53,6 +53,7 @@ class Organization extends DataObject implements PermissionProvider
         'skript'        => 'EnableSkript',
         'marketing'     => 'EnableMarketing',
         'inventory'     => 'EnableInventory',
+        'feedback'      => 'EnableFeedback',
     ];
 
     private static $db = [
@@ -72,6 +73,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableSkript"        => "Boolean(1)",
         "EnableMarketing"     => "Boolean(1)",
         "EnableInventory"     => "Boolean(1)",
+        "EnableFeedback"      => "Boolean(1)",
     ];
 
     private static $defaults = [
@@ -84,6 +86,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableSkript"        => true,
         "EnableMarketing"     => true,
         "EnableInventory"     => true,
+        "EnableFeedback"      => true,
     ];
 
     private static $has_one = [
@@ -127,6 +130,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableSkript"        => "Skript",
         "EnableMarketing"     => "Marketing",
         "EnableInventory"     => "Inventar",
+        "EnableFeedback"      => "Feedback",
     ];
 
     private static $table_name = 'Organization';
@@ -258,6 +262,7 @@ class Organization extends DataObject implements PermissionProvider
             OrgPermissions::STORAGE_CREATE,
             OrgPermissions::STORAGE_EDIT,
             OrgPermissions::STORAGE_DELETE,
+            OrgPermissions::FEEDBACK_MODERATE,
         ]);
         $moderator->write();
 

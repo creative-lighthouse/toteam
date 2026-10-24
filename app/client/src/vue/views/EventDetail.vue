@@ -143,6 +143,11 @@
               <OrgEventSitePlans :event="event" :state="planState" :editable="editing && planState.CanManage" @update="planState = $event" />
             </section>
 
+            <section v-if="feedbackState?.CanCreate" class="event-page_section">
+              <h2 class="hl3 event-page_subtitle">Feedback</h2>
+              <OrgEventFeedback :event="event" :items="feedbackState.feedback" @reload="loadFeedback" />
+            </section>
+
             <section v-if="planState?.items.length" class="event-page_section">
               <h2 class="hl3 event-page_subtitle">Ausgeliehenes Inventar</h2>
               <OrgEventInventory
@@ -265,6 +270,8 @@ import { useMasonry } from '@utils/useMasonry'
 import OrgEventFormModal from '@components/events/OrgEventFormModal.vue'
 import OrgEventMap from '@components/events/OrgEventMap.vue'
 import OrgEventInterestButtons from '@components/events/OrgEventInterestButtons.vue'
+import OrgEventFeedback from '@components/events/OrgEventFeedback.vue'
+import { useOrgFeedbackStore } from '@stores/orgFeedback'
 import actionShare from '../../../icons/actions/action_share.svg'
 import actionAddMessage from '../../../icons/actions/action_addmessage.svg'
 import OrgEventFeedShareModal from '@components/events/OrgEventFeedShareModal.vue'
@@ -281,6 +288,7 @@ const skriptStore = useSkriptStore()
 const eventsStore = useEventsStore()
 const moneyStore = useMoneyStore()
 const inventoryStore = useInventoryStore()
+const orgFeedbackStore = useOrgFeedbackStore()
 const pageHeader = usePageHeaderStore()
 
 const event = ref(null)
@@ -314,6 +322,9 @@ const sitePlanCreateModal = ref(null)
 const itemEditModal = ref(null)
 const rentalRequestModal = ref(null)
 const rentalDetailModal = ref(null)
+// Feedback zum Event (GET /orgfeedback/eventFeedback/{id}) — null, solange nicht geladen
+// oder wenn das Feedback-Totem fehlt
+const feedbackState = ref(null)
 
 // Ausleihen fürs Event beantragen (nur, wenn das Inventar-Totem aktiv ist)
 const canRequestRental = computed(() => !!planState.value?.CanRequestRental && authStore.hasTotem('inventory'))
@@ -375,7 +386,7 @@ const showLogin = computed(() =>
 // Zweispaltig nur, wenn es neben den Eckdaten etwas gibt — sonst bleibt die Seite einspaltig schmal
 const hasAside = computed(() => showLogin.value || (showInternal.value && !!(
   appointments.value.length || scriptState.value?.scripts.length || moneyState.value?.accounts.length
-  || planState.value?.plans.length || planState.value?.items.length
+  || planState.value?.plans.length || planState.value?.items.length || feedbackState.value?.CanCreate
 )))
 
 const layoutEl = ref(null)
@@ -450,6 +461,18 @@ async function openRentalRequest() {
 // Neuer Lageplan: gleich im Bearbeiten-Modus öffnen
 function onSitePlanCreated({ mapId }) {
   router.push({ name: 'MapDetail', params: { id: mapId }, query: { edit: 1 } })
+}
+
+async function loadFeedback() {
+  if (!authStore.hasTotem('feedback')) {
+    feedbackState.value = null
+    return
+  }
+  try {
+    feedbackState.value = await orgFeedbackStore.fetchEventFeedback(event.value.ID)
+  } catch {
+    feedbackState.value = null
+  }
 }
 
 async function loadPlans() {
@@ -572,6 +595,7 @@ async function load() {
       loadScripts()
       loadMoney()
       loadPlans()
+      loadFeedback()
     }
     pageHeader.setHeader(event.value.Title, event.value.OrganizationTitle ?? 'Event')
   } catch (e) {

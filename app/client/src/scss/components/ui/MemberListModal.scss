@@ -1,0 +1,49 @@
+.member-list-modal {
+    width: min(100% - 2rem, var(--WidthNarrow));
+
+    .app-modal_body {
+        text-align: left;
+    }
+
+    .member-list-modal_list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .member-list-modal_item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+
+        & + & {
+            border-top: 1px solid var(--ColorLightGray);
+        }
+    }
+
+    .member-list-modal_avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .member-list-modal_name {
+        flex: 1;
+        min-width: 0;
+        font-weight: bold;
+        overflow-wrap: anywhere;
+    }
+
+    .member-list-modal_date {
+        flex-shrink: 0;
+        font-size: 0.85rem;
+        color: var(--ColorDarkGray);
+    }
+
+    .member-list-modal_empty {
+        margin: 0;
+        color: var(--ColorDarkGray);
+    }
+}

@@ -1,57 +1,6 @@
 <template>
   <div class="script-editor">
-    <div v-if="editor" class="script-editor_toolbar">
-      <button
-        type="button"
-        class="script-editor_toolbar-btn"
-        :class="{ 'script-editor_toolbar-btn--active': editor.isActive('bold') }"
-        title="Fett"
-        @click="editor.chain().focus().toggleBold().run()"
-      ><strong>F</strong></button>
-      <button
-        type="button"
-        class="script-editor_toolbar-btn"
-        :class="{ 'script-editor_toolbar-btn--active': editor.isActive('italic') }"
-        title="Kursiv"
-        @click="editor.chain().focus().toggleItalic().run()"
-      ><em>K</em></button>
-      <button
-        type="button"
-        class="script-editor_toolbar-btn"
-        :class="{ 'script-editor_toolbar-btn--active': editor.isActive('underline') }"
-        title="Unterstrichen"
-        @click="editor.chain().focus().toggleUnderline().run()"
-      ><u>U</u></button>
-
-      <span class="script-editor_toolbar-sep" />
-
-      <button
-        v-for="level in [2, 3, 4]"
-        :key="level"
-        type="button"
-        class="script-editor_toolbar-btn"
-        :class="{ 'script-editor_toolbar-btn--active': editor.isActive('heading', { level }) }"
-        :title="`Überschrift ${level}`"
-        @click="editor.chain().focus().toggleHeading({ level }).run()"
-      >H{{ level }}</button>
-
-      <span class="script-editor_toolbar-sep" />
-
-      <button
-        type="button"
-        class="script-editor_toolbar-btn"
-        :class="{ 'script-editor_toolbar-btn--active': editor.isActive('bulletList') }"
-        title="Aufzählungsliste"
-        @click="editor.chain().focus().toggleBulletList().run()"
-      >•</button>
-      <button
-        type="button"
-        class="script-editor_toolbar-btn"
-        :class="{ 'script-editor_toolbar-btn--active': editor.isActive('orderedList') }"
-        title="Nummerierte Liste"
-        @click="editor.chain().focus().toggleOrderedList().run()"
-      >1.</button>
-    </div>
+    <AppRichTextToolbar v-if="editor" :editor="editor" class="script-editor_toolbar" />
 
     <EditorContent :editor="editor" class="script-editor_text" />
   </div>
@@ -61,6 +10,7 @@
 import { ref, provide, computed } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
+import AppRichTextToolbar from '@components/ui/AppRichTextToolbar.vue'
 import { useSkriptStore } from '@stores/skript'
 import {
   ScriptParagraphNode,

@@ -15,6 +15,8 @@ use App\Calendar\Appointment;
 use App\Calendar\SchedulingPoll;
 use App\Inventory\InventoryDamageReport;
 use App\Inventory\InventoryRental;
+use App\OrgFeedback\OrgFeedback;
+use App\OrgFeedback\OrgFeedbackComment;
 use SilverStripe\Security\Member;
 use SilverStripe\Core\Environment;
 
@@ -38,6 +40,7 @@ class PushNotificationService
         'maps'          => 'NotifyMaps',
         'applications'  => 'NotifyApplications',
         'inventory'     => 'NotifyInventory',
+        'feedback'      => 'NotifyFeedback',
     ];
 
     private static ?string $cachedAccessToken = null;
@@ -318,6 +321,38 @@ class PushNotificationService
             'Mitgliedschaft beendet',
             'Du bist nicht mehr Mitglied von "' . $org->Title . '".',
             '/app/organizations'
+        );
+    }
+
+    // ── Feedback ─────────────────────────────────────────────────────────────
+
+    /**
+     * Neuer Kommentar zu einem Feedback — an den Verfasser des Feedbacks und alle, die
+     * vorher schon kommentiert haben (außer dem Kommentierenden selbst)
+     */
+    public static function notifyFeedbackComment(OrgFeedbackComment $comment): void
+    {
+        $feedback = $comment->Feedback();
+        $author = $comment->Author();
+        if (!$feedback || !$feedback->exists()) {
+            return;
+        }
+
+        $recipients = array_merge(
+            [$feedback->AuthorID],
+            OrgFeedbackComment::get()->filter('FeedbackID', $feedback->ID)->column('AuthorID')
+        );
+        $text = preg_replace('/\s+/', ' ', (string) $comment->Content) ?? '';
+        $excerpt = mb_strlen($text) > 120 ? rtrim(mb_substr($text, 0, 119)) . '…' : $text;
+
+        self::deliver(
+            $recipients,
+            [(int) $feedback->OrganizationID],
+            'feedback',
+            '💬 ' . ($author && $author->exists() ? $author->getDisplayName() : 'Jemand') . ' zu "' . $feedback->Title . '"',
+            $excerpt,
+            $feedback->Link(),
+            [$comment->AuthorID]
         );
     }
 
