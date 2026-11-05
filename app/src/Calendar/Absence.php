@@ -64,32 +64,53 @@ class Absence extends DataObject
 
     /**
      * Check whether this absence applies to the given date string (YYYY-MM-DD).
+     *
+     * DateStart–DateEnd is the first occurrence; recurring absences repeat that
+     * whole span (e.g. weekly Mon–Wed covers every Mon, Tue and Wed).
      */
     public function appliesToDate(string $date): bool
     {
-        $start = strtotime($this->DateStart);
-        $end   = $this->DateEnd ? strtotime($this->DateEnd) : $start;
-        $check = strtotime($date);
+        $start = new \DateTimeImmutable(substr((string) $this->DateStart, 0, 10));
+        $end   = $this->DateEnd ? new \DateTimeImmutable(substr((string) $this->DateEnd, 0, 10)) : $start;
+        $check = new \DateTimeImmutable(substr($date, 0, 10));
 
         if ($check < $start) {
             return false;
         }
+        if ($end < $start) {
+            $end = $start;
+        }
 
+        if ($this->Recurrence === 'Never' || !$this->Recurrence) {
+            return $check <= $end;
+        }
+
+        // Is there an occurrence starting within the last $duration days?
+        $duration = min((int) $start->diff($end)->days, 366);
+        for ($k = 0; $k <= $duration; $k++) {
+            $candidate = $check->modify("-{$k} days");
+            if ($candidate < $start) {
+                break;
+            }
+            if ($this->isOccurrenceStart($start, $candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isOccurrenceStart(\DateTimeImmutable $start, \DateTimeImmutable $candidate): bool
+    {
         switch ($this->Recurrence) {
-            case 'Never':
-                return $check <= $end;
-
             case 'Daily':
                 return true;
-
             case 'Weekly':
-                return date('N', $check) === date('N', $start);
-
+                return $candidate->format('N') === $start->format('N');
             case 'Monthly':
-                return date('d', $check) === date('d', $start);
-
+                return $candidate->format('d') === $start->format('d');
             case 'Yearly':
-                return date('m-d', $check) === date('m-d', $start);
+                return $candidate->format('m-d') === $start->format('m-d');
         }
 
         return false;
