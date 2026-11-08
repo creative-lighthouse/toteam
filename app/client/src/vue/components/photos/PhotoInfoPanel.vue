@@ -106,6 +106,22 @@
         @remove="emit('change', { field: 'Characters', remove: $event.id })"
       />
 
+      <!-- Räume: Inventar-Räume der Organisation und gezeichnete Räume auf den Lageplänen
+           des Events (IDs mit "r"/"a" davor, damit sie sich nicht in die Quere kommen) -->
+      <PhotoTagSection
+        v-if="(photo.CanTag.Rooms && roomOptions.length) || roomItems.length"
+        title="Räume"
+        add-label="Raum hinzufügen"
+        placeholder="Raum suchen…"
+        :items="roomItems"
+        :options="roomOptions"
+        :can-add="photo.CanTag.Rooms"
+        :removable="() => photo.CanTag.Rooms"
+        :disabled="busy"
+        @add="emit('change', roomChange($event.id, 'add'))"
+        @remove="emit('change', roomChange($event.id, 'remove'))"
+      />
+
       <PhotoTagSection
         v-if="photo.CanTag.Tags || photo.Tags.length"
         title="Schlagworte"
@@ -182,6 +198,26 @@ const eventOptions = computed(() => {
   const current = props.photo?.Events[0]
   return current && !list.some(e => e.ID === current.ID) ? [current, ...list] : list
 })
+
+// ── Räume: Inventar-Räume + Räume (Flächen) auf den Lageplänen der Events des Fotos ──
+const roomItems = computed(() => [
+  ...(props.photo?.Rooms ?? []).map(r => ({ id: `r${r.ID}`, label: r.Title })),
+  ...(props.photo?.MapAreas ?? []).map(a => ({ id: `a${a.ID}`, label: a.Title })),
+])
+const roomOptions = computed(() => {
+  const eventIds = new Set((props.photo?.Events ?? []).map(e => e.ID))
+  return [
+    ...(props.options?.rooms ?? []).map(r => ({ id: `r${r.ID}`, label: r.Title, hint: 'Inventar' })),
+    ...(props.options?.areas ?? [])
+      .filter(a => eventIds.has(a.EventID))
+      .map(a => ({ id: `a${a.ID}`, label: a.Title, hint: a.Plan ? `Lageplan: ${a.Plan}` : 'Lageplan' })),
+  ]
+})
+
+function roomChange(key, action) {
+  const field = key.startsWith('a') ? 'MapAreas' : 'Rooms'
+  return { field, [action]: Number(key.slice(1)) }
+}
 
 // 0/0 ist kein echter Aufnahmeort (so stehen Fotos ohne GPS in der Datenbank)
 const hasLocation = computed(() => {

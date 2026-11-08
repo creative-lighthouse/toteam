@@ -18,4 +18,13 @@
         font-weight: 500;
         color: var(--ColorGray);
     }
+
+    .map-poi-modal_photos {
+        margin: 1rem 0 0;
+
+        a {
+            color: var(--ColorPrimary);
+            font-weight: 600;
+        }
+    }
 }

@@ -94,5 +94,9 @@
         &--character {
             box-shadow: inset 3px 0 0 var(--ColorSecondary);
         }
+
+        &--room {
+            box-shadow: inset 3px 0 0 var(--ColorGray);
+        }
     }
 }

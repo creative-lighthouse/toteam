@@ -2,6 +2,8 @@
 
 namespace App\Photos;
 
+use App\Maps\MapPOI;
+use App\Rooms\Room;
 use App\Skript\ScriptRole;
 use App\Teams\Organization;
 use App\Teams\OrgEvent;
@@ -44,6 +46,8 @@ use SilverStripe\Security\Member;
  * @method \SilverStripe\ORM\ManyManyList|\App\Teams\OrgEvent[] Events()
  * @method \SilverStripe\ORM\ManyManyList|\SilverStripe\Security\Member[] People()
  * @method \SilverStripe\ORM\ManyManyList|\App\Skript\ScriptRole[] Characters()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Rooms\Room[] Rooms()
+ * @method \SilverStripe\ORM\ManyManyList|\App\Maps\MapPOI[] MapAreas()
  * @method \SilverStripe\ORM\ManyManyList|\App\Photos\PhotoTag[] Tags()
  */
 class Photo extends DataObject
@@ -79,6 +83,10 @@ class Photo extends DataObject
         "People"     => Member::class,
         "Characters" => ScriptRole::class,
         "Tags"       => PhotoTag::class,
+        // Räume der Organisation (wo das Foto entstanden ist)
+        "Rooms"      => Room::class,
+        // Räume als Fläche auf den Lageplänen der Events des Fotos (MapPOI mit Type "area")
+        "MapAreas"   => MapPOI::class,
     ];
 
     private static $indexes = [
@@ -99,6 +107,8 @@ class Photo extends DataObject
         "People"       => "Personen",
         "Characters"   => "Charaktere",
         "Tags"         => "Schlagworte",
+        "Rooms"        => "Räume",
+        "MapAreas"     => "Räume (Lageplan)",
     ];
 
     private static $summary_fields = [
@@ -154,6 +164,8 @@ class Photo extends DataObject
         $this->Events()->removeAll();
         $this->People()->removeAll();
         $this->Characters()->removeAll();
+        $this->Rooms()->removeAll();
+        $this->MapAreas()->removeAll();
         $this->Tags()->removeAll();
 
         $storage = $this->storage();

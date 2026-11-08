@@ -274,11 +274,12 @@ function fieldsFor(detail, change) {
   const { field } = change
   if (field === 'Title' || field === 'Description' || field === 'Copyright') return { [field]: change.set }
   if (field === 'Events') return { EventIDs: change.set ? [change.set] : [] }
-  if (field === 'People' || field === 'Characters') {
-    let ids = detail[field].map(x => x.ID)
+  const idFields = { People: 'PeopleIDs', Characters: 'CharacterIDs', Rooms: 'RoomIDs', MapAreas: 'AreaIDs' }
+  if (idFields[field]) {
+    let ids = (detail[field] ?? []).map(x => x.ID)
     if (change.add) ids = ids.includes(change.add) ? ids : [...ids, change.add]
     if (change.remove) ids = ids.filter(x => x !== change.remove)
-    return { [field === 'People' ? 'PeopleIDs' : 'CharacterIDs']: ids }
+    return { [idFields[field]]: ids }
   }
   if (field === 'Tags') {
     let titles = detail.Tags.map(t => t.Title)

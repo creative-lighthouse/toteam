@@ -62,6 +62,12 @@ class Map extends DataObject implements PermissionProvider
         "MapLayers" => MapLayer::class,
     ];
 
+    // Ebenen (und über sie die Marker und Räume) gehören zum Plan — früher blieben sie
+    // beim Löschen verwaist zurück
+    private static $cascade_deletes = [
+        "MapLayers",
+    ];
+
     private static $defaults = [
         "Active" => true,
     ];
@@ -191,6 +197,15 @@ class Map extends DataObject implements PermissionProvider
             ...OrgEventItemPlacement::get()->filter('MapID', $this->ID)->toArray(),
         ];
         foreach ($records as $record) {
+            // Flächen: alle Eckpunkte umrechnen (der Mittelpunkt ergibt sich daraus neu)
+            if ($record instanceof MapPOI && $record->Type === 'area') {
+                $moved = array_filter(array_map(fn (array $p) => self::transformPoint($p, $old, $new), $record->getShapePoints()));
+                if ($moved) {
+                    $record->setShapePoints($moved);
+                    $record->write();
+                }
+                continue;
+            }
             $point = self::parseCoordinates($record->Coordinates);
             if (!$point) {
                 continue;
@@ -284,13 +299,17 @@ class Map extends DataObject implements PermissionProvider
             $keepRooms = (int) $this->ParentID === (int) $event->OrganizationID;
             foreach ($layer->POIs() as $poi) {
                 $isRoom = $poi->Type === 'room' && $keepRooms;
+                // Flächen (Räume eines Events) werden neue, eigene Flächen des neuen Events —
+                // Fotos des alten Events bleiben an den alten
+                $isArea = $poi->Type === 'area';
                 MapPOI::create([
                     'Title'       => $poi->Title,
                     'MarkerText'  => $poi->getField('MarkerText'),
                     'Description' => $poi->Description,
                     'Active'      => $poi->Active,
                     'Coordinates' => $poi->Coordinates,
-                    'Type'        => $isRoom ? 'room' : 'marker',
+                    'Type'        => $isArea ? 'area' : ($isRoom ? 'room' : 'marker'),
+                    'Shape'       => $isArea ? $poi->Shape : null,
                     'RoomID'      => $isRoom ? $poi->RoomID : 0,
                     'ParentID'    => $layerCopy->ID,
                 ])->write();

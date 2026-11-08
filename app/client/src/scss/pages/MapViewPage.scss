@@ -762,3 +762,35 @@
         }
     }
 }
+
+// Raum (Fläche) zeichnen: Hinweis und Knöpfe über dem Plan (views/MapDetail.vue)
+.section--MapView .map-area-toolbar {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem 1rem;
+    width: max-content;
+    max-width: calc(100% - 32px);
+    padding: 0.75rem 1rem;
+    border-radius: var(--BorderRadiusMedium);
+    background: var(--ColorWhite);
+    color: var(--ColorBlack);
+    box-shadow: var(--BoxShadowMenu);
+    transform: translateX(-50%);
+
+    .map-area-toolbar_text {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .map-area-toolbar_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}

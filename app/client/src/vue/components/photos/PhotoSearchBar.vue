@@ -1,7 +1,7 @@
 <!--
   Suchleiste der Foto-Galerie mit Such-Helfern. Freitext sucht überall (Titel, Beschreibung,
-  Personen, Charaktere, Schlagworte); mit Präfix nur in einer Art und nach genau diesem
-  Namen: person:Max, charakter:Andrea, schlagwort:"Mit Leerzeichen".
+  Personen, Charaktere, Räume, Schlagworte); mit Präfix nur in einer Art und nach genau diesem
+  Namen: person:Max, charakter:Andrea, raum:Keller, schlagwort:"Mit Leerzeichen".
   Beim Tippen schlägt sie passende Tags vor — Auswahl setzt das Präfix automatisch.
   Gleicher Aufbau wie AppSearchBar (dieselben Klassen), plus Vorschlagsliste.
 
@@ -19,7 +19,7 @@
           type="search"
           class="app-search-bar_input"
           :value="modelValue"
-          placeholder="Personen, Charaktere, Schlagworte suchen…"
+          placeholder="Personen, Charaktere, Räume, Schlagworte suchen…"
           aria-label="Fotos durchsuchen"
           autocomplete="off"
           autocorrect="off"
@@ -77,9 +77,10 @@ const uid = `photo-search-${Math.random().toString(36).slice(2)}`
 // Präfix, das beim Auswählen eingesetzt wird, und welche Präfixe beim Tippen erkannt werden
 // (dieselben wie im Backend, PhotosApiController::SEARCH_PREFIXES)
 const KINDS = {
-  people: { prefix: 'person', label: 'Person', aliases: ['person', 'personen'] },
-  characters: { prefix: 'charakter', label: 'Charakter', aliases: ['charakter', 'character', 'charaktere', 'rolle'] },
-  tags: { prefix: 'schlagwort', label: 'Schlagwort', aliases: ['schlagwort', 'tag'] },
+  people: { prefix: 'person', label: 'Person', plural: 'Personen', aliases: ['person', 'personen'] },
+  characters: { prefix: 'charakter', label: 'Charakter', plural: 'Charaktere', aliases: ['charakter', 'character', 'charaktere', 'rolle'] },
+  rooms: { prefix: 'raum', label: 'Raum', plural: 'Räume', aliases: ['raum', 'room'] },
+  tags: { prefix: 'schlagwort', label: 'Schlagwort', plural: 'Schlagworte', aliases: ['schlagwort', 'tag'] },
 }
 
 const inputEl = ref(null)
@@ -114,6 +115,14 @@ function candidates(kind) {
   if (!o) return []
   if (kind === 'people') return o.people.map(p => ({ id: p.ID, label: p.Name, hint: p.IsGuest ? 'Gast' : '' }))
   if (kind === 'characters') return o.characters.map(c => ({ id: c.ID, label: c.Title, hint: c.Script || '' }))
+  if (kind === 'rooms') {
+    // Inventar-Räume und Räume auf Event-Lageplänen; gleiche Namen nur einmal vorschlagen
+    const seen = new Set()
+    return [
+      ...(o.rooms ?? []).map(r => ({ id: `r${r.ID}`, label: r.Title, hint: '' })),
+      ...(o.areas ?? []).map(a => ({ id: `a${a.ID}`, label: a.Title, hint: a.Plan || '' })),
+    ].filter(r => !seen.has(r.label.toLowerCase()) && seen.add(r.label.toLowerCase()))
+  }
   return o.tags.map(t => ({ id: t.ID, label: t.Title, hint: '' }))
 }
 
@@ -124,7 +133,7 @@ const suggestions = computed(() => {
   // Leeres Feld bzw. gerade ein Leerzeichen getippt: die Präfixe als Hilfe anbieten
   if (!token.hasPrefix && !token.value) {
     return Object.entries(KINDS).map(([kind, def]) => ({
-      key: `prefix-${kind}`, kind, kindLabel: 'Suchen nach', label: `${def.prefix}:`, hint: `nur ${def.label === 'Person' ? 'Personen' : `${def.label}e`}`, prefixOnly: true,
+      key: `prefix-${kind}`, kind, kindLabel: 'Suchen nach', label: `${def.prefix}:`, hint: `nur ${def.plural}`, prefixOnly: true,
     }))
   }
 

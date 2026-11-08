@@ -6,15 +6,18 @@
     <template v-if="mode === 'view'">
       <p v-if="form.description" class="map-poi-modal_description"><AppLinkifiedText :text="form.description" /></p>
       <p v-else class="map-poi-modal_empty">Keine Beschreibung vorhanden.</p>
+      <p v-if="photosLink" class="map-poi-modal_photos">
+        <router-link :to="photosLink" @click="close">Fotos aus diesem Raum ansehen →</router-link>
+      </p>
     </template>
 
     <form v-else :id="formId" class="modalform" @submit.prevent="submit">
-      <label class="field field--4">
-        Titel *
-        <input v-model="form.title" type="text" placeholder="z.B. Eingang, Bühne" required autofocus>
+      <label class="field" :class="{ 'field--4': !isArea }">
+        {{ isArea ? 'Name des Raums *' : 'Titel *' }}
+        <input v-model="form.title" type="text" :placeholder="isArea ? 'z.B. Bühne, Kasse, Gruselgang' : 'z.B. Eingang, Bühne'" required autofocus>
       </label>
 
-      <label class="field field--2">
+      <label v-if="!isArea" class="field field--2">
         Marker-Text
         <input v-model="form.markerText" type="text" maxlength="4" :placeholder="markerTextPlaceholder" autocomplete="off">
       </label>
@@ -24,7 +27,9 @@
         <textarea v-model="form.description" rows="3" placeholder="Optional, z.B. Hinweise für Helfer…" />
       </label>
 
-      <label v-if="mode === 'edit'" class="field">
+      <p v-if="isArea && mode === 'create'" class="field map-poi-modal_hint">Danach tippst du die Eckpunkte des Raums nacheinander auf den Plan.</p>
+      <p v-else-if="isArea" class="field map-poi-modal_hint">Die Form änderst du direkt auf dem Plan, indem du die Eckpunkte verschiebst.</p>
+      <label v-else-if="mode === 'edit'" class="field">
         Koordinaten (Lat, Lng)
         <input v-model="form.position" type="text" placeholder="53.6371, 10.3829" autocomplete="off">
         <span class="map-poi-modal_hint">Am einfachsten verschiebst du den Marker direkt auf der Karte.</span>
@@ -64,20 +69,28 @@ let currentPoiData = null
 let createContext = null
 
 const form = reactive({ title: '', markerText: '', description: '', position: '' })
+// 'marker' oder 'area' (Raum als Fläche auf einem Event-Lageplan)
+const kind = ref('marker')
+const isArea = computed(() => kind.value === 'area')
+// Ansehen eines Raums: Link zu seinen Fotos (Route-Objekt) oder null
+const photosLink = ref(null)
 
 const modalTitle = computed(() => {
-  if (mode.value === 'create') return 'Neuer Marker'
-  if (mode.value === 'edit') return 'Marker bearbeiten'
-  return form.title || 'Marker'
+  const noun = isArea.value ? 'Raum' : 'Marker'
+  if (mode.value === 'create') return isArea.value ? 'Neuer Raum' : 'Neuer Marker'
+  if (mode.value === 'edit') return `${noun} bearbeiten`
+  return form.title || noun
 })
 
 // Ohne Marker-Text zeigt der Marker den ersten Buchstaben des Titels
 const markerTextPlaceholder = computed(() => (form.title.trim().charAt(0).toUpperCase() || 'z.B. A1'))
 
 /** Marker ansehen (editable = false) oder bearbeiten; poiData wie vom MapRenderer ({ layerId, poiId, poi }) */
-function open(poiData, { editable = false } = {}) {
+function open(poiData, { editable = false, kind: openKind = null, photosLink: link = null } = {}) {
   currentPoiData = poiData
   createContext = null
+  kind.value = openKind ?? (poiData.poi.type === 'area' ? 'area' : 'marker')
+  photosLink.value = link
   mode.value = editable ? 'edit' : 'view'
   const poi = poiData.poi
   Object.assign(form, {
@@ -91,9 +104,11 @@ function open(poiData, { editable = false } = {}) {
 }
 
 /** Neuen Marker anlegen; context wird mit dem create-Event zurückgegeben (z.B. die Ebene) */
-function openCreate(context = null) {
+function openCreate(context = null, { kind: openKind = 'marker' } = {}) {
   currentPoiData = null
   createContext = context
+  kind.value = openKind
+  photosLink.value = null
   mode.value = 'create'
   Object.assign(form, { title: '', markerText: '', description: '', position: '' })
   error.value = null
@@ -122,6 +137,12 @@ function submit() {
     return
   }
   const result = values()
+  // Räume: Form und Mittelpunkt kommen vom Plan, nur Name und Beschreibung ändern sich hier
+  if (isArea.value) {
+    emit('save', currentPoiData, { title: result.title, description: result.description })
+    close()
+    return
+  }
   if (!COORDINATES.test(result.position)) {
     error.value = 'Ungültige Koordinaten. Bitte als „Breitengrad, Längengrad“ angeben, z.B. 53.6371, 10.3829.'
     return
@@ -131,7 +152,7 @@ function submit() {
 }
 
 function remove() {
-  if (!confirm(`Marker „${form.title || currentPoiData.poi.title}“ wirklich löschen?`)) return
+  if (!confirm(`${isArea.value ? 'Raum' : 'Marker'} „${form.title || currentPoiData.poi.title}“ wirklich löschen?`)) return
   emit('delete', currentPoiData)
   close()
 }

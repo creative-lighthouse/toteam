@@ -54,6 +54,10 @@ class MapLayer extends DataObject implements PermissionProvider
         'POIs',
     ];
 
+    private static $cascade_deletes = [
+        'POIs',
+    ];
+
     private static $defaults = [
         "Active" => true,
     ];

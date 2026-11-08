@@ -257,6 +257,10 @@ class MapsApiController extends ApiController
                     'markerColor' => $poi->getMarkerColor(),
                     'markerText'  => $poi->getMarkerText(),
                     'type'        => $poi->Type ?: 'marker',
+                    // Fläche: Eckpunkte als "lat,lng" wie position
+                    'shape'       => $poi->Type === 'area'
+                        ? array_map(fn (array $p) => $p[0] . ',' . $p[1], $poi->getShapePoints())
+                        : null,
                     'roomId'      => ($poiRoom && $poiRoom->exists()) ? $poiRoom->ID : null,
                     'room'        => ($poiRoom && $poiRoom->exists()) ? [
                         'id'    => $poiRoom->ID,
@@ -624,7 +628,25 @@ class MapsApiController extends ApiController
                     }
 
                     $type = $poiData['type'] ?? 'marker';
-                    if ($type === 'room') {
+                    if ($type === 'area') {
+                        // Räume als Fläche gibt es nur auf Lageplänen eines Events
+                        if (!$layerMap->EventID) {
+                            return $this->errorResponse('Räume als Fläche gibt es nur auf Lageplänen eines Events', 400);
+                        }
+                        $points = [];
+                        foreach (is_array($poiData['shape'] ?? null) ? $poiData['shape'] : [] as $value) {
+                            $point = Map::parseCoordinates(is_string($value) ? $value : null);
+                            if ($point) {
+                                $points[] = $point;
+                            }
+                        }
+                        if (count($points) < 3 || count($points) > MapPOI::MAX_SHAPE_POINTS) {
+                            return $this->errorResponse(sprintf('Der Raum „%s“ braucht mindestens 3 Eckpunkte', $poiData['title'] ?? ''), 400);
+                        }
+                        $poi->Type = 'area';
+                        $poi->RoomID = 0;
+                        $poi->setShapePoints($points);
+                    } elseif ($type === 'room') {
                         $roomID = (int) ($poiData['roomId'] ?? 0);
                         $room   = $roomID ? Room::get()->byID($roomID) : null;
                         if (!$room || !$room->exists() || (int) $room->OrganizationID !== (int) $layerOrg->ID) {
@@ -635,6 +657,7 @@ class MapsApiController extends ApiController
                     } else {
                         $poi->Type   = 'marker';
                         $poi->RoomID = 0;
+                        $poi->Shape  = null;
                     }
 
                     $poi->write();
