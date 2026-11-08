@@ -10,7 +10,7 @@
       ]"
     />
 
-  Icons: list, grid, kanban, table. Für Werte in Formularen AppSegmentedToggle nehmen.
+  Icons: list, grid, grid-small (feinere Kacheln), kanban, table. Für Werte in Formularen AppSegmentedToggle nehmen.
 -->
 <template>
   <div class="app-view-toggle" role="group" aria-label="Ansicht">
@@ -33,6 +33,11 @@
         <template v-else-if="opt.icon === 'grid'">
           <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
           <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+        </template>
+        <template v-else-if="opt.icon === 'grid-small'">
+          <rect x="3" y="3" width="4.5" height="4.5" rx="0.5" /><rect x="9.75" y="3" width="4.5" height="4.5" rx="0.5" /><rect x="16.5" y="3" width="4.5" height="4.5" rx="0.5" />
+          <rect x="3" y="9.75" width="4.5" height="4.5" rx="0.5" /><rect x="9.75" y="9.75" width="4.5" height="4.5" rx="0.5" /><rect x="16.5" y="9.75" width="4.5" height="4.5" rx="0.5" />
+          <rect x="3" y="16.5" width="4.5" height="4.5" rx="0.5" /><rect x="9.75" y="16.5" width="4.5" height="4.5" rx="0.5" /><rect x="16.5" y="16.5" width="4.5" height="4.5" rx="0.5" />
         </template>
         <template v-else-if="opt.icon === 'kanban'">
           <rect x="3" y="3" width="5" height="18" rx="1" /><rect x="10" y="3" width="5" height="12" rx="1" /><rect x="17" y="3" width="5" height="7" rx="1" />

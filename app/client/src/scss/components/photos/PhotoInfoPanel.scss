@@ -1,0 +1,123 @@
+.photo-info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 16px;
+    overflow-y: auto;
+    background: var(--ColorWhite);
+    color: var(--ColorBlack);
+    text-align: left;
+    overscroll-behavior: contain;
+
+    p {
+        margin: 0;
+    }
+
+    .photo-info-panel_head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .photo-info-panel_title {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+        font-size: 1.1rem;
+        overflow-wrap: anywhere;
+    }
+
+    .photo-info-panel_close {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 50%;
+        background: var(--ColorVeryLightGray);
+        color: var(--ColorBlack);
+        cursor: pointer;
+    }
+
+    .photo-info-panel_description {
+        white-space: pre-line;
+    }
+
+    // Copyright: © davor, der Text daneben zum Anklicken
+    .photo-info-panel_copyright {
+        display: flex;
+        align-items: baseline;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--ColorDarkGray);
+    }
+
+    .photo-info-panel_copyright-sign {
+        flex-shrink: 0;
+    }
+
+    .photo-info-panel_copyright-text {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    // Event in einer Zeile: Beschriftung, Auswahl, Link zur Event-Seite
+    .photo-info-panel_row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .photo-info-panel_row-label {
+        flex-shrink: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .photo-info-panel_event-select {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: auto;
+        margin: 0;
+    }
+
+    .photo-info-panel_event-link {
+        flex-shrink: 0;
+        color: var(--ColorPrimary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .photo-info-panel_facts {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.9rem;
+        color: var(--ColorDarkGray);
+    }
+
+    .photo-info-panel_loading {
+        font-size: 0.9rem;
+        color: var(--ColorGray);
+    }
+
+    .photo-info-panel_error {
+        color: var(--ColorStatusBad);
+    }
+
+    .photo-info-panel_actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: auto;
+        padding-top: 0.5rem;
+    }
+
+    .photo-info-panel_delete {
+        margin-left: auto;
+    }
+}

@@ -1,0 +1,47 @@
+.photo-storage-settings-modal {
+    .app-modal_body {
+        text-align: left;
+    }
+
+    // .modalform ist ein 6-Spalten-Raster, in dem nur .field über die volle Breite geht —
+    // Hinweise, Listen und die Anleitung sollen das auch
+    .modalform > :not(.field) {
+        grid-column: 1 / -1;
+    }
+
+    .photo-storage-settings-modal_help {
+        margin-bottom: 1rem;
+    }
+
+    .photo-storage-settings-modal_steps {
+        margin: 0;
+        padding-left: 1.25rem;
+
+        li {
+            margin-bottom: 0.4rem;
+        }
+    }
+
+    .photo-storage-settings-modal_usage {
+        margin: 0 0 1rem;
+        font-size: 0.9rem;
+    }
+
+    .photo-storage-settings-modal_warning {
+        margin: 0 0 1rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: var(--BorderRadiusSmall);
+        background: var(--ColorStatusWarningAccent);
+        font-size: 0.9rem;
+    }
+
+    .photo-storage-settings-modal_ok {
+        color: var(--ColorStatusGood);
+        font-weight: 600;
+    }
+
+    .photo-storage-settings-modal_loading {
+        padding: 1rem;
+        text-align: center;
+    }
+}

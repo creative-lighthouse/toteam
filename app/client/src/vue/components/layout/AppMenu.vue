@@ -169,6 +169,16 @@
                     </router-link>
                 </li>
 
+                <li v-if="authStore.hasTotem('photos')">
+                    <router-link data-secondary-item to="/photos" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Photos' }" @click="closeAllMenus">
+                        <div class="nav_icon">
+                            <!-- Platzhalter, bis es ein eigenes Totem-Logo gibt -->
+                            <img :src="fotosTotem" alt="" class="nav_image">
+                        </div>
+                        <p class="nav_title">Fotos <span class="nav_alpha">Alpha</span></p>
+                    </router-link>
+                </li>
+
                 <li>
                     <router-link data-secondary-item to="/money" :aria-label="pendingEntries ? `Geld, ${pendingEntries === 1 ? '1 Buchung zu genehmigen' : `${pendingEntries} Buchungen zu genehmigen`}` : undefined" class="nav_link" :class="{ 'nav_link--active': $route.name === 'Money' || $route.name === 'MoneyAccountDetail' }" @click="closeAllMenus">
                         <div class="nav_icon">
@@ -259,6 +269,8 @@ import inventarTotem from '../../../../icons/totems/inventar_totem.png'
 import kummerkastenTotem from '../../../../icons/totems/kummerkasten_totem.png'
 import geldTotem from '../../../../icons/totems/geld_totem.png'
 import kartenTotem from '../../../../icons/totems/karten_totem.png'
+// TODO: eigenes Logo für das Foto-Totem
+import fotosTotem from '../../../../icons/totems/marketing_totem.png'
 import organizationsTotem from '../../../../icons/totems/organizations_totem.png'
 import actionLogout from '../../../../icons/actions/action_logout.svg'
 import actionSettings from '../../../../icons/actions/action_settings.svg'

@@ -1,0 +1,142 @@
+.photo-tag-section {
+    position: relative;
+
+    .photo-tag-section_title {
+        margin: 0 0 0.35rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .photo-tag-section_chips {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .photo-tag-section_chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.15rem 0.3rem 0.15rem 0.6rem;
+        border-radius: 1rem;
+        background: var(--ColorVeryLightGray);
+        color: var(--ColorBlack);
+        font-size: 0.9rem;
+
+        // Ohne Entfernen-Knopf rechts gleich viel Abstand wie links
+        &:not(:has(.photo-tag-section_remove)) {
+            padding-right: 0.6rem;
+        }
+    }
+
+    .photo-tag-section_avatar {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .photo-tag-section_remove {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.25rem;
+        height: 1.25rem;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        color: var(--ColorDarkGray);
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--ColorLightGray);
+            color: var(--ColorBlack);
+        }
+    }
+
+    .photo-tag-section_add {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.9rem;
+        height: 1.9rem;
+        padding: 0;
+        border: 1px dashed var(--ColorGray);
+        border-radius: 50%;
+        background: none;
+        color: var(--ColorDarkGray);
+        font-size: 1.1rem;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            border-style: solid;
+            border-color: var(--ColorPrimary);
+            color: var(--ColorPrimary);
+        }
+    }
+
+    .photo-tag-section_none {
+        color: var(--ColorGray);
+    }
+
+    .photo-tag-section_picker {
+        position: relative;
+        margin-top: 0.5rem;
+    }
+
+    .photo-tag-section_input {
+        width: 100%;
+        padding: 0.4rem 0.6rem;
+        border: 1px solid var(--ColorPrimary);
+        border-radius: var(--BorderRadiusSmall);
+        background: var(--ColorWhite);
+        color: var(--ColorBlack);
+        font: inherit;
+        box-sizing: border-box;
+    }
+
+    .photo-tag-section_list {
+        margin: 0.25rem 0 0;
+        padding: 0.25rem;
+        list-style: none;
+        border-radius: var(--BorderRadiusSmall);
+        background: var(--ColorWhite);
+        box-shadow: var(--BoxShadowMenu);
+    }
+
+    .photo-tag-section_option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 0.9rem;
+        cursor: pointer;
+
+        &--active {
+            background: var(--ColorVeryLightGray);
+        }
+    }
+
+    .photo-tag-section_hint {
+        margin-left: auto;
+        font-size: 0.8rem;
+        color: var(--ColorGray);
+    }
+
+    .photo-tag-section_empty {
+        margin: 0.35rem 0 0;
+        font-size: 0.85rem;
+        color: var(--ColorGray);
+    }
+}

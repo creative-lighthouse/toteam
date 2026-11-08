@@ -262,6 +262,36 @@ export async function apiPostForm(endpoint, formData) {
 }
 
 /**
+ * Lädt eine Datei vom Server (mit Anmeldung) und lässt den Browser sie speichern.
+ * Ein einfacher Link reicht dafür nicht, weil der Zugang per Authorization-Header läuft.
+ * Wirft bei Fehlern mit der Meldung des Servers.
+ */
+export async function apiDownload(endpoint, filename) {
+  const url = `${API_BASE}${endpoint}`
+  const doFetch = () => fetch(url, { headers: authHeaders(), credentials: 'same-origin' })
+
+  let response = await doFetch()
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) response = await doFetch()
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new Error(data?.error || `Download fehlgeschlagen (${response.status})`)
+  }
+
+  const blobUrl = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = blobUrl
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  // Kurz warten, sonst bricht manch ein Browser den Download ab
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
+}
+
+/**
  * DELETE request
  */
 export function apiDelete(endpoint) {

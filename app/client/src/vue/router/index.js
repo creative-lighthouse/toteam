@@ -29,6 +29,8 @@ import MoneyEntryDetail from '@views/MoneyEntryDetail.vue'
 import Skript from '@views/Skript.vue'
 import SkriptDetail from '@views/SkriptDetail.vue'
 import OrgFeedback from '@views/OrgFeedback.vue'
+import Photos from '@views/Photos.vue'
+import PhotoSlideshow from '@views/PhotoSlideshow.vue'
 import Marketing from '@views/Marketing.vue'
 import MarketingStatistics from '@views/MarketingStatistics.vue'
 import MarketingMap from '@views/MarketingMap.vue'
@@ -217,6 +219,19 @@ const routes = [
     name: 'OrgFeedback',
     component: OrgFeedback,
     meta: { requiresAuth: true, totem: 'feedback' }
+  },
+  {
+    path: '/photos',
+    name: 'Photos',
+    component: Photos,
+    meta: { requiresAuth: true, totem: 'photos' }
+  },
+  {
+    // Diashow eines Foto-Ordners im eigenen Tab — ohne Kopfzeile und Menü
+    path: '/photos/slideshow',
+    name: 'PhotoSlideshow',
+    component: PhotoSlideshow,
+    meta: { requiresAuth: true, totem: 'photos', bare: true }
   },
   {
     path: '/marketing',
