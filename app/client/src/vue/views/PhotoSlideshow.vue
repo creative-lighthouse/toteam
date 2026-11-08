@@ -3,6 +3,7 @@
   z.B. auf einem Bildschirm beim Event. Gestartet über den Play-Knopf in der Galerie.
 
   URL: /app/photos/slideshow?organization=ID&event=ID|none[&q=Suche]
+       bzw. ?mine=1[&q=Suche] für alle Fotos, auf denen man markiert ist
 
   Bedienung: Leertaste Pause/weiter, ←/→ blättern, F Vollbild. Die Leisten verschwinden nach
   ein paar Sekunden ohne Mausbewegung. Tempo und Reihenfolge (chronologisch/zufällig) merkt
@@ -153,7 +154,7 @@ const current = computed(() => photos.value[order.value[position.value]] ?? null
 
 function listQuery(offset) {
   const params = new URLSearchParams()
-  for (const key of ['organization', 'event', 'q']) {
+  for (const key of ['organization', 'event', 'q', 'mine']) {
     if (route.query[key]) params.set(key, route.query[key])
   }
   if (offset) params.set('offset', offset)
@@ -187,6 +188,11 @@ async function loadPhotos() {
 }
 
 async function loadFolderTitle() {
+  if (route.query.mine) {
+    folderTitle.value = 'Meine Fotos'
+    document.title = 'Diashow: Meine Fotos'
+    return
+  }
   const orgId = Number(route.query.organization)
   if (!orgId) return
   try {

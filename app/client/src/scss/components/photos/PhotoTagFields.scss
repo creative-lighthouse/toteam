@@ -1,0 +1,7 @@
+// Tags für mehrere Fotos (Hochladen, Mehrfachauswahl): die Arten untereinander
+.photo-tag-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    font-weight: normal;
+}

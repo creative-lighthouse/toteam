@@ -112,11 +112,14 @@ export const usePhotosStore = defineStore('photos', () => {
    * Ein vorbereitetes Foto hochladen (siehe utils/photoUpload.js).
    * @returns {{ photo: object, duplicate: boolean }}
    */
-  async function upload({ organizationId, eventId, tags, copyright, file, prepared, meta }) {
+  async function upload({ organizationId, eventId, tagging = {}, copyright, file, prepared, meta }) {
     const form = new FormData()
     form.append('OrganizationID', organizationId)
     if (eventId) form.append('EventID', eventId)
-    if (tags?.length) form.append('Tags', JSON.stringify(tags))
+    // Tags für alle Fotos des Uploads: Tags (Titel), PeopleIDs, CharacterIDs, RoomIDs, AreaIDs
+    for (const [field, values] of Object.entries(tagging)) {
+      if (values?.length) form.append(field, JSON.stringify(values))
+    }
     form.append('OriginalName', file.name)
     if (copyright) form.append('Copyright', copyright)
     if (meta.takenAt) form.append('TakenAt', meta.takenAt)
@@ -168,6 +171,27 @@ export const usePhotosStore = defineStore('photos', () => {
     unwrap(await apiDelete(`/photos/remove/${id}`), 'Fehler beim Löschen')
     items.value = items.value.filter(p => p.ID !== id)
     total.value = Math.max(0, total.value - 1)
+  }
+
+  /**
+   * Mehrfachauswahl: Tags zu mehreren Fotos hinzufügen ({ PeopleIDs, CharacterIDs, RoomIDs,
+   * AreaIDs, Tags }), danach die Liste neu laden
+   * @returns {{ updated: number, skipped: number }}
+   */
+  async function bulkTag(ids, tagging) {
+    const result = unwrap(await apiPost('/photos/bulkTag', { IDs: ids, ...tagging }), 'Fehler beim Taggen')
+    if (tagging.Tags?.length && items.value[0]) fetchOptions(items.value[0].OrganizationID, true).catch(() => {})
+    await refresh()
+    return result
+  }
+
+  /** @returns {{ removed: number[], skipped: number }} */
+  async function bulkRemove(ids) {
+    const result = unwrap(await apiPost('/photos/bulkRemove', { IDs: ids }), 'Fehler beim Löschen')
+    const removed = new Set(result.removed)
+    items.value = items.value.filter(p => !removed.has(p.ID))
+    total.value = Math.max(0, total.value - removed.size)
+    return result
   }
 
   async function untagMe(id) {
@@ -227,6 +251,8 @@ export const usePhotosStore = defineStore('photos', () => {
     update,
     remove,
     untagMe,
+    bulkTag,
+    bulkRemove,
     fetchSettings,
     saveSettings,
     testSettings,

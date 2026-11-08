@@ -16,6 +16,21 @@
         background: var(--ColorVeryLightGray);
     }
 
+    .photo-upload-modal_label {
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .photo-upload-modal_tagging {
+        padding: 0.75rem;
+        border-radius: var(--BorderRadiusSmall);
+        background: var(--ColorVeryLightGray);
+
+        .photo-tag-section_chip {
+            background: var(--ColorWhite);
+        }
+    }
+
     .photo-upload-modal_hint {
         display: block;
         margin-top: 0.25rem;

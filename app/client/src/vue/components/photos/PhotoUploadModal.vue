@@ -30,20 +30,16 @@
           <small class="photo-upload-modal_hint">Wird bei jedem Foto mit © angezeigt und lässt sich später einzeln ändern.</small>
         </label>
 
-        <label class="field">
-          Schlagworte für alle
-          <input
-            v-model="form.Tags"
-            type="text"
-            placeholder="z.B. Aufbau, Generalprobe"
+        <div class="field photo-upload-modal_tagging">
+          <span class="photo-upload-modal_label">Tags für alle</span>
+          <PhotoTagFields
+            v-model="tagging"
+            :options="options"
+            :event-ids="form.EventID ? [form.EventID] : []"
             :disabled="busy"
-            list="photo-upload-tags"
-          >
-          <datalist id="photo-upload-tags">
-            <option v-for="t in options?.tags ?? []" :key="t.ID" :value="t.Title" />
-          </datalist>
-          <small class="photo-upload-modal_hint">Mehrere mit Komma trennen. Personen und Charaktere taggst du danach am einzelnen Foto.</small>
-        </label>
+          />
+          <small class="photo-upload-modal_hint">Kommen an jedes hochgeladene Foto und lassen sich später einzeln ändern.</small>
+        </div>
 
         <div class="field">
           <label class="button photo-upload-modal_pick" :class="{ 'photo-upload-modal_pick--disabled': busy }">
@@ -93,6 +89,8 @@ import { preparePhoto, readPhotoMeta, isAcceptedImage, ACCEPT_ATTRIBUTE, ACCEPTE
 import AppModal from '@components/ui/AppModal.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import OrganizationPicker from '@components/ui/OrganizationPicker.vue'
+import PhotoTagFields from '@components/photos/PhotoTagFields.vue'
+import { emptyTagging, taggingFields } from '@utils/photoTagging'
 
 const emit = defineEmits(['uploaded'])
 const store = usePhotosStore()
@@ -106,7 +104,9 @@ const busy = ref(false)
 // { key, file, status: pending|preparing|uploading|done|duplicate|failed, message }
 const queue = ref([])
 
-const form = reactive({ OrganizationID: null, EventID: 0, Tags: '', Copyright: '' })
+const form = reactive({ OrganizationID: null, EventID: 0, Copyright: '' })
+// Personen, Charaktere, Räume, Schlagworte für alle Fotos (siehe utils/photoTagging.js)
+const tagging = ref(emptyTagging())
 
 // Wer viel hochlädt, ist meist selbst der Fotograf: letzten Copyright-Eintrag vorschlagen
 const COPYRIGHT_KEY = 'toteam_photo_copyright'
@@ -144,8 +144,15 @@ const failedCount = computed(() => queue.value.filter(e => e.status === 'failed'
 const finished = computed(() => queue.value.length > 0 && !busy.value && pendingCount.value === 0)
 const canStart = computed(() => !busy.value && !!form.OrganizationID && pendingCount.value > 0)
 
-watch(() => form.OrganizationID, (orgId) => {
+watch(() => form.OrganizationID, (orgId, previous) => {
   if (orgId) store.fetchOptions(orgId, true).catch(() => {})
+  // Tags gehören zur Organisation
+  if (previous) tagging.value = emptyTagging()
+})
+
+// Lageplan-Räume gehören zum Event
+watch(() => form.EventID, () => {
+  tagging.value = { ...tagging.value, rooms: tagging.value.rooms.filter(r => !String(r.id).startsWith('a')) }
 })
 
 function open({ organizationId = null, eventId = 0, fixed: isFixed = false, files = [] } = {}) {
@@ -156,7 +163,7 @@ function open({ organizationId = null, eventId = 0, fixed: isFixed = false, file
     ? organizationId
     : (orgs.value.length === 1 ? orgs.value[0].ID : null)
   form.EventID = eventId || 0
-  form.Tags = ''
+  tagging.value = emptyTagging()
   form.Copyright = readCopyright()
   // Immer frisch laden — z.B. ein gerade angelegtes Event soll sofort wählbar sein
   if (form.OrganizationID) store.fetchOptions(form.OrganizationID, true).catch(() => {})
@@ -207,10 +214,6 @@ function statusLabel(entry) {
   }[entry.status]
 }
 
-function parseTags() {
-  return form.Tags.split(',').map(t => t.trim()).filter(Boolean)
-}
-
 async function processEntry(entry, settings) {
   try {
     entry.status = 'preparing'
@@ -235,7 +238,7 @@ async function start() {
   const settings = {
     organizationId: form.OrganizationID,
     eventId: form.EventID || null,
-    tags: parseTags(),
+    tagging: taggingFields(tagging.value),
     copyright: form.Copyright.trim(),
   }
   rememberCopyright(settings.copyright)
@@ -252,7 +255,7 @@ async function start() {
   } finally {
     busy.value = false
     if (doneCount.value) emit('uploaded')
-    if (settings.tags.length || settings.copyright) store.fetchOptions(settings.organizationId, true).catch(() => {})
+    if (settings.tagging.Tags.length || settings.copyright) store.fetchOptions(settings.organizationId, true).catch(() => {})
   }
 }
 

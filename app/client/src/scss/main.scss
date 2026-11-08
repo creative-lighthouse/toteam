@@ -150,6 +150,10 @@
 @use "components/photos/PhotoInfoPanel.scss";
 @use "components/photos/PhotoInlineText.scss";
 @use "components/photos/PhotoTagSection.scss";
+@use "components/photos/PhotoTagFields.scss";
+@use "components/photos/PhotoSelectCheckbox.scss";
+@use "components/photos/PhotoSelectionBar.scss";
+@use "components/photos/PhotoBulkTagModal.scss";
 @use "components/photos/PhotoStorageSettingsModal.scss";
 @use "components/layout/PwaInstallBanner.scss";
 @use "components/tasks/TaskCard.scss";

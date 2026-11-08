@@ -62,7 +62,7 @@
           :aria-labelledby="`${uid}-event`"
           :value="photo.Events[0]?.ID ?? 0"
           :disabled="busy"
-          @change="emit('change', { field: 'Events', set: Number($event.target.value) })"
+          @change="onEventChange"
         >
           <option :value="0">Kein Event</option>
           <option v-for="ev in eventOptions" :key="ev.ID" :value="ev.ID">{{ ev.Title }}</option>
@@ -234,6 +234,12 @@ const osmLink = computed(() => {
 function removePerson(item) {
   if (props.photo.CanTag.People) emit('change', { field: 'People', remove: item.id })
   else emit('untag')
+}
+
+// Danach den Fokus abgeben, sonst wechseln die Pfeiltasten das Event statt das Foto
+function onEventChange(event) {
+  emit('change', { field: 'Events', set: Number(event.target.value) })
+  event.target.blur()
 }
 
 function openOriginal() {
