@@ -242,6 +242,13 @@
                       </AppButton>
                     </div>
 
+                    <!-- Räume als Fläche: nur auf Lageplänen eines Events (dort für Fotos taggbar) -->
+                    <div v-if="map.event" class="field">
+                      <AppButton size="small" variant="secondary" :disabled="areaDrawing.active" @click="addAreaToLayer(i)">
+                        + Raum zeichnen
+                      </AppButton>
+                    </div>
+
                     <div v-if="rooms.length" class="field">
                       <label :for="`rm-${editLayer.id}`">Raummarker</label>
                       <div class="room-marker-picker">
@@ -311,6 +318,20 @@
           <div ref="rendererEl" class="map-renderer">
             <MapBasemap v-if="map.basemap && showBasemap" ref="basemapRef" :config="map.basemap" />
             <canvas ref="canvasEl" id="mapCanvas"></canvas>
+
+            <!-- Raum zeichnen: Eckpunkte auf den Plan tippen -->
+            <div v-if="areaDrawing.active" class="map-area-toolbar" role="status">
+              <p class="map-area-toolbar_text">
+                <strong>{{ areaDrawing.title }}</strong>:
+                <template v-if="areaDrawing.count < 3">Tippe die Eckpunkte des Raums auf den Plan ({{ areaDrawing.count }} gesetzt, mind. 3).</template>
+                <template v-else>{{ areaDrawing.count }} Eckpunkte – tippe auf den ersten Punkt oder „Fertig“.</template>
+              </p>
+              <div class="map-area-toolbar_actions">
+                <AppButton size="small" variant="secondary" :disabled="!areaDrawing.count" @click="undoAreaPoint">Letzten Punkt entfernen</AppButton>
+                <AppButton size="small" variant="secondary" @click="cancelAreaDrawing">Abbrechen</AppButton>
+                <AppButton size="small" variant="primary" :disabled="areaDrawing.count < 3" @click="finishAreaDrawing">Fertig</AppButton>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -372,6 +393,45 @@ const bgImageInput = ref(null)
 const locationIconStyle = { maskImage: `url("${actionLocation}")`, WebkitMaskImage: `url("${actionLocation}")` }
 const recenterIconStyle = { maskImage: `url("${actionRecenter}")`, WebkitMaskImage: `url("${actionRecenter}")` }
 let renderer = null
+
+// ── Räume als Fläche (nur Event-Lagepläne) ──────────────────────────────
+// Stand des Zeichnens aus dem Renderer (onAreaDrawingChange)
+const areaDrawing = reactive({ active: false, count: 0, title: '' })
+// Beschreibung aus dem Anlegen-Dialog, bis der Raum fertig gezeichnet ist
+let pendingAreaDescription = ''
+
+function addAreaToLayer(layerIndex) {
+  poiModal.value?.openCreate({ layerIndex, kind: 'area' }, { kind: 'area' })
+}
+
+function undoAreaPoint() {
+  renderer?.undoAreaPoint()
+}
+
+function cancelAreaDrawing() {
+  renderer?.cancelAreaDrawing()
+}
+
+function finishAreaDrawing() {
+  renderer?.finishAreaDrawing()
+}
+
+function onAreaDrawingChange(state) {
+  Object.assign(areaDrawing, state)
+}
+
+function onAreaCreated(poi) {
+  poi.description = pendingAreaDescription
+  pendingAreaDescription = ''
+}
+
+// Ansehen bzw. im Bearbeiten-Modus bearbeiten — mit Link zu den Fotos dieses Raums
+function onAreaClick(poiData, editable) {
+  const photosLink = map.value?.event
+    ? { name: 'Photos', query: { organization: map.value.organizationId, event: map.value.event.ID, q: `raum:"${poiData.poi.title}"` } }
+    : null
+  poiModal.value?.open(poiData, { editable, kind: 'area', photosLink })
+}
 
 // Rooms available for "Raummarker" in this map's organization
 const rooms = ref([])
@@ -550,6 +610,9 @@ function initRenderer() {
     onItemPOIClick,
     onPOIClick,
     onPOIMoved,
+    onAreaClick,
+    onAreaDrawingChange,
+    onAreaCreated,
     onViewChange: view => basemapRef.value?.sync(view),
     onReady: onRendererReady,
   })
@@ -685,6 +748,7 @@ async function deleteMap() {
 }
 
 async function cancelEdit() {
+  if (areaDrawing.active) renderer?.cancelAreaDrawing()
   isEditMode.value = false
   editLayers.value = []
   pendingImages.value = {}
@@ -775,7 +839,14 @@ function onPOIClick(poiData, editable) {
   poiModal.value?.open(poiData, { editable })
 }
 
-function onPOICreate(values, layerIndex) {
+function onPOICreate(values, context) {
+  // Raum als Fläche: erst Titel, dann die Eckpunkte auf dem Plan
+  if (context?.kind === 'area') {
+    pendingAreaDescription = values.description || ''
+    renderer?.startAreaDrawing(values.title, context.layerIndex)
+    return
+  }
+  const layerIndex = context
   const poi = renderer?.addNewPOIToLayer(values.title, editLayers.value[layerIndex]?.color, layerIndex)
   if (!poi) return
   Object.assign(poi, { markerText: values.markerText, description: values.description })
@@ -830,6 +901,8 @@ async function createLayer({ title, layerColor }) {
 }
 
 async function saveAll() {
+  // Ein halb gezeichneter Raum wird nicht mitgespeichert
+  if (areaDrawing.active) renderer?.cancelAreaDrawing()
   if (!editTitle.value.trim()) {
     alert('Bitte gib einen Titel für den Lageplan an.')
     return
@@ -875,6 +948,7 @@ async function saveAll() {
         markerText: p.markerText,
         type: p.type || 'marker',
         roomId: p.roomId ?? null,
+        shape: p.type === 'area' ? p.shape : null,
         isNew: p.isNew || false,
       }))
 

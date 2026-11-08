@@ -38,6 +38,7 @@ export const usePhotosStore = defineStore('photos', () => {
 
   async function fetchList(filters = {}) {
     lastFilters = filters
+    listStale.value = false
     loading.value = items.value.length === 0
     error.value = null
     try {
@@ -133,10 +134,31 @@ export const usePhotosStore = defineStore('photos', () => {
     return fetchList(lastFilters)
   }
 
+  // Nach Änderungen im Betrachter muss die Liste neu geladen werden (z.B. Event gewechselt:
+  // dann gehört das Foto nicht mehr in den offenen Ordner)
+  const listStale = ref(false)
+
+  /**
+   * Die Kurzform in der Liste aus der Detailform nachziehen — Listen- und Kachelansicht
+   * zeigen Titel, Copyright und Tags, ohne neu zu laden.
+   */
+  function syncSummary(photo) {
+    const item = items.value.find(p => p.ID === photo.ID)
+    if (!item) return
+    Object.assign(item, {
+      Title: photo.Title,
+      Copyright: photo.Copyright,
+      PeopleNames: photo.People.map(p => p.Name),
+      CharacterNames: photo.Characters.map(c => c.Title),
+      TagNames: photo.Tags.map(t => t.Title),
+      RoomNames: [...(photo.Rooms ?? []), ...(photo.MapAreas ?? [])].map(r => r.Title),
+    })
+  }
+
   async function update(id, data) {
     const photo = unwrap(await apiPut(`/photos/update/${id}`, data), 'Fehler beim Speichern').photo
-    const item = items.value.find(p => p.ID === id)
-    if (item) Object.assign(item, { Title: photo.Title })
+    syncSummary(photo)
+    if ('EventIDs' in data) listStale.value = true
     // Neue Schlagworte und Copyright-Einträge tauchen in der Auswahl auf
     if (data.Tags || 'Copyright' in data) fetchOptions(photo.OrganizationID, true).catch(() => {})
     return photo
@@ -149,7 +171,9 @@ export const usePhotosStore = defineStore('photos', () => {
   }
 
   async function untagMe(id) {
-    return unwrap(await apiPost(`/photos/untagMe/${id}`, {}), 'Fehler beim Entfernen').photo
+    const photo = unwrap(await apiPost(`/photos/untagMe/${id}`, {}), 'Fehler beim Entfernen').photo
+    syncSummary(photo)
+    return photo
   }
 
   async function fetchSettings(orgId) {
@@ -182,6 +206,7 @@ export const usePhotosStore = defineStore('photos', () => {
 
   return {
     items,
+    listStale,
     total,
     hasMore,
     organizations,

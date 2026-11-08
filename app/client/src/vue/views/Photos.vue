@@ -419,6 +419,11 @@ async function onViewerClosed() {
   const lastId = viewerId.value
   const { photo: _photo, ...query } = route.query
   await router.replace({ query })
+  // Event eines Fotos geändert: Ordnerinhalt und Zähler stimmen nicht mehr
+  if (store.listStale) {
+    store.fetchFolders(orgId.value)
+    await store.refresh()
+  }
   await nextTick()
   const el = document.querySelector(`.photo-grid_button[data-photo-id="${lastId}"]`)
   el?.focus({ preventScroll: true })

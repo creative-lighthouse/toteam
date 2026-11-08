@@ -55,6 +55,12 @@ class MapRenderer {
         this.mouseCanvasY = 0;
         this.popupPOI = null; // POI for which popup is shown
 
+        // Räume als Fläche (POI type "area"): Zeichnen Punkt für Punkt und Verschieben
+        // { layerIndex, title, points: ["lat,lng", …] } solange gezeichnet wird, sonst null
+        this.drawingArea = null;
+        this.drawPointerDown = null; // Startpunkt eines Klicks/Tipps beim Zeichnen (Bildschirm-Pixel)
+        this.areaDragLast = null;    // letzter Punkt beim Verschieben einer ganzen Fläche (Kartenraum)
+
         // Edit mode state
         this.isEditMode = mapConfig.editMode || false;
         this.draggedPOI = null; // POI being dragged
@@ -496,14 +502,34 @@ class MapRenderer {
     setupEventListeners() {
         // Mouse events
         this.canvas.addEventListener('mousedown', (e) => {
+            // Raum zeichnen: Klick setzt einen Punkt (beim Loslassen), Ziehen verschiebt die Karte
+            if (this.drawingArea) {
+                this.drawPointerDown = { x: e.clientX, y: e.clientY };
+                this.isDragging = true;
+                this.lastX = e.clientX;
+                this.lastY = e.clientY;
+                return;
+            }
+
+            // Fläche (nicht am Eckpunkt): wie Kartenhintergrund ziehen, ein Klick ohne
+            // Bewegung öffnet sie beim Loslassen
+            if (this.hoveredPOI && !this.canDragTarget(this.hoveredPOI) && this.hoveredPOI.poi.type === 'area') {
+                this.areaClick = { target: this.hoveredPOI, x: e.clientX, y: e.clientY };
+                this.isDragging = true;
+                this.lastX = e.clientX;
+                this.lastY = e.clientY;
+                return;
+            }
+
             // Check if clicking on a POI
             if (this.hoveredPOI) {
-                if (this.canDragPOI(this.hoveredPOI.poi)) {
+                if (this.canDragTarget(this.hoveredPOI)) {
                     // In edit mode (or for POIs the host allows to move), start dragging the POI
                     this.draggedPOI = this.hoveredPOI;
                     this.isDraggingPOI = true;
                     this.dragStartX = this.mouseCanvasX;
                     this.dragStartY = this.mouseCanvasY;
+                    this.areaDragLast = { x: this.mouseCanvasX, y: this.mouseCanvasY };
                     this.poiWasDragged = false; // Track if POI was actually moved
                     this.canvas.style.cursor = 'grabbing';
                 } else {
@@ -551,6 +577,9 @@ class MapRenderer {
                 this.lastX = e.clientX;
                 this.lastY = e.clientY;
                 this.render();
+            } else if (this.drawingArea) {
+                // Vorschau-Linie zum Mauszeiger
+                this.render();
             } else {
                 // Check for POI hover. getPOIAtPosition() returns a fresh object
                 // literal every call, so comparing by reference would re-render
@@ -559,19 +588,43 @@ class MapRenderer {
                 // poiId instead and only redraw on an actual enter/leave.
                 const prevHovered = this.hoveredPOI;
                 const nextHovered = this.getPOIAtPosition(this.mouseCanvasX, this.mouseCanvasY);
-                const prevId = prevHovered ? prevHovered.poiId : null;
-                const nextId = nextHovered ? nextHovered.poiId : null;
+                // Eckpunkte einer Fläche zählen als eigenes Ziel (anderer Mauszeiger)
+                const prevId = prevHovered ? `${prevHovered.poiId}:${prevHovered.vertexIndex ?? ''}` : null;
+                const nextId = nextHovered ? `${nextHovered.poiId}:${nextHovered.vertexIndex ?? ''}` : null;
 
                 this.hoveredPOI = nextHovered;
 
                 if (prevId !== nextId) {
-                    this.canvas.style.cursor = nextHovered ? 'pointer' : 'grab';
+                    this.canvas.style.cursor = !nextHovered
+                        ? 'grab'
+                        : (nextHovered.vertexIndex != null ? 'crosshair' : (nextHovered.poi.type === 'area' && this.isEditMode ? 'move' : 'pointer'));
                     this.render();
                 }
             }
         });
 
-        this.canvas.addEventListener('mouseup', () => {
+        this.canvas.addEventListener('mouseup', (e) => {
+            if (this.drawingArea && this.drawPointerDown) {
+                const moved = Math.abs(e.clientX - this.drawPointerDown.x) + Math.abs(e.clientY - this.drawPointerDown.y);
+                this.drawPointerDown = null;
+                this.isDragging = false;
+                this.canvas.style.cursor = 'crosshair';
+                if (moved < 6) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.addAreaPoint(
+                        (e.clientX - rect.left - this.offsetX) / this.scale,
+                        (e.clientY - rect.top - this.offsetY) / this.scale
+                    );
+                }
+                return;
+            }
+            if (this.areaClick) {
+                const moved = Math.abs(e.clientX - this.areaClick.x) + Math.abs(e.clientY - this.areaClick.y);
+                if (moved < 6) {
+                    this.showPOIPopup(this.areaClick.target);
+                }
+                this.areaClick = null;
+            }
             if (this.isDraggingPOI && this.draggedPOI) {
                 // Only show popup if POI was clicked (not dragged)
                 if (!this.poiWasDragged) {
@@ -588,6 +641,7 @@ class MapRenderer {
         });
 
         this.canvas.addEventListener('mouseleave', () => {
+            this.areaClick = null;
             this.isDragging = false;
             this.isDraggingPOI = false;
             this.draggedPOI = null;
@@ -628,7 +682,9 @@ class MapRenderer {
                 const { x, y } = this.touchToMap(this.touches[0]);
                 this.touchStartX = this.touches[0].clientX;
                 this.touchStartY = this.touches[0].clientY;
-                this.touchPOI = this.getPOIAtPosition(x, y);
+                // Beim Zeichnen eines Raums setzt ein Tipp einen Punkt statt Marker zu öffnen
+                this.touchPOI = this.drawingArea ? null : this.getPOIAtPosition(x, y);
+                this.areaDragLast = { x, y };
             }
 
             if (this.touches.length === 1) {
@@ -645,12 +701,18 @@ class MapRenderer {
             e.preventDefault();
             this.touches = Array.from(e.touches);
 
-            if (this.touches.length === 1 && this.touchPOI) {
+            if (this.touches.length === 1) {
                 const moved = Math.abs(this.touches[0].clientX - this.touchStartX) + Math.abs(this.touches[0].clientY - this.touchStartY);
                 if (moved > 8) {
                     this.touchMoved = true;
                 }
-                if (this.touchMoved && this.canDragPOI(this.touchPOI.poi)) {
+            }
+            if (this.touches.length > 1) {
+                this.touchMoved = true;
+            }
+
+            if (this.touches.length === 1 && this.touchPOI) {
+                if (this.touchMoved && this.canDragTarget(this.touchPOI)) {
                     const { x, y } = this.touchToMap(this.touches[0]);
                     this.updatePOIPosition(this.touchPOI, x, y);
                     this.render();
@@ -695,10 +757,15 @@ class MapRenderer {
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
             this.touches = Array.from(e.touches);
+            // Raum zeichnen: ein Tipp (ohne Verschieben/Zoomen) setzt einen Punkt
+            if (this.drawingArea && this.touches.length === 0 && !this.touchMoved && e.changedTouches[0]) {
+                const { x, y } = this.touchToMap(e.changedTouches[0]);
+                this.addAreaPoint(x, y);
+            }
             if (this.touches.length === 0 && this.touchPOI) {
                 if (!this.touchMoved) {
                     this.showPOIPopup(this.touchPOI);
-                } else if (this.canDragPOI(this.touchPOI.poi)) {
+                } else if (this.canDragTarget(this.touchPOI)) {
                     this.notifyPOIMoved(this.touchPOI);
                 }
                 this.touchPOI = null;
@@ -804,6 +871,18 @@ class MapRenderer {
      * those the host app allows via config.canDragPOI(poi) (e.g. the items of
      * an event on a plan that is itself read-only).
      */
+    /**
+     * Ob ein Treffer aus getPOIAtPosition() gezogen werden darf. Flächen nur an ihren
+     * Eckpunkten — sonst würde man beim Verschieben der Karte versehentlich große
+     * Räume mitziehen.
+     */
+    canDragTarget(target) {
+        if (target.poi?.type === 'area') {
+            return this.isEditMode && target.vertexIndex != null;
+        }
+        return this.canDragPOI(target.poi);
+    }
+
     canDragPOI(poi) {
         if (this.isEditMode) {
             return true;
@@ -892,8 +971,14 @@ class MapRenderer {
         // Draw active layers
         this.drawLayers(ctx);
 
+        // Räume als Fläche unter den Markern
+        this.drawAreas(ctx);
+
         // Draw POIs from active layers
         this.drawPOIs(ctx);
+
+        // Raum, der gerade gezeichnet wird
+        this.drawAreaInProgress(ctx);
 
         // Eigene Position (Geolocation) über allem
         this.drawUserPosition(ctx);
@@ -1069,7 +1154,8 @@ class MapRenderer {
             }
 
             layer.pois.forEach(poi => {
-                if (!poi.active || !poi.position) {
+                // Flächen zeichnet drawAreas()
+                if (!poi.active || !poi.position || poi.type === 'area') {
                     return;
                 }
 
@@ -1175,6 +1261,19 @@ class MapRenderer {
      * @returns {object|null} POI data or null
      */
     getPOIAtPosition(x, y) {
+        // Im Bearbeiten-Modus zuerst die Eckpunkte der Flächen (zum Verschieben)
+        if (this.isEditMode) {
+            const vertex = this.getAreaVertexAt(x, y);
+            if (vertex) {
+                return vertex;
+            }
+        }
+        const marker = this.getMarkerAtPosition(x, y);
+        return marker || this.getAreaAtPosition(x, y);
+    }
+
+    /** Marker (keine Flächen) an einer Stelle */
+    getMarkerAtPosition(x, y) {
         const hitRadius = 15 / this.scale; // Hit detection radius
         const markerRadius = 12 / this.scale; // Half of drawPOIs()'s markerSize — must match for the bulb offset below
 
@@ -1184,7 +1283,7 @@ class MapRenderer {
             }
 
             for (const poi of layer.pois) {
-                if (!poi.active || !poi.position) {
+                if (!poi.active || !poi.position || poi.type === 'area') {
                     continue;
                 }
 
@@ -1234,6 +1333,13 @@ class MapRenderer {
         if (poi.type === 'room') {
             if (typeof this.config.onRoomPOIClick === 'function') {
                 this.config.onRoomPOIClick(poiData);
+            }
+            return;
+        }
+        // Räume als Fläche (MapDetail.vue: ansehen bzw. bearbeiten)
+        if (poi.type === 'area') {
+            if (typeof this.config.onAreaClick === 'function') {
+                this.config.onAreaClick(poiData, this.isEditMode);
             }
             return;
         }
@@ -1308,6 +1414,10 @@ class MapRenderer {
      * Update POI position based on canvas coordinates
      */
     updatePOIPosition(poiData, canvasX, canvasY) {
+        if (poiData.poi?.type === 'area') {
+            this.moveArea(poiData, canvasX, canvasY);
+            return;
+        }
         // Convert canvas coordinates back to geographic coordinates
         const geoCoords = this.canvasToGeo(canvasX, canvasY);
 
@@ -1329,6 +1439,302 @@ class MapRenderer {
                     window.updateLayerState({ pois: layer.pois });
                 }
             }
+        }
+    }
+
+    // ── Räume als Fläche (POI type "area") ─────────────────────────────────
+
+    /** Eckpunkte einer Fläche auf dem Canvas ([{ x, y }]) */
+    areaCanvasPoints(poi) {
+        return (poi.shape || [])
+            .map(p => this.parseCoordinates(p))
+            .filter(Boolean)
+            .map(c => this.geoToCanvas(c.lat, c.lng));
+    }
+
+    /** Liegt (x, y) im Vieleck? (Strahl-Methode) */
+    pointInPolygon(x, y, points) {
+        let inside = false;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+            const a = points[i];
+            const b = points[j];
+            if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) {
+                inside = !inside;
+            }
+        }
+        return inside;
+    }
+
+    /** Schwerpunkt der Fläche auf dem Canvas — dort steht die Beschriftung */
+    polygonCentroid(points) {
+        let area = 0;
+        let cx = 0;
+        let cy = 0;
+        for (let i = 0; i < points.length; i++) {
+            const a = points[i];
+            const b = points[(i + 1) % points.length];
+            const cross = a.x * b.y - b.x * a.y;
+            area += cross;
+            cx += (a.x + b.x) * cross;
+            cy += (a.y + b.y) * cross;
+        }
+        if (Math.abs(area) < 1e-9) {
+            const n = points.length || 1;
+            return { x: points.reduce((s, p) => s + p.x, 0) / n, y: points.reduce((s, p) => s + p.y, 0) / n };
+        }
+        return { x: cx / (3 * area), y: cy / (3 * area) };
+    }
+
+    /** Fläche (oberste zuerst) an einer Stelle */
+    getAreaAtPosition(x, y) {
+        for (let li = this.layers.length - 1; li >= 0; li--) {
+            const layer = this.layers[li];
+            if (!this.activeLayers.has(layer.id) || !layer.pois) continue;
+            for (let pi = layer.pois.length - 1; pi >= 0; pi--) {
+                const poi = layer.pois[pi];
+                if (poi.type !== 'area' || !poi.active) continue;
+                const points = this.areaCanvasPoints(poi);
+                if (points.length >= 3 && this.pointInPolygon(x, y, points)) {
+                    return { layerId: layer.id, poiId: poi.id, poi };
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Eckpunkt einer Fläche an einer Stelle (zum Verschieben im Bearbeiten-Modus) */
+    getAreaVertexAt(x, y) {
+        const radius = 9 / this.scale;
+        for (const layer of this.layers) {
+            if (!this.activeLayers.has(layer.id) || !layer.pois) continue;
+            for (const poi of layer.pois) {
+                if (poi.type !== 'area' || !poi.active) continue;
+                const points = this.areaCanvasPoints(poi);
+                const index = points.findIndex(p => Math.hypot(p.x - x, p.y - y) <= radius);
+                if (index !== -1) {
+                    return { layerId: layer.id, poiId: poi.id, poi, vertexIndex: index };
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Mittelpunkt (position) einer Fläche aus ihren Eckpunkten neu setzen */
+    updateAreaCenter(poi) {
+        const points = this.areaCanvasPoints(poi);
+        if (!points.length) return;
+        const c = this.polygonCentroid(points);
+        const geo = this.canvasToGeo(c.x, c.y);
+        poi.position = `${geo.lat},${geo.lng}`;
+    }
+
+    /** Eckpunkt (vertexIndex) bzw. ganze Fläche an die neue Stelle ziehen */
+    moveArea(poiData, canvasX, canvasY) {
+        const poi = poiData.poi;
+        if (poiData.vertexIndex != null) {
+            const geo = this.canvasToGeo(canvasX, canvasY);
+            poi.shape[poiData.vertexIndex] = `${geo.lat},${geo.lng}`;
+        } else {
+            const last = this.areaDragLast || { x: canvasX, y: canvasY };
+            const dx = canvasX - last.x;
+            const dy = canvasY - last.y;
+            poi.shape = this.areaCanvasPoints(poi).map(p => {
+                const geo = this.canvasToGeo(p.x + dx, p.y + dy);
+                return `${geo.lat},${geo.lng}`;
+            });
+        }
+        this.areaDragLast = { x: canvasX, y: canvasY };
+        this.updateAreaCenter(poi);
+    }
+
+    /** Farbe als rgba mit Deckkraft (für die Füllung) */
+    withAlpha(color, alpha) {
+        const hex = (color || '#e74c3c').replace('#', '');
+        const full = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
+        const r = parseInt(full.slice(0, 2), 16) || 0;
+        const g = parseInt(full.slice(2, 4), 16) || 0;
+        const b = parseInt(full.slice(4, 6), 16) || 0;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    drawAreas(ctx) {
+        this.layers.forEach(layer => {
+            if (!this.activeLayers.has(layer.id) || !layer.pois) return;
+            layer.pois.forEach(poi => {
+                if (poi.type !== 'area' || !poi.active) return;
+                const points = this.areaCanvasPoints(poi);
+                if (points.length < 3) return;
+                const color = poi.markerColor || layer.layerColor || '#e74c3c';
+                const hovered = this.hoveredPOI && this.hoveredPOI.poiId === poi.id;
+
+                ctx.save();
+                ctx.beginPath();
+                points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+                ctx.closePath();
+                ctx.fillStyle = this.withAlpha(color, hovered ? 0.4 : 0.25);
+                ctx.fill();
+                ctx.strokeStyle = this.darkenColor(color, 0.15);
+                ctx.lineWidth = (hovered ? 3 : 2) / this.scale;
+                ctx.stroke();
+
+                // Name in der Mitte, mit hellem Rand lesbar auf jedem Untergrund
+                if (poi.title) {
+                    const c = this.polygonCentroid(points);
+                    ctx.font = `bold ${12 / this.scale}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.lineJoin = 'round';
+                    ctx.lineWidth = 3 / this.scale;
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.strokeText(poi.title, c.x, c.y);
+                    ctx.fillStyle = this.darkenColor(color, 0.45);
+                    ctx.fillText(poi.title, c.x, c.y);
+                }
+
+                // Bearbeiten: Eckpunkte als Griffe
+                if (this.isEditMode) {
+                    points.forEach((p, i) => {
+                        const active = hovered && this.hoveredPOI.vertexIndex === i;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, (active ? 7 : 5) / this.scale, 0, Math.PI * 2);
+                        ctx.fillStyle = '#fff';
+                        ctx.fill();
+                        ctx.lineWidth = 2 / this.scale;
+                        ctx.strokeStyle = this.darkenColor(color, 0.15);
+                        ctx.stroke();
+                    });
+                }
+                ctx.restore();
+            });
+        });
+    }
+
+    /** Vorschau des Raums, der gerade gezeichnet wird: Punkte, Linien und Linie zum Mauszeiger */
+    drawAreaInProgress(ctx) {
+        if (!this.drawingArea) return;
+        const color = this.drawingArea.color || '#e74c3c';
+        const points = this.drawingArea.points
+            .map(p => this.parseCoordinates(p))
+            .filter(Boolean)
+            .map(c => this.geoToCanvas(c.lat, c.lng));
+
+        ctx.save();
+        if (points.length) {
+            ctx.beginPath();
+            points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+            // Mauszeiger (nur am Rechner; auf Touch-Geräten gibt es keinen)
+            if (!this.touches.length && this.mouseCanvasX !== undefined) {
+                ctx.lineTo(this.mouseCanvasX, this.mouseCanvasY);
+            }
+            if (points.length >= 3) {
+                ctx.closePath();
+                ctx.fillStyle = this.withAlpha(color, 0.18);
+                ctx.fill();
+            }
+            ctx.setLineDash([6 / this.scale, 4 / this.scale]);
+            ctx.strokeStyle = this.darkenColor(color, 0.15);
+            ctx.lineWidth = 2 / this.scale;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        points.forEach((p, i) => {
+            ctx.beginPath();
+            // Der erste Punkt ist größer: antippen schließt den Raum
+            ctx.arc(p.x, p.y, (i === 0 && points.length >= 3 ? 8 : 5) / this.scale, 0, Math.PI * 2);
+            ctx.fillStyle = i === 0 ? this.darkenColor(color, 0.15) : '#fff';
+            ctx.fill();
+            ctx.lineWidth = 2 / this.scale;
+            ctx.strokeStyle = this.darkenColor(color, 0.15);
+            ctx.stroke();
+        });
+        ctx.restore();
+    }
+
+    /**
+     * Neuen Raum (Fläche) auf einer Ebene zeichnen: Klicks/Tipps setzen die Eckpunkte,
+     * ein Klick auf den ersten Punkt oder finishAreaDrawing() schließt ihn.
+     * config.onAreaDrawingChange({ active, count }) hält die Vue-Seite auf dem Laufenden.
+     */
+    startAreaDrawing(title, layerIndex = 0) {
+        const layer = this.layers[layerIndex];
+        if (!layer) return;
+        this.drawingArea = { layerIndex, title, color: layer.layerColor, points: [] };
+        this.activeLayers.add(layer.id);
+        this.hoveredPOI = null;
+        this.canvas.style.cursor = 'crosshair';
+        this.notifyAreaDrawing();
+        this.render();
+    }
+
+    addAreaPoint(canvasX, canvasY) {
+        if (!this.drawingArea) return;
+        const points = this.drawingArea.points;
+        // Klick auf den ersten Punkt schließt den Raum
+        if (points.length >= 3) {
+            const first = this.parseCoordinates(points[0]);
+            const p = first && this.geoToCanvas(first.lat, first.lng);
+            if (p && Math.hypot(p.x - canvasX, p.y - canvasY) <= 12 / this.scale) {
+                this.finishAreaDrawing();
+                return;
+            }
+        }
+        const geo = this.canvasToGeo(canvasX, canvasY);
+        points.push(`${geo.lat},${geo.lng}`);
+        this.notifyAreaDrawing();
+        this.render();
+    }
+
+    undoAreaPoint() {
+        if (!this.drawingArea) return;
+        this.drawingArea.points.pop();
+        this.notifyAreaDrawing();
+        this.render();
+    }
+
+    /** Raum anlegen (ab 3 Punkten) — gibt den neuen POI zurück, sonst null */
+    finishAreaDrawing() {
+        const drawing = this.drawingArea;
+        if (!drawing || drawing.points.length < 3) return null;
+        const layer = this.layers[drawing.layerIndex];
+        const poi = {
+            id: Date.now(),
+            title: drawing.title,
+            description: '',
+            active: true,
+            type: 'area',
+            shape: [...drawing.points],
+            position: drawing.points[0],
+            markerColor: layer.layerColor || '#e74c3c',
+            markerText: '',
+            isNew: true,
+        };
+        this.updateAreaCenter(poi);
+        if (!layer.pois) layer.pois = [];
+        layer.pois.push(poi);
+        this.drawingArea = null;
+        this.canvas.style.cursor = 'grab';
+        this.notifyAreaDrawing();
+        this.render();
+        if (typeof this.config.onAreaCreated === 'function') {
+            this.config.onAreaCreated(poi);
+        }
+        return poi;
+    }
+
+    cancelAreaDrawing() {
+        this.drawingArea = null;
+        this.canvas.style.cursor = 'grab';
+        this.notifyAreaDrawing();
+        this.render();
+    }
+
+    notifyAreaDrawing() {
+        if (typeof this.config.onAreaDrawingChange === 'function') {
+            this.config.onAreaDrawingChange({
+                active: !!this.drawingArea,
+                count: this.drawingArea ? this.drawingArea.points.length : 0,
+                title: this.drawingArea?.title ?? '',
+            });
         }
     }
 

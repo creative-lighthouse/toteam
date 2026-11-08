@@ -7,6 +7,8 @@ use App\Photos\BunnyStorage;
 use App\Photos\Photo;
 use App\Photos\PhotoStorageConfig;
 use App\Photos\PhotoTag;
+use App\Maps\MapPOI;
+use App\Rooms\Room;
 use App\Skript\Script;
 use App\Skript\ScriptRole;
 use App\Teams\Organization;
@@ -121,8 +123,8 @@ class PhotosApiController extends ApiController
     }
 
     /**
-     * Für die Listenansicht: Namen der Personen, Charaktere und Schlagworte je Foto —
-     * mit drei Abfragen für die ganze Seite statt drei pro Foto.
+     * Für die Listenansicht: Namen der Personen, Charaktere, Schlagworte und Räume je Foto —
+     * mit vier Abfragen für die ganze Seite statt vier pro Foto.
      * @param array[] $summaries formatSummary()-Form
      */
     private function withTagSummaries(array $summaries): array
@@ -164,11 +166,29 @@ class PhotosApiController extends ApiController
             $tags[(int) $row['PhotoID']][] = $row['Title'];
         }
 
-        return array_map(function (array $s) use ($people, $names, $characters, $tags) {
+        $rooms = [];
+        foreach (DB::query(
+            'SELECT "Photo_Rooms"."PhotoID", "Room"."Title" FROM "Photo_Rooms"'
+            . ' INNER JOIN "Room" ON "Room"."ID" = "Photo_Rooms"."RoomID"'
+            . ' WHERE "Photo_Rooms"."PhotoID" IN (' . $in . ') ORDER BY "Room"."Title"'
+        ) as $row) {
+            $rooms[(int) $row['PhotoID']][] = $row['Title'];
+        }
+        // Räume als Fläche auf Event-Lageplänen zählen in der Liste wie Räume
+        foreach (DB::query(
+            'SELECT "Photo_MapAreas"."PhotoID", "MapPOI"."Title" FROM "Photo_MapAreas"'
+            . ' INNER JOIN "MapPOI" ON "MapPOI"."ID" = "Photo_MapAreas"."MapPOIID"'
+            . ' WHERE "Photo_MapAreas"."PhotoID" IN (' . $in . ') ORDER BY "MapPOI"."Title"'
+        ) as $row) {
+            $rooms[(int) $row['PhotoID']][] = $row['Title'];
+        }
+
+        return array_map(function (array $s) use ($people, $names, $characters, $tags, $rooms) {
             $id = (int) $s['ID'];
             $s['PeopleNames'] = array_values(array_filter(array_map(fn (int $m) => $names[$m] ?? null, $people[$id] ?? [])));
             $s['CharacterNames'] = $characters[$id] ?? [];
             $s['TagNames'] = $tags[$id] ?? [];
+            $s['RoomNames'] = $rooms[$id] ?? [];
             return $s;
         }, $summaries);
     }
@@ -184,6 +204,8 @@ class PhotosApiController extends ApiController
         'charakter'  => 'characters',
         'charaktere' => 'characters',
         'rolle'      => 'characters',
+        'raum'       => 'rooms',
+        'room'       => 'rooms',
         'tag'        => 'tags',
         'schlagwort' => 'tags',
         'titel'      => 'text',
@@ -216,7 +238,7 @@ class PhotosApiController extends ApiController
     }
 
     /**
-     * Freie Suche über Titel, Beschreibung, Personen, Charaktere und Schlagworte. Alle
+     * Freie Suche über Titel, Beschreibung, Personen, Charaktere, Räume und Schlagworte. Alle
      * Begriffe müssen passen. Ohne Präfix genügt ein Teil des Namens irgendwo, mit Präfix
      * ({@see SEARCH_PREFIXES}) muss der Name dieser Art genau stimmen — bei Personen der
      * angezeigte Name oder der Vorname. Personen werden über den angezeigten Namen gesucht,
@@ -261,6 +283,20 @@ class PhotosApiController extends ApiController
                     'SELECT "Photo_Characters"."PhotoID" FROM "Photo_Characters"'
                     . ' INNER JOIN "ScriptRole" ON "ScriptRole"."ID" = "Photo_Characters"."ScriptRoleID"'
                     . ' WHERE LOWER("ScriptRole"."Title") ' . $operator . ' ?',
+                    [$param]
+                )->column());
+            }
+            if ($kind === null || $kind === 'rooms') {
+                $ids = array_merge($ids, DB::prepared_query(
+                    'SELECT "Photo_Rooms"."PhotoID" FROM "Photo_Rooms"'
+                    . ' INNER JOIN "Room" ON "Room"."ID" = "Photo_Rooms"."RoomID"'
+                    . ' WHERE "Room"."OrganizationID" IN (' . $orgIn . ') AND LOWER("Room"."Title") ' . $operator . ' ?',
+                    [$param]
+                )->column());
+                $ids = array_merge($ids, DB::prepared_query(
+                    'SELECT "Photo_MapAreas"."PhotoID" FROM "Photo_MapAreas"'
+                    . ' INNER JOIN "MapPOI" ON "MapPOI"."ID" = "Photo_MapAreas"."MapPOIID"'
+                    . ' WHERE LOWER("MapPOI"."Title") ' . $operator . ' ?',
                     [$param]
                 )->column());
             }
@@ -311,6 +347,14 @@ class PhotosApiController extends ApiController
         foreach ($photo->Tags() as $tag) {
             $tags[] = ['ID' => $tag->ID, 'Title' => $tag->Title];
         }
+        $rooms = [];
+        foreach ($photo->Rooms()->sort('Title') as $room) {
+            $rooms[] = ['ID' => $room->ID, 'Title' => $room->Title];
+        }
+        $areas = [];
+        foreach ($photo->MapAreas()->sort('Title') as $area) {
+            $areas[] = $this->formatArea($area);
+        }
 
         return array_merge($this->formatSummary($photo), [
             'Description'  => (string) $photo->Description,
@@ -323,16 +367,46 @@ class PhotosApiController extends ApiController
             'People'       => $people,
             'Characters'   => $characters,
             'Tags'         => $tags,
+            'Rooms'        => $rooms,
+            'MapAreas'     => $areas,
             'CanEdit'      => $canEdit,
             // Je Art einzeln, damit sie sich später getrennt vergeben lassen (derzeit alle = CanEdit)
             'CanTag'       => [
                 'People'     => $canEdit,
                 'Characters' => $canEdit,
                 'Tags'       => $canEdit,
+                'Rooms'      => $canEdit,
+                'MapAreas'   => $canEdit,
                 'Events'     => $canEdit,
             ],
             'CanDelete'    => $photo->isDeletableBy($member),
             'IsTagged'     => $photo->People()->filter('ID', $member->ID)->exists(),
+        ]);
+    }
+
+    /** Raum als Fläche: Titel plus Lageplan und Event, zu dem er gehört */
+    private function formatArea(MapPOI $area): array
+    {
+        $layer = $area->Parent();
+        $map = $layer && $layer->exists() ? $layer->Parent() : null;
+        return [
+            'ID'      => $area->ID,
+            'Title'   => $area->Title,
+            'Plan'    => $map && $map->exists() ? $map->Title : null,
+            'MapID'   => $map && $map->exists() ? (int) $map->ID : null,
+            'EventID' => $map && $map->exists() ? (int) $map->EventID : null,
+        ];
+    }
+
+    /**
+     * Räume als Fläche auf den Lageplänen der angegebenen Events
+     * @param int[] $eventIDs
+     */
+    private function eventAreas(array $eventIDs)
+    {
+        return MapPOI::get()->filter([
+            'Type'                  => 'area',
+            'Parent.Parent.EventID' => $eventIDs ?: [0],
         ]);
     }
 
@@ -583,6 +657,18 @@ class PhotosApiController extends ApiController
             $tags[] = ['ID' => $tag->ID, 'Title' => $tag->Title];
         }
 
+        $rooms = [];
+        foreach (Room::get()->filter('OrganizationID', $org->ID)->sort('Title') as $room) {
+            $rooms[] = ['ID' => $room->ID, 'Title' => $room->Title];
+        }
+
+        // Räume als Fläche auf den Event-Lageplänen — wählbar nur bei Fotos dieses Events
+        $areas = [];
+        $eventIDs = array_map('intval', OrgEvent::get()->filter('OrganizationID', $org->ID)->column('ID'));
+        foreach ($this->eventAreas($eventIDs)->sort('Title') as $area) {
+            $areas[] = $this->formatArea($area);
+        }
+
         // Bisher verwendete Copyright-Einträge als Vorschläge, die häufigsten zuerst
         $copyrights = DB::prepared_query(
             'SELECT "Copyright" FROM "Photo" WHERE "OrganizationID" = ? AND "Copyright" IS NOT NULL AND "Copyright" <> \'\''
@@ -595,6 +681,8 @@ class PhotosApiController extends ApiController
             'characters' => $characters,
             'events'     => $events,
             'tags'       => $tags,
+            'rooms'      => $rooms,
+            'areas'      => $areas,
             'copyrights' => $copyrights,
         ]);
     }
@@ -784,7 +872,7 @@ class PhotosApiController extends ApiController
 
     /**
      * PUT /api/v1/photos/update/{id} — Title, Description, EventIDs, PeopleIDs,
-     * CharacterIDs, Tags (Liste von Titeln; neue werden angelegt)
+     * CharacterIDs, RoomIDs, AreaIDs (Flächen der Event-Lagepläne), Tags (Liste von Titeln; neue werden angelegt)
      */
     public function update(HTTPRequest $request): HTTPResponse
     {
@@ -826,6 +914,17 @@ class PhotosApiController extends ApiController
         }
         if (array_key_exists('CharacterIDs', $body)) {
             $photo->Characters()->setByIDList(self::allowedIDs($body['CharacterIDs'], $this->orgCharacterIDs($orgID)));
+        }
+        if (array_key_exists('RoomIDs', $body)) {
+            $allowed = array_map('intval', Room::get()->filter('OrganizationID', $orgID)->column('ID'));
+            $photo->Rooms()->setByIDList(self::allowedIDs($body['RoomIDs'], $allowed));
+        }
+        // Flächen nur von den Lageplänen der Events des Fotos; wechselt das Event, fallen
+        // die Flächen des alten weg
+        if (array_key_exists('AreaIDs', $body) || array_key_exists('EventIDs', $body)) {
+            $allowed = array_map('intval', $this->eventAreas(array_map('intval', $photo->Events()->column('ID')))->column('ID'));
+            $wanted = array_key_exists('AreaIDs', $body) ? $body['AreaIDs'] : $photo->MapAreas()->column('ID');
+            $photo->MapAreas()->setByIDList(self::allowedIDs($wanted, $allowed));
         }
         if (array_key_exists('Tags', $body)) {
             $tagIDs = [];
