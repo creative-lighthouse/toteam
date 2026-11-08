@@ -3,10 +3,27 @@
   Aufnahmezeit und die Tags (Personen, Charaktere, Schlagworte), ganz rechts der Download.
 
     <PhotoList :photos="photos" :downloading="setOfIds" @open="…" @download="…" />
+
+  Mit `selected` (Set der IDs) gibt es vorne ein Auswahlkästchen — nur bei Fotos, für die
+  `can-select` true liefert; `select` meldet (photo, { shift }).
 -->
 <template>
   <ul class="photo-list">
-    <li v-for="photo in photos" :key="photo.ID" class="photo-list_row">
+    <li
+      v-for="photo in photos"
+      :key="photo.ID"
+      class="photo-list_row"
+      :class="{ 'photo-list_row--selected': selected?.has(photo.ID) }"
+    >
+      <template v-if="selected">
+        <PhotoSelectCheckbox
+          v-if="canSelect(photo)"
+          :checked="selected.has(photo.ID)"
+          :label="`${photoLabel(photo)} auswählen`"
+          @toggle="emit('select', photo, $event)"
+        />
+        <span v-else class="photo-list_select-spacer" aria-hidden="true" />
+      </template>
       <button
         type="button"
         class="photo-list_open photo-grid_button"
@@ -47,6 +64,7 @@
 
 <script setup>
 import PhotoDownloadButton from '@components/photos/PhotoDownloadButton.vue'
+import PhotoSelectCheckbox from '@components/photos/PhotoSelectCheckbox.vue'
 import { formatCopyright, formatPhotoDateTime } from '@utils/photoUpload'
 
 defineProps({
@@ -54,9 +72,12 @@ defineProps({
   photos: { type: Array, required: true },
   // IDs der Fotos, die gerade heruntergeladen werden
   downloading: { type: Set, default: () => new Set() },
+  // Mehrfachauswahl: IDs der ausgewählten Fotos (null = ohne Auswahl)
+  selected: { type: Set, default: null },
+  canSelect: { type: Function, default: () => true },
 })
 
-const emit = defineEmits(['open', 'download'])
+const emit = defineEmits(['open', 'download', 'select'])
 
 function photoLabel(photo) {
   return photo.Title || `Foto vom ${formatPhotoDateTime(photo.TakenAt || photo.Created)}`

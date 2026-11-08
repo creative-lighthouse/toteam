@@ -100,3 +100,20 @@
         }
     }
 }
+
+// Mehrfachauswahl
+.photo-list {
+    .photo-list_row {
+        padding-left: 0;
+        transition: box-shadow 0.15s ease;
+
+        &--selected {
+            box-shadow: 0 0 0 2px var(--ColorPrimary);
+        }
+    }
+
+    // Fotos ohne Bearbeitungsrecht: gleiche Einrückung ohne Kästchen
+    .photo-list_select-spacer {
+        flex: 0 0 36px;
+    }
+}

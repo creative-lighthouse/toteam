@@ -1,0 +1,14 @@
+.photo-bulk-tag-modal {
+    .app-modal_body {
+        text-align: left;
+    }
+
+    .modalform > :not(.field) {
+        grid-column: 1 / -1;
+    }
+
+    .photo-bulk-tag-modal_hint {
+        margin: 0;
+        color: var(--ColorDarkGray);
+    }
+}

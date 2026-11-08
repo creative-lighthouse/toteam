@@ -1,9 +1,19 @@
 <template>
-  <div class="section section--PhotosPage">
+  <div class="section section--PhotosPage" :class="{ 'section--PhotosPage-selecting': selected.size }">
     <div class="section_content">
 
+      <!-- Alle Fotos, auf denen man markiert ist — quer über alle Ordner und Organisationen -->
+      <div class="photos-scope">
+        <AppToggle
+          :model-value="mine"
+          label="Alle meine Bilder"
+          field-class="photos-scope_toggle"
+          @update:model-value="setMine"
+        />
+      </div>
+
       <!-- Wo bin ich? Organisationen › Organisation › Event -->
-      <nav v-if="level !== 'orgs'" class="photos-breadcrumb" aria-label="Ordner">
+      <nav v-if="level === 'events' || level === 'photos'" class="photos-breadcrumb" aria-label="Ordner">
         <ol>
           <li v-if="store.organizations.length > 1">
             <router-link :to="{ query: {} }">Alle Organisationen</router-link>
@@ -19,7 +29,7 @@
       </nav>
 
       <!-- In einem Ordner: Suche, Ansicht, Hochladen -->
-      <PhotoSearchBar v-if="level === 'photos'" v-model="search" :options="options">
+      <PhotoSearchBar v-if="level === 'photos' || level === 'mine'" v-model="search" :options="options">
         <template #actions>
           <AppViewToggle v-model="viewMode" :options="VIEW_MODES" />
           <AppIconButton
@@ -33,7 +43,7 @@
           </AppIconButton>
           <!-- Kein Zahnrad hier: der Foto-Speicher gehört zur Organisation, nicht zum Event -->
           <AppButton
-            v-if="currentOrg?.CanUpload && currentOrg?.Configured"
+            v-if="level === 'photos' && currentOrg?.CanUpload && currentOrg?.Configured"
             variant="primary"
             @click="openUpload"
           >+ Hochladen</AppButton>
@@ -114,6 +124,7 @@
         <div v-if="store.loading" class="section_infobox"><p>Lade Fotos…</p></div>
         <div v-else-if="store.items.length === 0" class="section_infobox">
           <p v-if="activeSearch">Keine Fotos zu „{{ activeSearch }}“.</p>
+          <p v-else-if="level === 'mine'">Du bist bisher auf keinem Foto markiert.</p>
           <p v-else>Hier gibt es noch keine Fotos.<template v-if="currentOrg?.CanUpload && currentOrg?.Configured"> Lade die ersten über „+ Hochladen“ hoch.</template></p>
         </div>
         <template v-else>
@@ -122,18 +133,26 @@
             v-if="viewMode === 'list'"
             :photos="store.items"
             :downloading="downloading"
+            :selected="selected"
+            :can-select="canSelect"
             @open="openPhoto"
             @download="download"
+            @select="toggleSelect"
           />
           <PhotoGridLarge
             v-else-if="viewMode === 'large'"
             :photos="store.items"
             :downloading="downloading"
+            :selected="selected"
+            :can-select="canSelect"
             @open="openPhoto"
             @download="download"
+            @select="toggleSelect"
           />
           <PhotoGrid v-else :photos="store.items" @open="openPhoto" />
           <p v-if="downloadError" class="photos-error" role="alert">{{ downloadError }}</p>
+          <p v-if="bulkError" class="photos-error" role="alert">{{ bulkError }}</p>
+          <p v-if="bulkNotice" class="photos-notice" role="status">{{ bulkNotice }}</p>
           <div v-if="store.hasMore" ref="moreEl" class="photos-more">
             <AppButton variant="secondary" :disabled="store.loadingMore" @click="store.fetchMore()">
               {{ store.loadingMore ? 'Lade…' : 'Mehr laden' }}
@@ -143,6 +162,16 @@
       </template>
     </div>
 
+    <PhotoSelectionBar
+      :count="selected.size"
+      :selectable-count="selectableItems.length"
+      :busy="bulkBusy"
+      @select-all="selectAll"
+      @clear="clearSelection"
+      @tag="openBulkTag"
+      @remove="removeSelected"
+    />
+    <PhotoBulkTagModal ref="bulkTagModal" @saved="onBulkTagged" />
     <PhotoUploadModal ref="uploadModal" @uploaded="onUploaded" />
     <PhotoDropOverlay :state="dropState" :target="`${currentOrg?.Title ?? ''} › ${eventTitle}`" />
     <PhotoViewer
@@ -163,6 +192,10 @@ import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePhotosStore } from '@stores/photos'
 import { usePageHeaderStore } from '@stores/pageHeader'
+import { useAuthStore } from '@stores/auth'
+import AppToggle from '@components/ui/AppToggle.vue'
+import PhotoSelectionBar from '@components/photos/PhotoSelectionBar.vue'
+import PhotoBulkTagModal from '@components/photos/PhotoBulkTagModal.vue'
 import { orgAccentColor } from '@utils/orgColor'
 import AppButton from '@components/ui/AppButton.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
@@ -183,8 +216,10 @@ const route = useRoute()
 const router = useRouter()
 const store = usePhotosStore()
 const pageHeader = usePageHeaderStore()
+const authStore = useAuthStore()
 
 const uploadModal = ref(null)
+const bulkTagModal = ref(null)
 const settingsModal = ref(null)
 const moreEl = ref(null)
 
@@ -194,6 +229,8 @@ const settingsIconStyle = { maskImage: `url("${actionSettings}")`, WebkitMaskIma
 // ?organization=ID            → Event-Ordner der Organisation
 // ?organization=ID&event=ID   → Fotos des Events (event=none: ohne Event)
 // ?photo=ID                   → Foto im Betrachter
+// ?mine=1                     → alle Fotos, auf denen man markiert ist (Ordner bleiben in der
+//                               URL, damit man beim Ausschalten wieder dort landet)
 
 // Wer nur eine Organisation hat, startet gleich in deren Ordnern
 const orgId = computed(() => Number(route.query.organization)
@@ -203,7 +240,9 @@ const eventKey = computed(() => {
   if (value === 'none') return 'none'
   return Number(value) || null
 })
+const mine = computed(() => !!route.query.mine)
 const level = computed(() => {
+  if (mine.value) return 'mine'
   if (orgId.value && eventKey.value) return 'photos'
   if (orgId.value) return 'events'
   return 'orgs'
@@ -319,6 +358,13 @@ async function loadLevel() {
       event: eventKey.value,
       q: activeSearch.value,
     })
+  } else if (level.value === 'mine') {
+    if (lastFolderKey !== 'mine') {
+      store.items = []
+      lastFolderKey = 'mine'
+    }
+    if (orgId.value) store.fetchOptions(orgId.value).catch(() => {})
+    await store.fetchList({ mine: 1, q: activeSearch.value })
   }
 }
 
@@ -330,7 +376,8 @@ watch(
 
 // Kopfzeile passend zur Ebene
 watch([level, currentOrg, eventTitle], () => {
-  if (level.value === 'orgs') pageHeader.setHeader('Fotos', 'Die Bilder deiner Organisationen.')
+  if (level.value === 'mine') pageHeader.setHeader('Meine Fotos', 'Alle Fotos, auf denen du markiert bist.')
+  else if (level.value === 'orgs') pageHeader.setHeader('Fotos', 'Die Bilder deiner Organisationen.')
   else if (level.value === 'events') pageHeader.setHeader('Fotos', currentOrg.value?.Title ?? '')
   else pageHeader.setHeader(eventTitle.value, currentOrg.value?.Title ?? 'Fotos')
 }, { immediate: true })
@@ -382,6 +429,7 @@ function onDrop(event) {
 }
 
 onMounted(() => {
+  window.addEventListener('keydown', onSelectionKeydown)
   // dragenter wie dragover: die Überlagerung erscheint sofort
   window.addEventListener('dragenter', onDragOver)
   window.addEventListener('dragover', onDragOver)
@@ -390,7 +438,7 @@ onMounted(() => {
 
 // Diashow des aktuellen Ordners (inkl. Suche) im neuen Tab
 function openSlideshow() {
-  const query = { organization: orgId.value, event: eventKey.value }
+  const query = level.value === 'mine' ? { mine: 1 } : { organization: orgId.value, event: eventKey.value }
   if (activeSearch.value) query.q = activeSearch.value
   const { href } = router.resolve({ name: 'PhotoSlideshow', query })
   window.open(href, '_blank', 'noopener')
@@ -421,13 +469,124 @@ async function onViewerClosed() {
   await router.replace({ query })
   // Event eines Fotos geändert: Ordnerinhalt und Zähler stimmen nicht mehr
   if (store.listStale) {
-    store.fetchFolders(orgId.value)
+    if (orgId.value) store.fetchFolders(orgId.value)
     await store.refresh()
   }
   await nextTick()
   const el = document.querySelector(`.photo-grid_button[data-photo-id="${lastId}"]`)
   el?.focus({ preventScroll: true })
   el?.scrollIntoView({ block: 'nearest' })
+}
+
+function setMine(on) {
+  const { mine: _mine, photo: _photo, ...query } = route.query
+  router.push({ query: on ? { ...query, mine: 1 } : query })
+}
+
+// ── Mehrfachauswahl (Liste und große Kacheln): taggen oder löschen ─────
+// Auswählbar ist, was man bearbeiten darf: selbst hochgeladen oder PHOTOS_MANAGE in der
+// Organisation. Der Server prüft das noch einmal und überspringt den Rest.
+const selected = ref(new Set())
+const bulkBusy = ref(false)
+const bulkError = ref(null)
+const bulkNotice = ref(null)
+let lastSelectedId = null
+
+function canSelect(photo) {
+  const org = store.organizations.find(o => o.ID === photo.OrganizationID)
+  return !!org?.CanManage || photo.UploadedByID === authStore.user?.ID
+}
+
+const selectableItems = computed(() => store.items.filter(canSelect))
+
+function setSelected(ids) {
+  selected.value = new Set(ids)
+  bulkError.value = null
+  bulkNotice.value = null
+}
+
+// Shift-Klick wählt alles zwischen dem zuletzt angeklickten und diesem Foto
+function toggleSelect(photo, { shift = false } = {}) {
+  const next = new Set(selected.value)
+  const from = store.items.findIndex(p => p.ID === lastSelectedId)
+  const to = store.items.findIndex(p => p.ID === photo.ID)
+  if (shift && from >= 0 && to >= 0) {
+    const [a, b] = from < to ? [from, to] : [to, from]
+    store.items.slice(a, b + 1).filter(canSelect).forEach(p => next.add(p.ID))
+  } else if (next.has(photo.ID)) {
+    next.delete(photo.ID)
+  } else {
+    next.add(photo.ID)
+  }
+  lastSelectedId = photo.ID
+  setSelected(next)
+}
+
+function selectAll() {
+  setSelected(selectableItems.value.map(p => p.ID))
+}
+
+function clearSelection() {
+  lastSelectedId = null
+  setSelected([])
+}
+
+// Anderer Ordner, andere Suche oder kleine Kacheln (ohne Kästchen): Auswahl aufheben
+watch(() => [level.value, orgId.value, eventKey.value, activeSearch.value], clearSelection)
+watch(viewMode, (mode) => { if (mode === 'small') clearSelection() })
+
+function onSelectionKeydown(event) {
+  if (event.key !== 'Escape' || !selected.value.size || viewerId.value) return
+  if (document.querySelector('dialog[open]')) return
+  clearSelection()
+}
+
+function selectedPhotos() {
+  return store.items.filter(p => selected.value.has(p.ID))
+}
+
+function openBulkTag() {
+  const photos = selectedPhotos()
+  const orgIds = [...new Set(photos.map(p => p.OrganizationID))]
+  if (orgIds.length > 1) {
+    bulkError.value = 'Personen, Charaktere, Räume und Schlagworte gehören zu einer Organisation – wähle zum Taggen nur Fotos einer Organisation aus.'
+    return
+  }
+  bulkError.value = null
+  bulkTagModal.value?.open({
+    ids: photos.map(p => p.ID),
+    organizationId: orgIds[0],
+    // Lageplan-Räume gibt es nur im Ordner eines Events
+    eventIds: level.value === 'photos' && typeof eventKey.value === 'number' ? [eventKey.value] : [],
+  })
+}
+
+function skippedText(n) {
+  return n ? ` ${n} ${n === 1 ? 'Foto wurde' : 'Fotos wurden'} übersprungen (keine Berechtigung).` : ''
+}
+
+function onBulkTagged({ updated, skipped }) {
+  clearSelection()
+  bulkNotice.value = `Tags zu ${photoCount(updated)} hinzugefügt.${skippedText(skipped)}`
+}
+
+async function removeSelected() {
+  const ids = [...selected.value]
+  if (!ids.length || bulkBusy.value) return
+  if (!confirm(`${photoCount(ids.length)} wirklich löschen? Sie werden auch im Bunny-Speicher der Organisation gelöscht.`)) return
+  bulkBusy.value = true
+  bulkError.value = null
+  try {
+    const { removed, skipped } = await store.bulkRemove(ids)
+    clearSelection()
+    bulkNotice.value = `${photoCount(removed.length)} gelöscht.${skippedText(skipped)}`
+    if (orgId.value && level.value !== 'mine') store.fetchFolders(orgId.value)
+    if (store.hasMore) store.refresh()
+  } catch (err) {
+    bulkError.value = err.message
+  } finally {
+    bulkBusy.value = false
+  }
 }
 
 // "Mehr laden" automatisch, sobald der Knopf ins Bild scrollt
@@ -441,6 +600,7 @@ watch(moreEl, (el) => {
   observer.observe(el)
 })
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onSelectionKeydown)
   window.removeEventListener('dragenter', onDragOver)
   window.removeEventListener('dragover', onDragOver)
   window.removeEventListener('drop', onDrop)

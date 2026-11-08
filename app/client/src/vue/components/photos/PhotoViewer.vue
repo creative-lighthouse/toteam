@@ -25,7 +25,6 @@
       }"
       aria-label="Fotoansicht"
       @cancel.prevent="emit('close')"
-      @keydown="onKeydown"
     >
       <div class="photo-viewer_main">
         <PhotoViewerStage
@@ -109,7 +108,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { usePhotosStore } from '@stores/photos'
 import { formatPhotoDate } from '@utils/photoUpload'
 import PhotoViewerStage from '@components/photos/PhotoViewerStage.vue'
@@ -206,6 +205,10 @@ function loadOptions(photo) {
 
 watch(currentId, (id) => {
   loadDetail(id)
+  // Nachbarn vorab: beim Blättern sind Infos und Tags sofort da (eine offene Tag-Suche bleibt
+  // so beim Weiterblättern offen, statt kurz durch "Lädt…" ersetzt zu werden)
+  loadDetail(prevPhoto.value?.ID)
+  loadDetail(nextPhoto.value?.ID)
   // Kurz vor dem Ende der geladenen Fotos die nächsten holen
   if (props.hasMore && index.value >= props.photos.length - 4) emit('load-more')
 })
@@ -224,32 +227,59 @@ function sync(id) {
       chromeVisible.value = true
       freshOptions.clear()
       el.showModal()
+      document.addEventListener('keydown', onKeydown)
       nextTick(() => el.focus())
     }
   } else if (el.open) {
     stage.value?.reset()
     el.close()
+    document.removeEventListener('keydown', onKeydown)
   }
 }
 
 watch(() => props.photoId, sync)
 onMounted(() => sync(props.photoId))
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 
 // ── Tastatur ───────────────────────────────────────────────────────────
 
+// Am Dokument statt am Dialog: nach dem Speichern eines Textfelds (Enter) verschwindet das
+// Eingabefeld, der Fokus landet auf <body> — die Pfeiltasten sollen trotzdem blättern.
 function onKeydown(event) {
-  if (event.target.closest?.('input, textarea, select') || event.ctrlKey || event.metaKey || event.altKey) return
-  if (event.key === 'ArrowRight') {
+  if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return
+  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+    if (!canNavigateFrom(event.target)) return
     event.preventDefault()
-    stage.value?.go(-1)
-  } else if (event.key === 'ArrowLeft') {
-    event.preventDefault()
-    stage.value?.go(1)
+    stage.value?.go(event.key === 'ArrowRight' ? -1 : 1)
+  } else if (isTextField(event.target)) {
+    return
   } else if (event.key === 'i') {
     toggleInfo()
   } else if (event.key === 'z') {
     stage.value?.toggleZoom()
   }
+}
+
+const TEXT_INPUT_TYPES = ['text', 'search', 'email', 'url', 'tel', 'number', 'password']
+
+/** Das Eingabefeld, in dem getippt wird (null = keins) */
+function textField(el) {
+  const field = el?.closest?.('input, textarea, select, [contenteditable="true"]')
+  if (field?.tagName === 'INPUT' && !TEXT_INPUT_TYPES.includes(field.type)) return null
+  return field ?? null
+}
+
+function isTextField(el) {
+  return !!textField(el)
+}
+
+// Pfeiltasten blättern überall, außer in einem Feld mit Text (dort bewegen sie den Cursor) und
+// in Auswahllisten. Ein leeres Feld — z.B. die Tag-Suche nach Enter — gibt sie frei.
+function canNavigateFrom(el) {
+  const field = textField(el)
+  if (!field) return true
+  if (field.tagName === 'SELECT' || field.isContentEditable) return false
+  return (field.value ?? '') === ''
 }
 
 // ── Aktionen ───────────────────────────────────────────────────────────

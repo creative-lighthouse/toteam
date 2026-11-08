@@ -1,0 +1,71 @@
+@use "../../base/variables" as *;
+
+// Mehrfachauswahl der Foto-Galerie: schwebt unten über dem Inhalt — oberhalb des Menüs, das
+// selbst unten schwebt (AppMenu: bottom 17px, bis 60px hoch; gleiche Höhe wie PwaInstallBanner)
+.photo-selection-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 95px;
+    z-index: 101;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    width: max-content;
+    max-width: calc(100% - 32px);
+    padding: 0.4rem 0.5rem 0.4rem 0.4rem;
+    border-radius: var(--BorderRadiusMedium);
+    background: var(--ColorWhite);
+    box-shadow: var(--BoxShadowMenu);
+    border: 1px solid var(--ColorLightGray);
+    transform: translateX(-50%);
+
+    .photo-selection-bar_count {
+        margin: 0;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .photo-selection-bar_all {
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--ColorPrimary);
+        font: inherit;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+
+    .photo-selection-bar_actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: auto;
+    }
+
+    @include media(max-smartphone) {
+        width: calc(100% - 32px);
+    }
+}
+
+.photo-selection-bar-enter-active,
+.photo-selection-bar-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.photo-selection-bar-enter-from,
+.photo-selection-bar-leave-to {
+    opacity: 0;
+    transform: translate(-50%, 1rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .photo-selection-bar-enter-active,
+    .photo-selection-bar-leave-active {
+        transition: none;
+    }
+}

@@ -43,7 +43,12 @@ class PhotosApiController extends ApiController
         'download',
         'organizations',
         'folders',
+        'bulkTag',
+        'bulkRemove',
     ];
+
+    /** Höchstens so viele Fotos auf einmal per Mehrfachauswahl bearbeiten oder löschen */
+    private const MAX_BULK = 500;
 
     private const PAGE_SIZE = 60;
     private const MAX_FULL_SIZE = 20 * 1024 * 1024;
@@ -110,6 +115,8 @@ class PhotosApiController extends ApiController
         return [
             'ID'             => $photo->ID,
             'OrganizationID' => (int) $photo->OrganizationID,
+            // Für die Mehrfachauswahl: bearbeiten darf, wer hochgeladen hat oder PHOTOS_MANAGE hat
+            'UploadedByID'   => (int) $photo->UploadedByID,
             'Title'          => $photo->Title ?: null,
             'OriginalName'   => $photo->OriginalName ?: null,
             'Copyright'      => $photo->Copyright ?: null,
@@ -445,6 +452,64 @@ class PhotosApiController extends ApiController
         return array_values(array_intersect(array_unique($ids), $allowed));
     }
 
+    /** @var array<int, array{people: int[], characters: int[], rooms: int[]}> erlaubte IDs je Organisation */
+    private array $tagTargets = [];
+
+    /**
+     * Tags zu einem Foto hinzufügen (vorhandene bleiben) — beim Hochladen und bei der
+     * Mehrfachauswahl. Felder wie bei update(): PeopleIDs, CharacterIDs, RoomIDs, AreaIDs
+     * (nur Flächen der Lagepläne der Events des Fotos), Tags (Titel, neue werden angelegt).
+     */
+    private function addTags(Photo $photo, array $input): void
+    {
+        $orgID = (int) $photo->OrganizationID;
+        $this->tagTargets[$orgID] ??= [
+            'people'     => $this->orgMemberIDs($orgID),
+            'characters' => $this->orgCharacterIDs($orgID),
+            'rooms'      => array_map('intval', Room::get()->filter('OrganizationID', $orgID)->column('ID')),
+        ];
+        $targets = $this->tagTargets[$orgID];
+
+        foreach (self::allowedIDs($input['PeopleIDs'] ?? [], $targets['people']) as $id) {
+            $photo->People()->add($id);
+        }
+        foreach (self::allowedIDs($input['CharacterIDs'] ?? [], $targets['characters']) as $id) {
+            $photo->Characters()->add($id);
+        }
+        foreach (self::allowedIDs($input['RoomIDs'] ?? [], $targets['rooms']) as $id) {
+            $photo->Rooms()->add($id);
+        }
+        if (!empty($input['AreaIDs'])) {
+            $allowed = array_map('intval', $this->eventAreas(array_map('intval', $photo->Events()->column('ID')))->column('ID'));
+            foreach (self::allowedIDs($input['AreaIDs'], $allowed) as $id) {
+                $photo->MapAreas()->add($id);
+            }
+        }
+        foreach (is_array($input['Tags'] ?? null) ? $input['Tags'] : [] as $title) {
+            if (is_string($title) && ($tag = PhotoTag::findOrCreate($orgID, $title))) {
+                $photo->Tags()->add($tag);
+            }
+        }
+    }
+
+    /**
+     * Fotos der Mehrfachauswahl: nur sichtbare; aufgeteilt in die, die der Nutzer bearbeiten
+     * darf, und die übrigen
+     * @return array{0: Photo[], 1: int} [bearbeitbare Fotos, Anzahl übersprungener]
+     */
+    private function bulkPhotos(array $body, Member $member): array
+    {
+        $ids = array_slice(array_unique(array_map('intval', is_array($body['IDs'] ?? null) ? $body['IDs'] : [])), 0, self::MAX_BULK);
+        $editable = [];
+        foreach (Photo::get()->filter('ID', $ids ?: [0]) as $photo) {
+            if ($photo->isEditableBy($member)) {
+                $editable[] = $photo;
+            }
+        }
+        // Übersprungen: ohne Recht oder nicht (mehr) vorhanden
+        return [$editable, count($ids) - count($editable)];
+    }
+
     // ── Liste & Auswahl ───────────────────────────────────────────────────
 
     /**
@@ -705,8 +770,8 @@ class PhotosApiController extends ApiController
 
     /**
      * POST /api/v1/photos/upload (multipart) — ein Foto: Dateien `full` und `thumb` (JPEG,
-     * im Browser verkleinert), dazu OrganizationID, optional EventID, Tags (JSON-Liste),
-     * OriginalName, TakenAt (ISO) sowie Latitude/Longitude aus den EXIF-Daten.
+     * im Browser verkleinert), dazu OrganizationID, optional EventID, Tags (JSON-Liste von
+     * Titeln), PeopleIDs/CharacterIDs/RoomIDs/AreaIDs (JSON-Listen), OriginalName, TakenAt (ISO) sowie Latitude/Longitude aus den EXIF-Daten.
      */
     public function upload(HTTPRequest $request): HTTPResponse
     {
@@ -766,6 +831,10 @@ class PhotosApiController extends ApiController
             if ($existing->isChanged()) {
                 $existing->write();
             }
+            // Tags aus dem Upload kommen dazu, vorhandene bleiben
+            if ($existing->isEditableBy($member)) {
+                $this->addTags($existing, $this->uploadTags($request));
+            }
             return $this->successResponse([
                 'photo'     => $this->formatSummary($existing),
                 'duplicate' => true,
@@ -808,14 +877,20 @@ class PhotosApiController extends ApiController
         if ($event) {
             $photo->Events()->add($event);
         }
-        $tags = json_decode((string) $request->postVar('Tags'), true);
-        foreach (is_array($tags) ? $tags : [] as $title) {
-            if (is_string($title) && ($tag = PhotoTag::findOrCreate((int) $org->ID, $title))) {
-                $photo->Tags()->add($tag);
-            }
-        }
+        $this->addTags($photo, $this->uploadTags($request));
 
         return $this->successResponse(['photo' => $this->formatSummary($photo), 'duplicate' => false]);
+    }
+
+    /** Tags für alle Fotos eines Uploads: JSON-Felder Tags, PeopleIDs, CharacterIDs, RoomIDs, AreaIDs */
+    private function uploadTags(HTTPRequest $request): array
+    {
+        $input = [];
+        foreach (['Tags', 'PeopleIDs', 'CharacterIDs', 'RoomIDs', 'AreaIDs'] as $field) {
+            $value = json_decode((string) $request->postVar($field), true);
+            $input[$field] = is_array($value) ? $value : [];
+        }
+        return $input;
     }
 
     /** Copyright ohne vorangestelltes "©"/"(c)" speichern — die Anzeige setzt das Zeichen selbst davor */
@@ -938,6 +1013,55 @@ class PhotosApiController extends ApiController
         }
 
         return $this->successResponse(['photo' => $this->formatDetail($photo, $member)]);
+    }
+
+    /**
+     * POST /api/v1/photos/bulkTag — Tags zu mehreren Fotos hinzufügen: { IDs, PeopleIDs,
+     * CharacterIDs, RoomIDs, AreaIDs, Tags }. Fotos ohne Bearbeitungsrecht werden übersprungen.
+     */
+    public function bulkTag(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        $body = $this->getJsonBody();
+        [$photos, $skipped] = $this->bulkPhotos($body, $member);
+        foreach ($photos as $photo) {
+            $this->addTags($photo, $body);
+        }
+        return $this->successResponse(['updated' => count($photos), 'skipped' => $skipped]);
+    }
+
+    /** POST /api/v1/photos/bulkRemove — { IDs }: löscht die Fotos, die der Nutzer löschen darf */
+    public function bulkRemove(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+        [$photos, $skipped] = $this->bulkPhotos($this->getJsonBody(), $member);
+        $orgIDs = [];
+        $removed = [];
+        foreach ($photos as $photo) {
+            if (!$photo->isDeletableBy($member)) {
+                $skipped++;
+                continue;
+            }
+            $orgIDs[(int) $photo->OrganizationID] = true;
+            $removed[] = (int) $photo->ID;
+            $photo->delete();
+        }
+        foreach (array_keys($orgIDs) as $orgID) {
+            PhotoTag::pruneUnused($orgID);
+        }
+        return $this->successResponse(['removed' => $removed, 'skipped' => $skipped]);
     }
 
     /** DELETE /api/v1/photos/remove/{id} — löscht auch die Dateien bei Bunny */

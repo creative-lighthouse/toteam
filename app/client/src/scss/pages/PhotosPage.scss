@@ -1,6 +1,31 @@
 @use "../base/variables" as *;
 
 .section.section--PhotosPage {
+    // "Alle meine Bilder" über der Galerie
+    .photos-scope {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 0.75rem;
+    }
+
+    .photos-scope_toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    // Platz für die Auswahlleiste, damit sie die letzten Fotos nicht verdeckt
+    &.section--PhotosPage-selecting {
+        padding-bottom: 10rem;
+    }
+
+    .photos-notice {
+        margin-top: 0.75rem;
+        color: var(--ColorDarkGray);
+    }
+
     .photos-breadcrumb ol {
         display: flex;
         flex-wrap: wrap;

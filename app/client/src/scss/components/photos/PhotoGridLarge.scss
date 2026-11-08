@@ -72,6 +72,32 @@
         right: 8px;
     }
 
+    // Mehrfachauswahl: Kästchen oben links, erst beim Darüberfahren — außer auf Touch-Geräten
+    // und sobald etwas ausgewählt ist
+    .photo-grid-large_select {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    .photo-grid-large_frame:hover .photo-grid-large_select,
+    .photo-grid-large_select:focus-within,
+    &.photo-grid-large--selecting .photo-grid-large_select {
+        opacity: 1;
+    }
+
+    @media (hover: none) {
+        .photo-grid-large_select {
+            opacity: 1;
+        }
+    }
+
+    .photo-grid-large_item--selected .photo-grid-large_frame {
+        box-shadow: 0 0 0 3px var(--ColorPrimary);
+    }
+
     .photo-grid-large_date {
         margin: 0.4rem 0 0;
         font-size: 0.9rem;
