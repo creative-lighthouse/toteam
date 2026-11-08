@@ -24,6 +24,7 @@ use SilverStripe\Security\PermissionProvider;
  * @property bool $EnableLinks
  * @property bool $EnableMap
  * @property bool $EnableTasks
+ * @property bool $EnablePhotos
  * @property ?string $LogoColor
  * @property int $LogoID
  * @property int $CoverImageID
@@ -54,6 +55,7 @@ class Organization extends DataObject implements PermissionProvider
         'marketing'     => 'EnableMarketing',
         'inventory'     => 'EnableInventory',
         'feedback'      => 'EnableFeedback',
+        'photos'        => 'EnablePhotos',
     ];
 
     private static $db = [
@@ -74,6 +76,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableMarketing"     => "Boolean(1)",
         "EnableInventory"     => "Boolean(1)",
         "EnableFeedback"      => "Boolean(1)",
+        "EnablePhotos"        => "Boolean(1)",
     ];
 
     private static $defaults = [
@@ -87,6 +90,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableMarketing"     => true,
         "EnableInventory"     => true,
         "EnableFeedback"      => true,
+        "EnablePhotos"        => true,
     ];
 
     private static $has_one = [
@@ -131,6 +135,7 @@ class Organization extends DataObject implements PermissionProvider
         "EnableMarketing"     => "Marketing",
         "EnableInventory"     => "Inventar",
         "EnableFeedback"      => "Feedback",
+        "EnablePhotos"        => "Fotos",
     ];
 
     private static $table_name = 'Organization';
@@ -263,6 +268,8 @@ class Organization extends DataObject implements PermissionProvider
             OrgPermissions::STORAGE_EDIT,
             OrgPermissions::STORAGE_DELETE,
             OrgPermissions::FEEDBACK_MODERATE,
+            OrgPermissions::PHOTOS_UPLOAD,
+            OrgPermissions::PHOTOS_MANAGE,
         ]);
         $moderator->write();
 
@@ -275,6 +282,7 @@ class Organization extends DataObject implements PermissionProvider
             OrgPermissions::TASKS_EDIT,
             OrgPermissions::TASKS_DELETE,
             OrgPermissions::INVENTORY_REQUEST_RENTAL,
+            OrgPermissions::PHOTOS_UPLOAD,
         ]);
         $member->write();
     }

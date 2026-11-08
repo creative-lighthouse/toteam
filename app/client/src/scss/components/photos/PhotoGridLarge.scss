@@ -1,0 +1,107 @@
+@use "../../base/variables" as *;
+
+// Große quadratische Kacheln: höchstens vier nebeneinander, Datum und Copyright darunter,
+// Download oben rechts
+.photo-grid-large {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    // Tablet und kleine Laptops: drei
+    @media (max-width: 1000px) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @include media(max-medium) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include media(max-smartphone) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .photo-grid-large_frame {
+        position: relative;
+        aspect-ratio: 1;
+        overflow: hidden;
+        border-radius: var(--BorderRadiusMedium);
+        background: var(--ColorVeryLightGray);
+    }
+
+    .photo-grid-large_open {
+        display: block;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        border: none;
+        background: none;
+        cursor: zoom-in;
+
+        &:focus-visible {
+            outline: 3px solid var(--ColorPrimary);
+            outline-offset: -3px;
+        }
+    }
+
+    .photo-grid-large_image {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.2s ease;
+    }
+
+    .photo-grid-large_open:hover .photo-grid-large_image {
+        transform: scale(1.03);
+    }
+
+    .photo-grid-large_missing {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--ColorGray);
+    }
+
+    .photo-grid-large_download {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+    }
+
+    .photo-grid-large_date {
+        margin: 0.4rem 0 0;
+        font-size: 0.9rem;
+        color: var(--ColorDarkGray);
+    }
+
+    .photo-grid-large_copyright {
+        margin: 0.1rem 0 0;
+        font-size: 0.85rem;
+        color: var(--ColorGray);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .photo-grid-large_title {
+        margin: 0.1rem 0 0;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .photo-grid-large_image {
+            transition: none;
+        }
+
+        .photo-grid-large_open:hover .photo-grid-large_image {
+            transform: none;
+        }
+    }
+}

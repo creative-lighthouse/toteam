@@ -143,6 +143,11 @@
               <OrgEventSitePlans :event="event" :state="planState" :editable="editing && planState.CanManage" @update="planState = $event" />
             </section>
 
+            <section v-if="photoState?.total" class="event-page_section">
+              <h2 class="hl3 event-page_subtitle">Fotos</h2>
+              <OrgEventPhotos :event="event" :photos="photoState.photos" :total="photoState.total" />
+            </section>
+
             <section v-if="feedbackState?.CanCreate" class="event-page_section">
               <h2 class="hl3 event-page_subtitle">Feedback</h2>
               <OrgEventFeedback :event="event" :items="feedbackState.feedback" @reload="loadFeedback" />
@@ -272,6 +277,8 @@ import OrgEventMap from '@components/events/OrgEventMap.vue'
 import OrgEventInterestButtons from '@components/events/OrgEventInterestButtons.vue'
 import OrgEventFeedback from '@components/events/OrgEventFeedback.vue'
 import { useOrgFeedbackStore } from '@stores/orgFeedback'
+import OrgEventPhotos from '@components/events/OrgEventPhotos.vue'
+import { usePhotosStore } from '@stores/photos'
 import actionShare from '../../../icons/actions/action_share.svg'
 import actionAddMessage from '../../../icons/actions/action_addmessage.svg'
 import OrgEventFeedShareModal from '@components/events/OrgEventFeedShareModal.vue'
@@ -289,6 +296,7 @@ const eventsStore = useEventsStore()
 const moneyStore = useMoneyStore()
 const inventoryStore = useInventoryStore()
 const orgFeedbackStore = useOrgFeedbackStore()
+const photosStore = usePhotosStore()
 const pageHeader = usePageHeaderStore()
 
 const event = ref(null)
@@ -325,6 +333,8 @@ const rentalDetailModal = ref(null)
 // Feedback zum Event (GET /orgfeedback/eventFeedback/{id}) — null, solange nicht geladen
 // oder wenn das Feedback-Totem fehlt
 const feedbackState = ref(null)
+// Fotos des Events (GET /photos/eventPhotos/{id}) — null ohne Foto-Totem
+const photoState = ref(null)
 
 // Ausleihen fürs Event beantragen (nur, wenn das Inventar-Totem aktiv ist)
 const canRequestRental = computed(() => !!planState.value?.CanRequestRental && authStore.hasTotem('inventory'))
@@ -387,6 +397,7 @@ const showLogin = computed(() =>
 const hasAside = computed(() => showLogin.value || (showInternal.value && !!(
   appointments.value.length || scriptState.value?.scripts.length || moneyState.value?.accounts.length
   || planState.value?.plans.length || planState.value?.items.length || feedbackState.value?.CanCreate
+  || photoState.value?.total
 )))
 
 const layoutEl = ref(null)
@@ -472,6 +483,18 @@ async function loadFeedback() {
     feedbackState.value = await orgFeedbackStore.fetchEventFeedback(event.value.ID)
   } catch {
     feedbackState.value = null
+  }
+}
+
+async function loadPhotos() {
+  if (!authStore.hasTotem('photos')) {
+    photoState.value = null
+    return
+  }
+  try {
+    photoState.value = await photosStore.fetchEventPhotos(event.value.ID)
+  } catch {
+    photoState.value = null
   }
 }
 
@@ -596,6 +619,7 @@ async function load() {
       loadMoney()
       loadPlans()
       loadFeedback()
+      loadPhotos()
     }
     pageHeader.setHeader(event.value.Title, event.value.OrganizationTitle ?? 'Event')
   } catch (e) {

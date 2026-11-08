@@ -1,0 +1,224 @@
+// Diashow im eigenen Tab (views/PhotoSlideshow.vue, Route mit meta.bare): füllt den ganzen
+// Bildschirm, immer dunkel wie der Foto-Betrachter.
+.photo-slideshow {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow: hidden;
+    background: #000;
+    color: #fff;
+    cursor: default;
+    user-select: none;
+
+    // Ohne Mausbewegung: Leisten und Mauszeiger ausblenden
+    &--idle {
+        cursor: none;
+
+        .photo-slideshow_bar,
+        .photo-slideshow_caption,
+        .photo-slideshow_progress {
+            opacity: 0;
+            pointer-events: none;
+        }
+    }
+
+    .photo-slideshow_message {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        margin: 0;
+        text-align: center;
+        transform: translateY(-50%);
+        opacity: 0.8;
+    }
+
+    .photo-slideshow_image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        // Vorschaubild bleibt sichtbar, bis das große Bild geladen ist
+        background: center / contain no-repeat;
+    }
+
+    .photo-slideshow-fade-enter-active,
+    .photo-slideshow-fade-leave-active {
+        transition: opacity 0.8s ease;
+    }
+
+    .photo-slideshow-fade-enter-from,
+    .photo-slideshow-fade-leave-to {
+        opacity: 0;
+    }
+
+    .photo-slideshow_bar,
+    .photo-slideshow_caption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    .photo-slideshow_bar {
+        top: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem 1.5rem;
+        padding: 16px 20px 32px;
+        background: linear-gradient(rgb(0 0 0 / 65%), transparent);
+    }
+
+    .photo-slideshow_title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .photo-slideshow_counter {
+        margin-left: 0.6rem;
+        font-weight: normal;
+        font-variant-numeric: tabular-nums;
+        opacity: 0.75;
+    }
+
+    .photo-slideshow_controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .photo-slideshow_button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0;
+        border: none;
+        border-radius: 20px;
+        background: rgb(255 255 255 / 15%);
+        color: #fff;
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background: rgb(255 255 255 / 30%);
+        }
+
+        &:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        &--play {
+            min-width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background: #fff;
+            color: #000;
+
+            &:hover,
+            &:focus-visible {
+                background: rgb(255 255 255 / 85%);
+            }
+        }
+
+        &--text {
+            padding: 0 0.9rem;
+            font-size: 0.9rem;
+
+            &[aria-pressed="true"] {
+                background: #fff;
+                color: #000;
+            }
+        }
+    }
+
+    .photo-slideshow_speed {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+
+        select {
+            height: 40px;
+            padding: 0 0.6rem;
+            border: none;
+            border-radius: 20px;
+            background: rgb(255 255 255 / 15%);
+            color: #fff;
+            font: inherit;
+            cursor: pointer;
+
+            option {
+                color: #000;
+            }
+        }
+    }
+
+    .photo-slideshow_caption {
+        bottom: 0;
+        padding: 40px 20px 20px;
+        background: linear-gradient(transparent, rgb(0 0 0 / 65%));
+        pointer-events: none;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    .photo-slideshow_caption-title {
+        font-weight: 600;
+    }
+
+    .photo-slideshow_caption-meta {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    // Dünner Balken unten, der bis zum nächsten Foto vollläuft
+    .photo-slideshow_progress {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 3px;
+        width: 100%;
+        background: rgb(255 255 255 / 70%);
+        transform-origin: left;
+        animation: photo-slideshow-progress linear forwards;
+        transition: opacity 0.4s ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .photo-slideshow-fade-enter-active,
+        .photo-slideshow-fade-leave-active {
+            transition: none;
+        }
+
+        .photo-slideshow_progress {
+            display: none;
+        }
+    }
+}
+
+@keyframes photo-slideshow-progress {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}

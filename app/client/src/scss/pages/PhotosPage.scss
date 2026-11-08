@@ -1,0 +1,120 @@
+@use "../base/variables" as *;
+
+.section.section--PhotosPage {
+    .photos-breadcrumb ol {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 0.5rem;
+        margin: 0 0 0.75rem;
+        padding: 0;
+        list-style: none;
+        font-size: 0.95rem;
+
+        li + li::before {
+            content: "›";
+            margin-right: 0.5rem;
+            color: var(--ColorGray);
+        }
+
+        a {
+            color: var(--ColorPrimary);
+            text-decoration: none;
+
+            &:hover,
+            &:focus-visible {
+                text-decoration: underline;
+            }
+        }
+
+        [aria-current="page"] {
+            font-weight: 600;
+        }
+    }
+
+    .photos-folders {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        @include media(max-smartphone) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .photos-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .photos-toolbar_filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+
+        select.input {
+            width: auto;
+            max-width: 100%;
+        }
+    }
+
+    .photos-toolbar_actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: auto;
+    }
+
+    // Handy: Auswahlfelder untereinander über die volle Breite
+    @include media(max-medium) {
+        .photos-toolbar_filters {
+            flex: 1 1 100%;
+
+            select.input {
+                width: 100%;
+            }
+        }
+    }
+
+    .photos-setup {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem 1rem;
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: var(--BorderRadiusMedium);
+        background: var(--ColorStatusWarningAccent);
+
+        p {
+            margin: 0;
+            flex: 1 1 20rem;
+        }
+    }
+
+    .photos-count {
+        margin: 0 0 0.5rem;
+        font-size: 0.9rem;
+        color: var(--ColorDarkGray);
+    }
+
+    .photos-error {
+        margin-top: 0.75rem;
+        color: var(--ColorStatusBad);
+    }
+
+    .photos-more {
+        display: flex;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+}

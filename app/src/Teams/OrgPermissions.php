@@ -68,6 +68,9 @@ class OrgPermissions
 
     public const FEEDBACK_MODERATE = 'FEEDBACK_MODERATE';
 
+    public const PHOTOS_UPLOAD = 'PHOTOS_UPLOAD';
+    public const PHOTOS_MANAGE = 'PHOTOS_MANAGE';
+
     /**
      * Alle Berechtigungen gruppiert nach Kategorie, für die Rollen-Verwaltungs-UI.
      * @return array<string, array<string, string>> Kategorie => [Code => Label]
@@ -144,6 +147,10 @@ class OrgPermissions
             ],
             'Feedback' => [
                 self::FEEDBACK_MODERATE => 'Fremdes Feedback und Kommentare löschen',
+            ],
+            'Fotos' => [
+                self::PHOTOS_UPLOAD => 'Fotos hochladen',
+                self::PHOTOS_MANAGE => 'Fremde Fotos bearbeiten, taggen & löschen',
             ],
         ];
     }

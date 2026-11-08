@@ -1,0 +1,44 @@
+.photo-download-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--ColorLightGray);
+    border-radius: 50%;
+    background: var(--ColorWhite);
+    color: var(--ColorDarkGray);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+        background: var(--ColorVeryLightGray);
+        color: var(--ColorPrimary);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: 2px;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: progress;
+    }
+
+    // Auf dem Foto: dunkel und halbtransparent, damit es auf jedem Bild lesbar ist
+    &--overlay {
+        border-color: transparent;
+        background: rgb(0 0 0 / 50%);
+        color: #fff;
+
+        &:hover,
+        &:focus-visible {
+            background: rgb(0 0 0 / 75%);
+            color: #fff;
+        }
+    }
+}

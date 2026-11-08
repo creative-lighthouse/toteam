@@ -1,0 +1,51 @@
+.photo-viewer-stage {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    // Gesten übernimmt die Komponente selbst (wischen, zoomen)
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+
+    &:active {
+        cursor: grabbing;
+    }
+
+    &--zoomed {
+        cursor: move;
+    }
+
+    .photo-viewer-stage_slide {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        will-change: transform;
+    }
+
+    &--animating .photo-viewer-stage_slide {
+        transition: transform 0.22s ease-out, opacity 0.22s ease-out;
+    }
+
+    .photo-viewer-stage_image {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        // Vorschaubild (style) bleibt sichtbar, bis das große Bild geladen ist
+        background: center / contain no-repeat;
+        transform-origin: center;
+        will-change: transform;
+        -webkit-user-drag: none;
+    }
+
+    &--zoom-animating .photo-viewer-stage_image {
+        transition: transform 0.22s ease-out;
+    }
+
+    .photo-viewer-stage_missing {
+        color: rgb(255 255 255 / 70%);
+    }
+}

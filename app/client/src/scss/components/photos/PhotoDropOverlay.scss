@@ -1,0 +1,80 @@
+// Überlagerung beim Ziehen von Dateien auf einen Foto-Ordner
+.photo-drop-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    // Ereignisse gehen ans Fenster, die Überlagerung selbst soll nichts abfangen
+    pointer-events: none;
+    background: color-mix(in srgb, var(--ColorPrimary) 18%, transparent);
+    backdrop-filter: blur(2px);
+
+    .photo-drop-overlay_box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        width: 100%;
+        max-width: var(--WidthNarrow);
+        padding: 2rem 1.5rem;
+        border: 3px dashed var(--ColorPrimary);
+        border-radius: var(--BorderRadiusLarge);
+        background: var(--ColorWhite);
+        color: var(--ColorPrimary);
+        text-align: center;
+        box-shadow: var(--BoxShadowMenu);
+
+        p {
+            margin: 0;
+        }
+    }
+
+    .photo-drop-overlay_title {
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+
+    .photo-drop-overlay_target {
+        color: var(--ColorBlack);
+    }
+
+    .photo-drop-overlay_hint {
+        font-size: 0.85rem;
+        color: var(--ColorDarkGray);
+    }
+
+    // Teils keine Bilder: Hinweis, aber ablegbar
+    &--mixed .photo-drop-overlay_box {
+        border-color: var(--ColorStatusWarning);
+    }
+
+    // Gar keine Bilder: nicht ablegbar
+    &--invalid {
+        background: color-mix(in srgb, var(--ColorStatusBad) 15%, transparent);
+
+        .photo-drop-overlay_box {
+            border-color: var(--ColorStatusBad);
+            color: var(--ColorStatusBad);
+        }
+    }
+}
+
+.photo-drop-overlay-enter-active,
+.photo-drop-overlay-leave-active {
+    transition: opacity 0.15s ease;
+}
+
+.photo-drop-overlay-enter-from,
+.photo-drop-overlay-leave-to {
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .photo-drop-overlay-enter-active,
+    .photo-drop-overlay-leave-active {
+        transition: none;
+    }
+}

@@ -1,8 +1,9 @@
 <template>
   <div id="vue-app">
-    <AppHeader :title="pageHeaderStore.title" :description="pageHeaderStore.description" />
+    <!-- meta.bare: Seite ohne Kopfzeile und Menü (z.B. die Diashow im eigenen Tab) -->
+    <AppHeader v-if="!route.meta.bare" :title="pageHeaderStore.title" :description="pageHeaderStore.description" />
 
-    <main class="area_content main">
+    <main class="area_content main" :class="{ 'main--bare': route.meta.bare }">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in" @after-enter="onPageEntered">
           <component :is="Component" />
@@ -11,17 +12,17 @@
     </main>
 
     <!-- Menü nach dem Inhalt: optisch unten fixiert, im DOM (und damit per Tab) hinter der Seite -->
-    <div class="area_header" v-if="authStore.isAuthenticated">
+    <div class="area_header" v-if="authStore.isAuthenticated && !route.meta.bare">
       <AppMenu />
     </div>
 
-    <PwaInstallBanner />
+    <PwaInstallBanner v-if="!route.meta.bare" />
   </div>
 </template>
 
 <script setup>
 import { watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import { useNotificationsStore } from '@stores/notifications'
@@ -94,6 +95,7 @@ watch(() => pageHeaderStore.title, (title) => {
 // angesagt. Nicht beim ersten Laden und nicht, wenn sich nur die Query ändert
 // (z.B. ein Termin im Kalender geöffnet/geschlossen wird).
 const router = useRouter()
+const route = useRoute()
 let focusPending = false
 let fallbackTimer = null
 

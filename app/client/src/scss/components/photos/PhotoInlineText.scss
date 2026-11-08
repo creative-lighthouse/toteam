@@ -1,0 +1,55 @@
+// Text zum Anklicken und Bearbeiten (Titel/Beschreibung im Foto-Betrachter)
+.photo-inline-text {
+    margin: 0;
+
+    .photo-inline-text_button {
+        display: block;
+        width: 100%;
+        margin: -0.2rem -0.4rem;
+        padding: 0.2rem 0.4rem;
+        border: 1px solid transparent;
+        border-radius: var(--BorderRadiusSmall);
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+        cursor: text;
+        box-sizing: content-box;
+
+        &:hover,
+        &:focus-visible {
+            border-color: var(--ColorLightGray);
+            background: var(--ColorVeryLightGray);
+        }
+    }
+
+    &--empty .photo-inline-text_button {
+        color: var(--ColorGray);
+        font-weight: normal;
+        font-style: italic;
+    }
+}
+
+.photo-inline-text_input {
+    display: block;
+    width: 100%;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid var(--ColorPrimary);
+    border-radius: var(--BorderRadiusSmall);
+    background: var(--ColorWhite);
+    color: var(--ColorBlack);
+    font: inherit;
+    box-sizing: border-box;
+
+    &--h2 {
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    &--multiline {
+        resize: vertical;
+        min-height: 4.5rem;
+    }
+}

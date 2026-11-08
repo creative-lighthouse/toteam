@@ -1,0 +1,51 @@
+// Vorschlagsliste unter der Suchleiste (Aufbau sonst wie AppSearchBar)
+.photo-search-bar {
+    .photo-search-bar_list {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        max-height: 320px;
+        margin: 0;
+        padding: 4px;
+        overflow-y: auto;
+        list-style: none;
+        border-radius: var(--BorderRadiusMedium);
+        background: var(--ColorWhite);
+        box-shadow: var(--BoxShadowMenu);
+    }
+
+    .photo-search-bar_option {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        padding: 0.45rem 0.6rem;
+        border-radius: var(--BorderRadiusSmall);
+        cursor: pointer;
+
+        &--active {
+            background: var(--ColorVeryLightGray);
+        }
+    }
+
+    .photo-search-bar_kind {
+        flex: 0 0 6.5rem;
+        font-size: 0.8rem;
+        color: var(--ColorGray);
+    }
+
+    .photo-search-bar_value {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .photo-search-bar_hint {
+        margin-left: auto;
+        flex-shrink: 0;
+        font-size: 0.8rem;
+        color: var(--ColorGray);
+    }
+}
