@@ -141,9 +141,9 @@
         margin: 0;
     }
 
-    // ── Budgets ──────────────────────────────────────────────
-    // Accordion: Kopfzeile (Titel + Gesamtbudget + Chevron) klappt die Liste auf
-    .money-budgets_toggle {
+    // ── Akkordeon (Budgets, Schulden) ───────────────────────
+    // Kopfzeile (Titel + Zusammenfassung + Chevron) klappt den Inhalt auf
+    .money-accordion_toggle {
         display: flex;
         align-items: center;
         gap: 16px;
@@ -168,27 +168,30 @@
         }
     }
 
-    .money-budgets_title {
+    // Steht als <span> im Button, soll aber wie die <h3>-Überschriften aussehen
+    .money-accordion_title {
         margin: 0;
         flex-shrink: 0;
+        font-size: 1.17em;
+        font-weight: 700;
     }
 
-    // Balken + Betrag in einer Zeile neben dem Titel
-    .money-budgets_total {
+    // Zusammenfassung in einer Zeile neben dem Titel (z. B. Balken + Betrag)
+    .money-accordion_summary {
         flex: 1;
         min-width: 0;
         display: flex;
         align-items: center;
         gap: 10px;
 
-        .money-budgets_progress {
+        .money-progress {
             flex: 1;
             min-width: 40px;
         }
     }
 
     // Chevron aus zwei Rahmenkanten (wie AppCollapse), dreht beim Öffnen nach oben
-    .money-budgets_chevron {
+    .money-accordion_chevron {
         width: 8px;
         height: 8px;
         margin: 0 4px 0 auto;
@@ -200,34 +203,35 @@
     }
 
     // Höhe animieren ohne feste Maximalhöhe: Grid-Zeile von 0fr auf 1fr
-    .money-budgets_content {
+    .money-accordion_content {
         display: grid;
         grid-template-rows: 0fr;
         transition: grid-template-rows 0.2s ease;
     }
 
-    .money-budgets_inner {
+    .money-accordion_inner {
         min-height: 0;
         overflow: hidden;
     }
 
-    .money-budgets--open {
-        .money-budgets_chevron {
+    .money-accordion--open {
+        .money-accordion_chevron {
             transform: translateY(2px) rotate(-135deg);
         }
 
-        .money-budgets_content {
+        .money-accordion_content {
             grid-template-rows: 1fr;
         }
 
-        // Platz für die Schatten der Budget-Karten, die sonst abgeschnitten
+        // Platz für die Schatten der Karten, die sonst abgeschnitten
         // würden — nur offen, sonst schaut eingeklappt ein Streifen heraus
-        .money-budgets_inner {
+        .money-accordion_inner {
             padding: 2px;
             margin: -2px;
         }
     }
 
+    // ── Budgets ──────────────────────────────────────────────
     .money-budget-list {
         display: flex;
         flex-direction: column;
@@ -266,10 +270,25 @@
     }
 
     // ── Buchungsverlauf / Freigaben ──────────────────────────
+    // Ziel von "Offene Buchungen anzeigen" — Abstand für den fixierten Seitenkopf
+    .money-history {
+        scroll-margin-top: 80px;
+    }
+
     .money-entry-list {
         display: flex;
         flex-direction: column;
         gap: 10px;
+    }
+
+    // Ende der Liste: Auslöser fürs Nachladen beim Scrollen
+    .money-entry-list_more {
+        display: flex;
+        justify-content: center;
+        min-height: 40px;
+        padding: 12px 0;
+        font-size: 13px;
+        color: var(--ColorGray);
     }
 
     .money-entry {

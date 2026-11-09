@@ -76,28 +76,28 @@
         </section>
 
         <!-- Budgets -->
-        <section class="money-section money-budgets" :class="{ 'money-budgets--open': isBudgetsOpen, 'money-budgets--empty': !hasBudgets }">
+        <section class="money-section money-accordion money-budgets" :class="{ 'money-accordion--open': isBudgetsOpen, 'money-budgets--empty': !hasBudgets }">
           <!-- Kopfzeile: Titel + Gesamtbudget-Leiste + Chevron, klappt die Liste auf/zu -->
           <button
             type="button"
-            class="money-budgets_toggle"
+            class="money-accordion_toggle"
             :aria-expanded="isBudgetsOpen"
             aria-controls="money-budgets-content"
             :disabled="!hasBudgets"
             @click="budgetsOpen = !budgetsOpen"
           >
-            <span class="hl3 money-section_title money-budgets_title">Budget</span>
-            <span v-if="totalBudget" class="money-budgets_total">
-              <MoneyBudgetProgress :budget="totalBudget" class="money-budgets_progress" />
+            <span class="hl3 money-section_title money-accordion_title">Budget</span>
+            <span v-if="totalBudget" class="money-accordion_summary">
+              <MoneyBudgetProgress :budget="totalBudget" />
               <span class="money-budget_amount">
                 {{ formatCurrency(totalBudget.Spent) }} / {{ formatCurrency(totalBudget.Budget) }}
               </span>
             </span>
-            <span v-if="hasBudgets" class="money-budgets_chevron" aria-hidden="true"></span>
+            <span v-if="hasBudgets" class="money-accordion_chevron" aria-hidden="true"></span>
           </button>
 
-          <div id="money-budgets-content" class="money-budgets_content" :inert="!isBudgetsOpen">
-            <div class="money-budgets_inner">
+          <div id="money-budgets-content" class="money-accordion_content" :inert="!isBudgetsOpen">
+            <div class="money-accordion_inner">
               <div v-if="account.Budgets.length === 0" class="section_infobox"><p>Noch keine Budgets angelegt.</p></div>
 
               <div v-else class="money-budget-list">
@@ -126,12 +126,15 @@
           </div>
         </section>
 
+        <!-- Offene Auszahlungen an einen selbst / an alle Mitglieder -->
+        <MoneyDebtsSection v-if="account.Debts" :debts="account.Debts" @filter="showOpenEntriesOf" />
+
         <!-- Buchungsverlauf -->
-        <section class="money-section">
+        <section ref="historySection" class="money-section money-history">
           <h3 class="hl3 money-section_title">Buchungsverlauf</h3>
 
           <AppSearchBar
-            v-if="canEnterEntries || account.History.length > 0"
+            v-if="canEnterEntries || account.EntryCount > 0"
             v-model="filters.search"
             placeholder="Nach Titel, Person oder Betrag suchen…"
           >
@@ -139,7 +142,7 @@
               <AppButton variant="primary" title="Ausgabe/Einnahme erfassen" @click="openEntryModal(null)">+ Buchung</AppButton>
             </template>
 
-            <template v-if="account.History.length > 0" #filters>
+            <template v-if="account.EntryCount > 0" #filters>
               <select v-model="filters.userId" aria-label="Nutzer">
                 <option value="">Alle Nutzer</option>
                 <option v-for="u in historyUsers" :key="u.ID" :value="String(u.ID)">{{ u.Name }}</option>
@@ -155,6 +158,7 @@
                 <option value="">Alle Status</option>
                 <option value="approved">Freigegeben</option>
                 <option value="pending">Ausstehend</option>
+                <option value="open">Offen (nicht ausgezahlt)</option>
               </select>
 
               <select v-model="sortOrder" aria-label="Reihenfolge" title="Reihenfolge">
@@ -165,12 +169,14 @@
             </template>
           </AppSearchBar>
 
-          <div v-if="account.History.length === 0" class="section_infobox"><p>Noch keine Buchungen erfasst.</p></div>
-          <div v-else-if="filteredHistory.length === 0" class="section_infobox"><p>Keine Buchungen entsprechen den gewählten Filtern.</p></div>
+          <div v-if="account.EntryCount === 0" class="section_infobox"><p>Noch keine Buchungen erfasst.</p></div>
+          <div v-else-if="store.entriesError && entries.length === 0" class="section_infobox"><p>{{ store.entriesError }}</p></div>
+          <div v-else-if="entries.length === 0 && store.entriesLoading" class="section_infobox"><p>Lade Buchungen…</p></div>
+          <div v-else-if="entries.length === 0" class="section_infobox"><p>Keine Buchungen entsprechen den gewählten Filtern.</p></div>
 
           <div v-else class="money-entry-list">
             <div
-              v-for="entry in filteredHistory"
+              v-for="entry in entries"
               :key="entry.ID"
               class="money-entry"
               role="button"
@@ -180,6 +186,12 @@
             >
               <MoneyEntryRow :entry="entry" :can-settle="account.Permissions.canApprove" @settle="openSettleModal" />
             </div>
+          </div>
+
+          <!-- Lazyloading: lädt die nächste Seite, sobald dieses Element in die Nähe des sichtbaren Bereichs kommt -->
+          <div v-if="entries.length > 0 && store.entriesHasMore" ref="moreEl" class="money-entry-list_more">
+            <p v-if="store.entriesLoading">Lade weitere Buchungen…</p>
+            <AppButton v-else-if="store.entriesError" variant="secondary" size="small" @click="store.loadMoreEntries()">Erneut versuchen</AppButton>
           </div>
         </section>
 
@@ -245,6 +257,7 @@ import MoneyBudgetModal from '@components/money/MoneyBudgetModal.vue'
 import MoneyEntryRow from '@components/money/MoneyEntryRow.vue'
 import MoneyBudgetProgress from '@components/money/MoneyBudgetProgress.vue'
 import MoneySettleModal from '@components/money/MoneySettleModal.vue'
+import MoneyDebtsSection from '@components/money/MoneyDebtsSection.vue'
 import AppButton from '@components/ui/AppButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
@@ -330,68 +343,66 @@ const SORT_OPTIONS = [
 ]
 const sortOrder = ref('invoice')
 
-const historyUsers = computed(() => {
-  const map = new Map()
-  for (const entry of account.value?.History ?? []) {
-    if (entry.User) map.set(entry.User.ID, entry.User.Name)
-  }
-  return [...map.entries()]
-    .map(([ID, Name]) => ({ ID, Name }))
-    .sort((a, b) => a.Name.localeCompare(b.Name))
-})
+// Personen mit Buchungen in dieser Kasse (vom Server, da nicht alle Buchungen geladen sind)
+const historyUsers = computed(() => account.value?.EntryUsers ?? [])
 
-// Betrag in den gängigen Schreibweisen, damit z. B. "12,5", "12,50", "12.50"
-// und "1.234,50" alle dieselbe Buchung finden
-function amountVariants(amount) {
-  const value = Math.abs(Number(amount) || 0)
-  const fixed = value.toFixed(2)
-  return [
-    new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value),
-    fixed.replace('.', ','),
-    fixed,
-    String(value),
-    String(value).replace('.', ','),
-  ]
+// Buchungsverlauf: wird seitenweise vom Server geladen; Suche, Filter und Sortierung
+// laufen dort (MoneyApiController::entries), damit sie auch ungeladene Buchungen erfassen
+const entries = computed(() => store.entries)
+const moreEl = ref(null)
+
+function entriesQuery() {
+  return {
+    search: filters.search.trim(),
+    user: filters.userId,
+    budget: filters.budgetId,
+    status: filters.status,
+    sort: sortOrder.value,
+  }
 }
 
-// Suche über Titel, Person und Betrag. Enthält die Eingabe nur Ziffern/Trenner
-// (optional mit €/Vorzeichen), wird zusätzlich der Betrag verglichen.
-function matchesSearch(entry, search) {
-  const q = search.trim().toLowerCase()
-  if (!q) return true
-
-  if (entry.ChangeReason?.toLowerCase().includes(q)) return true
-  if (entry.User?.Name?.toLowerCase().includes(q)) return true
-
-  const amountQuery = q.replace(/[€\s+-]/g, '')
-  if (/^[\d.,]+$/.test(amountQuery)) {
-    return amountVariants(entry.ChangeAmount).some(v => v.includes(amountQuery))
-  }
-  return false
+function loadEntries() {
+  const id = route.params.id
+  if (id) store.loadEntries(id, entriesQuery())
 }
 
-const filteredHistory = computed(() => {
-  const history = account.value?.History ?? []
-  const filtered = history.filter(entry => {
-    if (filters.search && !matchesSearch(entry, filters.search)) return false
-    if (filters.userId && String(entry.User?.ID) !== filters.userId) return false
-    if (filters.budgetId === 'none' && entry.Budget) return false
-    if (filters.budgetId && filters.budgetId !== 'none' && String(entry.Budget?.ID) !== filters.budgetId) return false
-    if (filters.status === 'approved' && !entry.Approved) return false
-    if (filters.status === 'pending' && entry.Approved) return false
-    return true
-  })
-
-  const sorted = [...filtered]
-  if (sortOrder.value === 'alphabetical') {
-    sorted.sort((a, b) => a.ChangeReason.localeCompare(b.ChangeReason))
-  } else if (sortOrder.value === 'submission') {
-    sorted.sort((a, b) => (b.Created ?? '').localeCompare(a.Created ?? ''))
-  } else {
-    sorted.sort((a, b) => (b.ChangeDate ?? '').localeCompare(a.ChangeDate ?? ''))
-  }
-  return sorted
+// Auswahlfelder sofort, die Suche erst nach einer kurzen Tipp-Pause
+let searchTimer = null
+watch(() => filters.search, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(loadEntries, 300)
 })
+watch(() => [filters.userId, filters.budgetId, filters.status, sortOrder.value], () => {
+  clearTimeout(searchTimer)
+  loadEntries()
+})
+
+// Nächste Seite laden, sobald das Ende der Liste in die Nähe kommt. Ist danach noch
+// Platz (kurze Seite, großer Bildschirm), wird erneut geprüft.
+let observer = null
+watch(moreEl, el => {
+  observer?.disconnect()
+  if (!el || typeof IntersectionObserver === 'undefined') return
+  observer = new IntersectionObserver(async observed => {
+    if (!observed.some(e => e.isIntersecting)) return
+    await store.loadMoreEntries()
+    if (moreEl.value && store.entriesHasMore && !store.entriesError) {
+      observer.unobserve(moreEl.value)
+      observer.observe(moreEl.value)
+    }
+  }, { rootMargin: '400px' })
+  observer.observe(el)
+})
+
+// Aus "Schulden": Buchungsverlauf auf die offenen Buchungen einer Person filtern
+const historySection = ref(null)
+function showOpenEntriesOf(userId) {
+  filters.search = ''
+  filters.budgetId = ''
+  filters.userId = String(userId)
+  filters.status = 'open'
+  historySection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0)
@@ -462,17 +473,25 @@ let lightbox = null
 
 onMounted(() => {
   store.fetchAccount(route.params.id)
+  loadEntries()
   lightbox = GLightbox({ selector: '.money-entry_receipt', touchNavigation: true })
 })
 
 onUnmounted(() => {
   lightbox?.destroy()
+  observer?.disconnect()
+  clearTimeout(searchTimer)
+  store.resetEntries()
 })
 
-watch(() => route.params.id, id => { if (id) store.fetchAccount(id) })
+watch(() => route.params.id, id => {
+  if (!id) return
+  store.fetchAccount(id)
+  loadEntries()
+})
 
 // Re-scan the DOM for receipt links whenever the entry list changes
-watch(account, () => {
+watch([account, entries], () => {
   nextTick(() => lightbox?.reload())
 }, { deep: true })
 </script>
