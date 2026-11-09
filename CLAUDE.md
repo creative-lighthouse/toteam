@@ -52,7 +52,14 @@ ddev composer rector-dry  # Preview code modernization (PHP 8.3 / SS6)
 ddev composer rector      # Apply Rector changes
 ```
 
-There are no frontend or backend test suites configured.
+## Tests
+
+```bash
+ddev composer test                                   # PHPUnit (app/tests/), ~30 s
+ddev exec vendor/bin/phpunit --filter MoneyDebtsTest # einzelne Klasse/Methode
+```
+
+Backend tests only (no frontend tests). They are `SapphireTest`s that run against a temporary database per test class (`ss_tmpdb_*`, never the dev data); `.ddev/config.tests.yaml` grants the `db` user the rights for that on `ddev start`. `phpunit.xml.dist` sets `SS_PHPUNIT_FLUSH=1` so new test classes are found. The money tests (`app/tests/Money/`) call the real API as different org members via JWT (`MoneyApiTestCase::api()`), so permissions, approvals and the cached balances are covered too; compare amounts with `assertMoney()` (JSON turns `30.0` into `30`).
 
 ## Architecture
 

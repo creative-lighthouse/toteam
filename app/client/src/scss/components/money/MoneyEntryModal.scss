@@ -1,0 +1,23 @@
+// Buchung erfassen/bearbeiten (siehe MoneyEntryModal.vue); Grundmaße in money-modals.scss
+.money-entry-modal {
+    // Felder nach der Typ-Wahl: eigenes .modalform-Raster über die ganze Breite
+    .money-entry-modal_details {
+        grid-column: 1 / -1;
+    }
+
+    // Einblenden der Felder, sobald ein Typ gewählt ist
+    .money-entry-modal_step-enter-active {
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .money-entry-modal_step-enter-from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .money-entry-modal_step-enter-active {
+            transition: none;
+        }
+    }
+}

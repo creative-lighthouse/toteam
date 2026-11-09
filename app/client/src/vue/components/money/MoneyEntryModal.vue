@@ -2,67 +2,74 @@
   <AppModal ref="modal" class="money-entry-modal" :title="isEdit ? 'Buchung bearbeiten' : 'Buchung erfassen'" @close="close">
     <form id="money-entry-form" class="modalform" @submit.prevent="submit">
 
-      <AppSegmentedToggle
-        v-model="form.ChangeType"
-        label="Typ"
-        :options="[
-          { value: 'Withdrawal', label: 'Ausgabe', disabled: !canEnterWithdrawal },
-          { value: 'Deposit', label: 'Einnahme', disabled: !canEnterDeposit },
-        ]"
-      />
-
       <div class="field">
-        <label>Für</label>
+        <label>Buchung von *</label>
         <MemberPicker
           v-model="form.UserID"
           :members="memberOptions"
           dropdown
+          collapse
+          label="Buchung von"
           pin-self
           :self-id="selfId"
           :disabled="loadingMembers"
         />
       </div>
 
-      <div class="field">
-        <label for="entry-amount">Betrag (€) *</label>
-        <input id="entry-amount" v-model="form.ChangeAmount" type="number" step="0.01" min="0.01" placeholder="0,00" required />
-        <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
-      </div>
-
-      <label class="field">
-        Grund *
-        <input id="entry-reason" v-model="form.ChangeReason" type="text" placeholder="z.B. Getränkeeinkauf" required />
-      </label>
-
-      <label class="field">
-        Datum
-        <input id="entry-date" v-model="form.ChangeDate" type="date" />
-      </label>
-
-      <div v-if="form.ChangeType === 'Withdrawal' && budgets.length" class="field">
-        <label for="entry-budget">Budget</label>
-        <select id="entry-budget" v-model="form.BudgetID">
-          <option value="">Kein Budget</option>
-          <option v-for="b in budgets" :key="b.ID" :value="b.ID">{{ b.Title }}</option>
-        </select>
-      </div>
-
-      <label class="field">
-        Anmerkungen
-        <textarea id="entry-notes" v-model="form.Notes" rows="3" placeholder="Weitere Details zu dieser Buchung…"></textarea>
-      </label>
-
-      <AppFileUpload
-        v-model="receiptFile"
-        label="Beleg"
-        :required="requiresReceipt && !existingReceiptURL"
-        :accept="RECEIPT_TYPES.join(',')"
-        :max-size="RECEIPT_MAX_SIZE"
-        button-label="Beleg fotografieren / auswählen"
-        change-label="Anderen Beleg wählen"
-        hint="JPG, PNG oder PDF, max. 5 MB"
-        :existing-hint="existingReceiptURL ? 'Aktueller Beleg bleibt erhalten, falls kein neuer gewählt wird.' : ''"
+      <AppSegmentedToggle
+        v-model="form.ChangeType"
+        label="Typ *"
+        :options="[
+          { value: 'Withdrawal', label: 'Ausgabe', disabled: !canEnterWithdrawal },
+          { value: 'Deposit', label: 'Einnahme', disabled: !canEnterDeposit },
+        ]"
       />
+
+      <!-- Schrittweise: die übrigen Felder erscheinen erst, wenn ein Typ gewählt ist -->
+      <Transition name="money-entry-modal_step">
+        <div v-if="form.ChangeType" class="modalform money-entry-modal_details">
+          <div class="field">
+            <label for="entry-amount">Betrag (€) *</label>
+            <input id="entry-amount" v-model="form.ChangeAmount" type="number" step="0.01" min="0.01" placeholder="0,00" required />
+            <p v-if="amountError" class="money-field-error">{{ amountError }}</p>
+          </div>
+
+          <label class="field">
+            Grund *
+            <input id="entry-reason" v-model="form.ChangeReason" type="text" placeholder="z.B. Getränkeeinkauf" required />
+          </label>
+
+          <label class="field">
+            Datum
+            <input id="entry-date" v-model="form.ChangeDate" type="date" />
+          </label>
+
+          <div v-if="form.ChangeType === 'Withdrawal' && budgets.length" class="field">
+            <label for="entry-budget">Budget</label>
+            <select id="entry-budget" v-model="form.BudgetID">
+              <option value="">Kein Budget</option>
+              <option v-for="b in budgets" :key="b.ID" :value="b.ID">{{ b.Title }}</option>
+            </select>
+          </div>
+
+          <label class="field">
+            Anmerkungen
+            <textarea id="entry-notes" v-model="form.Notes" rows="3" placeholder="Weitere Details zu dieser Buchung…"></textarea>
+          </label>
+
+          <AppFileUpload
+            v-model="receiptFile"
+            label="Beleg"
+            :required="requiresReceipt && !existingReceiptURL"
+            :accept="RECEIPT_TYPES.join(',')"
+            :max-size="RECEIPT_MAX_SIZE"
+            button-label="Beleg fotografieren / auswählen"
+            change-label="Anderen Beleg wählen"
+            hint="JPG, PNG oder PDF, max. 5 MB"
+            :existing-hint="existingReceiptURL ? 'Aktueller Beleg bleibt erhalten, falls kein neuer gewählt wird.' : ''"
+          />
+        </div>
+      </Transition>
 
       <div v-if="error" class="app-modal_error">{{ error }}</div>
     </form>
@@ -153,8 +160,9 @@ const MAX_AMOUNT = 999999999.99
 
 const today = () => new Date().toISOString().slice(0, 10)
 
+// Neue Buchungen starten ohne Typ — die übrigen Felder erscheinen erst nach der Wahl
 const defaultForm = () => ({
-  ChangeType: props.canEnterWithdrawal ? 'Withdrawal' : 'Deposit',
+  ChangeType: '',
   ChangeAmount: '',
   ChangeReason: '',
   ChangeDate: today(),
@@ -181,6 +189,7 @@ const clientAmountError = computed(() => {
 const amountError = computed(() => clientAmountError.value || serverAmountError.value)
 
 const canSubmit = computed(() => {
+  if (!form.ChangeType || !form.UserID) return false
   if (!form.ChangeAmount || !form.ChangeReason.trim()) return false
   if (amountError.value) return false
   if (requiresReceipt.value && !receiptFile.value && !existingReceiptURL.value) return false
@@ -208,7 +217,9 @@ function open(entryToEdit = null, defaultBudgetId = null) {
   if (entryToEdit) {
     fillFromEntry(entryToEdit)
   } else if (defaultBudgetId) {
+    // Aus einem Budget heraus geht es immer um eine Ausgabe (Budgets gibt es nur für Ausgaben)
     form.BudgetID = defaultBudgetId
+    if (props.canEnterWithdrawal) form.ChangeType = 'Withdrawal'
   }
   loadMembers()
   modal.value?.open()

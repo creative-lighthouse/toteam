@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tests laufen gegen eine temporäre Datenbank, die SilverStripe pro Testklasse anlegt
+  (ss_tmpdb_*), nicht gegen die Entwicklungsdaten. Ausführen: ddev composer test
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/silverstripe/framework/tests/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache">
+    <php>
+        <!-- Klassen-Cache neu aufbauen, damit neue Testklassen sofort gefunden werden -->
+        <env name="SS_PHPUNIT_FLUSH" value="1"/>
+    </php>
+    <testsuites>
+        <testsuite name="app">
+            <directory>app/tests</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

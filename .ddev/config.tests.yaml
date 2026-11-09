@@ -1,0 +1,7 @@
+# PHPUnit (ddev composer test): SilverStripe legt für jede Testklasse eine temporäre
+# Datenbank ss_tmpdb_* an und löscht sie danach wieder. Der Benutzer "db" darf das nur
+# für diese Datenbanken, nicht für andere.
+hooks:
+    post-start:
+        - exec: mysql -uroot -proot -e "GRANT ALL PRIVILEGES ON \`ss\_tmpdb\_%\`.* TO 'db'@'%';"
+          service: db
