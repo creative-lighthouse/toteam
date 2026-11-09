@@ -43,6 +43,8 @@ class MoneyApiController extends ApiController
         'entryUpdate',
         'entryApprove',
         'entrySettle',
+        'entrySettleBulk',
+        'entryRemoveBulk',
         'entry',
         'accountMembers',
         'entryHistory',
@@ -959,6 +961,155 @@ class MoneyApiController extends ApiController
             'entry' => $this->formatEntry($entry),
             'account' => $this->formatAccount($account, $member, true),
         ], 'Zahlung erfasst');
+    }
+
+    /**
+     * POST /api/v1/money/entrySettleBulk — mehrere Buchungen einer Kasse auf einmal begleichen
+     * Body: { AccountID, EntryIDs: int[], Date?, PaymentMethod: "Bar"|"EC" }
+     * Jede Buchung wird um ihren noch offenen Rest beglichen. Übersprungen (skipped) wird, was
+     * nichts offen hat: Einnahmen, nicht freigegebene oder bereits voll beglichene Buchungen
+     * sowie IDs, die nicht zu dieser Kasse gehören.
+     */
+    public function entrySettleBulk(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $body = $this->getJsonBody();
+
+        $account = MoneyAccount::get()->byID((int) ($body['AccountID'] ?? 0));
+        if (!$account || !$account->exists() || !$account->canApproveEntriesInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($body['EntryIDs'] ?? [])))));
+        if (!$ids) {
+            return $this->errorResponse('Keine Buchungen ausgewählt', 400);
+        }
+        if (count($ids) > 500) {
+            return $this->errorResponse('Höchstens 500 Buchungen auf einmal', 400);
+        }
+
+        $paymentMethod = trim($body['PaymentMethod'] ?? '');
+        if (!in_array($paymentMethod, ['Bar', 'EC'], true)) {
+            return $this->errorResponse('Zahlungsart muss "Bar" oder "EC" sein', 400);
+        }
+        $date = trim($body['Date'] ?? '') ?: date('Y-m-d');
+
+        $settledIDs = [];
+        $total = 0.0;
+        $entries = MoneyHistory::get()->filter(['ID' => $ids, 'ParentID' => $account->ID]);
+
+        DB::get_conn()->withTransaction(function () use ($entries, $paymentMethod, $date, $member, &$settledIDs, &$total) {
+            foreach ($entries as $entry) {
+                if ($entry->ChangeType !== 'Withdrawal' || !$entry->Approved) {
+                    continue;
+                }
+                $open = round((float) $entry->ChangeAmount - (float) $entry->Settlements()->sum('Amount'), 2);
+                if ($open <= 0) {
+                    continue;
+                }
+
+                $settlement = MoneySettlement::create();
+                $settlement->Amount = $open;
+                $settlement->Date = $date;
+                $settlement->PaymentMethod = $paymentMethod;
+                $settlement->EntryID = $entry->ID;
+                $settlement->UserID = $member->ID;
+                $settlement->write();
+
+                $settledIDs[] = (int) $entry->ID;
+                $total += $open;
+            }
+        });
+
+        return $this->successResponse([
+            'settled' => $settledIDs,
+            'skipped' => count($ids) - count($settledIDs),
+            'amount' => round($total, 2),
+            'account' => $this->formatAccount($account, $member, true),
+        ], count($settledIDs) === 1 ? '1 Buchung beglichen' : count($settledIDs) . ' Buchungen beglichen');
+    }
+
+    /**
+     * POST /api/v1/money/entryRemoveBulk — mehrere Buchungen einer Kasse auf einmal löschen
+     * Body: { AccountID, EntryIDs: int[] }
+     * Gelöscht wird, was man auch einzeln löschen dürfte (Freigebende alles, sonst nur eigene,
+     * noch nicht freigegebene Buchungen) — samt Begleichungen und Beleg. Der Rest und IDs
+     * anderer Kassen werden übersprungen (skipped). Salden werden einmal am Ende neu berechnet.
+     */
+    public function entryRemoveBulk(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $body = $this->getJsonBody();
+
+        $account = MoneyAccount::get()->byID((int) ($body['AccountID'] ?? 0));
+        if (!$account || !$account->exists() || !$account->canViewInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($body['EntryIDs'] ?? [])))));
+        if (!$ids) {
+            return $this->errorResponse('Keine Buchungen ausgewählt', 400);
+        }
+        if (count($ids) > 500) {
+            return $this->errorResponse('Höchstens 500 Buchungen auf einmal', 400);
+        }
+
+        $canManage = $account->canApproveEntriesInApp($member);
+        $removedIDs = [];
+        $receipts = [];
+        $anyApproved = false;
+        $entries = MoneyHistory::get()->filter(['ID' => $ids, 'ParentID' => $account->ID]);
+
+        DB::get_conn()->withTransaction(function () use ($entries, $member, $canManage, &$removedIDs, &$receipts, &$anyApproved) {
+            foreach ($entries as $entry) {
+                $isOwner = (int) $entry->UserID === (int) $member->ID;
+                if (!$canManage && !($isOwner && !$entry->Approved)) {
+                    continue;
+                }
+                $anyApproved = $anyApproved || (bool) $entry->Approved;
+                $receipt = $entry->Receipt();
+                if ($receipt && $receipt->exists()) {
+                    $receipts[] = $receipt;
+                }
+                foreach ($entry->Settlements() as $settlement) {
+                    $settlement->delete();
+                }
+                $removedIDs[] = (int) $entry->ID;
+                $entry->delete();
+            }
+        });
+
+        // Dateien erst nach der Transaktion löschen (lassen sich nicht zurückrollen)
+        foreach ($receipts as $receipt) {
+            $receipt->deleteFile();
+            $receipt->doArchive();
+        }
+
+        if ($anyApproved) {
+            $this->recalculateBalances($account);
+        }
+
+        return $this->successResponse([
+            'removed' => $removedIDs,
+            'skipped' => count($ids) - count($removedIDs),
+            'account' => $this->formatAccount($account, $member, true),
+        ], count($removedIDs) === 1 ? '1 Buchung gelöscht' : count($removedIDs) . ' Buchungen gelöscht');
     }
 
     /** PUT /api/v1/money/entryApprove/$ID */

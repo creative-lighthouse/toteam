@@ -177,4 +177,64 @@ class MoneyBalanceTest extends MoneyApiTestCase
         }
         $this->assertMoney(0.0, $this->balance($account));
     }
+
+    // ── Mehrere auf einmal löschen (entryRemoveBulk) ────────────────────
+
+    private function removeBulk(int $account, array $ids, $as = null): array
+    {
+        return $this->api($as ?? $this->treasurer, 'POST', 'entryRemoveBulk', [], ['AccountID' => $account, 'EntryIDs' => $ids]);
+    }
+
+    public function testBulkRemoveDeletesEntriesAndRecalculates(): void
+    {
+        $account = $this->createAccount(['StartingAmount' => 100]);
+        $budget = $this->createBudget($account, 500);
+        $a = $this->createEntry($account, 'Withdrawal', '30', $this->member, ['BudgetID' => $budget]);
+        $b = $this->createEntry($account, 'Deposit', '20');
+        $keep = $this->createEntry($account, 'Withdrawal', '5');
+        $this->settle($a, 10);
+
+        $response = $this->removeBulk($account, [$a, $b]);
+
+        $this->assertSame(200, $response['_status']);
+        $this->assertSame([$a, $b], $response['data']['removed']);
+        $this->assertSame(0, $response['data']['skipped']);
+        $this->assertMoney(95, $this->balance($account));
+        $this->assertMoney(0, $this->budget($account, $budget)['Spent']);
+        $this->assertSame([$keep], $this->entryIDs($account));
+        $this->assertSame(0, \App\Money\MoneySettlement::get()->filter('EntryID', $a)->count(), 'Begleichungen mitgelöscht');
+    }
+
+    public function testBulkRemoveOnlyWhatOneMayDelete(): void
+    {
+        // Mitglieder dürfen nur eigene, noch nicht freigegebene Buchungen löschen
+        $account = $this->createAccount(['RequiresApproval' => true]);
+        $ownPending = $this->createEntry($account, 'Withdrawal', '10', $this->member);
+        $ownApproved = $this->createEntry($account, 'Withdrawal', '20', $this->member);
+        $this->approve($ownApproved);
+        $othersPending = $this->createEntry($account, 'Withdrawal', '30', $this->member2);
+        $foreign = $this->createEntry($this->createAccount(['Title' => 'Andere']), 'Withdrawal', '40', $this->member);
+
+        $response = $this->removeBulk($account, [$ownPending, $ownApproved, $othersPending, $foreign], $this->member);
+
+        $this->assertSame([$ownPending], $response['data']['removed']);
+        $this->assertSame(3, $response['data']['skipped']);
+        $remaining = $this->entryIDs($account);
+        sort($remaining);
+        $this->assertSame([$ownApproved, $othersPending], $remaining);
+        $this->assertMoney(-20, $this->balance($account));
+        $this->assertNotNull(\App\Money\MoneyHistory::get()->byID($foreign), 'Buchung einer anderen Kasse bleibt');
+    }
+
+    public function testBulkRemoveRejectsOutsidersAndEmptySelection(): void
+    {
+        $account = $this->createAccount();
+        $entry = $this->createEntry($account, 'Withdrawal', '10');
+        $outsider = \SilverStripe\Security\Member::create(['FirstName' => 'Fremd', 'Email' => 'fremd@example.com']);
+        $outsider->write();
+
+        $this->assertSame(403, $this->removeBulk($account, [$entry], $outsider)['_status']);
+        $this->assertSame(400, $this->removeBulk($account, [])['_status']);
+        $this->assertSame([$entry], $this->entryIDs($account));
+    }
 }

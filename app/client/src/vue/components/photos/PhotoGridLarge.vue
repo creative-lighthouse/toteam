@@ -27,7 +27,7 @@
           <img v-if="photo.ThumbURL" :src="photo.ThumbURL" alt="" class="photo-grid-large_image" loading="lazy" decoding="async">
           <span v-else class="photo-grid-large_missing">Nicht verfügbar</span>
         </button>
-        <PhotoSelectCheckbox
+        <AppSelectCheckbox
           v-if="selected && canSelect(photo)"
           class="photo-grid-large_select"
           overlay
@@ -54,7 +54,7 @@
 
 <script setup>
 import PhotoDownloadButton from '@components/photos/PhotoDownloadButton.vue'
-import PhotoSelectCheckbox from '@components/photos/PhotoSelectCheckbox.vue'
+import AppSelectCheckbox from '@components/ui/AppSelectCheckbox.vue'
 import { formatCopyright, formatPhotoDateTime } from '@utils/photoUpload'
 
 defineProps({

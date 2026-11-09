@@ -16,7 +16,7 @@
       :class="{ 'photo-list_row--selected': selected?.has(photo.ID) }"
     >
       <template v-if="selected">
-        <PhotoSelectCheckbox
+        <AppSelectCheckbox
           v-if="canSelect(photo)"
           :checked="selected.has(photo.ID)"
           :label="`${photoLabel(photo)} auswählen`"
@@ -64,7 +64,7 @@
 
 <script setup>
 import PhotoDownloadButton from '@components/photos/PhotoDownloadButton.vue'
-import PhotoSelectCheckbox from '@components/photos/PhotoSelectCheckbox.vue'
+import AppSelectCheckbox from '@components/ui/AppSelectCheckbox.vue'
 import { formatCopyright, formatPhotoDateTime } from '@utils/photoUpload'
 
 defineProps({

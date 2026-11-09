@@ -308,6 +308,18 @@
         }
     }
 
+    // Mehrfachauswahl: Kästchen vor dem Eintrag, ausgewählte Einträge hervorgehoben
+    .money-entry_select {
+        display: flex;
+        align-self: center;
+        margin: -8px 0 -8px -8px; // Klickfläche des Kästchens (36px) ragt in das Polster
+        cursor: default;
+    }
+
+    .money-entry--selected {
+        box-shadow: 0 0 0 2px var(--ColorPrimary);
+    }
+
     .money-entry_row {
         flex: 1;
         min-width: 0;
@@ -428,4 +440,9 @@
     &:hover {
         background-color: var(--ColorPrimaryDark);
     }
+}
+
+// Während einer Mehrfachauswahl liegt die Auswahlleiste unten — der schwebende Button weicht
+.section--MoneyAccountDetailPage-selecting .money-fab {
+    display: none;
 }

@@ -99,6 +99,7 @@
 @use "components/ui/AppCountButton.scss";
 @use "components/ui/AppSegmentedToggle.scss";
 @use "components/ui/AppViewToggle.scss";
+@use "components/ui/AppSelectCheckbox.scss";
 @use "components/ui/AppTabNav.scss";
 @use "components/ui/AppChipSelect.scss";
 @use "components/ui/AppSearchBar.scss";
@@ -151,7 +152,6 @@
 @use "components/photos/PhotoInlineText.scss";
 @use "components/photos/PhotoTagSection.scss";
 @use "components/photos/PhotoTagFields.scss";
-@use "components/photos/PhotoSelectCheckbox.scss";
 @use "components/photos/PhotoSelectionBar.scss";
 @use "components/photos/PhotoBulkTagModal.scss";
 @use "components/photos/PhotoStorageSettingsModal.scss";
@@ -171,9 +171,14 @@
 @use "components/rooms/RoomDetailModal.scss";
 @use "components/tasks/TaskRoomsModal.scss";
 @use "components/money/money-modals.scss";
+@use "components/money/MoneyBudgetBoard.scss";
+@use "components/money/MoneyBudgetColumn.scss";
 @use "components/money/MoneyDebtProgress.scss";
 @use "components/money/MoneyDebtsSection.scss";
 @use "components/money/MoneyEntryModal.scss";
+@use "components/money/MoneyEntryTable.scss";
+@use "components/money/MoneySelectionBar.scss";
+@use "components/money/MoneySettleBulkModal.scss";
 @use "components/money/MoneySettleModal.scss";
 @use "components/organizations/OrgRoleEditModal.scss";
 @use "components/organizations/OrgMemberRolesModal.scss";

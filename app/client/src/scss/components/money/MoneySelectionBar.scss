@@ -1,0 +1,91 @@
+@use "../../base/variables" as *;
+
+// Mehrfachauswahl im Buchungsverlauf (siehe MoneySelectionBar.vue), aufgebaut wie
+// .photo-selection-bar: schwebt unten über dem Inhalt, oberhalb des Menüs
+.money-selection-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 95px;
+    z-index: 101;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    width: max-content;
+    max-width: calc(100% - 32px);
+    padding: 0.4rem 0.5rem 0.4rem 0.4rem;
+    border-radius: var(--BorderRadiusMedium);
+    background: var(--ColorWhite);
+    box-shadow: var(--BoxShadowMenu);
+    border: 1px solid var(--ColorLightGray);
+    transform: translateX(-50%);
+
+    .money-selection-bar_summary {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+    }
+
+    .money-selection-bar_count {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .money-selection-bar_sum {
+        font-size: 13px;
+        color: var(--ColorGray);
+        white-space: nowrap;
+
+        strong {
+            color: var(--ColorBlack);
+        }
+    }
+
+    .money-selection-bar_all {
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--ColorPrimary);
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+
+    .money-selection-bar_actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: auto;
+
+        .button {
+            margin: 0;
+        }
+    }
+
+    @include media(max-smartphone) {
+        width: calc(100% - 32px);
+    }
+}
+
+.money-selection-bar-enter-active,
+.money-selection-bar-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.money-selection-bar-enter-from,
+.money-selection-bar-leave-to {
+    opacity: 0;
+    transform: translate(-50%, 1rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .money-selection-bar-enter-active,
+    .money-selection-bar-leave-active {
+        transition: none;
+    }
+}

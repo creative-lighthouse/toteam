@@ -1,0 +1,20 @@
+@use "../../base/variables" as *;
+
+// Budget-Ansicht des Buchungsverlaufs (siehe MoneyBudgetBoard.vue): Spalten nebeneinander,
+// das Board scrollt seitwärts (Spalten selbst: MoneyBudgetColumn.scss).
+.money-budget-board {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px; // Platz für die waagerechte Scrollleiste
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ColorGray) transparent;
+
+    &:focus-visible {
+        outline: 2px solid var(--ColorPrimary);
+        outline-offset: 2px;
+        border-radius: var(--BorderRadiusMedium);
+    }
+}

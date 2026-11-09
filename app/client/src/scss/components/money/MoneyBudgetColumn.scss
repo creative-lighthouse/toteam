@@ -1,0 +1,110 @@
+@use "../../base/variables" as *;
+
+// Eine Spalte im Budget-Board (siehe MoneyBudgetColumn.vue): feste Höhe, die Karten scrollen
+// und laden für sich nach.
+.money-budget-column {
+    flex: 0 0 300px;
+    max-width: 85vw;
+    height: min(70vh, 720px);
+    display: flex;
+    flex-direction: column;
+    background-color: var(--ColorLightGray);
+    border-radius: var(--BorderRadiusMedium);
+    overflow: hidden;
+    scroll-snap-align: start;
+
+    .money-budget-column_header {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 14px;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+
+        // Fortschrittsbalken auf grauem Grund: Leiste weiß lassen
+        .money-progress_bar {
+            background-color: var(--ColorWhite);
+        }
+    }
+
+    .money-budget-column_title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .money-budget-column_title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ColorGray);
+    }
+
+    .money-budget-column_count {
+        flex-shrink: 0;
+        padding: 1px 8px;
+        border-radius: 50px;
+        background-color: var(--ColorWhite);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ColorGray);
+    }
+
+    .money-budget-column_amount {
+        font-size: 12px;
+        color: var(--ColorGray);
+    }
+
+    .money-budget-column_cards {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--ColorGray) transparent;
+
+        .money-entry {
+            flex-shrink: 0;
+            padding: 10px 12px;
+        }
+
+        // Das Budget ist die Spalte selbst
+        .money-entry_budget-tag {
+            display: none;
+        }
+    }
+
+    .money-budget-column_hint {
+        margin: 8px 4px;
+        font-size: 13px;
+        color: var(--ColorGray);
+        text-align: center;
+    }
+
+    .money-budget-column_retry {
+        display: block;
+        margin: 6px auto 0;
+        border: none;
+        background: none;
+        color: var(--ColorPrimary);
+        font: inherit;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    .money-budget-column_more {
+        flex-shrink: 0;
+        min-height: 24px;
+        font-size: 12px;
+        color: var(--ColorGray);
+        text-align: center;
+    }
+}

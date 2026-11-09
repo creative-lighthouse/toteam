@@ -175,4 +175,88 @@ class MoneyDebtsTest extends MoneyApiTestCase
 
         $this->assertSame([$open], $this->entryIDs($account, ['status' => 'open', 'user' => $this->member->ID]));
     }
+
+    // ── Mehrere auf einmal begleichen (entrySettleBulk) ─────────────────
+
+    private function settleBulk(int $account, array $ids, $as = null): array
+    {
+        return $this->api($as ?? $this->treasurer, 'POST', 'entrySettleBulk', [], [
+            'AccountID' => $account,
+            'EntryIDs' => $ids,
+            'PaymentMethod' => 'EC',
+        ]);
+    }
+
+    public function testBulkSettleSettlesTheRemainingAmountOfEachEntry(): void
+    {
+        $account = $this->createAccount();
+        $a = $this->createEntry($account, 'Withdrawal', '40', $this->member);
+        $b = $this->createEntry($account, 'Withdrawal', '30', $this->member2);
+        $this->settle($b, 10);
+
+        $response = $this->settleBulk($account, [$a, $b]);
+
+        $this->assertSame(200, $response['_status']);
+        $this->assertSame([$a, $b], $response['data']['settled']);
+        $this->assertSame(0, $response['data']['skipped']);
+        $this->assertMoney(60, $response['data']['amount'], '40 + Rest 20');
+        $this->assertEquals($this->sums(70, 70, 0), $this->debts($account)['Total']);
+        $this->assertSame([], $this->entryIDs($account, ['status' => 'open']));
+
+        // Nie mehr als der Betrag der Buchung
+        $this->assertMoney(30, \App\Money\MoneySettlement::get()->filter('EntryID', $b)->sum('Amount'));
+    }
+
+    public function testBulkSettleSkipsEntriesWithNothingOpen(): void
+    {
+        $account = $this->createAccount(['RequiresApproval' => true]);
+        $open = $this->createEntry($account, 'Withdrawal', '40', $this->member);
+        $settled = $this->createEntry($account, 'Withdrawal', '20', $this->member);
+        $deposit = $this->createEntry($account, 'Deposit', '50', $this->member);
+        foreach ([$open, $settled, $deposit] as $id) {
+            $this->approve($id);
+        }
+        $this->settle($settled, 20);
+        $pending = $this->createEntry($account, 'Withdrawal', '15', $this->member);
+        $foreign = $this->createEntry($this->createAccount(['Title' => 'Andere']), 'Withdrawal', '99', $this->member);
+
+        $response = $this->settleBulk($account, [$open, $settled, $deposit, $pending, $foreign]);
+
+        $this->assertSame([$open], $response['data']['settled']);
+        $this->assertSame(4, $response['data']['skipped']);
+        $this->assertMoney(40, $response['data']['amount']);
+        $this->assertSame(0, \App\Money\MoneySettlement::get()->filter('EntryID', [$deposit, $pending, $foreign])->count());
+        $this->assertMoney(20, \App\Money\MoneySettlement::get()->filter('EntryID', $settled)->sum('Amount'), 'Nicht doppelt beglichen');
+    }
+
+    public function testBulkSettleDoesNotChangeTheBalance(): void
+    {
+        $account = $this->createAccount(['StartingAmount' => 100]);
+        $a = $this->createEntry($account, 'Withdrawal', '40', $this->member);
+
+        $this->settleBulk($account, [$a]);
+
+        $this->assertMoney(60, $this->balance($account));
+    }
+
+    public function testBulkSettleOnlyForApprovers(): void
+    {
+        $account = $this->createAccount();
+        $a = $this->createEntry($account, 'Withdrawal', '40', $this->member);
+
+        $this->assertSame(403, $this->settleBulk($account, [$a], $this->member)['_status']);
+        $this->assertSame(40.0, (float) $this->debts($account)['Total']['Open']);
+    }
+
+    public function testBulkSettleValidatesInput(): void
+    {
+        $account = $this->createAccount();
+        $a = $this->createEntry($account, 'Withdrawal', '40', $this->member);
+
+        $this->assertSame(400, $this->settleBulk($account, [])['_status']);
+        $this->assertSame(400, $this->api($this->treasurer, 'POST', 'entrySettleBulk', [], [
+            'AccountID' => $account, 'EntryIDs' => [$a], 'PaymentMethod' => 'Scheck',
+        ])['_status']);
+        $this->assertSame(40.0, (float) $this->debts($account)['Total']['Open']);
+    }
 }

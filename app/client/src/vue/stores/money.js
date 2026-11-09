@@ -21,6 +21,9 @@ export const useMoneyStore = defineStore('money', () => {
   const entriesLoading = ref(false)
   const entriesError = ref(null)
   let entriesAccountId = null
+  // Zählt jede Änderung an Buchungen/Budgets hoch — Ansichten mit eigenem Laden
+  // (Spalten im Budget-Board) laden daraufhin neu
+  const entriesVersion = ref(0)
   let entriesQuery = {}
   let entriesRequest = 0
 
@@ -111,6 +114,7 @@ export const useMoneyStore = defineStore('money', () => {
   function applyAccount(account) {
     if (!account) return
     currentAccount.value = account
+    entriesVersion.value++
     if (account.ID === entriesAccountId) refreshEntries()
   }
 
@@ -208,6 +212,7 @@ export const useMoneyStore = defineStore('money', () => {
     const response = await apiPost('/money/budgetStore', data)
     if (response.success && currentAccount.value) {
       await fetchAccount(currentAccount.value.ID)
+      entriesVersion.value++
       if (currentAccount.value?.ID === entriesAccountId) refreshEntries()
     }
     return response
@@ -217,6 +222,7 @@ export const useMoneyStore = defineStore('money', () => {
     const response = await apiPut(`/money/budgetUpdate/${id}`, data)
     if (response.success && currentAccount.value) {
       await fetchAccount(currentAccount.value.ID)
+      entriesVersion.value++
       if (currentAccount.value?.ID === entriesAccountId) refreshEntries()
     }
     return response
@@ -291,6 +297,30 @@ export const useMoneyStore = defineStore('money', () => {
     return response
   }
 
+  /**
+   * Mehrere Buchungen einer Kasse auf einmal begleichen (jeweils der offene Rest).
+   * data: { Date?, PaymentMethod } → Antwort mit { settled, skipped, amount, account }
+   */
+  async function settleEntries(accountId, entryIds, data) {
+    const response = await apiPost('/money/entrySettleBulk', { AccountID: accountId, EntryIDs: entryIds, ...data })
+    if (response.success) {
+      applyAccount(response.data?.account)
+      await clearCacheForEndpoint('/money')
+    }
+    return response
+  }
+
+  /** Mehrere Buchungen einer Kasse auf einmal löschen → Antwort mit { removed, skipped, account } */
+  async function removeEntries(accountId, entryIds) {
+    const response = await apiPost('/money/entryRemoveBulk', { AccountID: accountId, EntryIDs: entryIds })
+    if (response.success) {
+      applyAccount(response.data?.account)
+      await clearCacheForEndpoint('/money')
+      fetchPendingCount()
+    }
+    return response
+  }
+
   // ── Kassen eines Events (Event-Seite) ──
   // Alle Aufrufe liefern den vollständigen Stand: { accounts, availableAccounts, CanCreate }
 
@@ -329,6 +359,7 @@ export const useMoneyStore = defineStore('money', () => {
     entriesHasMore,
     entriesLoading,
     entriesError,
+    entriesVersion,
     loadEntries,
     loadMoreEntries,
     refreshEntries,
@@ -350,6 +381,8 @@ export const useMoneyStore = defineStore('money', () => {
     approveEntry,
     removeEntry,
     settleEntry,
+    settleEntries,
+    removeEntries,
     fetchEventAccounts,
     attachEventAccount,
     detachEventAccount,

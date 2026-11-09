@@ -1,5 +1,5 @@
 <template>
-  <div class="section section--MoneyAccountDetailPage">
+  <div class="section section--MoneyAccountDetailPage" :class="{ 'section--MoneyAccountDetailPage-selecting': selected.size }">
     <div class="section_content">
 
       <div v-if="loading" class="section_infobox"><p>Lade Kasse…</p></div>
@@ -166,30 +166,67 @@
               </select>
 
               <AppButton v-if="hasActiveFilters" variant="secondary" size="small" class="money-filter-reset" @click="resetFilters">Filter zurücksetzen</AppButton>
+
+              <AppViewToggle v-model="viewMode" :options="VIEW_MODES" />
             </template>
           </AppSearchBar>
 
           <div v-if="account.EntryCount === 0" class="section_infobox"><p>Noch keine Buchungen erfasst.</p></div>
+
+          <!-- Budget-Ansicht: Spalten laden selbst (je Budget seitenweise) -->
+          <MoneyBudgetBoard
+            v-else-if="viewMode === 'budgets'"
+            :account-id="account.ID"
+            :budgets="account.Budgets"
+            :query="appliedQuery"
+            :can-settle="account.Permissions.canApprove"
+            :version="store.entriesVersion"
+            @open="openEntryDetail"
+            @settle="openSettleModal"
+            @loaded="reloadLightbox"
+          />
+
           <div v-else-if="store.entriesError && entries.length === 0" class="section_infobox"><p>{{ store.entriesError }}</p></div>
           <div v-else-if="entries.length === 0 && store.entriesLoading" class="section_infobox"><p>Lade Buchungen…</p></div>
           <div v-else-if="entries.length === 0" class="section_infobox"><p>Keine Buchungen entsprechen den gewählten Filtern.</p></div>
+
+          <MoneyEntryTable
+            v-else-if="viewMode === 'table'"
+            :entries="entries"
+            :can-settle="account.Permissions.canApprove"
+            :can-manage="account.Permissions.canApprove"
+            :selected="selectedIds"
+            @open="openEntryDetail"
+            @settle="openSettleModal"
+            @edit="openEntryModal"
+            @toggle-select="toggleSelect"
+            @toggle-all="toggleAllLoaded"
+          />
 
           <div v-else class="money-entry-list">
             <div
               v-for="entry in entries"
               :key="entry.ID"
               class="money-entry"
+              :class="{ 'money-entry--selected': selected.has(entry.ID) }"
               role="button"
               tabindex="0"
               @click="openEntryDetail(entry)"
               @keydown.enter.space.prevent="openEntryDetail(entry)"
             >
+              <span class="money-entry_select" @click.stop @keydown.stop>
+                <AppSelectCheckbox
+                  :checked="selected.has(entry.ID)"
+                  :label="`${entry.ChangeReason} auswählen`"
+                  @toggle="toggleSelect(entry, $event)"
+                />
+              </span>
               <MoneyEntryRow :entry="entry" :can-settle="account.Permissions.canApprove" @settle="openSettleModal" />
             </div>
           </div>
 
           <!-- Lazyloading: lädt die nächste Seite, sobald dieses Element in die Nähe des sichtbaren Bereichs kommt -->
-          <div v-if="entries.length > 0 && store.entriesHasMore" ref="moreEl" class="money-entry-list_more">
+          <div v-if="viewMode !== 'budgets' && entries.length > 0 && store.entriesHasMore" ref="moreEl" class="money-entry-list_more">
             <p v-if="store.entriesLoading">Lade weitere Buchungen…</p>
             <AppButton v-else-if="store.entriesError" variant="secondary" size="small" @click="store.loadMoreEntries()">Erneut versuchen</AppButton>
           </div>
@@ -242,6 +279,27 @@
       :can-settle="account.Permissions.canApprove"
       @saved="onSettleSaved"
     />
+    <MoneySettleBulkModal
+      v-if="account"
+      ref="settleBulkModal"
+      :account-id="account.ID"
+      @saved="onBulkSettled"
+    />
+
+    <MoneySelectionBar
+      :count="selected.size"
+      :selectable-count="entries.length"
+      :expenses="selectionSums.expenses"
+      :income="selectionSums.income"
+      :open-amount="selectionSums.open"
+      :can-settle="!!account?.Permissions.canApprove"
+      :deletable-count="deletableSelection.length"
+      :busy="removingSelection"
+      @select-all="selectAllLoaded"
+      @settle="settleBulkModal?.open([...selected.values()])"
+      @remove="removeSelection"
+      @clear="clearSelection"
+    />
   </div>
 </template>
 
@@ -250,6 +308,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from
 import { useRoute, useRouter } from 'vue-router'
 import GLightbox from 'glightbox'
 import { useMoneyStore } from '@stores/money'
+import { useAuthStore } from '@stores/auth'
 import { usePageHeaderStore } from '@stores/pageHeader'
 import MoneyEntryModal from '@components/money/MoneyEntryModal.vue'
 import MoneyAccountModal from '@components/money/MoneyAccountModal.vue'
@@ -258,6 +317,13 @@ import MoneyEntryRow from '@components/money/MoneyEntryRow.vue'
 import MoneyBudgetProgress from '@components/money/MoneyBudgetProgress.vue'
 import MoneySettleModal from '@components/money/MoneySettleModal.vue'
 import MoneyDebtsSection from '@components/money/MoneyDebtsSection.vue'
+import MoneyEntryTable from '@components/money/MoneyEntryTable.vue'
+import MoneyBudgetBoard from '@components/money/MoneyBudgetBoard.vue'
+import AppViewToggle from '@components/ui/AppViewToggle.vue'
+import AppSelectCheckbox from '@components/ui/AppSelectCheckbox.vue'
+import MoneySelectionBar from '@components/money/MoneySelectionBar.vue'
+import MoneySettleBulkModal from '@components/money/MoneySettleBulkModal.vue'
+import { sumEntries } from '@utils/moneyEntries'
 import AppButton from '@components/ui/AppButton.vue'
 import AppSearchBar from '@components/ui/AppSearchBar.vue'
 import AppIconButton from '@components/ui/AppIconButton.vue'
@@ -271,6 +337,7 @@ const trashIconStyle = { maskImage: `url("${actionTrash}")`, WebkitMaskImage: `u
 const route = useRoute()
 const router = useRouter()
 const store = useMoneyStore()
+const authStore = useAuthStore()
 const pageHeaderStore = usePageHeaderStore()
 
 pageHeaderStore.setHeader('Kasse')
@@ -361,10 +428,137 @@ function entriesQuery() {
   }
 }
 
+// Zuletzt angewandte Suche/Filter — für die Budget-Ansicht, deren Spalten selbst laden
+// (erst nach der Tipp-Pause aktualisiert, damit nicht jede Taste alle Spalten neu lädt)
+const appliedQuery = ref(entriesQuery())
+
 function loadEntries() {
   const id = route.params.id
-  if (id) store.loadEntries(id, entriesQuery())
+  appliedQuery.value = entriesQuery()
+  if (id) store.loadEntries(id, appliedQuery.value)
 }
+
+// ── Mehrfachauswahl (Liste und Tabelle): Summe sehen, offene gemeinsam begleichen ─────
+// Map ID → Buchung, damit Summen auch für Ausgewählte stimmen, die durch Nachladen/Filtern
+// gerade nicht in der Liste stehen. Shift-Klick wählt den Bereich bis zum zuletzt Angeklickten.
+const selected = ref(new Map())
+const selectedIds = computed(() => new Set(selected.value.keys()))
+const selectionSums = computed(() => sumEntries([...selected.value.values()]))
+const settleBulkModal = ref(null)
+let lastSelectedId = null
+
+function toggleSelect(entry, { shift = false } = {}) {
+  const next = new Map(selected.value)
+  const list = entries.value
+  const from = list.findIndex(e => e.ID === lastSelectedId)
+  const to = list.findIndex(e => e.ID === entry.ID)
+  if (shift && from >= 0 && to >= 0) {
+    const [a, b] = from < to ? [from, to] : [to, from]
+    list.slice(a, b + 1).forEach(e => next.set(e.ID, e))
+  } else if (next.has(entry.ID)) {
+    next.delete(entry.ID)
+  } else {
+    next.set(entry.ID, entry)
+  }
+  lastSelectedId = entry.ID
+  selected.value = next
+}
+
+function selectAllLoaded() {
+  const next = new Map(selected.value)
+  entries.value.forEach(e => next.set(e.ID, e))
+  selected.value = next
+}
+
+function toggleAllLoaded() {
+  if (entries.value.length && entries.value.every(e => selected.value.has(e.ID))) clearSelection()
+  else selectAllLoaded()
+}
+
+function clearSelection() {
+  lastSelectedId = null
+  if (selected.value.size) selected.value = new Map()
+}
+
+// Nach dem Neuladen (z. B. nach einer Begleichung) die aktuellen Daten übernehmen
+watch(entries, list => {
+  if (!selected.value.size) return
+  const next = new Map(selected.value)
+  for (const e of list) if (next.has(e.ID)) next.set(e.ID, e)
+  selected.value = next
+})
+
+function onBulkSettled() {
+  clearSelection()
+}
+
+// Löschen: nur, was man auch einzeln löschen darf (wie MoneyEntryDetail / entryRemoveBulk)
+function canDeleteEntry(entry) {
+  if (account.value?.Permissions.canApprove) return true
+  return !entry.Approved && entry.User?.ID === authStore.user?.ID
+}
+const deletableSelection = computed(() => [...selected.value.values()].filter(canDeleteEntry))
+const removingSelection = ref(false)
+
+async function removeSelection() {
+  const toRemove = deletableSelection.value
+  if (!toRemove.length || removingSelection.value) return
+  const { expenses, income } = sumEntries(toRemove)
+  const amounts = [expenses && `Ausgaben ${formatCurrency(expenses)}`, income && `Einnahmen ${formatCurrency(income)}`].filter(Boolean).join(', ')
+  const skipped = selected.value.size - toRemove.length
+  const question = (toRemove.length === 1
+    ? `Die ausgewählte Buchung „${toRemove[0].ChangeReason}“ wirklich löschen?`
+    : `${toRemove.length} ausgewählte Buchungen wirklich löschen?`)
+    + (amounts ? ` (${amounts})` : '')
+    + '\n\nZugehörige Zahlungen und Belege werden ebenfalls gelöscht. Das lässt sich nicht rückgängig machen.'
+    + (skipped ? `\n\n${skipped === 1 ? '1 weitere ausgewählte Buchung darfst' : `${skipped} weitere ausgewählte Buchungen darfst`} du nicht löschen – sie ${skipped === 1 ? 'bleibt' : 'bleiben'} erhalten.` : '')
+  if (!confirm(question)) return
+
+  removingSelection.value = true
+  try {
+    const response = await store.removeEntries(account.value.ID, toRemove.map(e => e.ID))
+    if (response.success) {
+      clearSelection()
+    } else {
+      alert(response.error || 'Fehler beim Löschen der Buchungen.')
+    }
+  } finally {
+    removingSelection.value = false
+  }
+}
+
+function onSelectionKeydown(event) {
+  if (event.key !== 'Escape' || !selected.value.size) return
+  if (document.querySelector('dialog[open]')) return
+  clearSelection()
+}
+
+// ── Ansicht: Liste, Tabelle oder Budget-Board (pro Gerät gemerkt) ─────
+const VIEW_KEY = 'toteam_money_view'
+const VIEW_MODES = [
+  { value: 'list', label: 'Listenansicht', icon: 'list' },
+  { value: 'table', label: 'Tabellenansicht', icon: 'table' },
+  { value: 'budgets', label: 'Nach Budgets', icon: 'kanban' },
+]
+function readViewMode() {
+  try {
+    const stored = localStorage.getItem(VIEW_KEY)
+    if (VIEW_MODES.some(m => m.value === stored)) return stored
+  } catch {
+    // Speicher nicht verfügbar
+  }
+  return 'list'
+}
+const viewMode = ref(readViewMode())
+watch(appliedQuery, clearSelection)
+watch(viewMode, mode => {
+  if (mode === 'budgets') clearSelection()
+  try {
+    localStorage.setItem(VIEW_KEY, mode)
+  } catch {
+    // egal
+  }
+})
 
 // Auswahlfelder sofort, die Suche erst nach einer kurzen Tipp-Pause
 let searchTimer = null
@@ -472,12 +666,14 @@ watch(account, val => {
 let lightbox = null
 
 onMounted(() => {
+  window.addEventListener('keydown', onSelectionKeydown)
   store.fetchAccount(route.params.id)
   loadEntries()
   lightbox = GLightbox({ selector: '.money-entry_receipt', touchNavigation: true })
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', onSelectionKeydown)
   lightbox?.destroy()
   observer?.disconnect()
   clearTimeout(searchTimer)
@@ -486,12 +682,16 @@ onUnmounted(() => {
 
 watch(() => route.params.id, id => {
   if (!id) return
+  clearSelection()
   store.fetchAccount(id)
   loadEntries()
 })
 
 // Re-scan the DOM for receipt links whenever the entry list changes
-watch([account, entries], () => {
+function reloadLightbox() {
+  nextTick(() => lightbox?.reload())
+}
+watch([account, entries, viewMode], () => {
   nextTick(() => lightbox?.reload())
 }, { deep: true })
 </script>
