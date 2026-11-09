@@ -1,0 +1,94 @@
+// "Schulden" auf der Kassenseite (siehe MoneyDebtsSection.vue).
+// Akkordeon-Kopf/-Animation kommen aus .money-accordion (pages/MoneyAccountDetailPage.scss).
+.money-debts {
+    .money-debts_summary {
+        margin-left: auto;
+        font-size: 13px;
+        color: var(--ColorGray);
+        white-space: nowrap;
+
+        &--open {
+            font-weight: 700;
+            color: var(--ColorBlack);
+        }
+    }
+
+    // Karte wie ein Budget
+    .money-debt {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 12px 14px;
+        background-color: var(--ColorWhite);
+        border-radius: var(--BorderRadiusMedium);
+        box-shadow: var(--BoxShadowLight);
+
+        .money-progress_bar {
+            background-color: var(--ColorLightGray);
+        }
+    }
+
+    .money-debt_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .money-debt_title,
+    .money-debt_person {
+        font-weight: 600;
+    }
+
+    .money-debt_person {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .money-debt_avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .money-debt_amount {
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .money-debt_actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .money-debt_empty {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+    }
+
+    .money-debt-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .money-debts_subtitle {
+        margin: 12px 0 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ColorGray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .money-debt--total {
+        background-color: var(--ColorVeryLightGray);
+        box-shadow: none;
+        border: 1px solid var(--ColorLightGray);
+    }
+}

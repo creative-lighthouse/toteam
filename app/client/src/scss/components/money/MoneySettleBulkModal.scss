@@ -1,0 +1,65 @@
+@use "../../base/variables" as *;
+
+// Mehrere Buchungen auf einmal begleichen (siehe MoneySettleBulkModal.vue)
+.money-settle-bulk-modal {
+    text-align: left;
+    max-width: 520px;
+    max-height: 90dvh;
+
+    // Texte und Liste stehen direkt im .modalform-Raster (6 Spalten) — über die ganze Breite
+    .money-settle-bulk-modal_summary,
+    .money-settle-bulk-modal_list {
+        grid-column: 1 / -1;
+    }
+
+    .money-settle-bulk-modal_summary {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ColorGray);
+
+        strong {
+            color: var(--ColorBlack);
+        }
+    }
+
+    .money-settle-bulk-modal_list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border: 1px solid var(--ColorLightGray);
+        border-radius: var(--BorderRadiusSmall);
+        font-size: 13px;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+
+            & + li {
+                border-top: 1px solid var(--ColorLightGray);
+            }
+        }
+    }
+
+    .money-settle-bulk-modal_reason {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 600;
+    }
+
+    .money-settle-bulk-modal_person {
+        color: var(--ColorGray);
+        white-space: nowrap;
+    }
+
+    .money-settle-bulk-modal_amount {
+        font-weight: 700;
+        white-space: nowrap;
+    }
+}

@@ -39,6 +39,11 @@
             "App\\": "app/src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "app/tests/"
+        }
+    },
     "extra": {
         "expose": [
             "app/client/dist",
@@ -65,7 +70,8 @@
         "fix": "vendor/bin/phpcbf",
         "rector": "vendor/bin/rector -v",
         "rector-dry": "vendor/bin/rector -v --dry-run",
-        "phpstan": "vendor/bin/phpstan"
+        "phpstan": "vendor/bin/phpstan",
+        "test": "vendor/bin/phpunit"
     },
     "config": {
         "allow-plugins": {

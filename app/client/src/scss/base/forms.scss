@@ -69,6 +69,11 @@ textarea.input {
     width: 100%;
     align-items: start;
 
+    // Fehlermeldung unter den Feldern über die ganze Breite statt in einer der 6 Spalten
+    > .app-modal_error {
+        grid-column: 1 / -1;
+    }
+
     .field {
         grid-column: span 6;
         display: flex;

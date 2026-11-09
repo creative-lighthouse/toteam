@@ -96,6 +96,29 @@
       </div>
     </template>
 
+    <!-- Einzelauswahl mit collapse: gewählte Person an der Stelle des Suchfelds,
+         mit X zum Abwählen (wie die Einzelauswahl im OrganizationPicker) -->
+    <div v-else-if="!multiple && dropdown && collapse && selectedMember" class="member-picker_selected">
+      <AppAvatar
+        :src="selectedMember.Avatar"
+        alt=""
+        img-class="member-picker_selected-avatar"
+        placeholder-class="member-picker_selected-avatar--placeholder"
+      />
+      <span class="member-picker_selected-name">
+        <span v-if="label" class="member-picker_sr-only">{{ label }}: </span>{{ selectedMember.Name }}<template v-if="pinSelf && selectedMember.ID === selfId"> (Du)</template>
+      </span>
+      <button
+        v-if="!disabled"
+        ref="clearButton"
+        type="button"
+        class="member-picker_clear"
+        :aria-label="`${selectedMember.Name} abwählen`"
+        title="Andere Person wählen"
+        @click="clear"
+      >✕</button>
+    </div>
+
     <!-- Kompakte Einzelauswahl (dropdown): gewählte Person als Chip + Suche
          mit ausklappendem Dropdown statt der kompletten Liste, z.B. für den
          Verantwortlichen im Aufgaben-Formular. -->
@@ -242,6 +265,8 @@ const props = defineProps({
   autofocus: { type: Boolean, default: false },
   // Einzelauswahl als Chip + Such-Dropdown statt kompletter Liste (siehe oben)
   dropdown: { type: Boolean, default: false },
+  // Nur mit dropdown: die gewählte Person ersetzt das Suchfeld, X wählt sie ab
+  collapse: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
 })
 
@@ -313,7 +338,8 @@ const matches = computed(() => {
 
 // ── Combobox (Such-Dropdowns): Tastatur und Screenreader ──────────────────────
 
-const usesCombobox = computed(() => (props.multiple && props.showSelectAll && mode.value === 'individual') || (!props.multiple && props.dropdown))
+const usesCombobox = computed(() => (props.multiple && props.showSelectAll && mode.value === 'individual')
+  || (!props.multiple && props.dropdown && !(props.collapse && selectedMember.value)))
 const listOpen = computed(() => dropdownOpen.value && matches.value.length > 0)
 const activeIndex = ref(0)
 const searchLabel = computed(() => props.label
@@ -387,8 +413,21 @@ function toggle(id) {
       // Liste schließen, Fokus bleibt im Suchfeld (sonst fiele er für Tastatur-Nutzer heraus)
       query.value = ''
       dropdownOpen.value = false
+      // Mit collapse verschwindet das Suchfeld — Fokus auf das X, damit es per Tastatur weitergeht
+      if (props.collapse) nextTick(() => clearButton.value?.focus())
     }
   }
+}
+
+// collapse: Person abwählen und direkt weitersuchen
+const clearButton = ref(null)
+function clear() {
+  query.value = ''
+  emit('update:modelValue', null)
+  nextTick(() => {
+    searchInput.value?.focus()
+    dropdownOpen.value = true
+  })
 }
 
 // Suchfeld direkt bereit, z. B. wenn der Picker in einem Dropdown aufklappt

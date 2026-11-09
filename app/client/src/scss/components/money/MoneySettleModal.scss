@@ -2,6 +2,12 @@
 
 // ── Zahlungshistorie (nur money-settle-modal) ────────────────
 .money-settle-modal {
+    // Texte stehen direkt im .modalform-Raster (6 Spalten) — über die ganze Breite ziehen
+    &_summary,
+    &_history {
+        grid-column: 1 / -1;
+    }
+
     &_summary {
         margin: 0;
         font-size: 14px;

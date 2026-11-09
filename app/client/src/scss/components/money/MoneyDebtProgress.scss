@@ -1,0 +1,10 @@
+// Balken ausgezahlt / offen (siehe MoneyDebtProgress.vue); Grundgerüst aus .money-progress
+.money-debt-progress {
+    .money-progress_fill--paid {
+        background-color: var(--ColorStatusGood);
+    }
+
+    .money-progress_fill--open {
+        background-color: var(--ColorStatusWarning);
+    }
+}

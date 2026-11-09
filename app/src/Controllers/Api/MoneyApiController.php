@@ -15,6 +15,8 @@ use SilverStripe\Assets\File;
 use SilverStripe\Assets\Upload;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Core\Convert;
+use SilverStripe\ORM\DB;
 use SilverStripe\Security\Member;
 
 /**
@@ -28,6 +30,7 @@ class MoneyApiController extends ApiController
     private static $allowed_actions = [
         'index',
         'account',
+        'entries',
         'accountStore',
         'accountUpdate',
         'accountRemove',
@@ -40,6 +43,8 @@ class MoneyApiController extends ApiController
         'entryUpdate',
         'entryApprove',
         'entrySettle',
+        'entrySettleBulk',
+        'entryRemoveBulk',
         'entry',
         'accountMembers',
         'entryHistory',
@@ -58,6 +63,10 @@ class MoneyApiController extends ApiController
     // Vorkommastellen) — verhindert eine ValidationException (→ API 500) bei versehentlich
     // sehr hoch eingegebenen Beträgen und gibt stattdessen eine verständliche Fehlermeldung.
     private const MAX_AMOUNT = 999999999.99;
+
+    // Bereits ausgezahlter Betrag einer Buchung (Summe ihrer Begleichungen), für SQL-Bedingungen
+    private const SETTLED_SUM_SQL = '(SELECT COALESCE(SUM("MoneySettlement"."Amount"), 0) FROM "MoneySettlement"'
+        . ' WHERE "MoneySettlement"."EntryID" = "MoneyHistory"."ID")';
 
     protected function getDefaultAction()
     {
@@ -130,6 +139,185 @@ class MoneyApiController extends ApiController
         }
 
         return $this->jsonResponse(['account' => $this->formatAccount($account, $member, true)]);
+    }
+
+    /**
+     * GET /api/v1/money/entries/$ID?offset=0&limit=30&search=&user=&budget=&status=&sort=
+     * Buchungsverlauf einer Kasse, seitenweise (Lazyloading in der App). Suche, Filter und
+     * Sortierung laufen hier, damit sie auch die noch nicht geladenen Buchungen erfassen.
+     * budget: ID oder "none", status: "approved"/"pending"/"open" (noch nicht voll ausgezahlt),
+     * sort: "invoice"/"submission"/"alphabetical"
+     */
+    public function entries(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        $account = MoneyAccount::get()->byID((int) $request->param('ID'));
+        if (!$account || !$account->exists() || !$account->canViewInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $offset = max(0, (int) $request->getVar('offset'));
+        $limit = min(100, max(1, (int) ($request->getVar('limit') ?: 30)));
+
+        $list = MoneyHistory::get()->filter('ParentID', $account->ID);
+
+        if ($userID = (int) $request->getVar('user')) {
+            $list = $list->filter('UserID', $userID);
+        }
+
+        $budget = (string) $request->getVar('budget');
+        if ($budget === 'none') {
+            $list = $list->filter('BudgetID', 0);
+        } elseif ((int) $budget) {
+            $list = $list->filter('BudgetID', (int) $budget);
+        }
+
+        $status = (string) $request->getVar('status');
+        if ($status === 'approved' || $status === 'pending') {
+            $list = $list->filter('Approved', $status === 'approved');
+        } elseif ($status === 'open') {
+            $list = $list->filter(['Approved' => true, 'ChangeType' => 'Withdrawal'])
+                ->where('"MoneyHistory"."ChangeAmount" > ' . self::SETTLED_SUM_SQL);
+        }
+
+        $search = trim((string) $request->getVar('search'));
+        if ($search !== '') {
+            $list = $list->where($this->entrySearchWhere($account, $search));
+        }
+
+        $list = match ((string) $request->getVar('sort')) {
+            'submission' => $list->sort(['Created' => 'DESC', 'ID' => 'DESC']),
+            'alphabetical' => $list->sort(['ChangeReason' => 'ASC', 'ID' => 'ASC']),
+            default => $list->sort(['ChangeDate' => 'DESC', 'ID' => 'DESC']),
+        };
+
+        $total = $list->count();
+        $entries = [];
+        foreach ($list->limit($limit, $offset) as $entry) {
+            $entries[] = $this->formatEntry($entry);
+        }
+
+        return $this->jsonResponse([
+            'entries' => $entries,
+            'total' => $total,
+            'hasMore' => $offset + count($entries) < $total,
+        ]);
+    }
+
+    /**
+     * SQL-Bedingung für die Suche im Buchungsverlauf: Titel, Person (nur über den angezeigten
+     * Namen, damit verborgene Nachnamen nicht auffindbar sind) und — wenn die Eingabe wie ein
+     * Betrag aussieht — der Betrag in den gängigen Schreibweisen ("12,5", "12.50", "1.234,50").
+     */
+    private function entrySearchWhere(MoneyAccount $account, string $search): string
+    {
+        $q = mb_strtolower($search);
+        $like = fn (string $value) => "'%" . addcslashes(Convert::raw2sql($value), '%_') . "%'";
+
+        $conditions = ['LOWER("MoneyHistory"."ChangeReason") LIKE ' . $like($q)];
+
+        $userIDs = [];
+        foreach ($this->entryUserMembers($account) as $user) {
+            if (str_contains(mb_strtolower($user->getDisplayName()), $q)) {
+                $userIDs[] = (int) $user->ID;
+            }
+        }
+        if ($userIDs) {
+            $conditions[] = '"MoneyHistory"."UserID" IN (' . implode(',', $userIDs) . ')';
+        }
+
+        $amount = preg_replace('/[€\s+-]/u', '', $q);
+        if ($amount !== '' && preg_match('/^[\d.,]+$/', $amount)) {
+            $variants = [];
+            if (str_contains($amount, ',')) {
+                // Deutsche Schreibweise: Punkte sind Tausendertrenner
+                $variants[] = str_replace(',', '.', str_replace('.', '', $amount));
+            } else {
+                // "12.50" als Dezimalpunkt oder "1.234" als Tausendertrenner
+                $variants[] = $amount;
+                $variants[] = str_replace('.', '', $amount);
+            }
+            foreach (array_unique(array_filter($variants, fn ($v) => $v !== '' && $v !== '.')) as $variant) {
+                $conditions[] = 'CAST("MoneyHistory"."ChangeAmount" AS CHAR) LIKE ' . $like($variant);
+            }
+        }
+
+        return '(' . implode(' OR ', $conditions) . ')';
+    }
+
+    /**
+     * Schulden der Kasse gegenüber Mitgliedern: freigegebene Ausgaben, die jemand ausgelegt hat,
+     * abzüglich der Begleichungen (Auszahlungen). "Own" für den aktuellen Nutzer; "Members"
+     * (alle Personen mit offenen Beträgen) und "Total" nur für Freigebende — wie beim
+     * Begleichen-Status in der Liste, den sonst nur die eigene Person sieht.
+     */
+    private function formatDebts(MoneyAccount $account, Member $member, bool $canApprove): array
+    {
+        $rows = DB::prepared_query(
+            'SELECT "MoneyHistory"."UserID" AS "UserID",'
+            . ' SUM("MoneyHistory"."ChangeAmount") AS "Total",'
+            . ' SUM(LEAST(' . self::SETTLED_SUM_SQL . ', "MoneyHistory"."ChangeAmount")) AS "Paid"'
+            . ' FROM "MoneyHistory"'
+            . ' WHERE "MoneyHistory"."ParentID" = ? AND "MoneyHistory"."Approved" = 1'
+            . ' AND "MoneyHistory"."ChangeType" = ? AND "MoneyHistory"."UserID" > 0'
+            . ' GROUP BY "MoneyHistory"."UserID"',
+            [$account->ID, 'Withdrawal']
+        );
+
+        $sums = fn (float $total, float $paid) => [
+            'Total' => round($total, 2),
+            'Paid' => round($paid, 2),
+            'Open' => round(max(0, $total - $paid), 2),
+        ];
+
+        $byUser = [];
+        foreach ($rows as $row) {
+            $byUser[(int) $row['UserID']] = $sums((float) $row['Total'], (float) $row['Paid']);
+        }
+
+        $data = ['Own' => $byUser[(int) $member->ID] ?? $sums(0, 0)];
+        if (!$canApprove) {
+            return $data;
+        }
+
+        // Liste nur mit Personen, denen noch etwas zusteht; die Summe über alle, damit der
+        // Balken auch bereits vollständig Ausgezahltes zeigt
+        $members = [];
+        $openIDs = array_keys(array_filter($byUser, fn ($d) => $d['Open'] > 0));
+        $users = $openIDs ? Member::get()->byIDs($openIDs) : [];
+        foreach ($users as $user) {
+            $members[] = ['User' => $this->formatMember($user)] + $byUser[(int) $user->ID];
+        }
+        usort($members, fn ($a, $b) => $b['Open'] <=> $a['Open']);
+
+        $data['Members'] = $members;
+        $data['Total'] = $sums(
+            array_sum(array_column($byUser, 'Total')),
+            array_sum(array_column($byUser, 'Paid'))
+        );
+        return $data;
+    }
+
+    /** Alle Personen mit mindestens einer Buchung in der Kasse */
+    private function entryUserMembers(MoneyAccount $account): iterable
+    {
+        $ids = MoneyHistory::get()->filter('ParentID', $account->ID)->exclude('UserID', 0)->columnUnique('UserID');
+        return $ids ? Member::get()->byIDs($ids) : [];
+    }
+
+    /** Auswahl für den Personen-Filter im Buchungsverlauf */
+    private function entryUsers(MoneyAccount $account): array
+    {
+        $users = [];
+        foreach ($this->entryUserMembers($account) as $user) {
+            $users[] = ['ID' => (int) $user->ID, 'Name' => $user->getDisplayName()];
+        }
+        usort($users, fn ($a, $b) => strcasecmp($a['Name'], $b['Name']));
+        return $users;
     }
 
     /** POST /api/v1/money/accountStore */
@@ -775,6 +963,155 @@ class MoneyApiController extends ApiController
         ], 'Zahlung erfasst');
     }
 
+    /**
+     * POST /api/v1/money/entrySettleBulk — mehrere Buchungen einer Kasse auf einmal begleichen
+     * Body: { AccountID, EntryIDs: int[], Date?, PaymentMethod: "Bar"|"EC" }
+     * Jede Buchung wird um ihren noch offenen Rest beglichen. Übersprungen (skipped) wird, was
+     * nichts offen hat: Einnahmen, nicht freigegebene oder bereits voll beglichene Buchungen
+     * sowie IDs, die nicht zu dieser Kasse gehören.
+     */
+    public function entrySettleBulk(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $body = $this->getJsonBody();
+
+        $account = MoneyAccount::get()->byID((int) ($body['AccountID'] ?? 0));
+        if (!$account || !$account->exists() || !$account->canApproveEntriesInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($body['EntryIDs'] ?? [])))));
+        if (!$ids) {
+            return $this->errorResponse('Keine Buchungen ausgewählt', 400);
+        }
+        if (count($ids) > 500) {
+            return $this->errorResponse('Höchstens 500 Buchungen auf einmal', 400);
+        }
+
+        $paymentMethod = trim($body['PaymentMethod'] ?? '');
+        if (!in_array($paymentMethod, ['Bar', 'EC'], true)) {
+            return $this->errorResponse('Zahlungsart muss "Bar" oder "EC" sein', 400);
+        }
+        $date = trim($body['Date'] ?? '') ?: date('Y-m-d');
+
+        $settledIDs = [];
+        $total = 0.0;
+        $entries = MoneyHistory::get()->filter(['ID' => $ids, 'ParentID' => $account->ID]);
+
+        DB::get_conn()->withTransaction(function () use ($entries, $paymentMethod, $date, $member, &$settledIDs, &$total) {
+            foreach ($entries as $entry) {
+                if ($entry->ChangeType !== 'Withdrawal' || !$entry->Approved) {
+                    continue;
+                }
+                $open = round((float) $entry->ChangeAmount - (float) $entry->Settlements()->sum('Amount'), 2);
+                if ($open <= 0) {
+                    continue;
+                }
+
+                $settlement = MoneySettlement::create();
+                $settlement->Amount = $open;
+                $settlement->Date = $date;
+                $settlement->PaymentMethod = $paymentMethod;
+                $settlement->EntryID = $entry->ID;
+                $settlement->UserID = $member->ID;
+                $settlement->write();
+
+                $settledIDs[] = (int) $entry->ID;
+                $total += $open;
+            }
+        });
+
+        return $this->successResponse([
+            'settled' => $settledIDs,
+            'skipped' => count($ids) - count($settledIDs),
+            'amount' => round($total, 2),
+            'account' => $this->formatAccount($account, $member, true),
+        ], count($settledIDs) === 1 ? '1 Buchung beglichen' : count($settledIDs) . ' Buchungen beglichen');
+    }
+
+    /**
+     * POST /api/v1/money/entryRemoveBulk — mehrere Buchungen einer Kasse auf einmal löschen
+     * Body: { AccountID, EntryIDs: int[] }
+     * Gelöscht wird, was man auch einzeln löschen dürfte (Freigebende alles, sonst nur eigene,
+     * noch nicht freigegebene Buchungen) — samt Begleichungen und Beleg. Der Rest und IDs
+     * anderer Kassen werden übersprungen (skipped). Salden werden einmal am Ende neu berechnet.
+     */
+    public function entryRemoveBulk(HTTPRequest $request): HTTPResponse
+    {
+        $member = $this->requireAuth();
+        if (!$member) {
+            return $this->errorResponse('Unauthorized', 401);
+        }
+
+        if ($request->httpMethod() !== 'POST') {
+            return $this->errorResponse('Method not allowed', 405);
+        }
+
+        $body = $this->getJsonBody();
+
+        $account = MoneyAccount::get()->byID((int) ($body['AccountID'] ?? 0));
+        if (!$account || !$account->exists() || !$account->canViewInApp($member)) {
+            return $this->errorResponse('Keine Berechtigung', 403);
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($body['EntryIDs'] ?? [])))));
+        if (!$ids) {
+            return $this->errorResponse('Keine Buchungen ausgewählt', 400);
+        }
+        if (count($ids) > 500) {
+            return $this->errorResponse('Höchstens 500 Buchungen auf einmal', 400);
+        }
+
+        $canManage = $account->canApproveEntriesInApp($member);
+        $removedIDs = [];
+        $receipts = [];
+        $anyApproved = false;
+        $entries = MoneyHistory::get()->filter(['ID' => $ids, 'ParentID' => $account->ID]);
+
+        DB::get_conn()->withTransaction(function () use ($entries, $member, $canManage, &$removedIDs, &$receipts, &$anyApproved) {
+            foreach ($entries as $entry) {
+                $isOwner = (int) $entry->UserID === (int) $member->ID;
+                if (!$canManage && !($isOwner && !$entry->Approved)) {
+                    continue;
+                }
+                $anyApproved = $anyApproved || (bool) $entry->Approved;
+                $receipt = $entry->Receipt();
+                if ($receipt && $receipt->exists()) {
+                    $receipts[] = $receipt;
+                }
+                foreach ($entry->Settlements() as $settlement) {
+                    $settlement->delete();
+                }
+                $removedIDs[] = (int) $entry->ID;
+                $entry->delete();
+            }
+        });
+
+        // Dateien erst nach der Transaktion löschen (lassen sich nicht zurückrollen)
+        foreach ($receipts as $receipt) {
+            $receipt->deleteFile();
+            $receipt->doArchive();
+        }
+
+        if ($anyApproved) {
+            $this->recalculateBalances($account);
+        }
+
+        return $this->successResponse([
+            'removed' => $removedIDs,
+            'skipped' => count($ids) - count($removedIDs),
+            'account' => $this->formatAccount($account, $member, true),
+        ], count($removedIDs) === 1 ? '1 Buchung gelöscht' : count($removedIDs) . ' Buchungen gelöscht');
+    }
+
     /** PUT /api/v1/money/entryApprove/$ID */
     public function entryApprove(HTTPRequest $request): HTTPResponse
     {
@@ -1312,11 +1649,10 @@ class MoneyApiController extends ApiController
             }
             $data['Budgets'] = $budgets;
 
-            $history = [];
-            foreach (MoneyHistory::get()->filter('ParentID', $account->ID)->sort('ChangeDate DESC')->limit(50) as $entry) {
-                $history[] = $this->formatEntry($entry);
-            }
-            $data['History'] = $history;
+            // Die Buchungen selbst lädt die App seitenweise über entries/$ID
+            $data['EntryCount'] = MoneyHistory::get()->filter('ParentID', $account->ID)->count();
+            $data['EntryUsers'] = $this->entryUsers($account);
+            $data['Debts'] = $this->formatDebts($account, $member, $canApprove);
 
             if ($canApprove) {
                 $pending = [];

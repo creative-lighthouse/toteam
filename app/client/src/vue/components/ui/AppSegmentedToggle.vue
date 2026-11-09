@@ -1,6 +1,7 @@
 <!--
   Umschalter zwischen zwei (oder wenigen) festen Werten, z. B. Ausgabe/Einnahme
-  oder Externe URL/Datei — immer genau ein Wert ist gewählt. Technisch eine
+  oder Externe URL/Datei — höchstens ein Wert ist gewählt (ohne Wert startet
+  er leer, z. B. damit ein Formular erst nach der Wahl weitergeht). Technisch eine
   Radio-Gruppe (Tastatur/Screenreader), optisch ein Segment-Schalter mit
   gleitendem Marker. Rendert sich als kompletter .field-Block:
 

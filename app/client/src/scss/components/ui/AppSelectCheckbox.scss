@@ -1,5 +1,5 @@
-// Auswahlkästchen für die Mehrfachauswahl der Foto-Galerie
-.photo-select-checkbox {
+// Auswahlkästchen für Mehrfachauswahlen (siehe AppSelectCheckbox.vue)
+.app-select-checkbox {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -9,7 +9,7 @@
     height: 36px;
     cursor: pointer;
 
-    .photo-select-checkbox_input {
+    .app-select-checkbox_input {
         position: absolute;
         inset: 0;
         margin: 0;
@@ -17,7 +17,7 @@
         cursor: pointer;
     }
 
-    .photo-select-checkbox_box {
+    .app-select-checkbox_box {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -30,29 +30,29 @@
         transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
-    &:hover .photo-select-checkbox_box {
+    &:hover .app-select-checkbox_box {
         border-color: var(--ColorPrimary);
     }
 
-    .photo-select-checkbox_input:focus-visible + .photo-select-checkbox_box {
+    .app-select-checkbox_input:focus-visible + .app-select-checkbox_box {
         outline: 2px solid var(--ColorPrimary);
         outline-offset: 2px;
     }
 
-    &--checked .photo-select-checkbox_box {
+    &--checked .app-select-checkbox_box {
         border-color: var(--ColorPrimary);
         background: var(--ColorPrimary);
         color: var(--ColorWhite);
     }
 
     // Auf dem Foto
-    &--overlay .photo-select-checkbox_box {
+    &--overlay .app-select-checkbox_box {
         border-color: #fff;
         background: rgb(0 0 0 / 35%);
         box-shadow: 0 0 0 1px rgb(0 0 0 / 30%);
     }
 
-    &--overlay.photo-select-checkbox--checked .photo-select-checkbox_box {
+    &--overlay.app-select-checkbox--checked .app-select-checkbox_box {
         border-color: #fff;
         background: var(--ColorPrimary);
         color: #fff;

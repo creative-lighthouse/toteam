@@ -1,0 +1,149 @@
+@use "../../base/variables" as *;
+
+// Tabellenansicht des Buchungsverlaufs (siehe MoneyEntryTable.vue), Aufbau wie .task-table.
+// Badges/Beträge kommen aus den .money-entry_*-Klassen der Kassenseite.
+.money-entry-table {
+    overflow-x: auto;
+    border-radius: var(--BorderRadiusMedium);
+    background-color: var(--ColorWhite);
+    box-shadow: var(--BoxShadowLight);
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    th {
+        padding: 10px 12px;
+        border-bottom: 2px solid var(--ColorLightGray);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ColorGray);
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--ColorLightGray);
+        vertical-align: middle;
+        font-size: 13px;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .money-entry-table_row {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        @include hover {
+            background-color: var(--ColorVeryLightGray);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: -2px;
+        }
+    }
+
+    // Spalte der Auswahlkästchen: so schmal wie das Kästchen
+    .money-entry-table_col-select {
+        width: 1%;
+        padding: 0 0 0 6px;
+        cursor: default;
+    }
+
+    .money-entry-table_row--selected {
+        background-color: var(--ColorPrimaryLight);
+
+        @include hover {
+            background-color: var(--ColorPrimaryLight);
+        }
+    }
+
+    .money-entry-table_date {
+        white-space: nowrap;
+        color: var(--ColorGray);
+    }
+
+    .money-entry-table_reason {
+        min-width: 160px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ColorBlack);
+    }
+
+    .money-entry-table_person {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .money-entry-table_avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .money-entry-table_status {
+        white-space: nowrap;
+
+        > * + * {
+            margin-left: 6px;
+        }
+    }
+
+    // Budget-Tag steht hier in einer eigenen Spalte, nicht rechtsbündig in der Meta-Zeile
+    .money-entry_budget-tag {
+        margin-left: 0;
+        white-space: nowrap;
+    }
+
+    .money-entry-table_col-amount {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    // Bearbeiten-Button: nur beim Überfahren bzw. wenn die Zeile/der Button den Fokus hat.
+    // Per opacity statt display, damit er per Tab erreichbar bleibt.
+    .money-entry-table_col-actions {
+        width: 1%; // so schmal wie der Button
+        padding-left: 0;
+        text-align: right;
+    }
+
+    .money-entry-table_edit {
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    .money-entry-table_row:hover .money-entry-table_edit,
+    .money-entry-table_row:focus-within .money-entry-table_edit {
+        opacity: 1;
+    }
+
+    // Touch-Geräte kennen kein Überfahren — dort immer sichtbar
+    @media (hover: none) {
+        .money-entry-table_edit {
+            opacity: 1;
+        }
+    }
+
+    .money-entry-table_sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
+}

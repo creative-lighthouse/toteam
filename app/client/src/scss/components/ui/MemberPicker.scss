@@ -1,3 +1,5 @@
+@use "../../base/variables" as *;
+
 // Einheitlicher Personen-Auswähler (Einzel- oder Mehrfachauswahl, mit Avatar
 // + Suchfeld) — Pendant zu .org-picker (orgpicker.scss). Ersetzt die früher
 // pro Komponente duplizierten Chip-Listen/Dropdowns/Checkbox-Listen für die
@@ -127,6 +129,73 @@
 
         &:hover {
             background: rgba(255, 255, 255, 0.45);
+        }
+    }
+
+    // collapse: gewählte Person an der Stelle des Suchfelds (wie .org-picker_selected)
+    &_selected {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px;
+        border: 1px solid var(--ColorPrimary);
+        border-radius: var(--BorderRadiusMedium);
+        background-color: var(--ColorPrimaryLight);
+        color: var(--ColorBlack);
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    &_selected-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+
+        &--placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--ColorPrimary);
+            color: var(--ColorWhite);
+            font-weight: 700;
+            font-size: 12px;
+        }
+    }
+
+    &_selected-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &_clear {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        color: var(--ColorBlack);
+        font-size: 0.85rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        @include hover {
+            background-color: var(--ColorWhite);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ColorPrimary);
+            outline-offset: 1px;
         }
     }
 
